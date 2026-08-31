@@ -1,45 +1,45 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderAnalyzer,
+    Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net9_0)
-            .WithAnalyzer<UseAnOverloadThatHasTimeProviderAnalyzer>()
-            .WithCodeFixProvider<UseAnOverloadThatHasTimeProviderFixer>();
-    }
+    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net90 };
 
     [Fact]
-    public async Task NoReport_ConsoleWriteLine()
+    public Task NoReport_ConsoleWriteLine()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             System.Console.WriteLine("test");
             """;
-        await CreateProjectBuilder()
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoReport_TimeSpanFromSeconds()
+    public Task NoReport_TimeSpanFromSeconds()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             _ = System.TimeSpan.FromSeconds(1);
             """;
-        await CreateProjectBuilder()
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAvailable()
+    public Task NotAvailable()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -48,15 +48,15 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoReport_WrongOverload()
+    public Task NoReport_WrongOverload()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public void A()
@@ -68,15 +68,15 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 void B(int a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WhenAvailable_Parameter()
+    public Task WhenAvailable_Parameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(System.TimeProvider foo)
@@ -85,8 +85,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(System.TimeProvider foo)
@@ -95,16 +94,15 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WhenAvailable_NestedProp()
+    public Task WhenAvailable_NestedProp()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(Sample foo)
@@ -115,8 +113,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 class Sample { public System.TimeProvider A {get;} }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(Sample foo)
@@ -127,16 +124,15 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 class Sample { public System.TimeProvider A {get;} }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptionalParameter_WhenAvailable()
+    public Task OptionalParameter_WhenAvailable()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void Delay(System.TimeProvider timeProvider = null)
@@ -149,8 +145,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 static void Delay(System.TimeProvider timeProvider = null)
@@ -164,16 +159,14 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptionalParameter_WithOptionalParameterBeforeTimeProvider()
+    public Task OptionalParameter_WithOptionalParameterBeforeTimeProvider()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void Delay(bool dummy = false, System.TimeProvider timeProvider = null)
@@ -186,8 +179,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 static void Delay(bool dummy = false, System.TimeProvider timeProvider = null)
@@ -201,9 +193,6 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

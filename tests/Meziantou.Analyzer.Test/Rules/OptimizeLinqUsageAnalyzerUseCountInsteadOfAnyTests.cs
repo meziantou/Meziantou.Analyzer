@@ -1,163 +1,173 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeLinqUsageAnalyzerUseCountInsteadOfAnyTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task Any_List()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
-            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = {|MA0112:collection.Any()|};
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_List()
+    public Task Any_List_CodeFix()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new System.Collections.Generic.List<int>();
-        _ = [|collection.Any()|];
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = {|MA0112:collection.Any()|};
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = collection.Count != 0;
+                }
+            }
 
-    [Fact]
-    public async Task Any_List_CodeFix()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new System.Collections.Generic.List<int>();
-        _ = [|collection.Any()|];
-    }
-}
-";
+            """;
 
-        const string FixedCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new System.Collections.Generic.List<int>();
-        _ = collection.Count != 0;
-    }
-}
-";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_Array()
+    public Task Any_Array()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new int[10];
-        _ = [|collection.Any()|];
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new int[10];
+                    _ = {|MA0112:collection.Any()|};
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            """;
 
-    [Fact]
-    public async Task Any_HashSet()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new System.Collections.Generic.HashSet<int>();
-        _ = [|collection.Any()|];
-    }
-}
-";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_Dictionary()
+    public Task Any_HashSet()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new System.Collections.Generic.Dictionary<int, int>();
-        _ = [|collection.Any()|];
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.HashSet<int>();
+                    _ = {|MA0112:collection.Any()|};
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            """;
 
-    [Fact]
-    public async Task Any_Enumerable()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = Enumerable.Empty<int>();
-        _ = collection.Any();
-    }
-}
-";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_Expression_Array()
+    public Task Any_Dictionary()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var collection = new int[10];
-        _ = collection.Any(i => i > 1);
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.Dictionary<int, int>();
+                    _ = {|MA0112:collection.Any()|};
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_VariableTypedAsEnumerableAssignedToList()
+    public Task Any_Enumerable()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = Enumerable.Empty<int>();
+                    _ = collection.Any();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_Expression_Array()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new int[10];
+                    _ = collection.Any(i => i > 1);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_VariableTypedAsEnumerableAssignedToList()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;
             class Test
@@ -170,15 +180,14 @@ class Test
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Any_ExplicitCastToEnumerable()
+    public Task Any_ExplicitCastToEnumerable()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;
             class Test
@@ -190,8 +199,6 @@ class Test
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

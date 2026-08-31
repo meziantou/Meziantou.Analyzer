@@ -1,39 +1,42 @@
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.MethodShouldNotBeTooLongAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MethodShouldNotBeTooLongAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest(params (string Key, string Value)[] configuration)
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<MethodShouldNotBeTooLongAnalyzer>();
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration(configuration);
+        return test;
     }
 
     [Fact]
-    public async Task TooLongMethod_Statements()
+    public Task TooLongMethod_Statements()
     {
-        const string SourceCode = """
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "2"));
+        test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;var b = 0;
                     void A(){var c = 0;}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "2")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidMethod_Statements()
+    public Task ValidMethod_Statements()
     {
-        const string SourceCode = """
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "3"));
+        test.TestCode = """
             public class Test
             {
                 void Method()
@@ -42,19 +45,18 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "3")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TooLongMethod_Lines()
+    public Task TooLongMethod_Lines()
     {
-        const string SourceCode = """
+        var test = CreateTest(("MA0051.maximum_lines_per_method", "2"));
+        test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;var d = 0;
                     var b = 0;var e = 0;
@@ -62,16 +64,15 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "2")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidMethod_Lines()
+    public Task ValidMethod_Lines()
     {
-        const string SourceCode = """
+        var test = CreateTest(("MA0051.maximum_lines_per_method", "4"));
+        test.TestCode = """
             public class Test
             {
                 void Method()
@@ -82,19 +83,20 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "4")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TooLong_SkipLocalFunction_False()
+    public Task TooLong_SkipLocalFunction_False()
     {
-        const string SourceCode = """
+        var test = CreateTest(
+            ("MA0051.maximum_lines_per_method", "5"),
+            ("MA0051.skip_local_functions", "false"));
+        test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;
                     var b = 0;
@@ -107,17 +109,17 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
-              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "false")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidMethod_SkipLocalFunction_True()
+    public Task ValidMethod_SkipLocalFunction_True()
     {
-        const string SourceCode = """
+        var test = CreateTest(
+            ("MA0051.maximum_lines_per_method", "5"),
+            ("MA0051.skip_local_functions", "true"));
+        test.TestCode = """
             public class Test
             {
                 void Method()
@@ -133,17 +135,18 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "5")
-              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidMethod_Statements_SkipLocalFunction()
+    public Task ValidMethod_Statements_SkipLocalFunction()
     {
-        const string SourceCode = """
+        var test = CreateTest(
+            ("MA0051.maximum_lines_per_method", "-1"),
+            ("MA0051.maximum_statements_per_method", "2"),
+            ("MA0051.skip_local_functions", "true"));
+        test.TestCode = """
             public class Test
             {
                 void Method()
@@ -160,12 +163,8 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0051.maximum_lines_per_method", "-1")
-              .AddAnalyzerConfiguration("MA0051.maximum_statements_per_method", "2")
-              .AddAnalyzerConfiguration("MA0051.skip_local_functions", "true")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]

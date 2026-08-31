@@ -1,75 +1,75 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseArrayEmptyAnalyzer,
+    Meziantou.Analyzer.Rules.UseArrayEmptyFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseArrayEmptyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseArrayEmptyAnalyzer>()
-            .WithCodeFixProvider<UseArrayEmptyFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("new int[0]")]
     [InlineData("new int[] { }")]
-    public async Task EmptyArray_ShouldReportError(string code)
+    public Task EmptyArray_ShouldReportError(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        var a = [|{{code}}|];
-                    }
+                    var a = {|MA0005:{{code}}|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                class TestClass
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        var a = System.Array.Empty<int>();
-                    }
+                    var a = System.Array.Empty<int>();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("new int[1]")]
     [InlineData("new int[] { 0 }")]
-    public async Task NonEmptyArray_ShouldReportError(string code)
+    public Task NonEmptyArray_ShouldReportError(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                class TestClass
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        var a = {{code}};
-                    }
+                    var a = {{code}};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Length_FlowedFromLocal_ShouldReportError()
+    public Task Length_FlowedFromLocal_ShouldReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
                 {
                     int length = 0;
-                    var a = [|new int[length]|];
+                    var a = {|MA0005:new int[length]|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith("""
+        test.FixedCode = """
             class TestClass
             {
                 void Test()
@@ -78,14 +78,16 @@ public sealed class UseArrayEmptyAnalyzerTests
                     var a = System.Array.Empty<int>();
                 }
             }
-            """)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParamsMethod_ShouldNotReportError()
+    public Task ParamsMethod_ShouldNotReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class TestClass
             {
                 public void Test(params string[] values)
@@ -98,38 +100,37 @@ public sealed class UseArrayEmptyAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyArrayInAttribute_ShouldNotReportError()
+    public Task EmptyArrayInAttribute_ShouldNotReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [Test(new int[0])]
             class TestAttribute : System.Attribute
             {
                 public TestAttribute(int[] data) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitEmptyArrayInAttribute_ShouldNotReportError()
+    public Task ImplicitEmptyArrayInAttribute_ShouldNotReportError()
     {
-        const string SourceCode = """
-[Test("test")]
-class TestAttribute : System.Attribute
-{
-    public TestAttribute(string a, params object[] data) { }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [Test("test")]
+            class TestAttribute : System.Attribute
+            {
+                public TestAttribute(string a, params object[] data) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

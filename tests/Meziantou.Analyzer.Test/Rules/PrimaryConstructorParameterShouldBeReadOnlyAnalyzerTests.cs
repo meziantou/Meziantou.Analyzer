@@ -1,220 +1,240 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.PrimaryConstructorParameterShouldBeReadOnlyAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<PrimaryConstructorParameterShouldBeReadOnlyAnalyzer>()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12);
+        var test = new AnalyzerTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        return test;
     }
 
     [Fact]
-    public async Task AssignClassicCtorParameter()
+    public Task AssignClassicCtorParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    Test(int p) => p++;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                Test(int p) => p++;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignClassicParameter()
+    public Task AssignClassicParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    void A(int p) => p++;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(int p) => p++;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignUsingIncrementOperator()
+    public Task AssignUsingIncrementOperator()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(int p)
-                {
-                    int A() => [|p|]++;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                int A() => {|MA0143:p|}++;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignUsingDecrementOperator()
+    public Task AssignUsingDecrementOperator()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(int p)
-                {
-                    int A() => [|p|]--;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                int A() => {|MA0143:p|}--;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignUsingInfixDecrementOperator()
+    public Task AssignUsingInfixDecrementOperator()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(int p)
-                {
-                    int A() => --[|p|];
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                int A() => --{|MA0143:p|};
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DeconstructionAssignment()
+    public Task DeconstructionAssignment()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(int p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        ([|p|], _) = (1, 0);
-                    }
+                    ({|MA0143:p|}, _) = (1, 0);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Deconstruction_Deep_Assignment()
+    public Task Deconstruction_Deep_Assignment()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(int p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        (var a, ([|p|], _)) = (0, (1, 2));
-                    }
+                    (var a, ({|MA0143:p|}, _)) = (0, (1, 2));
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CoalesceAssignment()
+    public Task CoalesceAssignment()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        [|p|] ??= "";
-                    }
+                    {|MA0143:p|} ??= "";
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CompoundAssignment()
+    public Task CompoundAssignment()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        [|p|] += "";
-                    }
+                    {|MA0143:p|} += "";
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignVariable()
+    public Task AssignVariable()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var a = p;
-                    }
+                    var a = p;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument()
+    public Task Argument()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A(string value)
                 {
-                    void A(string value)
-                    {
-                        A(p);
-                    }
+                    A(p);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditUsingRefVariable()
+    public Task EditUsingRefVariable()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        ref var a = ref [|p|];
-                    }
+                    ref var a = ref {|MA0143:p|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditUsingRefParameter()
+    public Task EditUsingRefParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A(ref string a)
                 {
-                    void A(ref string a)
-                    {
-                        A(ref [|p|]);
-                    }
+                    A(ref {|MA0143:p|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EditUsingInParameter()
+    public Task EditUsingInParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test(string p)
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A(in string a)
                 {
-                    void A(in string a)
-                    {
-                        A(in p);
-                    }
+                    A(in p);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

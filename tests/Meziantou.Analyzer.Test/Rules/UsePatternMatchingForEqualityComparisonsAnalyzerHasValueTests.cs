@@ -1,117 +1,128 @@
+using Microsoft.CodeAnalysis;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UsePatternMatchingInsteadOfHasValueAnalyzer,
+    Meziantou.Analyzer.Rules.UsePatternMatchingInsteadOfHasvalueFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UsePatternMatchingInsteadOfHasValueAnalyzer>()
-            .WithCodeFixProvider<UsePatternMatchingInsteadOfHasvalueFixer>();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task HasValue()
+    public Task HasValue()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = [|value.HasValue|];
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is not null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|};
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is not null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotHasValue()
+    public Task NotHasValue()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = ![|value.HasValue|];
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = !{|MA0171:value.HasValue|};
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HasValueEqualsTrue()
+    public Task HasValueEqualsTrue()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = [|value.HasValue|] == true;
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is not null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|} == true;
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is not null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HasValueEqualsFalse()
+    public Task HasValueEqualsFalse()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = [|value.HasValue|] == false;
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|} == false;
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FalseEqualsHasValue()
+    public Task FalseEqualsHasValue()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = false == [|value.HasValue|];
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = false == {|MA0171:value.HasValue|};
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HasValueIsTrue()
+    public Task HasValueIsTrue()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = [|value.HasValue|] is true;
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is not null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|} is true;
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is not null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HasValueIsFalse()
+    public Task HasValueIsFalse()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  var value = default(int?);
-                  _ = [|value.HasValue|] is false;
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = default(int?);
-                  _ = value is null;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|} is false;
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = value is null;
+            """;
+
+        return test.RunAsync();
     }
 }

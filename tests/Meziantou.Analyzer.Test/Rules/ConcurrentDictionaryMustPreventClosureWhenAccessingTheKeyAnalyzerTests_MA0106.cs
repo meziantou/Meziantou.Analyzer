@@ -1,19 +1,28 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AvoidClosureWhenUsingConcurrentDictionaryAnalyzer,
+    Meziantou.Analyzer.Rules.AvoidClosureWhenUsingConcurrentDictionaryFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0106
+public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTests_MA0106
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0106 only, the way the original test filtered the diagnostics to that rule
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net6_0)
-            .WithAnalyzer<AvoidClosureWhenUsingConcurrentDictionaryAnalyzer>(id: "MA0106")
-            .WithCodeFixProvider<AvoidClosureWhenUsingConcurrentDictionaryFixer>();
+        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net60 };
+        test.DisabledDiagnostics.Add(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary);
+        return test;
     }
 
     [Fact]
-    public async Task GetOrAdd_IsValid()
+    public Task GetOrAdd_IsValid()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
@@ -22,16 +31,17 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             a.GetOrAdd(key, (k) => k + 1);
             a.GetOrAdd(key, (_, v) => v, value);
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_NoOverload_IsValid()
+    public Task GetOrAdd_NoOverload_IsValid()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
@@ -40,17 +50,16 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             a.GetOrAdd(key, (k) => k + 1);
             a.GetOrAdd(key, _ => value);
             """;
-        await CreateProjectBuilder()
-            .WithTargetFramework(TargetFramework.NetStandard2_0) // No overload
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_TArg_IsValid()
+    public Task GetOrAdd_TArg_IsValid()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
             using System.Collections.Concurrent;
 
@@ -59,16 +68,16 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             var a = new ConcurrentDictionary<int, Func<string>>();
             a.GetOrAdd<Func<string>>(key, (_, v) => v, () => closure);
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_Key_IsValid()
+    public Task GetOrAdd_Key_IsValid()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
             using System.Collections.Concurrent;
 
@@ -77,42 +86,41 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             var a = new ConcurrentDictionary<Func<string>, int>();
             a.GetOrAdd(() => closure, _ => 0);
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_Closure()
+    public Task GetOrAdd_Closure()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
             var value = 1;
             var a = new ConcurrentDictionary<int, int>();
-            a.GetOrAdd(key, [|_ => value|]);
+            a.GetOrAdd(key, {|MA0106:_ => value|});
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_Closure_CodeFix()
+    public Task GetOrAdd_Closure_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
             var value = 1;
             var a = new ConcurrentDictionary<int, int>();
-            a.GetOrAdd(key, [|_ => value|]);
+            a.GetOrAdd(key, {|MA0106:_ => value|});
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
@@ -121,33 +129,31 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             a.GetOrAdd(key, (_, arg) => arg, value);
             """;
 
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(FixedCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_ClosureWithLambdaParameter()
+    public Task GetOrAdd_ClosureWithLambdaParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System.Collections.Concurrent;
 
             var key = 1;
             var a = new ConcurrentDictionary<int, int>();
             a.GetOrAdd(key, k => new System.Func<int>(() => k)());
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetOrAdd_NoClosure()
+    public Task GetOrAdd_NoClosure()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
             using System.Collections.Concurrent;
             using System.Linq;
@@ -162,9 +168,7 @@ public class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAnalyzerTe
             var dummy = new object();
             var f = new System.Func<bool>(() => dummy != null);
             """;
-        await CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

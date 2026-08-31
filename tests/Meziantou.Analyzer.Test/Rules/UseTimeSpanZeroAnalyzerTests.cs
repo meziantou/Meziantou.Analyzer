@@ -1,14 +1,12 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseTimeSpanZeroAnalyzer,
+    Meziantou.Analyzer.Rules.UseTimeSpanZeroFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseTimeSpanZeroAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseTimeSpanZeroAnalyzer>()
-            .WithCodeFixProvider<UseTimeSpanZeroFixer>()
-            .WithTargetFramework(Helpers.TargetFramework.NetLatest);
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("System.TimeSpan.FromSeconds(0)")]
@@ -28,28 +26,29 @@ public sealed class UseTimeSpanZeroAnalyzerTests
     [InlineData("System.TimeSpan.FromMicroseconds(0.0)")]
     [InlineData("System.TimeSpan.FromTicks(0)")]
     [InlineData("System.TimeSpan.FromTicks(0L)")]
-    public async Task ShouldReportDiagnostic(string code)
+    public Task ShouldReportDiagnostic(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-class TestClass
-{
-    void Test()
-    {
-        _ = [|{{code}}|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-class TestClass
-{
-    void Test()
-    {
-        _ = System.TimeSpan.Zero;
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = {|MA0178:{{code}}|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = System.TimeSpan.Zero;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -65,70 +64,73 @@ class TestClass
     [InlineData("new System.TimeSpan()")]
     [InlineData("new System.TimeSpan(0)")]
     [InlineData("default(System.TimeSpan)")]
-    public async Task ShouldNotReportDiagnostic(string code)
+    public Task ShouldNotReportDiagnostic(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-class TestClass
-{
-    void Test()
-    {
-        _ = {{code}};
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = {{code}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReportDiagnostic_MultipleOccurrences()
+    public Task ShouldReportDiagnostic_MultipleOccurrences()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-class TestClass
-{
-    void Test()
-    {
-        _ = [|System.TimeSpan.FromSeconds(0)|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-class TestClass
-{
-    void Test()
-    {
-        _ = System.TimeSpan.Zero;
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = {|MA0178:System.TimeSpan.FromSeconds(0)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    _ = System.TimeSpan.Zero;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReportDiagnostic_FlowedFromLocal()
+    public Task ShouldReportDiagnostic_FlowedFromLocal()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-class TestClass
-{
-    void Test()
-    {
-        var value = 0;
-        _ = [|System.TimeSpan.FromSeconds(value)|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-class TestClass
-{
-    void Test()
-    {
-        var value = 0;
-        _ = System.TimeSpan.Zero;
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var value = 0;
+                    _ = {|MA0178:System.TimeSpan.FromSeconds(value)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    var value = 0;
+                    _ = System.TimeSpan.Zero;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

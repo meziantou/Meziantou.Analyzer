@@ -1,142 +1,147 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseInlineArrayInsteadOfFixedBufferAnalyzer,
+    Meziantou.Analyzer.Rules.UseInlineArrayInsteadOfFixedBufferFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task FixedByteBuffer_InlineArray16Exists_UseCodeFix()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseInlineArrayInsteadOfFixedBufferAnalyzer>()
-            .WithCodeFixProvider<UseInlineArrayInsteadOfFixedBufferFixer>()
-            .WithTargetFramework(TargetFramework.Net10_0);
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte {|MA0189:IpAddress|}[16];
+            }
+            """;
+        test.FixedCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public System.Runtime.CompilerServices.InlineArray16<byte> IpAddress;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixedByteBuffer_InlineArray16Exists_UseCodeFix()
+    public Task FixedByteBuffer_InlineArray2Exists_UseCodeFix()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte [|IpAddress|][16];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                unsafe struct IpAddressBuffer
-                {
-                    public System.Runtime.CompilerServices.InlineArray16<byte> IpAddress;
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte {|MA0189:IpAddress|}[2];
+            }
+            """;
+        test.FixedCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public System.Runtime.CompilerServices.InlineArray2<byte> IpAddress;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixedByteBuffer_InlineArray2Exists_UseCodeFix()
+    public Task FixedByteBuffer_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte [|IpAddress|][2];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                unsafe struct IpAddressBuffer
-                {
-                    public System.Runtime.CompilerServices.InlineArray2<byte> IpAddress;
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte {|MA0189:IpAddress|}[16];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixedByteBuffer_ReportsDiagnostic()
+    public Task FixedIntBuffer_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte [|IpAddress|][16];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe struct Buffer
+            {
+                private fixed int {|MA0189:Values|}[8];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixedIntBuffer_ReportsDiagnostic()
+    public Task FixedByteBuffer_Size17_NoCodeFix()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                unsafe struct Buffer
-                {
-                    private fixed int [|Values|][8];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte {|MA0189:IpAddress|}[17];
+            }
+            """;
+        test.FixedCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte {|MA0189:IpAddress|}[17];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixedByteBuffer_Size17_NoCodeFix()
+    public Task NonFixedField_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte [|IpAddress|][17];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte IpAddress[17];
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            struct Buffer
+            {
+                private int Values;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonFixedField_NoDiagnostic()
+    public Task CSharp10_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                struct Buffer
-                {
-                    private int Values;
-                }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte IpAddress[16];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CSharp10_NoDiagnostic()
+    public Task Net7WithoutInlineArrayAttribute_NoDiagnostic()
     {
-        await new ProjectBuilder()
-            .WithAnalyzer<UseInlineArrayInsteadOfFixedBufferAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithLanguageVersion(LanguageVersion.CSharp10)
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte IpAddress[16];
-                }
-                """)
-            .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            unsafe struct IpAddressBuffer
+            {
+                public fixed byte IpAddress[16];
+            }
+            """;
 
-    [Fact]
-    public async Task Net7WithoutInlineArrayAttribute_NoDiagnostic()
-    {
-        await new ProjectBuilder()
-            .WithAnalyzer<UseInlineArrayInsteadOfFixedBufferAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                unsafe struct IpAddressBuffer
-                {
-                    public fixed byte IpAddress[16];
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

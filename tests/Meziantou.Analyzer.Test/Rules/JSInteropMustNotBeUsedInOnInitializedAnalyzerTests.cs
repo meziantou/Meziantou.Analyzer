@@ -1,126 +1,136 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.JSInteropMustNotBeUsedInOnInitializedAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<JSInteropMustNotBeUsedInOnInitializedAnalyzer>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
+        return test;
     }
 
     [Fact]
-    public async Task WebAssembly_NoReport()
+    public Task WebAssembly_NoReport()
     {
-        await CreateProjectBuilder()
-              .AddNuGetReference("Microsoft.JSInterop.WebAssembly", "6.0.10", "lib/net6.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.AspNetCore.Components;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.JSInterop.WebAssembly", AnalyzerTestDefaults.DotNetVersion)]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.JSInterop;
 
-                class MyComponent : ComponentBase
+            class MyComponent : ComponentBase
+            {
+                public IJSRuntime JS { get; set; }
+
+                protected override void OnInitialized()
                 {
-                    public IJSRuntime JS { get; set; }
-
-                    protected override void OnInitialized()
-                    {
-                        _ = JS.InvokeVoidAsync("");
-                    }
-
-                    protected override async Task OnInitializedAsync()
-                    {
-                        await JS.InvokeVoidAsync("");
-                        await base.OnInitializedAsync();
-                    }
+                    _ = JS.InvokeVoidAsync("");
                 }
-                """)
-              .ValidateAsync();
+
+                protected override async Task OnInitializedAsync()
+                {
+                    await JS.InvokeVoidAsync("");
+                    await base.OnInitializedAsync();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitialized_Report()
+    public Task OnInitialized_Report()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.AspNetCore.Components;
-                using Microsoft.JSInterop;
-                class MyComponent : ComponentBase
-                {
-                    public IJSRuntime JS { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.JSInterop;
+            class MyComponent : ComponentBase
+            {
+                public IJSRuntime JS { get; set; }
 
-                    protected override void OnInitialized()
-                    {
-                        _ = [|JS.InvokeVoidAsync("")|];
-                    }
+                protected override void OnInitialized()
+                {
+                    _ = {|MA0119:JS.InvokeVoidAsync("")|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitializedAsync_JsRuntimeExtensionMethod_Report()
+    public Task OnInitializedAsync_JsRuntimeExtensionMethod_Report()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.AspNetCore.Components;
-                using Microsoft.JSInterop;
-                class MyComponent : ComponentBase
-                {
-                    public IJSRuntime JS { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.JSInterop;
+            class MyComponent : ComponentBase
+            {
+                public IJSRuntime JS { get; set; }
 
-                    protected override async Task OnInitializedAsync()
-                    {
-                        await [|JS.InvokeVoidAsync("")|];
-                        await base.OnInitializedAsync();
-                    }
+                protected override async Task OnInitializedAsync()
+                {
+                    await {|MA0119:JS.InvokeVoidAsync("")|};
+                    await base.OnInitializedAsync();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitializedAsync_JsRuntimeInstance_Report()
+    public Task OnInitializedAsync_JsRuntimeInstance_Report()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.AspNetCore.Components;
-                using Microsoft.JSInterop;
-                class MyComponent : ComponentBase
-                {
-                    public IJSRuntime JS { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.JSInterop;
+            class MyComponent : ComponentBase
+            {
+                public IJSRuntime JS { get; set; }
 
-                    protected override async Task OnInitializedAsync()
-                    {
-                        await [|JS.InvokeAsync<object>(identifier: "", args: new object[0])|];
-                        await base.OnInitializedAsync();
-                    }
+                protected override async Task OnInitializedAsync()
+                {
+                    await {|MA0119:JS.InvokeAsync<object>(identifier: "", args: new object[0])|};
+                    await base.OnInitializedAsync();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OnInitializedAsync_ProtectedLocalStorage_Report()
+    public Task OnInitializedAsync_ProtectedLocalStorage_Report()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.AspNetCore.Components;
-                using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
-                using Microsoft.JSInterop;
-                class MyComponent : ComponentBase
-                {
-                    public ProtectedLocalStorage Storage { get; set; }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage;
+            using Microsoft.JSInterop;
+            class MyComponent : ComponentBase
+            {
+                public ProtectedLocalStorage Storage { get; set; }
 
-                    protected override async Task OnInitializedAsync()
-                    {
-                        await [|Storage.GetAsync<string>("")|];
-                    }
+                protected override async Task OnInitializedAsync()
+                {
+                    await {|MA0119:Storage.GetAsync<string>("")|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -1,361 +1,402 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0020 only, the way the original test filtered the diagnostics to that rule
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods)
-            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+        var test = new CodeFixTest();
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_UseOrder);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.DuplicateEnumerable_OrderBy);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_Count);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_CombineMethods);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.UseIndexerInsteadOfElementAt);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect);
+        test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny);
+        return test;
     }
 
     [Fact]
     public Task FirstOrDefaultAsync_Net9()
-        => CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode("""
-                using System.Linq;
-                class Test
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
                 {
-                    public Test()
-                    {
-                        var enumerable = System.Linq.Enumerable.Empty<int>();
-                        var list = new System.Collections.Generic.List<int>();
-                        list.FirstOrDefault();
-                        list.FirstOrDefault(x => x == 0);
-                        enumerable.FirstOrDefault();
-                        enumerable.FirstOrDefault(x => x == 0);
-                    }
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.FirstOrDefault();
+                    list.FirstOrDefault(x => x == 0);
+                    enumerable.FirstOrDefault();
+                    enumerable.FirstOrDefault(x => x == 0);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
 
-    [Fact]
-    public async Task FirstOrDefaultAsync()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.FirstOrDefault();
-        list.[|FirstOrDefault|](x => x == 0);
-        enumerable.FirstOrDefault();
-        enumerable.FirstOrDefault(x => x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.FirstOrDefault();
-        list.Find(x => x == 0);
-        enumerable.FirstOrDefault();
-        enumerable.FirstOrDefault(x => x == 0);
-    }
-}
-";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FirstOrDefaultAsync_Cast()
+    public Task FirstOrDefaultAsync()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.FirstOrDefault(predicate);
-    }
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.FirstOrDefault();
+                    list.{|#0:FirstOrDefault|}(x => x == 0);
+                    enumerable.FirstOrDefault();
+                    enumerable.FirstOrDefault(x => x == 0);
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Find()' instead of 'FirstOrDefault()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.FirstOrDefault();
+                    list.Find(x => x == 0);
+                    enumerable.FirstOrDefault();
+                    enumerable.FirstOrDefault(x => x == 0);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FirstOrDefaultAsync_Cast_ConfigureEnabled()
+    public Task FirstOrDefaultAsync_Cast()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.[|FirstOrDefault|](predicate);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.Find(new System.Predicate<int>(predicate));
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.FirstOrDefault(predicate);
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
-              .ShouldReportDiagnosticWithMessage("Use 'Find()' instead of 'FirstOrDefault()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TrueForAll()
+    public Task FirstOrDefaultAsync_Cast_ConfigureEnabled()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.[|All|](x => x == 0);
-        enumerable.All(x => x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.TrueForAll(x => x == 0);
-        enumerable.All(x => x == 0);
-    }
-}
-";
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestState.SetConfiguration("MA0020.report_when_conversion_needed", "true");
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.{|#0:FirstOrDefault|}(predicate);
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use 'TrueForAll()' instead of 'All()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Find()' instead of 'FirstOrDefault()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.Find(new System.Predicate<int>(predicate));
+                }
+            }
 
-    [Fact]
-    public async Task TrueForAll_Cast()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.All(predicate);
-    }
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TrueForAll_Cast_ConfigureEnabled()
+    public Task TrueForAll()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.[|All|](predicate);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.TrueForAll(new System.Predicate<int>(predicate));
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.{|#0:All|}(x => x == 0);
+                    enumerable.All(x => x == 0);
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
-              .ShouldReportDiagnosticWithMessage("Use 'TrueForAll()' instead of 'All()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'TrueForAll()' instead of 'All()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.TrueForAll(x => x == 0);
+                    enumerable.All(x => x == 0);
+                }
+            }
 
-    [Fact]
-    public async Task Exists()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.[|Any|](x => x == 0);
-        enumerable.Any(x => x == 0);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        var list = new System.Collections.Generic.List<int>();
-        list.Exists(x => x == 0);
-        enumerable.Any(x => x == 0);
-    }
-}
-";
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use 'Exists()' instead of 'Any()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Exists_Cast()
+    public Task TrueForAll_Cast()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.Any(predicate);
-    }
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.All(predicate);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Exists_Cast_ConfigureEnabled()
+    public Task TrueForAll_Cast_ConfigureEnabled()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.[|Any|](predicate);
-    }
-}
-";
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        System.Func<int, bool> predicate = _ => true;
-        list.Exists(new System.Predicate<int>(predicate));
-    }
-}
-";
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0020.report_when_conversion_needed", "true");
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.{|#0:All|}(predicate);
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0020.report_when_conversion_needed", "true")
-              .ShouldReportDiagnosticWithMessage("Use 'Exists()' instead of 'Any()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'TrueForAll()' instead of 'All()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.TrueForAll(new System.Predicate<int>(predicate));
+                }
+            }
 
-    [Fact]
-    public async Task Count_IEnumerableAsync()
-    {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var enumerable = System.Linq.Enumerable.Empty<int>();
-        enumerable.Count();
-    }
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Count_ListAsync()
+    public Task Exists()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list.[|Count|]();
-        list.Count(x => x == 0);
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.{|#0:Any|}(x => x == 0);
+                    enumerable.Any(x => x == 0);
+                }
+            }
 
-        const string CodeFix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new System.Collections.Generic.List<int>();
-        _ = list.Count;
-        list.Count(x => x == 0);
-    }
-}
-";
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Exists()' instead of 'Any()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    var list = new System.Collections.Generic.List<int>();
+                    list.Exists(x => x == 0);
+                    enumerable.Any(x => x == 0);
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use 'Count' instead of 'Count()'")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Count_ICollectionExplicitImplementationAsync()
+    public Task Exists_Cast()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.Any(predicate);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Exists_Cast_ConfigureEnabled()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0020.report_when_conversion_needed", "true");
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.{|#0:Any|}(predicate);
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Exists()' instead of 'Any()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    System.Func<int, bool> predicate = _ => true;
+                    list.Exists(new System.Predicate<int>(predicate));
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_IEnumerableAsync()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    enumerable.Count();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_ListAsync()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list.{|#0:Count|}();
+                    list.Count(x => x == 0);
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Count' instead of 'Count()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new System.Collections.Generic.List<int>();
+                    _ = list.Count;
+                    list.Count(x => x == 0);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_ICollectionExplicitImplementationAsync()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections;
             using System.Collections.Generic;
             using System.Linq;
@@ -382,48 +423,50 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Count_ArrayAsync()
+    public Task Count_ArrayAsync()
     {
-        const string SourceCode = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[10];
-        _ = list.[|Count|]();
-        list.Count(x => x == 0);
-    }
-}
-";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[10];
+                    _ = list.{|#0:Count|}();
+                    list.Count(x => x == 0);
+                }
+            }
 
-        const string Fix = @"using System.Linq;
-class Test
-{
-    public Test()
-    {
-        var list = new int[10];
-        _ = list.Length;
-        list.Count(x => x == 0);
-    }
-}
-";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use 'Length' instead of 'Count()'")
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'Length' instead of 'Count()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[10];
+                    _ = list.Length;
+                    list.Count(x => x == 0);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Count_VariableTypedAsEnumerableAssignedToList()
+    public Task Count_VariableTypedAsEnumerableAssignedToList()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;
             class Test
@@ -436,15 +479,14 @@ class Test
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Exists_VariableTypedAsEnumerableAssignedToList()
+    public Task Exists_VariableTypedAsEnumerableAssignedToList()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;
             class Test
@@ -457,8 +499,6 @@ class Test
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,553 +1,579 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStaticLambdaAnalyzer,
+    Meziantou.Analyzer.Rules.UseStaticLambdaFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStaticLambdaAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task LambdaWithoutCapture()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseStaticLambdaAnalyzer>()
-            .WithCodeFixProvider<UseStaticLambdaFixer>()
-            .WithTargetFramework(TargetFramework.Net9_0);
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list) => list.Sort({|MA0217:(x, y) => x.CompareTo(y)|});
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list) => list.Sort(static (x, y) => x.CompareTo(y));
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaWithoutCapture()
+    public Task SimpleLambdaWithoutCapture()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list) => list.Sort([|(x, y) => x.CompareTo(y)|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list) => list.Sort(static (x, y) => x.CompareTo(y));
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, int>)({|MA0217:x => x + 1|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, int>)(static x => x + 1);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SimpleLambdaWithoutCapture()
+    public Task AnonymousMethodWithoutCapture()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, int>)([|x => x + 1|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, int>)(static x => x + 1);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int>)({|MA0217:delegate { return 1; }|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int>)(static delegate { return 1; });
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AnonymousMethodWithoutCapture()
+    public Task AsyncLambdaWithoutCapture()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int>)([|delegate { return 1; }|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int>)(static delegate { return 1; });
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class C
+            {
+                void M() => _ = (Func<Task<int>>)({|MA0217:async () => await Task.FromResult(1)|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class C
+            {
+                void M() => _ = (Func<Task<int>>)(static async () => await Task.FromResult(1));
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsyncLambdaWithoutCapture()
+    public Task MultilineLambdaKeepsIndentation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  using System.Threading.Tasks;
-                  class C
-                  {
-                      void M() => _ = (Func<Task<int>>)([|async () => await Task.FromResult(1)|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  using System.Threading.Tasks;
-                  class C
-                  {
-                      void M() => _ = (Func<Task<int>>)(static async () => await Task.FromResult(1));
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list)
+                {
+                    list.Sort(
+                        {|MA0217:(x, y) => x.CompareTo(y)|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list)
+                {
+                    list.Sort(
+                        static (x, y) => x.CompareTo(y));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultilineLambdaKeepsIndentation()
+    public Task LambdaInExpressionTree()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list)
-                      {
-                          list.Sort(
-                              [|(x, y) => x.CompareTo(y)|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list)
-                      {
-                          list.Sort(
-                              static (x, y) => x.CompareTo(y));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq.Expressions;
+            class C
+            {
+                void M() => _ = (Expression<Func<int, int>>)({|MA0217:x => x + 1|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq.Expressions;
+            class C
+            {
+                void M() => _ = (Expression<Func<int, int>>)(static x => x + 1);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaInExpressionTree()
+    public Task LambdaUsingStaticMemberAndConstant()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  using System.Linq.Expressions;
-                  class C
-                  {
-                      void M() => _ = (Expression<Func<int, int>>)([|x => x + 1|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  using System.Linq.Expressions;
-                  class C
-                  {
-                      void M() => _ = (Expression<Func<int, int>>)(static x => x + 1);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                const int Constant = 1;
+                static int Field;
+                void M() => _ = (Func<int>)({|MA0217:() => Field + Constant + Compute()|});
+                static int Compute() => 0;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                const int Constant = 1;
+                static int Field;
+                void M() => _ = (Func<int>)(static () => Field + Constant + Compute());
+                static int Compute() => 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaUsingStaticMemberAndConstant()
+    public Task LambdaUsingNameofOfLocal()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      const int Constant = 1;
-                      static int Field;
-                      void M() => _ = (Func<int>)([|() => Field + Constant + Compute()|]);
-                      static int Compute() => 0;
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      const int Constant = 1;
-                      static int Field;
-                      void M() => _ = (Func<int>)(static () => Field + Constant + Compute());
-                      static int Compute() => 0;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M(int parameter) => _ = (Func<string>)({|MA0217:() => nameof(parameter)|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M(int parameter) => _ = (Func<string>)(static () => nameof(parameter));
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaUsingNameofOfLocal()
+    public Task NestedLambdaCapturingLocalOfTheOuterLambda()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M(int parameter) => _ = (Func<string>)([|() => nameof(parameter)|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M(int parameter) => _ = (Func<string>)(static () => nameof(parameter));
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, Func<int>>)({|MA0217:x => { var y = x; return () => y; }|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, Func<int>>)(static x => { var y = x; return () => y; });
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedLambdaCapturingLocalOfTheOuterLambda()
+    public Task LambdaUsingStaticLocalFunction()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, Func<int>>)([|x => { var y = x; return () => y; }|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, Func<int>>)(static x => { var y = x; return () => y; });
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    static int Local() => 1;
+                    _ = (Func<int>)({|MA0217:() => Local()|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    static int Local() => 1;
+                    _ = (Func<int>)(static () => Local());
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaUsingStaticLocalFunction()
+    public Task LambdaDeclaringItsOwnLocalFunction()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          static int Local() => 1;
-                          _ = (Func<int>)([|() => Local()|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          static int Local() => 1;
-                          _ = (Func<int>)(static () => Local());
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int>)({|MA0217:() => { int Local() => 1; return Local(); }|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int>)(static () => { int Local() => 1; return Local(); });
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaDeclaringItsOwnLocalFunction()
+    public Task AlreadyStatic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int>)([|() => { int Local() => 1; return Local(); }|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int>)(static () => { int Local() => 1; return Local(); });
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list) => list.Sort(static (x, y) => x.CompareTo(y));
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AlreadyStatic()
+    public Task CaptureLocalVariable()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list) => list.Sort(static (x, y) => x.CompareTo(y));
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M(int value) => _ = (Func<int>)(() => value);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CaptureLocalVariable()
+    public Task CaptureInstanceField()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M(int value) => _ = (Func<int>)(() => value);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                int _field;
+                void M() => _ = (Func<int>)(() => _field);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CaptureInstanceField()
+    public Task CaptureThisUsingInstanceMethod()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      int _field;
-                      void M() => _ = (Func<int>)(() => _field);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                int Compute() => 1;
+                void M() => _ = (Func<int>)(() => Compute());
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CaptureThisUsingInstanceMethod()
+    public Task CapturePrimaryConstructorParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      int Compute() => 1;
-                      void M() => _ = (Func<int>)(() => Compute());
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C(int value)
+            {
+                void M() => _ = (Func<int>)(() => value);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CapturePrimaryConstructorParameter()
+    public Task NestedLambdaCapturingLocalOfTheEnclosingMethod()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C(int value)
-                  {
-                      void M() => _ = (Func<int>)(() => value);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M(int value) => _ = (Func<int, Func<int>>)(x => () => value);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedLambdaCapturingLocalOfTheEnclosingMethod()
+    public Task ReferenceNonStaticLocalFunction()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M(int value) => _ = (Func<int, Func<int>>)(x => () => value);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    int Local() => 1;
+                    _ = (Func<int>)(() => Local());
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReferenceNonStaticLocalFunction()
+    public Task ReferenceNonStaticLocalFunctionAsMethodGroup()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          int Local() => 1;
-                          _ = (Func<int>)(() => Local());
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    int Local() => 1;
+                    _ = (Func<Func<int>>)(() => Local);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReferenceNonStaticLocalFunctionAsMethodGroup()
+    public Task QueryExpression()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          int Local() => 1;
-                          _ = (Func<Func<int>>)(() => Local);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class C
+            {
+                void M(IEnumerable<int> items) => _ = from item in items where item > 0 select item;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task QueryExpression()
+    public Task LambdaCapturingRangeVariable()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class C
-                  {
-                      void M(IEnumerable<int> items) => _ = from item in items where item > 0 select item;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            class C
+            {
+                void M(IEnumerable<int> items) => _ = from item in items select (Func<int>)(() => item);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaCapturingRangeVariable()
+    public Task CSharp8()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  using System.Collections.Generic;
-                  using System.Linq;
-                  class C
-                  {
-                      void M(IEnumerable<int> items) => _ = from item in items select (Func<int>)(() => item);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            using System.Collections.Generic;
+            class C
+            {
+                void M(List<int> list) => list.Sort((x, y) => x.CompareTo(y));
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CSharp8()
+    public Task LambdaWithAttribute()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(LanguageVersion.CSharp8)
-              .WithSourceCode("""
-                  using System.Collections.Generic;
-                  class C
-                  {
-                      void M(List<int> list) => list.Sort((x, y) => x.CompareTo(y));
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, int>)({|MA0217:[Obsolete] (int x) => x|});
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M() => _ = (Func<int, int>)([Obsolete] static (int x) => x);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaWithAttribute()
+    public Task MultipleLambdasWithoutCapture()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, int>)([|[Obsolete] (int x) => x|]);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M() => _ = (Func<int, int>)([Obsolete] static (int x) => x);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    _ = (Func<int>)({|MA0217:() => 1|});
+                    _ = (Func<int>)({|MA0217:() => 2|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M()
+                {
+                    _ = (Func<int>)(static () => 1);
+                    _ = (Func<int>)(static () => 2);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleLambdasWithoutCapture()
+    public Task NestedLambdaInsideCapturingLambda()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          _ = (Func<int>)([|() => 1|]);
-                          _ = (Func<int>)([|() => 2|]);
-                      }
-                  }
-                  """)
-              .ShouldBatchFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M()
-                      {
-                          _ = (Func<int>)(static () => 1);
-                          _ = (Func<int>)(static () => 2);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? {|MA0217:() => 1|} : null);
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? static () => 1 : null);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedLambdaInsideCapturingLambda()
+    public Task TopLevelStatements()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? [|() => 1|] : null);
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? static () => 1 : null);
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System;
+            var value = 1;
+            _ = (Func<int>)({|MA0217:() => 1|});
+            _ = (Func<int>)(() => value);
+            """;
+        test.FixedCode = """
+            using System;
+            var value = 1;
+            _ = (Func<int>)(static () => 1);
+            _ = (Func<int>)(() => value);
+            """;
 
-    [Fact]
-    public async Task TopLevelStatements()
-    {
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                  using System;
-                  var value = 1;
-                  _ = (Func<int>)([|() => 1|]);
-                  _ = (Func<int>)(() => value);
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  var value = 1;
-                  _ = (Func<int>)(static () => 1);
-                  _ = (Func<int>)(() => value);
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task CaptureThisUsingFieldKeyword()
+    public Task CaptureThisUsingFieldKeyword()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      public int P
-                      {
-                          get
-                          {
-                              Func<int> f = () => field;
-                              return f();
-                          }
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                public int P
+                {
+                    get
+                    {
+                        Func<int> f = () => field;
+                        return f();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 #endif
 }

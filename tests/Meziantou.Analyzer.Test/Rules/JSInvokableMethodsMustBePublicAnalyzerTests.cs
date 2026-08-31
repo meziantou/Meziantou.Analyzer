@@ -1,18 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.JSInvokableMethodsMustBePublicAnalyzer,
+    Meziantou.Analyzer.Rules.JSInvokableMethodsMustBePublicFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
-public class JSInvokableMethodsMustBePublicAnalyzerTests
+
+public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<JSInvokableMethodsMustBePublicAnalyzer>()
-            .WithCodeFixProvider<JSInvokableMethodsMustBePublicFixer>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
+        return test;
     }
 
     [Fact]
-    public async Task Test()
+    public Task Test()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.JSInterop;
 
             class Test
@@ -21,21 +29,21 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                internal void [|B|]() => throw null;
+                internal void {|MA0118:B|}() => throw null;
 
                 [JSInvokable]
-                static void [|C|]() => throw null;
+                static void {|MA0118:C|}() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_CodeFix_InternalMethod()
+    public Task Test_CodeFix_InternalMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.JSInterop;
 
             class Test
@@ -44,10 +52,10 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                internal void [|B|]() => throw null;
+                internal void {|MA0118:B|}() => throw null;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using Microsoft.JSInterop;
 
             class Test
@@ -59,16 +67,15 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void B() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_CodeFix_PrivateStaticMethod()
+    public Task Test_CodeFix_PrivateStaticMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.JSInterop;
 
             class Test
@@ -77,101 +84,100 @@ public class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                private static void [|C|]() => throw null;
+                private static void {|MA0118:C|}() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith("""
-                using Microsoft.JSInterop;
-
-                class Test
-                {
-                    [JSInvokable]
-                    public void A() => throw null;
-
-                    [JSInvokable]
-                    public static void C() => throw null;
-                }
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Test_CodeFix_StaticPrivateMethod()
-    {
-        const string SourceCode = """
+        test.FixedCode = """
             using Microsoft.JSInterop;
 
             class Test
             {
                 [JSInvokable]
-                static private void [|C|]() => throw null;
+                public void A() => throw null;
+
+                [JSInvokable]
+                public static void C() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith("""
-                using Microsoft.JSInterop;
 
-                class Test
-                {
-                    [JSInvokable]
-                    static public void C() => throw null;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_CodeFix_StaticMethodWithoutVisibilityModifier()
+    public Task Test_CodeFix_StaticPrivateMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.JSInterop;
 
             class Test
             {
                 [JSInvokable]
-                static void [|C|]() => throw null;
+                static private void {|MA0118:C|}() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith("""
-                using Microsoft.JSInterop;
-
-                class Test
-                {
-                    [JSInvokable]
-                    public static void C() => throw null;
-                }
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Test_CodeFix_PrivateProtectedStaticMethod()
-    {
-        const string SourceCode = """
+        test.FixedCode = """
             using Microsoft.JSInterop;
 
             class Test
             {
                 [JSInvokable]
-                private protected static void [|A|]() => throw null;
+                static public void C() => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith("""
-                using Microsoft.JSInterop;
 
-                class Test
-                {
-                    [JSInvokable]
-                    public static void A() => throw null;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_CodeFix_StaticMethodWithoutVisibilityModifier()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                static void {|MA0118:C|}() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                public static void C() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_CodeFix_PrivateProtectedStaticMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                private protected static void {|MA0118:A|}() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.JSInterop;
+
+            class Test
+            {
+                [JSInvokable]
+                public static void A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

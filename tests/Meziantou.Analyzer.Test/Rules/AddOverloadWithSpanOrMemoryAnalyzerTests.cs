@@ -1,49 +1,51 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.AddOverloadWithSpanOrMemoryAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net6_0)
-            .WithAnalyzer<AddOverloadWithSpanOrMemoryAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task EntryPoint_Main_ShouldNotTrigger()
+    public Task EntryPoint_Main_ShouldNotTrigger()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             public class Program
             {
                 public static void Main(string[] args) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EntryPoint_NonMainMethod_ShouldTrigger()
+    public Task EntryPoint_NonMainMethod_ShouldTrigger()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             public class Program
             {
                 public static void Main(string[] args) { }
-                public static void [|DoWork|](string[] data) { }
+                public static void {|MA0109:DoWork|}(string[] data) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArrayWithoutSpanOverload_Params()
+    public Task StringArrayWithoutSpanOverload_Params()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 public void A(params string[] a)
@@ -51,72 +53,71 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArrayWithoutSpanOverload_Out()
+    public Task StringArrayWithoutSpanOverload_Out()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 public void A(out byte[] a) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArrayWithSpanOverload_Params()
+    public Task StringArrayWithSpanOverload_Params()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
                 public void A(params string[] a) { }
                 public void A(System.ReadOnlySpan<string> a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArrayWithoutSpanOverload()
+    public Task StringArrayWithoutSpanOverload()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
-                public void [|A|](string[] a)
+                public void {|MA0109:A|}(string[] a)
                 {
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArrayWithoutSpanOverload_Complex()
+    public Task StringArrayWithoutSpanOverload_Complex()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Test
             {
-                public void [|A|](string[] a, int b) { }
+                public void {|MA0109:A|}(string[] a, int b) { }
                 public void A(System.ReadOnlySpan<string> a, string b) { } // Not same type for b
                 public void A(System.ReadOnlySpan<string> a, int b, int c) { } // not same number of parameters
                 public void A(System.ReadOnlySpan<string> a, System.ReadOnlySpan<int> b) { } // Not same type for b
                 public void B(System.ReadOnlySpan<string> a, int b) { } // Not same method name
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -124,17 +125,18 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
     [InlineData("System.ReadOnlySpan<string>")]
     [InlineData("System.Memory<string>")]
     [InlineData("System.ReadOnlyMemory<string>")]
-    public async Task StringArrayWithSpanOverload(string overloadType)
+    public Task StringArrayWithSpanOverload(string overloadType)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                  public class Test
-                  {
-                      public void A(string[] a) { }
-                      public void A({{overloadType}} a) { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Test
+            {
+                public void A(string[] a) { }
+                public void A({{overloadType}} a) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -142,17 +144,18 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
     [InlineData("System.ReadOnlySpan<char>")]
     [InlineData("System.Memory<char>")]
     [InlineData("System.ReadOnlyMemory<char>")]
-    public async Task StringArrayWithSpanOverload_String(string overloadType)
+    public Task StringArrayWithSpanOverload_String(string overloadType)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                  public class Test
-                  {
-                      public void A(string a) { }
-                      public void A({{overloadType}} a) { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Test
+            {
+                public void A(string a) { }
+                public void A({{overloadType}} a) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -160,15 +163,16 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
     [InlineData("System.ReadOnlySpan<string>")]
     [InlineData("System.Memory<string>")]
     [InlineData("System.ReadOnlyMemory<string>")]
-    public async Task SpanWithoutOverload(string overloadType)
+    public Task SpanWithoutOverload(string overloadType)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                  public class Test
-                  {
-                      public void A({{overloadType}} a) { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Test
+            {
+                public void A({{overloadType}} a) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

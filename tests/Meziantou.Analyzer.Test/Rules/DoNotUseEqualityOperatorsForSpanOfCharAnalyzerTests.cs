@@ -1,29 +1,29 @@
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotUseEqualityOperatorsForSpanOfCharAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotUseEqualityOperatorsForSpanOfCharFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseEqualityOperatorsForSpanOfCharAnalyzer>()
-            .WithCodeFixProvider<DoNotUseEqualityOperatorsForSpanOfCharFixer>()
-            .WithTargetFramework(TargetFramework.Net5_0);
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task SpanEquals()
+    public Task SpanEquals()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
                 void A()
                 {
-                    _ = [|"a".AsSpan() == "ab".AsSpan().Slice(0, 1)|];
+                    _ = {|MA0103:"a".AsSpan() == "ab".AsSpan().Slice(0, 1)|};
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -33,26 +33,25 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SpanNotEquals()
+    public Task SpanNotEquals()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
                 void A()
                 {
-                    _ = [|"a".AsSpan() != "ab".AsSpan().Slice(0, 1)|];
+                    _ = {|MA0103:"a".AsSpan() != "ab".AsSpan().Slice(0, 1)|};
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -62,16 +61,15 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringEquals()
+    public Task StringEquals()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -81,8 +79,7 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

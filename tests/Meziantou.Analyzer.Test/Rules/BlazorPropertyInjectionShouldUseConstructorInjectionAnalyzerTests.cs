@@ -1,253 +1,263 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer,
+    Meziantou.Analyzer.Rules.BlazorPropertyInjectionShouldUseConstructorInjectionFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer>()
-            .WithCodeFixProvider<BlazorPropertyInjectionShouldUseConstructorInjectionFixer>()
-            .WithTargetFramework(TargetFramework.AspNetCore9_0)
-            .WithLanguageVersion(LanguageVersion.CSharp12);
+        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net90.AddAspNetCore("9.0.0") };
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        return test;
     }
 
     [Fact]
-    public async Task InjectProperty_IComponent_ReportsDiagnostic()
+    public Task InjectProperty_IComponent_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : IComponent
-{
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
+            class MyComponent : IComponent
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
-    public void Attach(RenderHandle renderHandle) { }
-    public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
-}
-""")
-              .ShouldFixCodeWith("""
-using Microsoft.AspNetCore.Components;
+                public void Attach(RenderHandle renderHandle) { }
+                public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent(NavigationManager navigation) : IComponent
-{
+            class MyComponent(NavigationManager navigation) : IComponent
+            {
 
-    public void Attach(RenderHandle renderHandle) { }
-    public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
-}
-""")
-              .ValidateAsync();
+                public void Attach(RenderHandle renderHandle) { }
+                public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_ComponentBase_ReportsDiagnostic()
+    public Task InjectProperty_ComponentBase_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
-}
-""")
-              .ShouldFixCodeWith("""
-using Microsoft.AspNetCore.Components;
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent(NavigationManager navigation) : ComponentBase
-{
-}
-""")
-              .ValidateAsync();
+            class MyComponent(NavigationManager navigation) : ComponentBase
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_ExistingPrimaryConstructor_AddsParameter()
+    public Task InjectProperty_ExistingPrimaryConstructor_AddsParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.Extensions.Logging;
 
-class MyComponent(ILogger<MyComponent> logger) : ComponentBase
-{
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
-}
-""")
-              .ShouldFixCodeWith("""
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
+            class MyComponent(ILogger<MyComponent> logger) : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.Extensions.Logging;
 
-class MyComponent(ILogger<MyComponent> logger, NavigationManager navigation) : ComponentBase
-{
-}
-""")
-              .ValidateAsync();
+            class MyComponent(ILogger<MyComponent> logger, NavigationManager navigation) : ComponentBase
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_WithExplicitConstructor_NoDiagnosticFix()
+    public Task InjectProperty_WithExplicitConstructor_NoDiagnosticFix()
     {
-        // Analyzer still reports, but no code fix when explicit non-primary constructor exists
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    public MyComponent() { }
+            class MyComponent : ComponentBase
+            {
+                public MyComponent() { }
 
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
-}
-""")
-              .ValidateAsync();
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoInjectAttribute_NoDiagnostic()
+    public Task NoInjectAttribute_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    protected NavigationManager Navigation { get; set; } = default!;
-}
-""")
-              .ValidateAsync();
+            class MyComponent : ComponentBase
+            {
+                protected NavigationManager Navigation { get; set; } = default!;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_NotBlazorComponent_NoDiagnostic()
+    public Task InjectProperty_NotBlazorComponent_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class NotAComponent
-{
-    [Inject]
-    protected NavigationManager Navigation { get; set; } = default!;
-}
-""")
-              .ValidateAsync();
+            class NotAComponent
+            {
+                [Inject]
+                protected NavigationManager Navigation { get; set; } = default!;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_CSharp11_NoDiagnostic()
+    public Task InjectProperty_CSharp11_NoDiagnostic()
     {
-        await new ProjectBuilder()
-              .WithAnalyzer<BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer>()
-              .WithTargetFramework(TargetFramework.AspNetCore9_0)
-              .WithLanguageVersion(LanguageVersion.CSharp11)
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    [Inject]
-    protected NavigationManager Navigation { get; set; } = default!;
-}
-""")
-              .ValidateAsync();
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager Navigation { get; set; } = default!;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_AspNetCore8_NoDiagnostic()
+    public Task InjectProperty_AspNetCore8_NoDiagnostic()
     {
-        await new ProjectBuilder()
-              .WithAnalyzer<BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer>()
-              .WithTargetFramework(TargetFramework.AspNetCore8_0)
-              .WithLanguageVersion(LanguageVersion.CSharp12)
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    [Inject]
-    protected NavigationManager Navigation { get; set; } = default!;
-}
-""")
-              .ValidateAsync();
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager Navigation { get; set; } = default!;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InjectProperty_UpdatesUsages()
+    public Task InjectProperty_UpdatesUsages()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent : ComponentBase
-{
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
-    private void HandleClick()
-    {
-        Navigation.NavigateTo("/counter");
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using Microsoft.AspNetCore.Components;
+                private void HandleClick()
+                {
+                    Navigation.NavigateTo("/counter");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
 
-class MyComponent(NavigationManager navigation) : ComponentBase
-{
+            class MyComponent(NavigationManager navigation) : ComponentBase
+            {
 
-    private void HandleClick()
-    {
-        navigation.NavigateTo("/counter");
-    }
-}
-""")
-              .ValidateAsync();
+                private void HandleClick()
+                {
+                    navigation.NavigateTo("/counter");
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleInjectProperties_BatchFix()
+    public Task MultipleInjectProperties_BatchFix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.Extensions.Logging;
 
-class MyComponent : ComponentBase
-{
-    [Inject]
-    protected NavigationManager [|Navigation|] { get; set; } = default!;
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
-    [Inject]
-    protected ILogger<MyComponent> [|Logger|] { get; set; } = default!;
+                [Inject]
+                protected ILogger<MyComponent> {|MA0187:Logger|} { get; set; } = default!;
 
-    private void HandleClick()
-    {
-        Navigation.NavigateTo("/counter");
-        Logger.LogInformation("Clicked");
-    }
-}
-""")
-              .ShouldBatchFixCodeWith("""
-using Microsoft.AspNetCore.Components;
-using Microsoft.Extensions.Logging;
+                private void HandleClick()
+                {
+                    Navigation.NavigateTo("/counter");
+                    Logger.LogInformation("Clicked");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Microsoft.AspNetCore.Components;
+            using Microsoft.Extensions.Logging;
 
-class MyComponent(NavigationManager navigation, ILogger<MyComponent> logger) : ComponentBase
-{
+            class MyComponent(NavigationManager navigation, ILogger<MyComponent> logger) : ComponentBase
+            {
 
-    private void HandleClick()
-    {
-        navigation.NavigateTo("/counter");
-        logger.LogInformation("Clicked");
-    }
-}
-""")
-              .ValidateAsync();
+                private void HandleClick()
+                {
+                    navigation.NavigateTo("/counter");
+                    logger.LogInformation("Clicked");
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -1,29 +1,29 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotUseStringGetHashCodeAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotUseStringGetHashCodeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseStringGetHashCodeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseStringGetHashCodeAnalyzer>()
-            .WithCodeFixProvider<DoNotUseStringGetHashCodeFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task GetHashCode_ShouldReportDiagnostic()
+    public Task GetHashCode_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    [|"a".GetHashCode()|];
+                    {|MA0021:"a".GetHashCode()|};
                     System.StringComparer.Ordinal.GetHashCode("a");
                     new object().GetHashCode();
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -34,9 +34,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

@@ -1,792 +1,799 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseToStringIfObjectAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class DoNotUseToStringIfObjectAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseToStringIfObjectAnalyzer>()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
 #if ROSLYN_5_9_OR_GREATER
-    private static ProjectBuilder CreatePreviewProjectBuilder()
+    private static AnalyzerTest CreatePreviewTest()
     {
-        return CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
     }
 #endif
 
     [Fact]
-    public async Task Object_ToString()
+    public Task Object_ToString()
     {
-        var sourceCode = """
-var o = new object();
-o.ToString();
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new object();
+            o.ToString();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Struct_ToString()
+    public Task Struct_ToString()
     {
-        var sourceCode = """
-var o = new A();
-[|o.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            {|MA0150:o.ToString()|};
 
-public struct A{ }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public struct A{ }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedRecord_ToString()
+    public Task SealedRecord_ToString()
     {
-        var sourceCode = """
-var o = new A();
-o.ToString();
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            o.ToString();
 
-public sealed record A();
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed record A();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedClass_ToString()
+    public Task SealedClass_ToString()
     {
-        var sourceCode = """
-var o = new A();
-[|o.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            {|MA0150:o.ToString()|};
 
-public sealed class A {}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed class A {}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedClass_Overridden_ToString()
+    public Task SealedClass_Overridden_ToString()
     {
-        var sourceCode = """
-var o = new A();
-o.ToString();
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            o.ToString();
 
-public sealed class A { public override string ToString() => throw null;}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed class A { public override string ToString() => throw null;}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Struct_NoToStringOverride()
+    public Task Struct_NoToStringOverride()
     {
-        var sourceCode = """
-Sample a = new Sample();
-[|a.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = new Sample();
+            {|MA0150:a.ToString()|};
 
-struct Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            struct Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Struct_ToStringOverride()
+    public Task Struct_ToStringOverride()
     {
-        var sourceCode = """
-Sample a = new Sample();
-a.ToString();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = new Sample();
+            a.ToString();
 
-struct Sample { public override string ToString() => throw null; }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            struct Sample { public override string ToString() => throw null; }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonSealedBaseType_RuntimeTypeOverridesToString()
+    public Task NonSealedBaseType_RuntimeTypeOverridesToString()
     {
-        var sourceCode = """
-Sample a = new Derived();
-a.ToString();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = new Derived();
+            a.ToString();
 
-class Sample { }
-class Derived : Sample { public override string ToString() => "test"; }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample { }
+            class Derived : Sample { public override string ToString() => "test"; }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_RuntimeTypeOverridesToString()
+    public Task SealedType_RuntimeTypeOverridesToString()
     {
-        var sourceCode = """
-var a = new Derived();
-[|a.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            var a = new Derived();
+            {|MA0150:a.ToString()|};
 
-class Sample { }
-sealed class Derived : Sample {  }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample { }
+            sealed class Derived : Sample {  }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromLocalInitializer()
+    public Task SealedType_FlowedFromLocalInitializer()
     {
-        var sourceCode = """
-Sample a = new Derived();
-[|a.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = new Derived();
+            {|MA0150:a.ToString()|};
 
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromLocalAssignment()
+    public Task SealedType_FlowedFromLocalAssignment()
     {
-        var sourceCode = """
-Sample a;
-a = new Derived();
-[|a.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a;
+            a = new Derived();
+            {|MA0150:a.ToString()|};
 
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromLocalInitializer_Reassigned()
+    public Task SealedType_FlowedFromLocalInitializer_Reassigned()
     {
-        var sourceCode = """
-Sample a = new Derived();
-a = Get();
-a.ToString();
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = new Derived();
+            a = Get();
+            a.ToString();
 
-Sample Get() => new Sample();
+            Sample Get() => new Sample();
 
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromPrivateReadonlyFieldInitializer()
+    public Task SealedType_FlowedFromPrivateReadonlyFieldInitializer()
     {
-        var sourceCode = """
-class Test
-{
-    private readonly Sample _value = new Derived();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Test
+            {
+                private readonly Sample _value = new Derived();
 
-    void M()
-    {
-        [|_value.ToString()|];
-    }
-}
+                void M()
+                {
+                    {|MA0150:_value.ToString()|};
+                }
+            }
 
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
-    }
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
 
-    [Fact]
-    public async Task SealedType_PrivateReadonlyFieldInitializer_AssignedInConstructor()
-    {
-        var sourceCode = """
-class Test
-{
-    private readonly Sample _value = new Derived();
-
-    public Test()
-    {
-        _value = new Sample();
-    }
-
-    void M()
-    {
-        _value.ToString();
-    }
-}
-
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromPrivateGetOnlyPropertyInitializer()
+    public Task SealedType_PrivateReadonlyFieldInitializer_AssignedInConstructor()
     {
-        var sourceCode = """
-class Test
-{
-    private Sample Value { get; } = new Derived();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Test
+            {
+                private readonly Sample _value = new Derived();
 
-    void M()
-    {
-        [|Value.ToString()|];
-    }
-}
+                public Test()
+                {
+                    _value = new Sample();
+                }
 
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
-    }
+                void M()
+                {
+                    _value.ToString();
+                }
+            }
 
-    [Fact]
-    public async Task SealedType_PrivateGetOnlyPropertyInitializer_AssignedInConstructor()
-    {
-        var sourceCode = """
-class Test
-{
-    private Sample Value { get; } = new Derived();
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
 
-    public Test()
-    {
-        Value = new Sample();
-    }
-
-    void M()
-    {
-        Value.ToString();
-    }
-}
-
-class Sample { }
-sealed class Derived : Sample { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_FlowedFromLocalInitializer_InheritsBaseToStringOverride()
+    public Task SealedType_FlowedFromPrivateGetOnlyPropertyInitializer()
     {
-        var sourceCode = """
-object o = "abc";
-o.ToString();
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Test
+            {
+                private Sample Value { get; } = new Derived();
+
+                void M()
+                {
+                    {|MA0150:Value.ToString()|};
+                }
+            }
+
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedType_InheritsBaseToStringOverride()
+    public Task SealedType_PrivateGetOnlyPropertyInitializer_AssignedInConstructor()
     {
-        var sourceCode = """
-var a = new Derived();
-a.ToString();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Test
+            {
+                private Sample Value { get; } = new Derived();
 
-class Base { public override string ToString() => "test"; }
-sealed class Derived : Base { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+                public Test()
+                {
+                    Value = new Sample();
+                }
+
+                void M()
+                {
+                    Value.ToString();
+                }
+            }
+
+            class Sample { }
+            sealed class Derived : Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SealedType_FlowedFromLocalInitializer_InheritsBaseToStringOverride()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            object o = "abc";
+            o.ToString();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SealedType_InheritsBaseToStringOverride()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var a = new Derived();
+            a.ToString();
+
+            class Base { public override string ToString() => "test"; }
+            sealed class Derived : Base { }
+            """;
+
+        return test.RunAsync();
     }
 
 #if ROSLYN_5_9_OR_GREATER
     [Fact]
-    public async Task ClosedType_NoToStringOverrideInHierarchy()
+    public Task ClosedType_NoToStringOverrideInHierarchy()
     {
-        var sourceCode = """
-Shape a = new Circle();
-[|((Shape)a).ToString()|];
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            {|MA0150:((Shape)a).ToString()|};
 
-closed class Shape;
-sealed class Circle : Shape;
-sealed class Square : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            sealed class Circle : Shape;
+            sealed class Square : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_DerivedTypeOverridesToString()
+    public Task ClosedType_DerivedTypeOverridesToString()
     {
-        var sourceCode = """
-Shape a = new Circle();
-((Shape)a).ToString();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            ((Shape)a).ToString();
 
-closed class Shape;
-sealed class Circle : Shape;
-sealed class Square : Shape { public override string ToString() => "square"; }
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            sealed class Circle : Shape;
+            sealed class Square : Shape { public override string ToString() => "square"; }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_NestedClosedHierarchy_NoToStringOverride()
+    public Task ClosedType_NestedClosedHierarchy_NoToStringOverride()
     {
-        var sourceCode = """
-Shape a = new Circle();
-[|((Shape)a).ToString()|];
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            {|MA0150:((Shape)a).ToString()|};
 
-closed class Shape;
-closed class Round : Shape;
-sealed class Circle : Round;
-sealed class Square : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            closed class Round : Shape;
+            sealed class Circle : Round;
+            sealed class Square : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_NestedClosedHierarchy_LeafOverridesToString()
+    public Task ClosedType_NestedClosedHierarchy_LeafOverridesToString()
     {
-        var sourceCode = """
-Shape a = new Circle();
-((Shape)a).ToString();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            ((Shape)a).ToString();
 
-closed class Shape;
-closed class Round : Shape;
-sealed class Circle : Round { public override string ToString() => "circle"; }
-sealed class Square : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            closed class Round : Shape;
+            sealed class Circle : Round { public override string ToString() => "circle"; }
+            sealed class Square : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_NestedClosedHierarchy_IntermediateTypeOverridesToString()
+    public Task ClosedType_NestedClosedHierarchy_IntermediateTypeOverridesToString()
     {
-        var sourceCode = """
-Shape a = new Circle();
-((Shape)a).ToString();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            ((Shape)a).ToString();
 
-closed class Shape;
-closed class Round : Shape { public override string ToString() => "round"; }
-sealed class Circle : Round;
-sealed class Square : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            closed class Round : Shape { public override string ToString() => "round"; }
+            sealed class Circle : Round;
+            sealed class Square : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_DerivedTypeIsNeitherSealedNorClosed()
+    public Task ClosedType_DerivedTypeIsNeitherSealedNorClosed()
     {
-        var sourceCode = """
-Shape a = new Circle();
-((Shape)a).ToString();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            ((Shape)a).ToString();
 
-closed class Shape;
-class Circle : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            class Circle : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_OverridesToString()
+    public Task ClosedType_OverridesToString()
     {
-        var sourceCode = """
-Shape a = new Circle();
-((Shape)a).ToString();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            ((Shape)a).ToString();
 
-closed class Shape { public override string ToString() => "shape"; }
-sealed class Circle : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape { public override string ToString() => "shape"; }
+            sealed class Circle : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedType_UnspeakableDerivedType()
+    public Task ClosedType_UnspeakableDerivedType()
     {
-        var sourceCode = """
-class Test
-{
-    void M<T>(Shape<T> value) => value.ToString();
-}
+        var test = CreatePreviewTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Test
+            {
+                void M<T>(Shape<T> value) => value.ToString();
+            }
 
-closed class Shape<T>;
-sealed class Circle : Shape<int>;
-sealed class Square<T> : Shape<T[]>;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
+            closed class Shape<T>;
+            sealed class Circle : Shape<int>;
+            sealed class Square<T> : Shape<T[]>;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_ClosedType_NoToStringOverrideInHierarchy()
+    public Task InterpolatedString_ClosedType_NoToStringOverrideInHierarchy()
     {
-        var sourceCode = """
-Shape a = new Circle();
-_ = $"{[|(Shape)a|]}";
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            _ = $"{{|MA0150:(Shape)a|}}";
 
-closed class Shape;
-sealed class Circle : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            sealed class Circle : Shape;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_ClosedType_DerivedTypeOverridesToString()
+    public Task InterpolatedString_ClosedType_DerivedTypeOverridesToString()
     {
-        var sourceCode = """
-Shape a = new Circle();
-_ = $"{(Shape)a}";
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            _ = $"{(Shape)a}";
 
-closed class Shape;
-sealed class Circle : Shape { public override string ToString() => "circle"; }
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            sealed class Circle : Shape { public override string ToString() => "circle"; }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_ClosedType_NoToStringOverrideInHierarchy()
+    public Task Concat_ClosedType_NoToStringOverrideInHierarchy()
     {
-        var sourceCode = """
-Shape a = new Circle();
-_ = "" + [|(Shape)a|];
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            Shape a = new Circle();
+            _ = "" + {|MA0150:(Shape)a|};
 
-closed class Shape;
-sealed class Circle : Shape;
-""";
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            closed class Shape;
+            sealed class Circle : Shape;
+            """;
+
+        return test.RunAsync();
     }
 #endif
 
     [Fact]
-    public async Task InterpolatedString_Sealed_Interpolation()
+    public Task InterpolatedString_Sealed_Interpolation()
     {
-        var sourceCode = """
-var o = new A();
-_ = $"{[|o|]}";
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = $"{{|MA0150:o|}}";
 
-public sealed class A { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed class A { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_SealedType_InheritsBaseToStringOverride()
+    public Task InterpolatedString_SealedType_InheritsBaseToStringOverride()
     {
-        var sourceCode = """
-var a = new Derived();
-_ = $"{a}";
+        var test = CreateTest();
+        test.TestCode = """
+            var a = new Derived();
+            _ = $"{a}";
 
-class Base { public override string ToString() => "test"; }
-sealed class Derived : Base { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Base { public override string ToString() => "test"; }
+            sealed class Derived : Base { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Interpolation()
+    public Task InterpolatedString_Interpolation()
     {
-        var sourceCode = """
-var o = new A();
-_ = $"{o}";
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = $"{o}";
 
-public class A { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public class A { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Struct_Interpolation()
+    public Task InterpolatedString_Struct_Interpolation()
     {
-        var sourceCode = """
-var o = new A();
-_ = $"{[|o|]}";
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = $"{{|MA0150:o|}}";
 
-public struct A { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public struct A { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Struct_Overridden_Interpolation()
+    public Task InterpolatedString_Struct_Overridden_Interpolation()
     {
-        var sourceCode = """
-var o = new A();
-_ = $"{o}";
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = $"{o}";
 
-public struct A { public override string ToString() => throw null; }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public struct A { public override string ToString() => throw null; }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Enum_Interpolation()
+    public Task InterpolatedString_Enum_Interpolation()
     {
-        var sourceCode = """
-var o = System.DayOfWeek.Monday;
-_ = $"{o}";
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var o = System.DayOfWeek.Monday;
+            _ = $"{o}";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Struct_Interpolation_Net8()
+    public Task InterpolatedString_Struct_Interpolation_Net8()
     {
-        var sourceCode = """
-var o = new A();
-System.Diagnostics.Debug.Assert(false, $"foo{[|o|]}bar");
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            var o = new A();
+            System.Diagnostics.Debug.Assert(false, $"foo{{|MA0150:o|}}bar");
 
-public struct A { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+            public struct A { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_Struct_Interpolation_CustomStringHandler()
+    public Task InterpolatedString_Struct_Interpolation_CustomStringHandler()
     {
-        var sourceCode = """
-var o = new A();
-Foo($"foo{o}bar");
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            var o = new A();
+            Foo($"foo{o}bar");
 
-void Foo(CustomStringHandler handler) => throw null;
+            void Foo(CustomStringHandler handler) => throw null;
 
-public struct A { }
+            public struct A { }
 
-[System.Runtime.CompilerServices.InterpolatedStringHandler]
-public struct CustomStringHandler
-{
-    public CustomStringHandler(int literalLength, int formattedCount) => throw null;
-    public CustomStringHandler(int literalLength, int formattedCount, System.IFormatProvider? provider) => throw null;
-    public void AppendLiteral(string value) => throw null;
-    public void AppendFormatted<T>(T value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+            [System.Runtime.CompilerServices.InterpolatedStringHandler]
+            public struct CustomStringHandler
+            {
+                public CustomStringHandler(int literalLength, int formattedCount) => throw null;
+                public CustomStringHandler(int literalLength, int formattedCount, System.IFormatProvider? provider) => throw null;
+                public void AppendLiteral(string value) => throw null;
+                public void AppendFormatted<T>(T value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_SealedType_CustomStringHandler()
+    public Task InterpolatedString_SealedType_CustomStringHandler()
     {
-        var sourceCode = """
-var o = new A();
-Foo($"foo{o}bar");
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            var o = new A();
+            Foo($"foo{o}bar");
 
-void Foo(CustomStringHandler handler) => throw null;
+            void Foo(CustomStringHandler handler) => throw null;
 
-public sealed class A { }
+            public sealed class A { }
 
-[System.Runtime.CompilerServices.InterpolatedStringHandler]
-public struct CustomStringHandler
-{
-    public CustomStringHandler(int literalLength, int formattedCount) => throw null;
-    public void AppendLiteral(string value) => throw null;
-    public void AppendFormatted<T>(T value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+            [System.Runtime.CompilerServices.InterpolatedStringHandler]
+            public struct CustomStringHandler
+            {
+                public CustomStringHandler(int literalLength, int formattedCount) => throw null;
+                public void AppendLiteral(string value) => throw null;
+                public void AppendFormatted<T>(T value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Object_Concat()
+    public Task Object_Concat()
     {
-        var sourceCode = """
-var o = new object();
-_ = "" + o;
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new object();
+            _ = "" + o;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Struct_Concat()
+    public Task Struct_Concat()
     {
-        var sourceCode = """
-var o = new A();
-_ = "" + [|o|];
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = "" + {|MA0150:o|};
 
-public struct A{ }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public struct A{ }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedRecord_Concat()
+    public Task SealedRecord_Concat()
     {
-        var sourceCode = """
-var o = new A();
-_ = "" + o;
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = "" + o;
 
-public sealed record A();
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed record A();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedClass_Concat()
+    public Task SealedClass_Concat()
     {
-        var sourceCode = """
-var o = new A();
-_ = "" + [|o.ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            var o = new A();
+            _ = "" + {|MA0150:o.ToString()|};
 
-public sealed class A {}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            public sealed class A {}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interpolation_Int32()
+    public Task Interpolation_Int32()
     {
-        var sourceCode = """
-var statusCode = 42;
-_ = $"{statusCode}";
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var statusCode = 42;
+            _ = $"{statusCode}";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interpolation_CastEnumToInt32()
+    public Task Interpolation_CastEnumToInt32()
     {
-        var sourceCode = """
-var statusCode = System.Net.HttpStatusCode.OK;
-_ = $"{(int)statusCode}";
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var statusCode = System.Net.HttpStatusCode.OK;
+            _ = $"{(int)statusCode}";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interpolation_Enum()
+    public Task Interpolation_Enum()
     {
-        var sourceCode = """
-var statusCode = System.Net.HttpStatusCode.OK;
-_ = $"{statusCode}";
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var statusCode = System.Net.HttpStatusCode.OK;
+            _ = $"{statusCode}";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interpolation_AnonymousType()
+    public Task Interpolation_AnonymousType()
     {
-        var sourceCode = """
-var obj = new { FirstName = "" };
-_ = $"{obj}";
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var obj = new { FirstName = "" };
+            _ = $"{obj}";
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ToString_AnonymousType()
+    public Task ToString_AnonymousType()
     {
-        var sourceCode = """
-new { FirstName = "" }.ToString();
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            new { FirstName = "" }.ToString();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interpolation_ReproCachingIssue()
+    public Task Interpolation_ReproCachingIssue()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-var url = args[0];
-var result = new Result(default);
-var encoding = "";
-Assert.False(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
-Assert.True(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
+            var url = args[0];
+            var result = new Result(default);
+            var encoding = "";
+            Assert.False(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
+            Assert.True(result.IsSuccessStatusCode, $"{url}\nEncoding: {encoding}\nStatus code: {(int)result.StatusCode} {result.StatusCode}");
 
-class Assert
-{
-    public static void False(bool condition, string? errorMessage) { }
-    public static void True(bool condition, string? errorMessage) { }
-}
+            class Assert
+            {
+                public static void False(bool condition, string? errorMessage) { }
+                public static void True(bool condition, string? errorMessage) { }
+            }
 
-record Result(System.Net.HttpStatusCode StatusCode)
-{
-    public bool IsSuccessStatusCode => false;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            record Result(System.Net.HttpStatusCode StatusCode)
+            {
+                public bool IsSuccessStatusCode => false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

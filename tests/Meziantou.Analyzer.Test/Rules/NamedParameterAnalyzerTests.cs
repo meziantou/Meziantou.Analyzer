@@ -1,20 +1,27 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.NamedParameterAnalyzer,
+    Meziantou.Analyzer.Rules.NamedParameterFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class NamedParameterAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<NamedParameterAnalyzer>()
-            .WithCodeFixProvider<NamedParameterFixer>()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
     }
 
     [Fact]
 
-    public async Task MethodWithNoParameter()
+    public Task MethodWithNoParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 TypeName() { }
@@ -29,16 +36,16 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
 
-    public async Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
+    public Task Task_ConfigureAwait_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public async System.Threading.Tasks.Task Test()
@@ -47,15 +54,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
+    public Task Task_T_ConfigureAwait_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public async System.Threading.Tasks.Task Test()
@@ -64,15 +71,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Volatile_ReadWrite_ShouldNotReportDiagnostic()
+    public Task Volatile_ReadWrite_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 private bool _value;
@@ -84,15 +91,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NamedParameter_ShouldNotReportDiagnostic()
+    public Task NamedParameter_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -101,24 +108,24 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task True_ShouldReportDiagnostic()
+    public Task True_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    var a = string.Compare("", "", [|true|]);
+                    var a = string.Compare("", "", {|MA0003:true|});
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -127,16 +134,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BatchFix_MultipleArgumentsInSingleInvocation()
+    public Task BatchFix_MultipleArgumentsInSingleInvocation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 private void InsertStatus(object reviewStatuses, object courseStatuses, object paymentInfos, object utcStatuses, object dmvStatuses)
@@ -145,11 +151,11 @@ public sealed class NamedParameterAnalyzerTests
 
                 public void Test()
                 {
-                    this.InsertStatus([|null|], [|null|], [|null|], utcStatuses: null, [|null|]);
+                    this.InsertStatus({|MA0003:null|}, {|MA0003:null|}, {|MA0003:null|}, utcStatuses: null, {|MA0003:null|});
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 private void InsertStatus(object reviewStatuses, object courseStatuses, object paymentInfos, object utcStatuses, object dmvStatuses)
@@ -162,16 +168,16 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldBatchFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task True_WithOptions_ShouldNotReportDiagnostic()
+    public Task True_WithOptions_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "None");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -180,16 +186,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "None")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DefaultLiteral_WithoutOptions_ShouldNotReportDiagnostic()
+    public Task DefaultLiteral_WithoutOptions_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -199,166 +204,167 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DefaultLiteral_WithOptions_ShouldReportDiagnostic()
+    public Task DefaultLiteral_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "default");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    A([|default|]);
+                    A({|MA0003:default|});
                     void A(object value) { }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "default")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_WithOptions_ShouldReportDiagnostic()
+    public Task String_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "string, boolean");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|""|],
-                                    [|""|],
-                                    [|true|]);
+                                    {|MA0003:""|},
+                                    {|MA0003:""|},
+                                    {|MA0003:true|});
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleLineRawString_WithOptions_ShouldReportDiagnostic()
+    public Task SingleLineRawString_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """"""
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "string, boolean");
+        test.TestCode = """"
             class TypeName
             {
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|"""test"""|],
-                                    [|"""test"""|],
-                                    [|true|]);
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:true|});
                 }
             }
-            """""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-              .ValidateAsync();
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringLineRawString_WithOptions_ShouldReportDiagnostic()
+    public Task InterpolatedStringLineRawString_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """"""
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "string, boolean");
+        test.TestCode = """"
             class TypeName
             {
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|$"""test{0}"""|],
-                                    [|"""test"""|],
-                                    [|true|]);
+                                    {|MA0003:$"""test{0}"""|},
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:true|});
                 }
             }
-            """""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-              .ValidateAsync();
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultiLinesRawString_WithOptions_ShouldReportDiagnostic()
+    public Task MultiLinesRawString_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """"""
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "string, boolean");
+        test.TestCode = """"
             class TypeName
             {
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|"""
+                                    {|MA0003:"""
                                         test
-                                        """|],
-                                    [|"""
+                                        """|},
+                                    {|MA0003:"""
                                         test
-                                        """|],
-                                    [|true|]);
+                                        """|},
+                                    {|MA0003:true|});
                 }
             }
-            """""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-              .ValidateAsync();
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedMultiLineLineRawString_WithOptions_ShouldReportDiagnostic()
+    public Task InterpolatedMultiLineLineRawString_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """"""
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "string, boolean");
+        test.TestCode = """"
             class TypeName
             {
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|$"""
+                                    {|MA0003:$"""
                                         test{0}
-                                        """|],
-                                    [|"""
+                                        """|},
+                                    {|MA0003:"""
                                     test
-                                    """|],
-                                    [|true|]);
+                                    """|},
+                                    {|MA0003:true|});
                 }
             }
-            """""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "string, boolean")
-              .ValidateAsync();
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32_WithOptions_ShouldReportDiagnostic()
+    public Task Int32_WithOptions_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "numeric");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    A([|1|], [|1L|], [|3|]);
+                    A({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
                     void A(int a, long b, short c) { }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32_WithOptions_ShouldNotReportDiagnosticForArrayIndexer()
+    public Task Int32_WithOptions_ShouldNotReportDiagnosticForArrayIndexer()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "numeric");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -372,16 +378,16 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
+    public Task Int32_ExcludedMethod_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod"));
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -392,38 +398,35 @@ public sealed class NamedParameterAnalyzerTests
                 void MyMethod(int a, long b, short c) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-              .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "M[a-z][A-Z]ethod")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32_ExcludedMethodWithInvalidRegex_ShouldReportDiagnostic()
+    public Task Int32_ExcludedMethodWithInvalidRegex_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods_regex", "["));
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    MyMethod([|1|], [|1L|], [|3|]);
+                    MyMethod({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
                 }
 
                 void MyMethod(int a, long b, short c) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-              .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "[")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task False_ShouldReportDiagnostic()
+    public Task False_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -432,15 +435,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Null_ShouldReportDiagnostic()
+    public Task Null_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -449,15 +452,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
+    public Task MethodBaseInvoke_FirstArg_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -466,24 +469,24 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MethodBaseInvoke_ShouldReportDiagnostic()
+    public Task MethodBaseInvoke_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    typeof(TypeName).GetMethod("").Invoke(null, [|null|]);
+                    typeof(TypeName).GetMethod("").Invoke(null, {|MA0003:null|});
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -492,72 +495,71 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MSTestAssert_ShouldNotReportDiagnostic()
+    public Task MSTestAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.TestCode = """
             class TypeName
             {
                 public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
             }
             """;
-        await CreateProjectBuilder()
-              .AddMSTestApi()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NunitAssert_ShouldNotReportDiagnostic()
+    public Task NunitAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnitApi();
+        test.TestCode = """
             class TypeName
             {
                 public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
             }
             """;
-        await CreateProjectBuilder()
-              .AddNUnitApi()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task XunitAssert_ShouldNotReportDiagnostic()
+    public Task XunitAssert_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.TestCode = """
             class TypeName
             {
                 public void Test() => Xunit.Assert.Equal(null, "dummy");
             }
             """;
-        await CreateProjectBuilder()
-              .AddXUnitApi()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor_ShouldUseTheRightParameterName()
+    public Task Ctor_ShouldUseTheRightParameterName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    new TypeName([|null|]);
+                    new TypeName({|MA0003:null|});
                 }
 
                 TypeName(string a) { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -568,27 +570,26 @@ public sealed class NamedParameterAnalyzerTests
                 TypeName(string a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitCtor_ShouldUseTheRightParameterName()
+    public Task ImplicitCtor_ShouldUseTheRightParameterName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    TypeName a = new([|null|]);
+                    TypeName a = new({|MA0003:null|});
                 }
 
                 TypeName(string a) { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -599,27 +600,26 @@ public sealed class NamedParameterAnalyzerTests
                 TypeName(string a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorChaining()
+    public Task CtorChaining()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public TypeName()
-                    : this([|null|])
+                    : this({|MA0003:null|})
                 {
                 }
 
                 public TypeName(string a) { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public TypeName()
@@ -630,16 +630,15 @@ public sealed class NamedParameterAnalyzerTests
                 public TypeName(string a) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorBase()
+    public Task CtorBase()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class BaseType
             {
                 protected BaseType(string a) { }
@@ -647,12 +646,12 @@ public sealed class NamedParameterAnalyzerTests
             class TypeName: BaseType
             {
                 public TypeName()
-                    : base([|null|])
+                    : base({|MA0003:null|})
                 {
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class BaseType
             {
                 protected BaseType(string a) { }
@@ -665,16 +664,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
+    public Task PropertyBuilder_IsUnicode_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public async System.Threading.Tasks.Task Test()
@@ -691,15 +689,15 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Task_FromResult_ShouldNotReportDiagnostic()
+    public Task Task_FromResult_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -708,15 +706,16 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValueTask_FromResult_ShouldNotReportDiagnostic()
+    public Task ValueTask_FromResult_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -725,813 +724,852 @@ public sealed class NamedParameterAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Expression_IEnumerable_ShouldNotReportDiagnostic()
+    public Task Expression_IEnumerable_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                 using System.Linq;
-                 using System.Collections.Generic;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            using System.Collections.Generic;
 
-                 class Test
-                 {
-                     public Test()
-                     {
-                         IEnumerable<string> query = null;
-                         query.Where(x => M([|false|]));
-                     }
+            class Test
+            {
+                public Test()
+                {
+                    IEnumerable<string> query = null;
+                    query.Where(x => M({|MA0003:false|}));
+                }
 
-                     static bool M(bool a) => false;
-                 }
+                static bool M(bool a) => false;
+            }
 
-                 """)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Expression_IQueryable_ShouldNotReportDiagnostic()
+    public Task Expression_IQueryable_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-              .WithSourceCode("""
-                 using System.Linq;
-                 class Test
-                 {
-                     public Test()
-                     {
-                         IQueryable<string> query = null;
-                         query.Where(x => M(false));
-                     }
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IQueryable<string> query = null;
+                    query.Where(x => M(false));
+                }
 
-                     static bool M(bool a) => false;
-                 }
-                 """)
-              .ValidateAsync();
+                static bool M(bool a) => false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task Expression_ParamsInLambda_ShouldNotReportDiagnostic()
+    public Task Expression_ParamsInLambda_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-              .WithSourceCode("""
-                 using System.Linq;
-                 class Test
-                 {
-                     public Test()
-                     {
-                         IQueryable<string> query = null;
-                         query.Where(x => M([|false|]));
-                     }
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    IQueryable<string> query = null;
+                    query.Where(x => M({|MA0003:false|}));
+                }
 
-                     static bool M(bool a) => false;
-                 }
-                 """)
-              .ValidateAsync();
+                static bool M(bool a) => false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 #endif
 
     [Fact]
-    public async Task Expression_ShouldNotReportDiagnostic2()
+    public Task Expression_ShouldNotReportDiagnostic2()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-              .WithSourceCode("""
-                using System;
-                using System.Linq;
-                using System.Linq.Expressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Linq.Expressions;
 
-                class Test
+            class Test
+            {
+                public Test()
                 {
-                    public Test()
-                    {
-                        Mock<ITest> mock = null;
-                        mock.Setup(x => x.M(false));
-                    }
-
-                    static bool M(bool a) => false;
+                    Mock<ITest> mock = null;
+                    mock.Setup(x => x.M(false));
                 }
 
-                interface ITest
-                {
-                    bool M(bool a);
-                }
+                static bool M(bool a) => false;
+            }
 
-                class Mock<T>
-                {
-                    public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
-                }
-                """)
-              .ValidateAsync();
+            interface ITest
+            {
+                bool M(bool a);
+            }
+
+            class Mock<T>
+            {
+                public void Setup<TResult>(Expression<Func<T, TResult>> expression) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SyntaxNode_With()
+    public Task SyntaxNode_With()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var a = new Microsoft.CodeAnalysis.SyntaxNode();
-                        _ = a.WithElse(null);
-                    }
+                    var a = new Microsoft.CodeAnalysis.SyntaxNode();
+                    _ = a.WithElse(null);
                 }
+            }
 
-                namespace Microsoft.CodeAnalysis
+            namespace Microsoft.CodeAnalysis
+            {
+                public class SyntaxNode
                 {
-                    public class SyntaxNode
-                    {
-                        public SyntaxNode WithElse(object value) => throw null;
-                    }
+                    public SyntaxNode WithElse(object value) => throw null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SyntaxNode_EnablePrefix()
+    public Task SyntaxNode_EnablePrefix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        EnableTest(false);
-                    }
-
-                    void EnableTest(bool value) { }
+                    EnableTest(false);
                 }
-                """)
-              .ValidateAsync();
+
+                void EnableTest(bool value) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task List_Add()
+    public Task List_Add()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var list = new System.Collections.Generic.List<string>();
-                        list.Add(null);
-                    }
+                    var list = new System.Collections.Generic.List<string>();
+                    list.Add(null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskCompletionSource_SetResult()
+    public Task TaskCompletionSource_SetResult()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
-                        a.SetResult(null);
-                    }
+                    var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+                    a.SetResult(null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Expression_Constant()
+    public Task Expression_Constant()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        _ = System.Linq.Expressions.Expression.Constant(null);
-                    }
+                    _ = System.Linq.Expressions.Expression.Constant(null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskCompletionSource_TrySetResult()
+    public Task TaskCompletionSource_TrySetResult()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var a = new System.Threading.Tasks.TaskCompletionSource<string>();
-                        _ = a.TrySetResult(null);
-                    }
+                    var a = new System.Threading.Tasks.TaskCompletionSource<string>();
+                    _ = a.TrySetResult(null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_Params()
+    public Task StringFormat_Params()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        string.Format("Hi {0}, {1}, {2}, {3}.", null, null, null, null);
-                    }
+                    string.Format("Hi {0}, {1}, {2}, {3}.", null, null, null, null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_Array()
+    public Task StringFormat_Array()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        string.Format("Hi {0}, {1}, {2}, {3}.", new object[] { null, null, null, null });
-                    }
+                    string.Format("Hi {0}, {1}, {2}, {3}.", new object[] { null, null, null, null });
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_Array_Null()
+    public Task StringFormat_Array_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        string.Format("Hi {0}, {1}, {2}, {3}.", (object[])null);
-                    }
+                    string.Format("Hi {0}, {1}, {2}, {3}.", (object[])null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Params_Array_Null()
+    public Task Params_Array_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        B([|null|]);
-                    }
-
-                    void B(params int[] a) {}
+                    B({|MA0003:null|});
                 }
-                """)
-              .ValidateAsync();
+
+                void B(params int[] a) {}
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor_Params_Null()
+    public Task Ctor_Params_Null()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public Test(params object[] a) { }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public Test(params object[] a) { }
 
-                    void A()
-                    {
-                        new Test(null, null);
-                    }
+                void A()
+                {
+                    new Test(null, null);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArrayIndexer()
+    public Task ArrayIndexer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
+                    var d = new[] {"Foo"};
+                    if (d[0] == "X")
                     {
-                        var d = new[] {"Foo"};
-                        if (d[0] == "X")
-                        {
-                            d[0] = "XXX";
-                        }
+                        d[0] = "XXX";
                     }
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Indexer()
+    public Task Indexer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public int this[string value] => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public int this[string value] => 0;
 
-                    void A()
-                    {
-                        _ = this[null];
-                    }
+                void A()
+                {
+                    _ = this[null];
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_Indexer()
+    public Task Dictionary_Indexer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var dict = new System.Collections.Generic.Dictionary<bool, object>();
-                        dict[false] = null;
-                    }
+                    var dict = new System.Collections.Generic.Dictionary<bool, object>();
+                    dict[false] = null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Indexer_MultipleArgument()
+    public Task Indexer_MultipleArgument()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public int this[int x, int y] => 0;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.expression_kinds", "numeric");
+        test.TestCode = """
+            class Test
+            {
+                public int this[int x, int y] => 0;
 
-                    void A()
-                    {
-                        _ = this[[|0|], [|0|]];
-                    }
+                void A()
+                {
+                    _ = this[{|MA0003:0|}, {|MA0003:0|}];
                 }
-                """)
-              .AddAnalyzerConfiguration("MA0003.expression_kinds", "numeric")
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Tuples()
+    public Task Tuples()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public Test(string a) { }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public Test(string a) { }
 
-                    void A()
-                    {
-                        _ = (false, new Test([|null|]));
-                    }
+                void A()
+                {
+                    _ = (false, new Test({|MA0003:null|}));
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument()
+    public Task CallerMustUseNamedArgument()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
-                {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
 
-                    void A()
-                    {
-                        _ = new Test([|new object()|]);
-                    }
+                void A()
+                {
+                    _ = new Test({|MA0003:new object()|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_False()
+    public Task CallerMustUseNamedArgument_False()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
-                {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(false)]object a) { }
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(false)]object a) { }
 
-                    void A()
-                    {
-                        _ = new Test(new object());
-                    }
+                void A()
+                {
+                    _ = new Test(new object());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_True()
+    public Task CallerMustUseNamedArgument_True()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
-                {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
 
-                    void A()
-                    {
-                        _ = new Test([|new object()|]);
-                    }
+                void A()
+                {
+                    _ = new Test({|MA0003:new object()|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ExtensionMethodReceiver_InstanceSyntax()
+    public Task CallerMustUseNamedArgument_ExtensionMethodReceiver_InstanceSyntax()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                static class Test
-                {
-                    public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            static class Test
+            {
+                public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
 
-                    static void B()
-                    {
-                        new object().A();
-                    }
+                static void B()
+                {
+                    new object().A();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ExtensionMethodReceiver_StaticSyntax()
+    public Task CallerMustUseNamedArgument_ExtensionMethodReceiver_StaticSyntax()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                static class Test
-                {
-                    public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            static class Test
+            {
+                public static void A([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]this object value) { }
 
-                    static void B()
-                    {
-                        Test.A(new object());
-                    }
+                static void B()
+                {
+                    Test.A(new object());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task CallerMustUseNamedArgument_ExtensionBlockReceiver()
+    public Task CallerMustUseNamedArgument_ExtensionBlockReceiver()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                static class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            static class Test
+            {
+                extension([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object value)
                 {
-                    extension([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object value)
-                    {
-                        public void A() { }
-                    }
-
-                    static void B()
-                    {
-                        new object().A();
-                        Test.A(new object());
-                    }
+                    public void A() { }
                 }
-                """)
-              .ValidateAsync();
+
+                static void B()
+                {
+                    new object().A();
+                    Test.A(new object());
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 #endif
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ExtensionMethodNonReceiverParameter()
+    public Task CallerMustUseNamedArgument_ExtensionMethodNonReceiverParameter()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                static class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            static class Test
+            {
+                public static void A(this object value, [Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object other) { }
+
+                static void B()
                 {
-                    public static void A(this object value, [Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object other) { }
-
-                    static void B()
-                    {
-                        new object().A([|new object()|]);
-                    }
+                    new object().A({|MA0003:new object()|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName()
+    public Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    void A()
-                    {
-                        object sample = null;
-                        _ = new Test(sample);
-                    }
+                    object sample = null;
+                    _ = new Test(sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsParameterWithSameNameIgnoringCase()
+    public Task CallerMustUseNamedArgument_ArgumentIsParameterWithSameNameIgnoringCase()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                void A(object Sample)
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    void A(object Sample)
-                    {
-                        _ = new Test(Sample);
-                    }
+                    _ = new Test(Sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsPropertyWithSameName()
+    public Task CallerMustUseNamedArgument_ArgumentIsPropertyWithSameName()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                object Sample => null;
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    object Sample => null;
-
-                    void A()
-                    {
-                        _ = new Test(this.Sample);
-                    }
+                    _ = new Test(this.Sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsFieldWithSameName()
+    public Task CallerMustUseNamedArgument_ArgumentIsFieldWithSameName()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                object sample;
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    object sample;
-
-                    void A()
-                    {
-                        _ = new Test(sample);
-                    }
+                    _ = new Test(sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsFieldWithUnderscorePrefix()
+    public Task CallerMustUseNamedArgument_ArgumentIsFieldWithUnderscorePrefix()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                object _sample;
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    object _sample;
-
-                    void A()
-                    {
-                        _ = new Test(_sample);
-                    }
+                    _ = new Test(_sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsStaticFieldWithUnderscorePrefix()
+    public Task CallerMustUseNamedArgument_ArgumentIsStaticFieldWithUnderscorePrefix()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                static object s_sample;
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    static object s_sample;
-
-                    void A()
-                    {
-                        _ = new Test(s_sample);
-                    }
+                    _ = new Test(s_sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithUnderscorePrefix()
+    public Task CallerMustUseNamedArgument_ArgumentIsLocalWithUnderscorePrefix()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    void A()
-                    {
-                        object _sample = null;
-                        _ = new Test([|_sample|]);
-                    }
+                    object _sample = null;
+                    _ = new Test({|MA0003:_sample|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsFieldNamedLikeTheParameterWithUnderscorePrefix()
+    public Task CallerMustUseNamedArgument_ArgumentIsFieldNamedLikeTheParameterWithUnderscorePrefix()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object _sample) { }
+
+                object _sample;
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object _sample) { }
-
-                    object _sample;
-
-                    void A()
-                    {
-                        _ = new Test(_sample);
-                    }
+                    _ = new Test(_sample);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithDifferentName()
+    public Task CallerMustUseNamedArgument_ArgumentIsLocalWithDifferentName()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    void A()
-                    {
-                        object other = null;
-                        _ = new Test([|other|]);
-                    }
+                    object other = null;
+                    _ = new Test({|MA0003:other|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName_OptionDisabled()
+    public Task CallerMustUseNamedArgument_ArgumentIsLocalWithSameName_OptionDisabled()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .AddAnalyzerConfiguration("MA0003.ignore_arguments_matching_parameter_name", "false")
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.ignore_arguments_matching_parameter_name", "false");
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object sample) { }
-
-                    void A()
-                    {
-                        object sample = null;
-                        _ = new Test([|sample|]);
-                    }
+                    object sample = null;
+                    _ = new Test({|MA0003:sample|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MinimumNumberOfParameters_2_RequireNamedArgumentAttribute()
+    public Task MinimumNumberOfParameters_2_RequireNamedArgumentAttribute()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.minimum_method_parameters", "2");
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
+
+                void A()
                 {
-                    public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute(true)]object a) { }
-
-                    void A()
-                    {
-                        _ = new Test([|new object()|]);
-                    }
+                    _ = new Test({|MA0003:new object()|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MinimumNumberOfParameters_2()
+    public Task MinimumNumberOfParameters_2()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0003.minimum_method_parameters", "2")
-              .WithSourceCode("""
-                class Test
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.minimum_method_parameters", "2");
+        test.TestCode = """
+            class Test
+            {
+                public Test(object a) { }
+
+                void A()
                 {
-                    public Test(object a) { }
-
-                    void A()
-                    {
-                        _ = new Test(new object());
-                    }
+                    _ = new Test(new object());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task System_Action_1()
+    public Task System_Action_1()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          System.Action<string> action = null;
-                          action(null);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    System.Action<string> action = null;
+                    action(null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task System_Action_2()
+    public Task System_Action_2()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          System.Action<string, string> action = null;
-                          action(null, null);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    System.Action<string, string> action = null;
+                    action(null, null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

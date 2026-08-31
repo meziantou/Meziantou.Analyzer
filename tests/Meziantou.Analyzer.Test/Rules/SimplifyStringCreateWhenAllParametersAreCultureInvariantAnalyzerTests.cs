@@ -1,759 +1,743 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.SimplifyStringCreateWhenAllParametersAreCultureInvariantAnalyzer,
+    Meziantou.Analyzer.Rules.SimplifyStringCreateWhenAllParametersAreCultureInvariantFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<SimplifyStringCreateWhenAllParametersAreCultureInvariantAnalyzer>()
-            .WithCodeFixProvider<SimplifyStringCreateWhenAllParametersAreCultureInvariantFixer>()
-            .AddMeziantouAttributes()
-            .WithTargetFramework(TargetFramework.Net6_0);
+        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net60 };
+        test.TestState.AddMeziantouAnnotations();
+        return test;
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_OnlyCultureInvariantParameters_ShouldReport()
+    public Task StringCreateWithInvariantCulture_OnlyCultureInvariantParameters_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:O}.")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:O}.")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = $"Current time is {DateTime.Now:O}.";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        var x = $"Current time is {DateTime.Now:O}.";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithString_ShouldReport()
+    public Task StringCreateWithInvariantCulture_WithString_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var name = "test";
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"Name: {name}")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    var name = "test";
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Name: {name}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var name = "test";
+                    var x = $"Name: {name}";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        var name = "test";
-        var x = $"Name: {name}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithGuid_ShouldReport()
+    public Task StringCreateWithInvariantCulture_WithGuid_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var id = Guid.NewGuid();
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"ID: {id}")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    var id = Guid.NewGuid();
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"ID: {id}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var id = Guid.NewGuid();
+                    var x = $"ID: {id}";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        var id = Guid.NewGuid();
-        var x = $"ID: {id}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithTimeSpanInvariantFormat_ShouldReport()
+    public Task StringCreateWithInvariantCulture_WithTimeSpanInvariantFormat_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var duration = TimeSpan.FromSeconds(42);
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"Duration: {duration:c}")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test()
+                {
+                    var duration = TimeSpan.FromSeconds(42);
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Duration: {duration:c}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var duration = TimeSpan.FromSeconds(42);
+                    var x = $"Duration: {duration:c}";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test()
-    {
-        var duration = TimeSpan.FromSeconds(42);
-        var x = $"Duration: {duration:c}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithCultureSensitiveParameter_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_WithCultureSensitiveParameter_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var price = 42.5;
-        var x = string.Create(CultureInfo.InvariantCulture, $"Price: {price}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    var price = 42.5;
+                    var x = string.Create(CultureInfo.InvariantCulture, $"Price: {price}");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_WithDateTimeNonInvariantFormat_NoDiagnostic()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
-    {
-        var x = string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:d}.");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithCurrentCulture_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_WithDateTimeNonInvariantFormat_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var x = string.Create(CultureInfo.CurrentCulture, $"Current time is {DateTime.Now:O}.");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:d}.");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_LiteralOnly_ShouldReport()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
-    {
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"Hello World")|];
-    }
-}
-""";
-
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
-    {
-        var x = $"Hello World";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithInteger_NoDiagnostic()
+    public Task StringCreateWithCurrentCulture_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var count = 42;
-        var x = string.Create(CultureInfo.InvariantCulture, $"Count: {count}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = string.Create(CultureInfo.CurrentCulture, $"Current time is {DateTime.Now:O}.");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_WithNullableInteger_NoDiagnostic()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
-    {
-        int? n = 42;
-        var s = string.Create(CultureInfo.InvariantCulture, $"/v{n}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_WithNullableDouble_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_LiteralOnly_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        double? value = 3.14;
-        var s = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Hello World")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_Object_ShouldReport()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = $"Hello World";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test(object value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(object value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_WithInteger_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test(object value)
-    {
-        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0185.treat_opaque_runtime_types_as_culture_sensitive", "true")
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    var count = 42;
+                    var x = string.Create(CultureInfo.InvariantCulture, $"Count: {count}");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_Interface_ShouldReport()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(IValue value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
-
-interface IValue { }
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(IValue value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-
-interface IValue { }
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_IFormattable_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_WithNullableInteger_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test(IFormattable value)
-    {
-        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    int? n = 42;
+                    var s = string.Create(CultureInfo.InvariantCulture, $"/v{n}");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_NonSealedType_ShouldReport()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
-
-class Value { }
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_NonSealedType_TreatUnsealedTypesAsCultureSensitive_NoDiagnostic()
+    public Task StringCreateWithInvariantCulture_WithNullableDouble_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
-    }
-}
+            class TypeName
+            {
+                public void Test()
+                {
+                    double? value = 3.14;
+                    var s = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+                }
+            }
+            """;
 
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0185.treat_unsealed_types_as_culture_sensitive", "true")
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_UnconstrainedTypeParameter_ShouldReport()
+    public Task StringCreateWithInvariantCulture_Object_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test<T>(T value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test(object value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test<T>(T value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test(object value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task StringCreateWithInvariantCulture_SealedNonFormattableType_ShouldReport()
-    {
-        const string SourceCode = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
-
-sealed class Value
-{
-    public override string ToString() => string.Empty;
-}
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-
-sealed class Value
-{
-    public override string ToString() => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_CultureInsensitiveTypeAttribute_ShouldReport()
+    public Task StringCreateWithInvariantCulture_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0185.treat_opaque_runtime_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
-    }
-}
+            class TypeName
+            {
+                public void Test(object value)
+                {
+                    _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+                }
+            }
+            """;
 
-[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
-class Value : IFormattable
-{
-    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
-}
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test(Value value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-
-[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
-class Value : IFormattable
-{
-    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_CultureInsensitiveAttribute_ShouldReport()
+    public Task StringCreateWithInvariantCulture_Interface_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {Value}")|];
-    }
+            class TypeName
+            {
+                public void Test(IValue value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
 
-    [Meziantou.Analyzer.Annotations.CultureInsensitive]
-    static double Value => 0;
-}
-""";
-        const string Fix = """
-using System;
-using System.Globalization;
+            interface IValue { }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        _ = $"Value: {Value}";
-    }
+            class TypeName
+            {
+                public void Test(IValue value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
 
-    [Meziantou.Analyzer.Annotations.CultureInsensitive]
-    static double Value => 0;
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+            interface IValue { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
+    public Task StringCreateWithInvariantCulture_IFormattable_NoDiagnostic()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test(IFormattable value)
+                {
+                    _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+                }
+            }
+            """;
 
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
-    {
-        var x = $"";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringCreateWithInvariantCulture_MultipleWords_ShouldReport()
+    public Task StringCreateWithInvariantCulture_NonSealedType_ShouldReport()
     {
-        const string SourceCode = """
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test()
-    {
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"This is a test message without any interpolations")|];
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
+
+            class Value { }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+
+            class Value { }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
 
-        const string Fix = """
-using System;
-using System.Globalization;
-
-class TypeName
-{
-    public void Test()
+    [Fact]
+    public Task StringCreateWithInvariantCulture_NonSealedType_TreatUnsealedTypesAsCultureSensitive_NoDiagnostic()
     {
-        var x = $"This is a test message without any interpolations";
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0185.treat_unsealed_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = string.Create(CultureInfo.InvariantCulture, $"Value: {value}");
+                }
+            }
+
+            class Value { }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_UnconstrainedTypeParameter_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test<T>(T value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test<T>(T value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_SealedNonFormattableType_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
+
+            sealed class Value
+            {
+                public override string ToString() => string.Empty;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+
+            sealed class Value
+            {
+                public override string ToString() => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_CultureInsensitiveTypeAttribute_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
+                }
+            }
+
+            [Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+            class Value : IFormattable
+            {
+                public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test(Value value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+
+            [Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+            class Value : IFormattable
+            {
+                public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_CultureInsensitiveAttribute_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {Value}")|};
+                }
+
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                static double Value => 0;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = $"Value: {Value}";
+                }
+
+                [Meziantou.Analyzer.Annotations.CultureInsensitive]
+                static double Value => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_EmptyString_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = $"";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringCreateWithInvariantCulture_MultipleWords_ShouldReport()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"This is a test message without any interpolations")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var x = $"This is a test message without any interpolations";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -761,36 +745,34 @@ class TypeName
     [InlineData("{value:G}")]
     [InlineData("{value.ToString()}")]
     [InlineData("{value.ToString(\"G\")}")]
-    public async Task StringCreateWithInvariantCulture_Enum_ShouldReport(string content)
+    public Task StringCreateWithInvariantCulture_Enum_ShouldReport(string content)
     {
-        var sourceCode = $$"""
-using System;
-using System.Globalization;
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Globalization;
 
-class TypeName
-{
-    public void Test(StringComparison value)
-    {
-        var x = [|string.Create(CultureInfo.InvariantCulture, $"abc{{content}}")|];
-    }
-}
-""";
+            class TypeName
+            {
+                public void Test(StringComparison value)
+                {
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"abc{{content}}")|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Globalization;
 
-        var fix = $$"""
-using System;
-using System.Globalization;
+            class TypeName
+            {
+                public void Test(StringComparison value)
+                {
+                    var x = $"abc{{content}}";
+                }
+            }
+            """;
 
-class TypeName
-{
-    public void Test(StringComparison value)
-    {
-        var x = $"abc{{content}}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,103 +1,108 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseContainsKeyInsteadOfTryGetValueAnalyzer,
+    Meziantou.Analyzer.Rules.UseContainsKeyInsteadOfTryGetValueFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task IDictionary_TryGetValue_Value()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseContainsKeyInsteadOfTryGetValueAnalyzer>()
-            .WithCodeFixProvider<UseContainsKeyInsteadOfTryGetValueFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class ClassTest
+            {
+                void Test(System.Collections.Generic.IDictionary<string, string> dict)
+                {
+                    dict.TryGetValue("", out var a);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IDictionary_TryGetValue_Value()
+    public Task IDictionary_TryGetValue_Discard()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class ClassTest
+        var test = CreateTest();
+        test.TestCode = """
+            class ClassTest
+            {
+                void Test(System.Collections.Generic.IDictionary<string, string> dict)
                 {
-                    void Test(System.Collections.Generic.IDictionary<string, string> dict)
-                    {
-                        dict.TryGetValue("", out var a);
-                    }
+                    {|MA0160:dict.TryGetValue("", out _)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            class ClassTest
+            {
+                void Test(System.Collections.Generic.IDictionary<string, string> dict)
+                {
+                    dict.ContainsKey("");
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IDictionary_TryGetValue_Discard()
+    public Task IReadOnlyDictionary_TryGetValue_Discard()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class ClassTest
+        var test = CreateTest();
+        test.TestCode = """
+            class ClassTest
+            {
+                void Test(System.Collections.Generic.IReadOnlyDictionary<string, string> dict)
                 {
-                    void Test(System.Collections.Generic.IDictionary<string, string> dict)
-                    {
-                        [|dict.TryGetValue("", out _)|];
-                    }
+                    {|MA0160:dict.TryGetValue("", out _)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                class ClassTest
-                {
-                    void Test(System.Collections.Generic.IDictionary<string, string> dict)
-                    {
-                        dict.ContainsKey("");
-                    }
-                }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IReadOnlyDictionary_TryGetValue_Discard()
+    public Task Dictionary_TryGetValue_Discard()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class ClassTest
+        var test = CreateTest();
+        test.TestCode = """
+            class ClassTest
+            {
+                void Test(System.Collections.Generic.Dictionary<string, string> dict)
                 {
-                    void Test(System.Collections.Generic.IReadOnlyDictionary<string, string> dict)
-                    {
-                        [|dict.TryGetValue("", out _)|];
-                    }
+                    {|MA0160:dict.TryGetValue("", out _)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_TryGetValue_Discard()
+    public Task CustomDictionary_TryGetValue_Discard()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class ClassTest
+        var test = CreateTest();
+        test.TestCode = """
+            class ClassTest
+            {
+                void Test(SampleDictionary dict)
                 {
-                    void Test(System.Collections.Generic.Dictionary<string, string> dict)
-                    {
-                        [|dict.TryGetValue("", out _)|];
-                    }
+                    {|MA0160:dict.TryGetValue("", out _)|};
                 }
-                """)
-              .ValidateAsync();
-    }
+            }
 
-    [Fact]
-    public async Task CustomDictionary_TryGetValue_Discard()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class ClassTest
-                {
-                    void Test(SampleDictionary dict)
-                    {
-                        [|dict.TryGetValue("", out _)|];
-                    }
-                }
+            class SampleDictionary : System.Collections.Generic.Dictionary<string, string>
+            {
+            }
+            """;
 
-                class SampleDictionary : System.Collections.Generic.Dictionary<string, string>
-                {
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

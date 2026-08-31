@@ -1,319 +1,357 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UsePatternMatchingForEqualityComparisonsAnalyzer,
+    Meziantou.Analyzer.Rules.UsePatternMatchingForEqualityComparisonsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UsePatternMatchingForEqualityComparisonsAnalyzer>()
-            .WithCodeFixProvider<UsePatternMatchingForEqualityComparisonsFixer>();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task DisabledInExpression()
+    public Task DisabledInExpression()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""              
-                  using System;
-                  using System.Linq;
-                  using System.Linq.Expressions;
-                  _ = (Expression<Func<int, bool>>)(item => item == 0);
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Linq.Expressions;
+            _ = (Expression<Func<int, bool>>)(item => item == 0);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForNullableOfT()
+    public Task NullCheckForNullableOfT()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = [|(int?)0 == null|];")
-              .ShouldFixCodeWith("_ = (int?)0 is null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0142:(int?)0 == null|};";
+        test.FixedCode = "_ = (int?)0 is null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForNullableOfT_NotNull()
+    public Task NullCheckForNullableOfT_NotNull()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = {|MA0141:(int?)0 != null|};")
-              .ShouldFixCodeWith("_ = (int?)0 is not null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0141:(int?)0 != null|};";
+        test.FixedCode = "_ = (int?)0 is not null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForObject()
+    public Task NullCheckForObject()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = [|new object() == null|];")
-              .ShouldFixCodeWith("_ = new object() is null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0142:new object() == null|};";
+        test.FixedCode = "_ = new object() is null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForObject_NullFirst()
+    public Task NullCheckForObject_NullFirst()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = [|null == new object()|];")
-              .ShouldFixCodeWith("_ = new object() is null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0142:null == new object()|};";
+        test.FixedCode = "_ = new object() is null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForObject_NotNull_NullFirst()
+    public Task NullCheckForObject_NotNull_NullFirst()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = {|MA0141:null != new object()|};")
-              .ShouldFixCodeWith("_ = new object() is not null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0141:null != new object()|};";
+        test.FixedCode = "_ = new object() is not null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForObject_FixerKeepParentheses()
+    public Task NullCheckForObject_FixerKeepParentheses()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  string line;
-                  while ({|MA0141:(line = null) != null|}) { }
-                  """)
-              .ShouldFixCodeWith("""
-                  string line;
-                  while ((line = null) is not null) { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            string line;
+            while ({|MA0141:(line = null) != null|}) { }
+            """;
+        test.FixedCode = """
+            string line;
+            while ((line = null) is not null) { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullEqualsNull()
+    public Task NullEqualsNull()
     {
         // no report as "null is null" is not valid
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = null == null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = null == null;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotNullCheck()
+    public Task NotNullCheck()
     {
         // no report as "null is null" is not valid
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = new object() == new object();")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = new object() == new object();";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForObjectWithCustomOperator()
+    public Task NullCheckForObjectWithCustomOperator()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                _ = new Sample() == null;
+        var test = CreateTest();
+        test.TestCode = """
+            _ = new Sample() == null;
 
-                class Sample
-                {
-                    public static bool operator ==(Sample left, Sample right) => false;
-                    public static bool operator !=(Sample left, Sample right) => false;
-                }
-                """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static bool operator ==(Sample left, Sample right) => false;
+                public static bool operator !=(Sample left, Sample right) => false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullCheckForNullableOfT_IsNull()
+    public Task NullCheckForNullableOfT_IsNull()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"_ = (int?)0 is null;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            _ = (int?)0 is null;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_String()
+    public Task EqualityComparison_String()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""_ = {|MA0148:(string)"dummy" == "dummy"|};""")
-              .ShouldFixCodeWith("""_ = (string)"dummy" is "dummy";""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """_ = {|MA0148:(string)"dummy" == "dummy"|};""";
+        test.FixedCode = """_ = (string)"dummy" is "dummy";""";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_NullableInt32_Int32()
+    public Task EqualityComparison_NullableInt32_Int32()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = {|MA0148:(int?)0 == 1|};")
-              .ShouldFixCodeWith("_ = (int?)0 is 1;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0148:(int?)0 == 1|};";
+        test.FixedCode = "_ = (int?)0 is 1;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_Enum()
+    public Task EqualityComparison_Enum()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = {|MA0148:(System.DayOfWeek)1 == System.DayOfWeek.Monday|};")
-              .ShouldFixCodeWith("_ = (System.DayOfWeek)1 is System.DayOfWeek.Monday;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0148:(System.DayOfWeek)1 == System.DayOfWeek.Monday|};";
+        // "x is System.DayOfWeek.Monday" is parsed as a type check, whereas the fixer builds the constant
+        // pattern the compiler binds it to, so the shape of the tree cannot be compared with the parsed one
+        test.CodeActionValidationMode = CodeActionValidationMode.None;
+        test.FixedCode = "_ = (System.DayOfWeek)1 is System.DayOfWeek.Monday;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_NullableEnum()
+    public Task EqualityComparison_NullableEnum()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("_ = {|MA0148:(System.DayOfWeek?)1 == System.DayOfWeek.Monday|};")
-              .ShouldFixCodeWith("_ = (System.DayOfWeek?)1 is System.DayOfWeek.Monday;")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "_ = {|MA0148:(System.DayOfWeek?)1 == System.DayOfWeek.Monday|};";
+        // "x is System.DayOfWeek.Monday" is parsed as a type check, whereas the fixer builds the constant
+        // pattern the compiler binds it to, so the shape of the tree cannot be compared with the parsed one
+        test.CodeActionValidationMode = CodeActionValidationMode.None;
+        test.FixedCode = "_ = (System.DayOfWeek?)1 is System.DayOfWeek.Monday;";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_MergeConditions()
+    public Task EqualityComparison_MergeConditions()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var value = 0;
-                  _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = 0;
-                  _ = value is 0 or 1;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            _ = value is 0 or 1;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InequalityComparison_MergeConditions()
+    public Task InequalityComparison_MergeConditions()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var value = 0;
-                  _ = {|MA0149:value != 0|} && {|MA0149:value != 1|};
-                  """)
-              .ShouldFixCodeWith("""
-                  var value = 0;
-                  _ = value is not (0 or 1);
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            _ = {|MA0149:value != 0|} && {|MA0149:value != 1|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            _ = value is not (0 or 1);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_DifferentExpressions_DoNotMerge()
+    public Task EqualityComparison_DifferentExpressions_DoNotMerge()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var value1 = 0;
-                  var value2 = 0;
-                  _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|};
-                  """)
-              .ShouldFixCodeWith("""
-                  var value1 = 0;
-                  var value2 = 0;
-                  _ = value1 is 0 || value2 is 1;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|};
+            """;
+        test.FixedCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = value1 is 0 || value2 is 1;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_NonContiguousExpressions_DoNotMerge()
+    public Task EqualityComparison_NonContiguousExpressions_DoNotMerge()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var value1 = 0;
-                  var value2 = 0;
-                  _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|} || {|MA0148:value1 == 2|};
-                  """)
-              .ShouldFixCodeWith("""
-                  var value1 = 0;
-                  var value2 = 0;
-                  _ = value1 is 0 || value2 is 1 || value1 is 2;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = {|MA0148:value1 == 0|} || {|MA0148:value2 == 1|} || {|MA0148:value1 == 2|};
+            """;
+        test.FixedCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = value1 is 0 || value2 is 1 || value1 is 2;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BatchFix_MergeConditions()
+    public Task BatchFix_MergeConditions()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var value = 0;
-                  _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
-                  _ = {|MA0149:value != 2|} && {|MA0149:value != 3|};
-                  """)
-              .ShouldBatchFixCodeWith("""
-                  var value = 0;
-                  _ = value is 0 or 1;
-                  _ = value is not (2 or 3);
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            _ = {|MA0148:value == 0|} || {|MA0148:value == 1|};
+            _ = {|MA0149:value != 2|} && {|MA0149:value != 3|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            _ = value is 0 or 1;
+            _ = value is not (2 or 3);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CustomOperator_Class_Int32()
+    public Task CustomOperator_Class_Int32()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                _ = new Sample() == 1;
+        var test = CreateTest();
+        test.TestCode = """
+            _ = new Sample() == 1;
 
-                class Sample
-                {
-                    public static bool operator ==(Sample left, int right) => false;
-                    public static bool operator !=(Sample left, int right) => false;
-                }
-                """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static bool operator ==(Sample left, int right) => false;
+                public static bool operator !=(Sample left, int right) => false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_ImplicitConversion_NoDiagnostic()
+    public Task EqualityComparison_ImplicitConversion_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  Sample value = null;
-                  _ = value == 0;
+        var test = CreateTest();
+        test.TestCode = """
+            Sample value = null;
+            _ = value == 0;
 
-                  class Sample
-                  {
-                      public static implicit operator int(Sample value) => 0;
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InequalityComparison_ImplicitConversion_NoDiagnostic()
+    public Task InequalityComparison_ImplicitConversion_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  Sample value = null;
-                  _ = value != 0;
+        var test = CreateTest();
+        test.TestCode = """
+            Sample value = null;
+            _ = value != 0;
 
-                  class Sample
-                  {
-                      public static implicit operator int(Sample value) => 0;
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EqualityComparison_MixedWithImplicitConversion_OnlyFixValidExpression()
+    public Task EqualityComparison_MixedWithImplicitConversion_OnlyFixValidExpression()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  var number = 0;
-                  Sample value = null;
-                  _ = {|MA0148:number == 0|} || value == 0;
+        var test = CreateTest();
+        test.TestCode = """
+            var number = 0;
+            Sample value = null;
+            _ = {|MA0148:number == 0|} || value == 0;
 
-                  class Sample
-                  {
-                      public static implicit operator int(Sample value) => 0;
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  var number = 0;
-                  Sample value = null;
-                  _ = number is 0 || value == 0;
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+            }
+            """;
+        test.FixedCode = """
+            var number = 0;
+            Sample value = null;
+            _ = number is 0 || value == 0;
 
-                  class Sample
-                  {
-                      public static implicit operator int(Sample value) => 0;
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

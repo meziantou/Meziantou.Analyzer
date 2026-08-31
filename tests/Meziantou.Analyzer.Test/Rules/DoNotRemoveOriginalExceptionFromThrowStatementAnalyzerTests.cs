@@ -1,18 +1,18 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotRemoveOriginalExceptionFromThrowStatementFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer>()
-            .WithCodeFixProvider<DoNotRemoveOriginalExceptionFromThrowStatementFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task NoDiagnostic()
+    public Task NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 internal void Sample()
@@ -30,54 +30,53 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReportDiagnostic_DerivedException()
+    public Task ShouldReportDiagnostic_DerivedException()
     {
-        const string SourceCode = """
-class Test
-{
-    internal void Sample()
-    {
-        try
-        {
-        }
-        catch (System.InvalidOperationException ex)
-        {
-            [|throw ex;|]
-        }
-    }
-}
-""";
-        const string CodeFix = """
-class Test
-{
-    internal void Sample()
-    {
-        try
-        {
-        }
-        catch (System.InvalidOperationException ex)
-        {
-            throw;
-        }
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.InvalidOperationException ex)
+                    {
+                        {|MA0027:throw ex;|}
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.InvalidOperationException ex)
+                    {
+                        throw;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ShouldReportDiagnostic()
+    public Task ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 internal void Sample()
@@ -88,12 +87,12 @@ class Test
                     catch (System.Exception ex)
                     {
                         _ = ex;
-                        [|throw ex;|]
+                        {|MA0027:throw ex;|}
                     }
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class Test
             {
                 internal void Sample()
@@ -109,9 +108,7 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

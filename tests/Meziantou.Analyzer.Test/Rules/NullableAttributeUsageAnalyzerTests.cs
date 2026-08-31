@@ -1,20 +1,20 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.NullableAttributeUsageAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class NullableAttributeUsageAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<NullableAttributeUsageAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task ParameterDoesNotExist()
+    public Task ParameterDoesNotExist()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
-                [return: [|System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("unknown")|]]
+                [return: {|MA0068:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("unknown")|}]
                 public void A(string a) { }
             }
 
@@ -29,15 +29,15 @@ public sealed class NullableAttributeUsageAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParameterExists()
+    public Task ParameterExists()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 [return: System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("a")]
@@ -55,16 +55,16 @@ public sealed class NullableAttributeUsageAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task ExtensionBlock_ParameterExists_NoDiagnostic()
+    public Task ExtensionBlock_ParameterExists_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
             static class Extensions
@@ -76,29 +76,28 @@ public sealed class NullableAttributeUsageAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExtensionBlock_ParameterDoesNotExist_Diagnostic()
+    public Task ExtensionBlock_ParameterDoesNotExist_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
             static class Extensions
             {
                 extension(object? obj)
                 {
-                    [return: [|NotNullIfNotNull("unknown")|]]
+                    [return: {|MA0068:NotNullIfNotNull("unknown")|}]
                     public object? DoSomething() => obj;
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 #endif
 }

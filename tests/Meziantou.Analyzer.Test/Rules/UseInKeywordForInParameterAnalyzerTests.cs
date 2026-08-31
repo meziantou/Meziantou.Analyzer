@@ -1,265 +1,278 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseInKeywordForInParameterAnalyzer,
+    Meziantou.Analyzer.Rules.UseInKeywordForInParameterFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseInKeywordForInParameterAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task StyleRule_Variable_ShouldReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseInKeywordForInParameterAnalyzer>()
-            .WithCodeFixProvider<UseInKeywordForInParameterFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var value = new S();
+                    M({|MA0209:value|});
+                }
+
+                private static void M(in S value) { }
+            }
+
+            struct S { }
+            """;
+        test.FixedCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var value = new S();
+                    M(in value);
+                }
+
+                private static void M(in S value) { }
+            }
+
+            struct S { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_Variable_ShouldReportDiagnostic()
+    public Task StyleRule_AlreadyIn_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var value = new S();
-                          M({|MA0209:value|});
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var value = new S();
+                    M(in value);
+                }
 
-                      private static void M(in S value) { }
-                  }
+                private static void M(in S value) { }
+            }
 
-                  struct S { }
-                  """)
-              .ShouldFixCodeWith("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var value = new S();
-                          M(in value);
-                      }
+            struct S { }
+            """;
 
-                      private static void M(in S value) { }
-                  }
-
-                  struct S { }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_AlreadyIn_ShouldNotReportDiagnostic()
+    public Task StyleRule_Literal_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var value = new S();
-                          M(in value);
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    M(42);
+                }
 
-                      private static void M(in S value) { }
-                  }
+                private static void M(in int value) { }
+            }
+            """;
 
-                  struct S { }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_Literal_ShouldNotReportDiagnostic()
+    public Task StyleRule_Property_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          M(42);
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            struct S { }
 
-                      private static void M(in int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+            class C
+            {
+                public S Property => default;
+
+                public void Test()
+                {
+                    M(Property);
+                }
+
+                private static void M(in S value) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_Property_ShouldNotReportDiagnostic()
+    public Task StyleRule_MethodReturnValue_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  struct S { }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    M(GetValue());
+                }
 
-                  class C
-                  {
-                      public S Property => default;
+                private static S GetValue() => default;
+                private static void M(in S value) { }
+            }
 
-                      public void Test()
-                      {
-                          M(Property);
-                      }
+            struct S { }
+            """;
 
-                      private static void M(in S value) { }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_MethodReturnValue_ShouldNotReportDiagnostic()
+    public Task StyleRule_ImplicitConversion_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          M(GetValue());
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    short value = 0;
+                    M(value);
+                }
 
-                      private static S GetValue() => default;
-                      private static void M(in S value) { }
-                  }
+                private static void M(in int value) { }
+            }
+            """;
 
-                  struct S { }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_ImplicitConversion_ShouldNotReportDiagnostic()
+    public Task StyleRule_Expression_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          short value = 0;
-                          M(value);
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var a = 1;
+                    var b = 2;
+                    M(a + b);
+                }
 
-                      private static void M(in int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+                private static void M(in int value) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_Expression_ShouldNotReportDiagnostic()
+    public Task StyleRule_ObjectCreation_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var a = 1;
-                          var b = 2;
-                          M(a + b);
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    M(new S());
+                }
 
-                      private static void M(in int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+                private static void M(in S value) { }
+            }
+
+            struct S { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StyleRule_ObjectCreation_ShouldNotReportDiagnostic()
+    public Task OverloadRule_Variable_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          M(new S());
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var value = new S();
+                    M({|MA0210:value|});
+                }
 
-                      private static void M(in S value) { }
-                  }
+                private static void M(S value) { }
+                private static void M(in S value) { }
+            }
 
-                  struct S { }
-                  """)
-              .ValidateAsync();
+            struct S { }
+            """;
+        test.FixedCode = """
+            class C
+            {
+                public void Test()
+                {
+                    var value = new S();
+                    M(in value);
+                }
+
+                private static void M(S value) { }
+                private static void M(in S value) { }
+            }
+
+            struct S { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OverloadRule_Variable_ShouldReportDiagnostic()
+    public Task OverloadRule_Expression_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var value = new S();
-                          M({|MA0210:value|});
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    M(new S());
+                }
 
-                      private static void M(S value) { }
-                      private static void M(in S value) { }
-                  }
+                private static void M(S value) { }
+                private static void M(in S value) { }
+            }
 
-                  struct S { }
-                  """)
-              .ShouldFixCodeWith("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          var value = new S();
-                          M(in value);
-                      }
+            struct S { }
+            """;
 
-                      private static void M(S value) { }
-                      private static void M(in S value) { }
-                  }
-
-                  struct S { }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OverloadRule_Expression_ShouldNotReportDiagnostic()
+    public Task OverloadRule_ImplicitConversion_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          M(new S());
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    short value = 0;
+                    M(value);
+                }
 
-                      private static void M(S value) { }
-                      private static void M(in S value) { }
-                  }
+                private static void M(int value) { }
+                private static void M(in int value) { }
+            }
+            """;
 
-                  struct S { }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task OverloadRule_ImplicitConversion_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      public void Test()
-                      {
-                          short value = 0;
-                          M(value);
-                      }
-
-                      private static void M(int value) { }
-                      private static void M(in int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

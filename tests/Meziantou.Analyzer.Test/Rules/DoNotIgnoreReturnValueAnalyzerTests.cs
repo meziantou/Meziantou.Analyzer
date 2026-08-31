@@ -1,930 +1,988 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotIgnoreReturnValueAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotIgnoreReturnValueAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotIgnoreReturnValueAnalyzer>()
-            .AddMeziantouAttributes();
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+
+        // The analyzer declares two descriptors with the same MA0060 id, so the markup cannot tell them apart
+        test.MarkupOptions = MarkupOptions.UseFirstDescriptor;
+        return test;
     }
 
     [Fact]
-    public async Task Stream_Read_ReturnValueNotUsed()
+    public Task Stream_Read_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A()
-                      {
-                          var stream = File.OpenRead("");
-                          [|stream.Read(null, 0, 0)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var stream = File.OpenRead("");
+                    {|MA0060:stream.Read(null, 0, 0)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Stream_ReadAsync_ReturnValueNotUsed()
+    public Task Stream_ReadAsync_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      async void A()
-                      {
-                          var stream = File.OpenRead("");
-                          await [|stream.ReadAsync(null, 0, 0)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                async void A()
+                {
+                    var stream = File.OpenRead("");
+                    await {|MA0060:stream.ReadAsync(null, 0, 0)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Stream_ReadAsync_ReturnValueUsed_DiscardOperator()
+    public Task Stream_ReadAsync_ReturnValueUsed_DiscardOperator()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      async void A()
-                      {
-                          var stream = File.OpenRead("");
-                          _ = await stream.ReadAsync(null, 0, 0);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                async void A()
+                {
+                    var stream = File.OpenRead("");
+                    _ = await stream.ReadAsync(null, 0, 0);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Stream_Read_ReturnValueUsed_MethodCall()
+    public Task Stream_Read_ReturnValueUsed_MethodCall()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A()
-                      {
-                          var stream = File.OpenRead("");
-                          System.Console.Write(stream.Read(null, 0, 0));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var stream = File.OpenRead("");
+                    System.Console.Write(stream.Read(null, 0, 0));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Stream_ReadByte_ReturnValueNotUsed_NoDiagnostic()
+    public Task Stream_ReadByte_ReturnValueNotUsed_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A()
-                      {
-                          var stream = File.OpenRead("");
-                          stream.ReadByte();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var stream = File.OpenRead("");
+                    stream.ReadByte();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TextReader_ReadLine_ReturnValueNotUsed_NoDiagnostic()
+    public Task TextReader_ReadLine_ReturnValueNotUsed_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A()
-                      {
-                          var reader = new StringReader("test");
-                          reader.ReadLine();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var reader = new StringReader("test");
+                    reader.ReadLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TextReader_ReadLine_ReturnValueUsed()
+    public Task TextReader_ReadLine_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A()
-                      {
-                          var reader = new StringReader("test");
-                          var line = reader.ReadLine();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A()
+                {
+                    var reader = new StringReader("test");
+                    var line = reader.ReadLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BinaryReader_ReadInt32_ReturnValueNotUsed_NoDiagnostic()
+    public Task BinaryReader_ReadInt32_ReturnValueNotUsed_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A(BinaryReader reader)
-                      {
-                          reader.ReadInt32();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(BinaryReader reader)
+                {
+                    reader.ReadInt32();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_ReturnValue_NotUsed()
+    public Task Attribute_ReturnValue_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using Meziantou.Analyzer.Annotations;
-                  class Test
-                  {
-                      [return: DoNotIgnore]
-                      static int Compute() => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            using Meziantou.Analyzer.Annotations;
+            class Test
+            {
+                [return: DoNotIgnore]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          [|Compute()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Compute()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_ReturnValue_Used()
+    public Task Attribute_ReturnValue_Used()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using Meziantou.Analyzer.Annotations;
-                  class Test
-                  {
-                      [return: DoNotIgnore]
-                      static int Compute() => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            using Meziantou.Analyzer.Annotations;
+            class Test
+            {
+                [return: DoNotIgnore]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          var result = Compute();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    var result = Compute();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_ReturnValue_WithMessage()
+    public Task Attribute_ReturnValue_WithMessage()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using Meziantou.Analyzer.Annotations;
-                  class Test
-                  {
-                      [return: DoNotIgnore(Message = "Use the result to check success")]
-                      static int Compute() => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            using Meziantou.Analyzer.Annotations;
+            class Test
+            {
+                [return: DoNotIgnore(Message = "Use the result to check success")]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          [|Compute()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Compute()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_OutParameter_Discarded()
+    public Task Attribute_OutParameter_Discarded()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using Meziantou.Analyzer.Annotations;
-                  class Test
-                  {
-                      static bool TryGet([DoNotIgnore] out int value) { value = 0; return true; }
+        var test = CreateTest();
+        test.TestCode = """
+            using Meziantou.Analyzer.Annotations;
+            class Test
+            {
+                static bool TryGet([DoNotIgnore] out int value) { value = 0; return true; }
 
-                      void A()
-                      {
-                          TryGet({|MA0060:out _|});
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    TryGet({|MA0060:out _|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_OutParameter_NotDiscarded()
+    public Task Attribute_OutParameter_NotDiscarded()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using Meziantou.Analyzer.Annotations;
-                  class Test
-                  {
-                      static bool TryGet([DoNotIgnore] out int value) { value = 0; return true; }
+        var test = CreateTest();
+        test.TestCode = """
+            using Meziantou.Analyzer.Annotations;
+            class Test
+            {
+                static bool TryGet([DoNotIgnore] out int value) { value = 0; return true; }
 
-                      void A()
-                      {
-                          TryGet(out int x);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    TryGet(out int x);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Pure_ReturnValueNotUsed()
+    public Task Pure_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Diagnostics.Contracts;
-                  class Test
-                  {
-                      [Pure]
-                      static int Compute() => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics.Contracts;
+            class Test
+            {
+                [Pure]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          [|Compute()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Compute()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Pure_ReturnValueUsed()
+    public Task Pure_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Diagnostics.Contracts;
-                  class Test
-                  {
-                      [Pure]
-                      static int Compute() => 0;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics.Contracts;
+            class Test
+            {
+                [Pure]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          var result = Compute();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    var result = Compute();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Pure_OnClass_NoMethodDiagnostic()
+    public Task Pure_OnClass_NoMethodDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Diagnostics.Contracts;
-                  [Pure]
-                  class MyClass
-                  {
-                      public int Compute() => 0;
-                  }
-                  class Test
-                  {
-                      void A(MyClass obj)
-                      {
-                          obj.Compute();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics.Contracts;
+            [Pure]
+            class MyClass
+            {
+                public int Compute() => 0;
+            }
+            class Test
+            {
+                void A(MyClass obj)
+                {
+                    obj.Compute();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Pure_JetBrainsAttribute_IsAlsoSupported_WhenSystemDiagnosticsContractsPureExists()
+    public Task Pure_JetBrainsAttribute_IsAlsoSupported_WhenSystemDiagnosticsContractsPureExists()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Diagnostics.Contracts;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics.Contracts;
 
-                  namespace JetBrains.Annotations
-                  {
-                      [System.AttributeUsage(System.AttributeTargets.Method)]
-                      sealed class PureAttribute : System.Attribute
-                      {
-                      }
-                  }
+            namespace JetBrains.Annotations
+            {
+                [System.AttributeUsage(System.AttributeTargets.Method)]
+                sealed class PureAttribute : System.Attribute
+                {
+                }
+            }
 
-                  class Test
-                  {
-                      [JetBrains.Annotations.Pure]
-                      static int Compute() => 0;
+            class Test
+            {
+                [JetBrains.Annotations.Pure]
+                static int Compute() => 0;
 
-                      void A()
-                      {
-                          [|Compute()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Compute()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Trim_ReturnValueNotUsed()
+    public Task String_Trim_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(string s)
-                      {
-                          [|s.Trim()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string s)
+                {
+                    {|MA0060:s.Trim()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Trim_ReturnValueUsed()
+    public Task String_Trim_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(string s)
-                      {
-                          var trimmed = s.Trim();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string s)
+                {
+                    var trimmed = s.Trim();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Replace_ReturnValueNotUsed()
+    public Task String_Replace_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(string s)
-                      {
-                          [|s.Replace("a", "b")|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string s)
+                {
+                    {|MA0060:s.Replace("a", "b")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Format_ArrowVoidMethod_ReturnValueNotUsed()
+    public Task String_Format_ArrowVoidMethod_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A() => [|string.Format("{0}", 1)|];
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() => {|MA0060:string.Format("{0}", 1)|};
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Format_ArrowStringMethod_ReturnValueUsed()
+    public Task String_Format_ArrowStringMethod_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      string A() => string.Format("{0}", 1);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                string A() => string.Format("{0}", 1);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TryParse_ReturnValueNotUsed()
+    public Task TryParse_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          [|int.TryParse("42", out _)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:int.TryParse("42", out _)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TryParse_ReturnValueUsed()
+    public Task TryParse_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          if (int.TryParse("42", out var value)) { }
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    if (int.TryParse("42", out var value)) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TryParse_CustomMethod_ReturnValueNotUsed()
+    public Task TryParse_CustomMethod_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      static bool TryParseItem(string s, out int result) { result = 0; return true; }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                static bool TryParseItem(string s, out int result) { result = 0; return true; }
 
-                      void A()
-                      {
-                          [|TryParseItem("42", out _)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:TryParseItem("42", out _)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TryParse_ReturnValueNotUsed_DisabledUsingConfiguration()
+    public Task TryParse_ReturnValueNotUsed_DisabledUsingConfiguration()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0060.enable_tryparse_pattern", "false")
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          int.TryParse("42", out _);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0060.enable_tryparse_pattern", "false");
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    int.TryParse("42", out _);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TryParse_ReturnValueNotUsed_InvalidConfiguration_UsesDefaultValue()
+    public Task TryParse_ReturnValueNotUsed_InvalidConfiguration_UsesDefaultValue()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0060.enable_tryparse_pattern", "invalid")
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          [|int.TryParse("42", out _)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0060.enable_tryparse_pattern", "invalid");
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:int.TryParse("42", out _)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableList_Add_ReturnValueNotUsed()
+    public Task ImmutableList_Add_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableList<int> list)
-                      {
-                          [|list.Add(1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableList<int> list)
+                {
+                    {|MA0060:list.Add(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableList_Add_ReturnValueUsed()
+    public Task ImmutableList_Add_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableList<int> list)
-                      {
-                          var newList = list.Add(1);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableList<int> list)
+                {
+                    var newList = list.Add(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableDictionary_Remove_ReturnValueNotUsed()
+    public Task ImmutableDictionary_Remove_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableDictionary<string, int> dict)
-                      {
-                          [|dict.Remove("key")|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableDictionary<string, int> dict)
+                {
+                    {|MA0060:dict.Remove("key")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableStack_Push_ReturnValueNotUsed()
+    public Task ImmutableStack_Push_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableStack<int> stack)
-                      {
-                          [|stack.Push(1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableStack<int> stack)
+                {
+                    {|MA0060:stack.Push(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableArray_Create_ReturnValueNotUsed()
+    public Task ImmutableArray_Create_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A()
-                      {
-                          [|ImmutableArray.Create(1, 2, 3)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:ImmutableArray.Create(1, 2, 3)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Stream_ReadAtLeast_ReturnValueNotUsed()
+    public Task Stream_ReadAtLeast_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A(Stream stream, byte[] buffer)
-                      {
-                          [|stream.ReadAtLeast(buffer, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(Stream stream, byte[] buffer)
+                {
+                    {|MA0060:stream.ReadAtLeast(buffer, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TextReader_Read_ReturnValueNotUsed()
+    public Task TextReader_Read_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A(TextReader reader)
-                      {
-                          [|reader.Read()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(TextReader reader)
+                {
+                    {|MA0060:reader.Read()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BinaryReader_Read_ReturnValueNotUsed()
+    public Task BinaryReader_Read_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.IO;
-                  class Test
-                  {
-                      void A(BinaryReader reader)
-                      {
-                          [|reader.Read()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(BinaryReader reader)
+                {
+                    {|MA0060:reader.Read()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_ToUpper_ReturnValueNotUsed()
+    public Task String_ToUpper_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(string s)
-                      {
-                          [|s.ToUpper()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string s)
+                {
+                    {|MA0060:s.ToUpper()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task String_Join_ReturnValueNotUsed()
+    public Task String_Join_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          [|string.Join(", ", "a", "b")|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:string.Join(", ", "a", "b")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableDictionary_Add_ReturnValueNotUsed()
+    public Task ImmutableDictionary_Add_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableDictionary<string, int> dict)
-                      {
-                          [|dict.Add("key", 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableDictionary<string, int> dict)
+                {
+                    {|MA0060:dict.Add("key", 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableQueue_Enqueue_ReturnValueNotUsed()
+    public Task ImmutableQueue_Enqueue_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableQueue<int> queue)
-                      {
-                          [|queue.Enqueue(1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableQueue<int> queue)
+                {
+                    {|MA0060:queue.Enqueue(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableSet_Add_ReturnValueNotUsed()
+    public Task ImmutableSet_Add_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableHashSet<int> set)
-                      {
-                          [|set.Add(1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableHashSet<int> set)
+                {
+                    {|MA0060:set.Add(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableArrayBuilder_IndexOf_ReturnValueNotUsed()
+    public Task ImmutableArrayBuilder_IndexOf_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System.Collections.Immutable;
-                  class Test
-                  {
-                      void A(ImmutableArray<int>.Builder builder)
-                      {
-                          [|builder.IndexOf(1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableArray<int>.Builder builder)
+                {
+                    {|MA0060:builder.IndexOf(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HResult_ReturnValueNotUsed()
+    public Task HResult_ReturnValueNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          [|NativeMethod()|];
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:NativeMethod()|};
+                }
 
-                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
-                  }
+                Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+            }
 
-                  namespace Windows.Win32.Foundation
-                  {
-                      public struct HRESULT { }
-                  }
-                  """)
-              .ValidateAsync();
+            namespace Windows.Win32.Foundation
+            {
+                public struct HRESULT { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HResult_ReturnValueUsed()
+    public Task HResult_ReturnValueUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          var hr = NativeMethod();
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    var hr = NativeMethod();
+                }
 
-                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
-                  }
+                Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+            }
 
-                  namespace Windows.Win32.Foundation
-                  {
-                      public struct HRESULT { }
-                  }
-                  """)
-              .ValidateAsync();
+            namespace Windows.Win32.Foundation
+            {
+                public struct HRESULT { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HResult_ThrowOnFailure_ReturnValueNotUsed_NoDiagnostic()
+    public Task HResult_ThrowOnFailure_ReturnValueNotUsed_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          NativeMethod().ThrowOnFailure();
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    NativeMethod().ThrowOnFailure();
+                }
 
-                      Windows.Win32.Foundation.HRESULT NativeMethod() => default;
-                  }
+                Windows.Win32.Foundation.HRESULT NativeMethod() => default;
+            }
 
-                  namespace Windows.Win32.Foundation
-                  {
-                      public struct HRESULT
-                      {
-                          public HRESULT ThrowOnFailure() => this;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+            namespace Windows.Win32.Foundation
+            {
+                public struct HRESULT
+                {
+                    public HRESULT ThrowOnFailure() => this;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_SimpleMethod_NotUsed()
+    public Task AssemblyAttribute_SimpleMethod_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
-                  class Test
-                  {
-                      static int Sample() => 42;
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
+            class Test
+            {
+                static int Sample() => 42;
 
-                      void A()
-                      {
-                          [|Sample()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Sample()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_SimpleMethod_Used()
+    public Task AssemblyAttribute_SimpleMethod_Used()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
-                  class Test
-                  {
-                      static int Sample() => 42;
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
+            class Test
+            {
+                static int Sample() => 42;
 
-                      void A()
-                      {
-                          var value = Sample();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    var value = Sample();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_NestedTypeMethod_NotUsed()
+    public Task AssemblyAttribute_NestedTypeMethod_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Nested.Sample")]
-                  class Test
-                  {
-                      class Nested
-                      {
-                          public static int Sample() => 42;
-                      }
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Nested.Sample")]
+            class Test
+            {
+                class Nested
+                {
+                    public static int Sample() => 42;
+                }
 
-                      void A()
-                      {
-                          [|Nested.Sample()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Nested.Sample()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_GenericTypeMethod_NotUsed()
+    public Task AssemblyAttribute_GenericTypeMethod_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test`1.Sample")]
-                  class Test<T>
-                  {
-                      static int Sample() => 42;
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test`1.Sample")]
+            class Test<T>
+            {
+                static int Sample() => 42;
 
-                      void A()
-                      {
-                          [|Sample()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Sample()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_GenericMethod_NotUsed()
+    public Task AssemblyAttribute_GenericMethod_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample``1")]
-                  class Test
-                  {
-                      static int Sample<T>() => 42;
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample``1")]
+            class Test
+            {
+                static int Sample<T>() => 42;
 
-                      void A()
-                      {
-                          [|Sample<int>()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:Sample<int>()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssemblyAttribute_MultipleEntries_NotUsed()
+    public Task AssemblyAttribute_MultipleEntries_NotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleA")]
-                  [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleB")]
-                  class Test
-                  {
-                      static int SampleA() => 1;
-                      static int SampleB() => 2;
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleA")]
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.SampleB")]
+            class Test
+            {
+                static int SampleA() => 1;
+                static int SampleB() => 2;
 
-                      void A()
-                      {
-                          [|SampleA()|];
-                          [|SampleB()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                void A()
+                {
+                    {|MA0060:SampleA()|};
+                    {|MA0060:SampleB()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-
 }

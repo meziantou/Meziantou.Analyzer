@@ -1,15 +1,18 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ThrowIfNullWithNonNullableInstanceAnalyzer,
+    Meziantou.Analyzer.Rules.ThrowIfNullWithNonNullableInstanceFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithAnalyzer<ThrowIfNullWithNonNullableInstanceAnalyzer>()
-            .WithCodeFixProvider<ThrowIfNullWithNonNullableInstanceFixer>();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Theory]
@@ -20,9 +23,10 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
     [InlineData("string")]
     [InlineData("int?")]
     [InlineData("System.Collections.Generic.IEnumerable<int>")]
-    public async Task ThrowIfNull_Ok(string type)
+    public Task ThrowIfNull_Ok(string type)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             unsafe
             {
                 {{type}} obj = default;
@@ -30,66 +34,58 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("System.Boolean")]
     [InlineData("int")]
-    public async Task ThrowIfNull_Diagnostic(string type)
+    public Task ThrowIfNull_Diagnostic(string type)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             {{type}} obj = default;
-            [|System.ArgumentNullException.ThrowIfNull(obj)|];
+            {|MA0131:System.ArgumentNullException.ThrowIfNull(obj)|};
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_Diagnostic_CodeFix()
+    public Task ThrowIfNull_Diagnostic_CodeFix()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             int obj = default;
-            [|System.ArgumentNullException.ThrowIfNull(obj)|];
+            {|MA0131:System.ArgumentNullException.ThrowIfNull(obj)|};
+            """;
+        test.FixedCode = """
+            int obj = default;
+
             """;
 
-        var fixedCode = """
-            int obj = default;
-            
-            """;
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_GenericType()
+    public Task ThrowIfNull_GenericType()
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = """
             void A<T>(T obj) => System.ArgumentNullException.ThrowIfNull(obj);
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_GenericTypeWithConstraint()
+    public Task ThrowIfNull_GenericTypeWithConstraint()
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = """
             void A<T>(T obj) where T : struct => System.ArgumentNullException.ThrowIfNull(obj);
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

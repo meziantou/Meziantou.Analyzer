@@ -1,293 +1,312 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseNotYetInitializedStaticFieldAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ReportDiagnostic_WhenReferencingLaterFieldInSamePart()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseNotYetInitializedStaticFieldAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly bool[] Values = new[] { {|MA0195:P1|}, {|MA0195:P2|} };
+                private static readonly bool P1 = true;
+                private static readonly bool P2 = false;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenReferencingLaterFieldInSamePart()
+    public Task NoDiagnostic_WhenReferencingEarlierFieldInSamePart()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly bool[] Values = new[] { [|P1|], [|P2|] };
-                      private static readonly bool P1 = true;
-                      private static readonly bool P2 = false;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly bool P1 = true;
+                private static readonly bool P2 = false;
+                private static readonly bool[] Values = new[] { P1, P2 };
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferencingEarlierFieldInSamePart()
+    public Task ReportDiagnostic_WhenReferencingFieldFromAnotherPartialDeclaration()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly bool P1 = true;
-                      private static readonly bool P2 = false;
-                      private static readonly bool[] Values = new[] { P1, P2 };
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                private static readonly bool P1 = true;
+            }
+
+            partial class Sample
+            {
+                private static readonly bool[] Values = new[] { {|MA0195:P1|} };
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenReferencingFieldFromAnotherPartialDeclaration()
+    public Task NoDiagnostic_WhenPartialDeclarationsOnlyReferenceEarlierFieldsInSamePart()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  partial class Sample
-                  {
-                      private static readonly bool P1 = true;
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                private static readonly int P1 = 1;
+                private static readonly int[] Values1 = new[] { P1 };
+            }
 
-                  partial class Sample
-                  {
-                      private static readonly bool[] Values = new[] { [|P1|] };
-                  }
-                  """)
-              .ValidateAsync();
+            partial class Sample
+            {
+                private static readonly int P2 = 2;
+                private static readonly int[] Values2 = new[] { P2 };
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenPartialDeclarationsOnlyReferenceEarlierFieldsInSamePart()
+    public Task NoDiagnostic_WhenReferencingFieldFromAnotherPartialDeclarationWithoutInitializer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  partial class Sample
-                  {
-                      private static readonly int P1 = 1;
-                      private static readonly int[] Values1 = new[] { P1 };
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                private static readonly int Other;
+            }
 
-                  partial class Sample
-                  {
-                      private static readonly int P2 = 2;
-                      private static readonly int[] Values2 = new[] { P2 };
-                  }
-                  """)
-              .ValidateAsync();
+            partial class Sample
+            {
+                private static readonly int Value = Other;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferencingFieldFromAnotherPartialDeclarationWithoutInitializer()
+    public Task NoDiagnostic_WhenReferencedFieldHasNoInitializer()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  partial class Sample
-                  {
-                      private static readonly int Other;
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly int Value = Other;
+                private static readonly int Other;
+            }
+            """;
 
-                  partial class Sample
-                  {
-                      private static readonly int Value = Other;
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferencedFieldHasNoInitializer()
+    public Task NoDiagnostic_WhenReferenceIsInNameof()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly int Value = Other;
-                      private static readonly int Other;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly string Value = nameof(Other);
+                private static readonly int Other = 42;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferenceIsInNameof()
+    public Task ReportDiagnostic_WhenReferencedFieldIsOnlyAssignedInStaticConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly string Value = nameof(Other);
-                      private static readonly int Other = 42;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly int Other;
+                private static readonly int Value = {|#0:Other|};
+
+                static Sample()
+                {
+                    Other = 42;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.DoNotUseNotYetInitializedStaticField, DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Static field 'Other' may not be initialized yet because it is assigned in the static constructor, which runs after the static field initializers"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenReferencedFieldIsOnlyAssignedInStaticConstructor()
+    public Task ReportDiagnostic_WhenReferencedFieldAssignedInStaticConstructorIsUsedInMethodCall()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly int Other;
-                      private static readonly int Value = [|Other|];
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly string Path;
+                private static readonly string Value = Compute({|MA0195:Path|});
 
-                      static Sample()
-                      {
-                          Other = 42;
-                      }
-                  }
-                  """)
-              .ShouldReportDiagnosticWithMessage("Static field 'Other' may not be initialized yet because it is assigned in the static constructor, which runs after the static field initializers")
-              .ValidateAsync();
+                static Sample()
+                {
+                    Path = "path";
+                }
+
+                private static string Compute(string? path = null) => path ?? "default";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenReferencedFieldAssignedInStaticConstructorIsUsedInMethodCall()
+    public Task ReportDiagnostic_WhenReferencedFieldIsAssignedInStaticConstructorOfAnotherPartialDeclaration()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly string Path;
-                      private static readonly string Value = Compute([|Path|]);
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                private static readonly int Value = {|MA0195:Other|};
+            }
 
-                      static Sample()
-                      {
-                          Path = "path";
-                      }
+            partial class Sample
+            {
+                private static readonly int Other;
 
-                      private static string Compute(string? path = null) => path ?? "default";
-                  }
-                  """)
-              .ValidateAsync();
+                static Sample()
+                {
+                    Other = 42;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenReferencedFieldIsAssignedInStaticConstructorOfAnotherPartialDeclaration()
+    public Task NoDiagnostic_WhenFieldIsOnlyReadInStaticConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  partial class Sample
-                  {
-                      private static readonly int Value = [|Other|];
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly int Other;
+                private static int Value;
 
-                  partial class Sample
-                  {
-                      private static readonly int Other;
+                static Sample()
+                {
+                    Value = Other;
+                }
+            }
+            """;
 
-                      static Sample()
-                      {
-                          Other = 42;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenFieldIsOnlyReadInStaticConstructor()
+    public Task NoDiagnostic_WhenReferencedFieldIsAssignedInAnInstanceConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly int Other;
-                      private static int Value;
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static int Other;
+                private static readonly int Value = Other;
 
-                      static Sample()
-                      {
-                          Value = Other;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                public Sample()
+                {
+                    Other = 42;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferencedFieldIsAssignedInAnInstanceConstructor()
+    public Task NoDiagnostic_WhenReferencedFieldIsAssignedInAStaticConstructorLambda()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static int Other;
-                      private static readonly int Value = Other;
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static int Other;
+                private static readonly int Value = Other;
 
-                      public Sample()
-                      {
-                          Other = 42;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                static Sample()
+                {
+                    System.Action action = () => Other = 42;
+                    action();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenReferencedFieldIsAssignedInAStaticConstructorLambda()
+    public Task ReportDiagnostic_WhenTypeIsAnInterface()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static int Other;
-                      private static readonly int Value = Other;
+        var test = CreateTest();
+        test.TestCode = """
+            interface ISample
+            {
+                private static readonly int Other;
+                private static readonly int Value = {|MA0195:Other|};
 
-                      static Sample()
-                      {
-                          System.Action action = () => Other = 42;
-                          action();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+                static ISample()
+                {
+                    Other = 42;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_WhenTypeIsAnInterface()
+    public Task NoDiagnostic_ForEnumMembers()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ISample
-                  {
-                      private static readonly int Other;
-                      private static readonly int Value = [|Other|];
+        var test = CreateTest();
+        test.TestCode = """
+            enum Sample
+            {
+                A = 1,
+                B = A + 1,
+            }
+            """;
 
-                      static ISample()
-                      {
-                          Other = 42;
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_ForEnumMembers()
+    public Task NoDiagnostic_WhenReferenceIsInLambda()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  enum Sample
-                  {
-                      A = 1,
-                      B = A + 1,
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly System.Func<int> ValueFactory = () => Other;
+                private static readonly int Other = 42;
+            }
+            """;
 
-    [Fact]
-    public async Task NoDiagnostic_WhenReferenceIsInLambda()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      private static readonly System.Func<int> ValueFactory = () => Other;
-                      private static readonly int Other = 42;
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,735 +1,756 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.LoggerParameterTypeAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class LoggerParameterTypeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder() => new ProjectBuilder()
-            .WithAnalyzer<LoggerParameterTypeAnalyzer>()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest)
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .AddNuGetReference("Microsoft.Extensions.Logging.Abstractions", "8.0.0", "lib/net8.0");
-
-    [Fact]
-    public async Task BeginScope_InvalidParameterType()
+    private static AnalyzerTest CreateTest()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-
-ILogger logger = null;
-logger.BeginScope("{Prop} {Name}", [|1|], 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.Int32
-""")
-              .ValidateAsync();
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
+        return test;
     }
 
     [Fact]
-    public async Task BeginScope_InvalidParameterType_XmlCommentId()
+    public Task BeginScope_InvalidParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.BeginScope({|MA0135:"{Prop} {Name} {Name}"|}, 1, 2, (int?)null);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Count;T:System.Nullable{System.Int32}
-""")
-                          .ShouldReportDiagnostic(new DiagnosticResult
-                          {
-                                  Id = RuleIdentifiers.LoggerParameterType_MissingConfiguration,
-                                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 19, 4, 19)],
-                          })
-                          .ShouldReportDiagnostic(new DiagnosticResult
-                          {
-                                  Id = RuleIdentifiers.LoggerParameterType,
-                                  Locations = [new DiagnosticResultLocation("Test0.cs", 4, 43, 4, 43)],
-                          })
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.BeginScope("{Prop} {Name}", {|MA0124:1|}, 2);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LogInformation_InvalidParameterType()
+    public Task BeginScope_InvalidParameterType_XmlCommentId()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop} {Name}", [|1|], 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.Int32
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.BeginScope({|MA0135:"{Prop} {Name} {Name}"|}, 1, 2, (int?)null);
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.LoggerParameterType_MissingConfiguration, DiagnosticSeverity.Warning).WithLocation(4, 19));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.LoggerParameterType, DiagnosticSeverity.Warning).WithLocation(4, 43));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Count;T:System.Nullable{System.Int32}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LogInformation_ValidParameterType2()
+    public Task LogInformation_InvalidParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop} {Name} {Name}", "test", 2, 3L);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-# This is a comment
-Prop;System.String
-Name;System.Int32;System.Int64
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop} {Name}", {|MA0124:1|}, 2);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LogInformation_NoConfigurationFile()
+    public Task LogInformation_ValidParameterType2()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop} {Name}", "test", 2, 3L);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop} {Name} {Name}", "test", 2, 3L);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            # This is a comment
+            Prop;System.String
+            Name;System.Int32;System.Int64
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LogInformation_EmptyConfigurationFile()
+    public Task LogInformation_NoConfigurationFile()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop} {Name} {Name}", "test", 2, 3L);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", "")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop} {Name}", "test", 2, 3L);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessage_Define_InvalidParameterType()
+    public Task LogInformation_EmptyConfigurationFile()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-LoggerMessage.Define<[|int|], string>(LogLevel.Information, new EventId(0), "{Prop} {Name}");
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.String
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop} {Name} {Name}", "test", 2, 3L);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessage_DefineScope_InvalidParameterType()
+    public Task LoggerMessage_Define_InvalidParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-LoggerMessage.DefineScope<[|int|], string>("{Prop} {Name}");
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.String
-""")
-              .ValidateAsync();
+            LoggerMessage.Define<{|MA0124:int|}, string>(LogLevel.Information, new EventId(0), "{Prop} {Name}");
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_InvalidParameterType_FormattableString()
+    public Task LoggerMessage_DefineScope_InvalidParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation($"{{Prop}} {2}", [|2|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-""")
-              .ValidateAsync();
+            LoggerMessage.DefineScope<{|MA0124:int|}, string>("{Prop} {Name}");
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_InvalidParameterType_StringConcat()
+    public Task Logger_LogTrace_InvalidParameterType_FormattableString()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-var a = "test";
-logger.LogInformation("{Prop} " + a, [|2|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation($"{{Prop}} {2}", {|MA0124:2|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_InvalidParameterType_StringConcat_NonConstantDisabled()
+    public Task Logger_LogTrace_InvalidParameterType_StringConcat()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-var a = "test";
-logger.LogInformation("{Prop} " + a, 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-""")
-              .AddAnalyzerConfiguration("MA0124.allow_non_constant_formats", "false")
-              .ValidateAsync();
+            ILogger logger = null;
+            var a = "test";
+            logger.LogInformation("{Prop} " + a, {|MA0124:2|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_InvalidParameterType_NullableGuid()
+    public Task Logger_LogTrace_InvalidParameterType_StringConcat_NonConstantDisabled()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0124.allow_non_constant_formats", "false");
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", [|2|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Guid;T:System.Nullable{System.Guid}
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            var a = "test";
+            logger.LogInformation("{Prop} " + a, 2);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_ValidParameterType_NullableGuid()
+    public Task Logger_LogTrace_InvalidParameterType_NullableGuid()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", System.Guid.Empty);
-logger.LogInformation("{Prop}", (System.Guid?)null);
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0124:2|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Guid;T:System.Nullable{System.Guid}
+            """));
 
-System.Guid? value1 = null;
-System.Guid? value2 = System.Guid.Empty;
-logger.LogInformation("{Prop}", value1);
-logger.LogInformation("{Prop}", value2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Guid;System.Nullable{System.Guid}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_ValidParameterType_StringArray()
+    public Task Logger_LogTrace_ValidParameterType_NullableGuid()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", new string[1]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String[]
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", System.Guid.Empty);
+            logger.LogInformation("{Prop}", (System.Guid?)null);
+
+            System.Guid? value1 = null;
+            System.Guid? value2 = System.Guid.Empty;
+            logger.LogInformation("{Prop}", value1);
+            logger.LogInformation("{Prop}", value2);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Guid;System.Nullable{System.Guid}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_ValidParameterType_ValueTuple()
+    public Task Logger_LogTrace_ValidParameterType_StringArray()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", ("", 1));
-logger.LogInformation("{Prop}", (A: "", B: 1));
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.ValueTuple{System.String,System.Int32}
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", new string[1]);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String[]
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_ValidParameterType_NullableReferenceType()
+    public Task Logger_LogTrace_ValidParameterType_ValueTuple()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", "");
-logger.LogInformation("{Prop}", (string?)null);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", ("", 1));
+            logger.LogInformation("{Prop}", (A: "", B: 1));
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.ValueTuple{System.String,System.Int32}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_InvalidParameterType_NullableReferenceType()
+    public Task Logger_LogTrace_ValidParameterType_NullableReferenceType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", [|(int?)null|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'""")
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Nullable{System.String}
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", "");
+            logger.LogInformation("{Prop}", (string?)null);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ErrorMessageDoesNotAddNullableAnnotation()
+    public Task Logger_LogTrace_InvalidParameterType_NullableReferenceType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", [|(string?)null|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.String'""")
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Nullable{System.String}
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|#0:(int?)null|});
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0124", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.Nullable<global::System.Int32>'"""));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Nullable{System.String}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogTrace_ValidParameterType_NullableInt32AllowsInt32()
+    public Task ErrorMessageDoesNotAddNullableAnnotation()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", 1);
-logger.LogInformation("{Prop}", (int?)1);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Nullable{System.Int32}
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|#0:(string?)null|});
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0124", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("""Log parameter 'Prop' must be of type 'global::System.Nullable<global::System.String>' but is of type 'global::System.String'"""));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Nullable{System.String}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Logger_LogInformation_Int32DoesNotAllowNullableInt32()
+    public Task Logger_LogTrace_ValidParameterType_NullableInt32AllowsInt32()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", 1);
-logger.LogInformation("{Prop}", [|(int?)1|]);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Int32
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", 1);
+            logger.LogInformation("{Prop}", (int?)1);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Nullable{System.Int32}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Configuration_UnknownParameterType()
+    public Task Logger_LogInformation_Int32DoesNotAllowNullableInt32()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("")
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", "Prop;int")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1)] })
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", 1);
+            logger.LogInformation("{Prop}", {|MA0124:(int?)1|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Configuration_CommentIdToMember()
+    public Task Configuration_UnknownParameterType()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("")
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", "Prop;M:System.Int32.MaxValue")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0125", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.txt", 1, 1, 1, 1)] })
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0125", DiagnosticSeverity.Warning).WithLocation("LoggerParameterTypes.txt", 1, 1));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;int
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Configuration_DuplicateParameterName()
+    public Task Configuration_CommentIdToMember()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("")
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.1.txt", "Prop;System.String")
-              .AddAdditionalFile("LoggerParameterTypes.2.txt", "New;System.String\nProp;System.String")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0126", Locations = [new DiagnosticResultLocation("LoggerParameterTypes.2.txt", 2, 1, 2, 1)] })
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0125", DiagnosticSeverity.Warning).WithLocation("LoggerParameterTypes.txt", 1, 1));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;M:System.Int32.MaxValue
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MissingConfiguration()
+    public Task Configuration_DuplicateParameterName()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
 
-ILogger logger = null;
-logger.LogInformation({|MA0135:"{Prop}"|}, 2);
-logger.LogInformation("{Dummy}", 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Dummy;System.Int32
-""")
-              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
-              .ValidateAsync();
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0126", DiagnosticSeverity.Warning).WithLocation("LoggerParameterTypes.2.txt", 2, 1));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.1.txt", """
+            Prop;System.String
+            """));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.2.txt", """
+            New;System.String
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DeniedParameter()
+    public Task MissingConfiguration()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation([|"{Prop}"|], 2);
-logger.LogInformation("{Dummy}", 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Dummy;System.Int32
-Prop;
-""")
-              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation({|#0:"{Prop}"|}, 2);
+            logger.LogInformation("{Dummy}", 2);
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0135", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Log parameter 'Prop' has no configured type"));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Dummy;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DeniedParameterWithoutSemiColon()
+    public Task DeniedParameter()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-ILogger logger = null;
-logger.LogInformation([|"{Prop}"|], 2);
-logger.LogInformation("{Dummy}", 2);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Dummy;System.Int32
-Prop
-""")
-              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation({|#0:"{Prop}"|}, 2);
+            logger.LogInformation("{Dummy}", 2);
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0124", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Log parameter 'Prop' is not allowed by configuration"));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Dummy;System.Int32
+            Prop;
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConfigurationFromAttribute()
+    public Task DeniedParameterWithoutSemiColon()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-[assembly: Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
+            ILogger logger = null;
+            logger.LogInformation({|#0:"{Prop}"|}, 2);
+            logger.LogInformation("{Dummy}", 2);
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0124", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Log parameter 'Prop' is not allowed by configuration"));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Dummy;System.Int32
+            Prop
+            """));
 
-ILogger logger = null;
-logger.LogInformation("{Prop}", [|2|]);
-logger.LogInformation("{Prop}", 2L);
-logger.LogInformation("{Prop}", "");
-""";
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.Int32
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_ValidParameterTypes()
+    public Task ConfigurationFromAttribute()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, string Prop, int Name);
-}
+            [assembly: Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
 
-class Program { static void Main() { } }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.Int32
-""")
-              .ValidateAsync();
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0124:2|});
+            logger.LogInformation("{Prop}", 2L);
+            logger.LogInformation("{Prop}", "");
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_InvalidParameterType()
+    public Task LoggerMessageAttribute_ValidParameterTypes()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, int [|Prop|], string Name);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.String
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+                static partial void LogTestMessage(ILogger logger, string Prop, int Name);
+            }
+
+            class Program { static void Main() { } }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_MultipleInvalidParameterTypes()
+    public Task LoggerMessageAttribute_InvalidParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, int [|Prop|], int [|Name|]);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Prop;System.String
-Name;System.String
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+                static partial void LogTestMessage(ILogger logger, int {|MA0124:Prop|}, string Name);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_MissingConfiguration()
+    public Task LoggerMessageAttribute_MultipleInvalidParameterTypes()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, string {|MA0135:Prop|}, int Name);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Name;System.Int32
-""")
-              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' has no configured type")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+                static partial void LogTestMessage(ILogger logger, int {|MA0124:Prop|}, int {|MA0124:Name|});
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            Name;System.String
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_DeniedParameter()
+    public Task LoggerMessageAttribute_MissingConfiguration()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
-    static partial void LogTestMessage(ILogger logger, string [|Prop|], int Name);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Name;System.Int32
-Prop;
-""")
-              .ShouldReportDiagnosticWithMessage("Log parameter 'Prop' is not allowed by configuration")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+                static partial void LogTestMessage(ILogger logger, string {|#0:Prop|}, int Name);
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0135", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Log parameter 'Prop' has no configured type"));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_SkipILoggerParameter()
+    public Task LoggerMessageAttribute_DeniedParameter()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Name}")]
-    static partial void LogTestMessage(ILogger logger, int Name);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Name;System.Int32
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop} and {Name}")]
+                static partial void LogTestMessage(ILogger logger, string {|#0:Prop|}, int Name);
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0124", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Log parameter 'Prop' is not allowed by configuration"));
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Name;System.Int32
+            Prop;
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_WithCallerMemberName()
+    public Task LoggerMessageAttribute_SkipILoggerParameter()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message from {Method} with {Name}")]
-    static partial void LogTestMessage(ILogger logger, int Name, [CallerMemberName] string Method = "");
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Method;System.String
-Name;System.Int32
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Name}")]
+                static partial void LogTestMessage(ILogger logger, int Name);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_NullableParameterType()
+    public Task LoggerMessageAttribute_WithCallerMemberName()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+            using System.Runtime.CompilerServices;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test with {Value}")]
-    static partial void LogTestMessage(ILogger logger, int Value);
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message from {Method} with {Name}")]
+                static partial void LogTestMessage(ILogger logger, int Name, [CallerMemberName] string Method = "");
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Method;System.String
+            Name;System.Int32
+            """));
 
-    [LoggerMessage(10_005, LogLevel.Trace, "Test with {Value}")]
-    static partial void LogTestMessage2(ILogger logger, int? Value);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Value;System.Nullable{System.Int32}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_NoConfiguration()
+    public Task LoggerMessageAttribute_NullableParameterType()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop}")]
-    static partial void LogTestMessage(ILogger logger, string Prop);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test with {Value}")]
+                static partial void LogTestMessage(ILogger logger, int Value);
+
+                [LoggerMessage(10_005, LogLevel.Trace, "Test with {Value}")]
+                static partial void LogTestMessage2(ILogger logger, int? Value);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Value;System.Nullable{System.Int32}
+            """));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_EmptyFormatString()
+    public Task LoggerMessageAttribute_NoConfiguration()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "")]
-    static partial void LogTestMessage(ILogger logger);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Name;System.Int32
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message with {Prop}")]
+                static partial void LogTestMessage(ILogger logger, string Prop);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LoggerMessageAttribute_NoFormatParameters()
+    public Task LoggerMessageAttribute_EmptyFormatString()
     {
-        const string SourceCode = """
-using Microsoft.Extensions.Logging;
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
 
-partial class LoggerExtensions
-{
-    [LoggerMessage(10_004, LogLevel.Trace, "Test message without parameters")]
-    static partial void LogTestMessage(ILogger logger);
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.DynamicallyLinkedLibrary)
-              .AddAdditionalFile("LoggerParameterTypes.txt", """
-Name;System.Int32
-""")
-              .ValidateAsync();
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "")]
+                static partial void LogTestMessage(ILogger logger);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NoFormatParameters()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(10_004, LogLevel.Trace, "Test message without parameters")]
+                static partial void LogTestMessage(ILogger logger);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Name;System.Int32
+            """));
+
+        return test.RunAsync();
     }
 }

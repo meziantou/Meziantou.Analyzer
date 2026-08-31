@@ -92,8 +92,13 @@ public sealed class SimplifyNegatedBooleanExpressionFixer : CodeFixProvider
         if (operation.Syntax is not BinaryExpressionSyntax binaryExpression)
             return null;
 
-        return binaryExpression
-            .WithOperatorToken(Token(GetOperatorTokenSyntaxKind(operatorKind)))
+        // The node must be rebuilt with the kind of the new operator: replacing only the token would keep
+        // the kind of the original operator, which no syntax tree of the same code would have
+        return BinaryExpression(
+            GetExpressionSyntaxKind(operatorKind),
+            binaryExpression.Left,
+            Token(GetOperatorTokenSyntaxKind(operatorKind)),
+            binaryExpression.Right)
             .WithoutLeadingTrivia()
             .WithoutTrailingTrivia();
     }

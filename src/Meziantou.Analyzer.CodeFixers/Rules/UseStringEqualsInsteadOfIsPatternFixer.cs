@@ -48,10 +48,10 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
             return document;
 
         var newExpression = generator.InvocationExpression(
-            generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
+            generator.TypeMemberAccessExpression(editor.SemanticModel.Compilation.GetSpecialType(SpecialType.System_String), nameof(string.Equals)),
             isPatternExpression.Expression,
             constantExpression,
-            generator.MemberAccessExpression(generator.TypeExpression(stringComparisonType, addImport: true), comparisonMode));
+            generator.TypeMemberAccessExpression(stringComparisonType, comparisonMode, addImport: true));
 
         editor.ReplaceNode(isPatternExpression, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();

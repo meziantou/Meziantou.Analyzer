@@ -1,18 +1,19 @@
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.ConstructorArgumentParametersShouldExistInConstructorsAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ConstructorArgumentParametersShouldExistInConstructorsAnalyzer>()
-            .WithTargetFramework(TargetFramework.Net4_8);
-    }
+    // ConstructorArgumentAttribute is in WindowsBase, which the default set of .NET Framework assemblies does not contain
+    private static AnalyzerTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf };
 
     [Fact]
-    public async Task WrongParameterName()
+    public Task WrongParameterName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class MyExtension
             {
                 public MyExtension() { }
@@ -22,19 +23,19 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
                     Value1 = value1;
                 }
 
-                [[|System.Windows.Markup.ConstructorArgument("value2")|]]
+                [{|MA0083:System.Windows.Markup.ConstructorArgument("value2")|}]
                 public object Value1 { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GoodParameterName()
+    public Task GoodParameterName()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class MyExtension
             {
                 public MyExtension() { }
@@ -48,8 +49,7 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
                 public object Value1 { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

@@ -1,50 +1,54 @@
 using Microsoft.CodeAnalysis;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests_MA0132
-
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithAnalyzer<DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer>(id: "MA0132");
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task ImplicitConversion_BinaryOperation_Subtract_UtcNow()
+    public Task ImplicitConversion_BinaryOperation_Subtract_UtcNow()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                _ = DateTime.UtcNow - DateTimeOffset.UtcNow;
-                """)
-            .ValidateAsync();
+            _ = {|MA0133:DateTime.UtcNow|} - DateTimeOffset.UtcNow;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitConversion_BinaryOperation_Subtract()
+    public Task ImplicitConversion_BinaryOperation_Subtract()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                _ = [|default(DateTime)|] - DateTimeOffset.UtcNow;
-                """)
-            .ValidateAsync();
+            _ = {|MA0132:default(DateTime)|} - DateTimeOffset.UtcNow;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExplicitConversion_BinaryOperation_Subtract()
+    public Task ExplicitConversion_BinaryOperation_Subtract()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                _ = (DateTimeOffset)default(DateTime) - DateTimeOffset.UtcNow;
-                """)
-            .ValidateAsync();
+            _ = (DateTimeOffset)default(DateTime) - DateTimeOffset.UtcNow;
+            """;
+
+        return test.RunAsync();
     }
 }

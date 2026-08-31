@@ -1,524 +1,566 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0045");
+        var test = new AnalyzerTest();
+        test.DisabledDiagnostics.Add("MA0042");
+        return test;
     }
 
     [Fact]
-    public async Task PublicNonAsync_Wait_NoDiagnostic()
+    public Task PublicNonAsync_Wait_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    public void A()
-    {
-        Task.Delay(1).Wait();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                public void A()
+                {
+                    Task.Delay(1).Wait();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PublicNonAsync_AsyncSuffix_NoDiagnostic()
+    public Task PublicNonAsync_AsyncSuffix_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    public void A()
-    {
-        Write();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                public void A()
+                {
+                    Write();
+                }
 
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
-              .ValidateAsync();
-    }
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
 
-    [Fact]
-    public async Task PrivateNonAsync_Wait_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        [|Task.Delay(1).Wait()|];
-    }
-}")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateNonAsync_AsyncSuffix()
+    public Task PrivateNonAsync_Wait_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        [|Write()|];
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    {|MA0045:Task.Delay(1).Wait()|};
+                }
+            }
+            """;
 
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task PrivateNonAsync_AsyncSuffix_InLock()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        lock (this)
-        {
-            Write();
-        }
-    }
-
-    public void Write() => throw null;
-    public Task WriteAsync() => throw null;
-}")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LambdaInLock()
+    public Task PrivateNonAsync_AsyncSuffix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Threading.Tasks;
-public class Test
-{
-    private void A()
-    {
-        lock (this)
-        {
-            _ = Task.FromResult(0).ContinueWith(t => t.Result);
-        }
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    {|MA0045:Write()|};
+                }
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
-}")
-              .ValidateAsync();
+
+    [Fact]
+    public Task PrivateNonAsync_AsyncSuffix_InLock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    lock (this)
+                    {
+                        Write();
+                    }
+                }
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LambdaInLock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    lock (this)
+                    {
+                        _ = Task.FromResult(0).ContinueWith(t => t.Result);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteConnection_CreateCommand_NoDiagnostic()
+    public Task PrivateNonAsync_SqliteConnection_CreateCommand_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteConnection connection)
                 {
-                    private void A(SqliteConnection connection)
-                    {
-                        using var command = connection.CreateCommand();
-                    }
+                    using var command = connection.CreateCommand();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteCommand_Prepare_NoDiagnostic()
+    public Task PrivateNonAsync_SqliteCommand_Prepare_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteCommand command)
                 {
-                    private void A(SqliteCommand command)
-                    {
-                        command.Prepare();
-                    }
+                    command.Prepare();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteConnection_Close_NoDiagnostic()
+    public Task PrivateNonAsync_SqliteConnection_Close_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteConnection connection)
                 {
-                    private void A(SqliteConnection connection)
-                    {
-                        connection.Close();
-                    }
+                    connection.Close();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteConnection_Close_OptionDisabled_Diagnostic()
+    public Task PrivateNonAsync_SqliteConnection_Close_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteConnection connection)
                 {
-                    private void A(SqliteConnection connection)
-                    {
-                        [|connection.Close()|];
-                    }
+                    {|MA0045:connection.Close()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteCommand_Prepare_OptionDisabled_Diagnostic()
+    public Task PrivateNonAsync_SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteCommand command)
                 {
-                    private void A(SqliteCommand command)
-                    {
-                        [|command.Prepare()|];
-                    }
+                    {|MA0045:command.Prepare()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteDataReader_Read_NoDiagnostic()
+    public Task PrivateNonAsync_SqliteDataReader_Read_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteDataReader reader)
                 {
-                    private void A(SqliteDataReader reader)
-                    {
-                        reader.Read();
-                    }
+                    reader.Read();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task PrivateNonAsync_SqliteDataReader_Read_OptionDisabled_Diagnostic()
+    public Task PrivateNonAsync_SqliteDataReader_Read_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                private void A(SqliteDataReader reader)
                 {
-                    private void A(SqliteDataReader reader)
-                    {
-                        [|reader.Read()|];
-                    }
+                    {|MA0045:reader.Read()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
-    public async Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        using var transaction = CreateTransaction();
-                    }
-
-                    private MyDbTransaction CreateTransaction() => throw null;
+                    using var transaction = CreateTransaction();
                 }
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
-    public async Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|using var transaction = CreateTransaction();|]
-                    }
-
-                    private MyDbTransaction CreateTransaction() => throw null;
+                    {|MA0045:using var transaction = CreateTransaction();|}
                 }
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        Task.Delay(1).Wait();
-                    }
+                    Task.Delay(1).Wait();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        System.Threading.Thread.Sleep(1);
-                    }
+                    System.Threading.Thread.Sleep(1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_OnlyMatchingOverload()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_OnlyMatchingOverload()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1))|];
-                    }
+                    {|MA0045:System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1))|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|using var value = Create();|]
-                    }
-
-                    private AsyncDisposable Create() => throw null;
+                    {|MA0045:using var value = Create();|}
                 }
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+                private AsyncDisposable Create() => throw null;
+            }
+
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
+    public Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|using var value = new AsyncDisposable();|]
-                    }
+                    {|MA0045:using var value = new AsyncDisposable();|}
                 }
+            }
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
+    public Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        using var value = new AsyncDisposable();
-                    }
+                    using var value = new AsyncDisposable();
                 }
+            }
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
+    public Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|Create()|];
-                    }
-
-                    private AwaitResult Create() => throw null;
-                    private Task<AwaitResult> CreateAsync() => throw null;
+                    {|MA0045:Create()|};
                 }
 
-                class AwaitResult { }
-                """)
-              .ValidateAsync();
+                private AwaitResult Create() => throw null;
+                private Task<AwaitResult> CreateAsync() => throw null;
+            }
+
+            class AwaitResult { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
+    public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
 
-                class Test
+            class Test
+            {
+                private void A()
                 {
-                    private void A()
-                    {
-                        [|using var value = new DerivedAsyncDisposable();|]
-                    }
+                    {|MA0045:using var value = new DerivedAsyncDisposable();|}
                 }
+            }
 
-                class BaseAsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
+            class BaseAsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
 
-                class DerivedAsyncDisposable : BaseAsyncDisposable { }
-                """)
-              .ValidateAsync();
+            class DerivedAsyncDisposable : BaseAsyncDisposable { }
+            """;
+
+        return test.RunAsync();
     }
 }

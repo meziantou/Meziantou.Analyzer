@@ -1,18 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>(id: "MA0015")
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = new AnalyzerTest();
+        test.DisabledDiagnostics.Add("MA0043");
+        return test;
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_Record_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_Record_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             internal sealed record ManuscriptId(int Id)
             {
@@ -20,15 +28,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_LocalFunction_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_LocalFunction_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 void Test(string test)
@@ -41,36 +48,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_LocalFunction_Static_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_LocalFunction_Static_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 void Test(string test)
                 {
                     static void LocalFunction(string a)
                     {
-                        throw new System.ArgumentNullException([|"test"|]);
+                        throw new System.ArgumentNullException({|MA0015:"test"|});
                     }
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_LocalFunction_ArgumentFromParentMethod_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_LocalFunction_ArgumentFromParentMethod_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 void Test(string test)
@@ -83,15 +88,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_Operator_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_Operator_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 public static Sample operator +(Sample first, Sample second)
@@ -102,15 +106,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_Method_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_Method_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 Sample(string test)
@@ -122,15 +125,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_Indexer_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_Indexer_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 string this[int index]
@@ -141,15 +143,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameIsSpecified_Setter_ShouldNotReportError()
+    public Task ArgumentNameIsSpecified_Setter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
                 string Prop
@@ -160,87 +161,86 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
+    public Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 string Prop
                 {
                     get { throw null; }
-                    set { throw new System.ArgumentNullException([|"unknown"|]); }
+                    set { throw new System.ArgumentNullException({|#0:"unknown"|}); }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
-              .ValidateAsync();
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'unknown' is not a valid parameter name"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
+    public Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
                 {
-                    throw new System.ArgumentException("message", [|"unknown"|]);
+                    throw new System.ArgumentException("message", {|#0:"unknown"|});
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("'unknown' is not a valid parameter name")
-              .ValidateAsync();
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'unknown' is not a valid parameter name"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OverloadWithoutParameterName_Properties_ShouldReportError()
+    public Task OverloadWithoutParameterName_Properties_ShouldReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 string Prop
                 {
                     get { throw null; }
-                    set { throw [|new System.ArgumentNullException()|]; }
+                    set { throw {|MA0015:new System.ArgumentNullException()|}; }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OverloadWithoutParameterName_Methods_ShouldReportError()
+    public Task OverloadWithoutParameterName_Methods_ShouldReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
                 {
-                    throw [|new System.ArgumentException("message")|];
+                    throw {|MA0015:new System.ArgumentException("message")|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidParameterName_Lambda()
+    public Task ValidParameterName_Lambda()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -253,15 +253,15 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidParameterName_Lambda()
+    public Task InvalidParameterName_Lambda()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -269,20 +269,20 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                     _ = new System.Action<int>((int a) =>
                     {
                         if (a < 0)
-                            throw new System.ArgumentOutOfRangeException(paramName: [|"dummy"|], a, message: "address out of range");
+                            throw new System.ArgumentOutOfRangeException(paramName: {|MA0015:"dummy"|}, a, message: "address out of range");
                     });
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidParameterName_StaticLambda()
+    public Task InvalidParameterName_StaticLambda()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -290,20 +290,20 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                     _ = new System.Action<int>(static (int a) =>
                     {
                         if (a < 0)
-                            throw new System.ArgumentOutOfRangeException(paramName: [|"test"|], a, message: "address out of range");
+                            throw new System.ArgumentOutOfRangeException(paramName: {|MA0015:"test"|}, a, message: "address out of range");
                     });
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidParameterName_LambdaWithoutParentheses()
+    public Task ValidParameterName_LambdaWithoutParentheses()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -315,35 +315,35 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidParameterName_StaticLambdaWithoutParameter()
+    public Task ValidParameterName_StaticLambdaWithoutParameter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
                 {
                     _ = new System.Action(static () =>
                     {
-                        throw new System.ArgumentNullException([|"test"|]);
+                        throw new System.ArgumentNullException({|MA0015:"test"|});
                     });
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidParameterName_Delegate()
+    public Task InvalidParameterName_Delegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -351,20 +351,20 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                     _ = new System.Action<int>(delegate (int a)
                     {
                         if (a < 0)
-                            throw new System.ArgumentOutOfRangeException(paramName: [|"dummy"|], a, message: "address out of range");
+                            throw new System.ArgumentOutOfRangeException(paramName: {|MA0015:"dummy"|}, a, message: "address out of range");
                     });
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidParameterName_Delegate()
+    public Task ValidParameterName_Delegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
@@ -377,35 +377,36 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidParameterName_StaticDelegate()
+    public Task InvalidParameterName_StaticDelegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestAttribute
             {
                 void Test(string test)
                 {
                     _ = new System.Action<int>(static delegate (int a)
                     {
-                        throw new System.ArgumentOutOfRangeException(paramName: [|"test"|], a, message: "address out of range");
+                        throw new System.ArgumentOutOfRangeException(paramName: {|MA0015:"test"|}, a, message: "address out of range");
                     });
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoCtorWithParameterName()
+    public Task NoCtorWithParameterName()
     {
-        const string SourceCode = """"
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
 
             void Sample1(string str)
@@ -435,34 +436,33 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                 {
                 }
              }
-            """";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrimaryConstructor()
+    public Task PrimaryConstructor()
     {
-        const string SourceCode = """"
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
             using System;
 
             public class Sample(string id)
             {
                 void A() => throw new ArgumentException("", nameof(id));
             }
-            """";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_ValidParameter_ShouldNotReportError()
+    public Task ThrowIfNull_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -473,36 +473,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_InvalidParameter_ShouldReportError()
+    public Task ThrowIfNull_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull([|Name|]);
+                    ArgumentNullException.ThrowIfNull({|MA0015:Name|});
                 }
 
                 public static string Name { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
+    public Task ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -513,36 +511,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
+    public Task ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNullOrEmpty([|Name|]);
+                    ArgumentNullException.ThrowIfNullOrEmpty({|MA0015:Name|});
                 }
 
                 public static string Name { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
+    public Task ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -553,36 +549,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
+    public Task ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNullOrWhiteSpace([|Name|]);
+                    ArgumentNullException.ThrowIfNullOrWhiteSpace({|MA0015:Name|});
                 }
 
                 public static string Name { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
+    public Task ArgumentException_ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -593,36 +587,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
+    public Task ArgumentException_ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentException.ThrowIfNullOrEmpty([|Name|]);
+                    ArgumentException.ThrowIfNullOrEmpty({|MA0015:Name|});
                 }
 
                 public static string Name { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
+    public Task ArgumentException_ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -633,36 +625,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
+    public Task ArgumentException_ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentException.ThrowIfNullOrWhiteSpace([|Name|]);
+                    ArgumentException.ThrowIfNullOrWhiteSpace({|MA0015:Name|});
                 }
 
                 public static string Name { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithValidParamNameArgument_ShouldNotReportError()
+    public Task ThrowIfNull_WithValidParamNameArgument_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -673,35 +663,33 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithInvalidParamNameArgument_ShouldReportError()
+    public Task ThrowIfNull_WithInvalidParamNameArgument_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull(test, [|"invalid"|]);
+                    ArgumentNullException.ThrowIfNull(test, {|#0:"invalid"|});
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'invalid' is not a valid parameter name"));
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrEmpty_WithValidParamNameArgument_ShouldNotReportError()
+    public Task ArgumentException_ThrowIfNullOrEmpty_WithValidParamNameArgument_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -712,35 +700,33 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentException_ThrowIfNullOrEmpty_WithInvalidParamNameArgument_ShouldReportError()
+    public Task ArgumentException_ThrowIfNullOrEmpty_WithInvalidParamNameArgument_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentException.ThrowIfNullOrEmpty(test, [|"invalid"|]);
+                    ArgumentException.ThrowIfNullOrEmpty(test, {|#0:"invalid"|});
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'invalid' is not a valid parameter name"));
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentOutOfRangeException_ThrowIfNegative_ValidParameter_ShouldNotReportError()
+    public Task ArgumentOutOfRangeException_ThrowIfNegative_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -751,36 +737,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentOutOfRangeException_ThrowIfNegative_InvalidParameter_ShouldReportError()
+    public Task ArgumentOutOfRangeException_ThrowIfNegative_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(int value)
                 {
-                    ArgumentOutOfRangeException.ThrowIfNegative([|Count|]);
+                    ArgumentOutOfRangeException.ThrowIfNegative({|MA0015:Count|});
                 }
 
                 public static int Count { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentOutOfRangeException_ThrowIfNegativeOrZero_ValidParameter_ShouldNotReportError()
+    public Task ArgumentOutOfRangeException_ThrowIfNegativeOrZero_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -791,15 +775,14 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentOutOfRangeException_ThrowIfGreaterThan_ValidParameter_ShouldNotReportError()
+    public Task ArgumentOutOfRangeException_ThrowIfGreaterThan_ValidParameter_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -810,55 +793,52 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentOutOfRangeException_ThrowIfGreaterThanOrEqual_InvalidParameter_ShouldReportError()
+    public Task ArgumentOutOfRangeException_ThrowIfGreaterThanOrEqual_InvalidParameter_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(int value)
                 {
-                    ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual([|MaxValue|], 100);
+                    ArgumentOutOfRangeException.ThrowIfGreaterThanOrEqual({|MA0015:MaxValue|}, 100);
                 }
 
                 public static int MaxValue { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithNullExpression_ShouldReportError()
+    public Task ThrowIfNull_WithNullExpression_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull([|""|]);
+                    ArgumentNullException.ThrowIfNull({|MA0015:""|});
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithNullExpressionAndValidParamName_ShouldNotReportError()
+    public Task ThrowIfNull_WithNullExpressionAndValidParamName_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -869,54 +849,51 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithNullExpressionAndInvalidParamName_ShouldReportError()
+    public Task ThrowIfNull_WithNullExpressionAndInvalidParamName_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull("", [|"invalid"|]);
+                    ArgumentNullException.ThrowIfNull("", {|MA0015:"invalid"|});
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithBooleanExpression_ShouldReportError()
+    public Task ThrowIfNull_WithBooleanExpression_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull([|0 == 1|]);
+                    ArgumentNullException.ThrowIfNull({|#0:0 == 1|});
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("The expression does not match a parameter"));
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldReportDiagnosticWithMessage("The expression does not match a parameter")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithBooleanExpressionAndValidParamName_ShouldNotReportError()
+    public Task ThrowIfNull_WithBooleanExpressionAndValidParamName_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -927,55 +904,53 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_WithBooleanExpressionAndInvalidParamName_ShouldReportError()
+    public Task ThrowIfNull_WithBooleanExpressionAndInvalidParamName_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull(0 == 1, [|"invalid"|]);
+                    ArgumentNullException.ThrowIfNull(0 == 1, {|#0:"invalid"|});
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'invalid' is not a valid parameter name"));
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldReportDiagnosticWithMessage("'invalid' is not a valid parameter name")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_MemberAccess_OptionDisabled_ShouldReportError()
+    public Task ThrowIfNull_MemberAccess_OptionDisabled_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(Request request)
                 {
-                    ArgumentNullException.ThrowIfNull([|request.Definition|]);
+                    ArgumentNullException.ThrowIfNull({|MA0015:request.Definition|});
                 }
             }
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_MemberAccess_OptionEnabled_ShouldNotReportError()
+    public Task ThrowIfNull_MemberAccess_OptionEnabled_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -987,16 +962,15 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_DeepMemberAccess_OptionEnabled_ShouldNotReportError()
+    public Task ThrowIfNull_DeepMemberAccess_OptionEnabled_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -1009,38 +983,36 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             class Request { public Inner? Inner { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_MemberAccess_NonParameterRoot_OptionEnabled_ShouldReportError()
+    public Task ThrowIfNull_MemberAccess_NonParameterRoot_OptionEnabled_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(string test)
                 {
-                    ArgumentNullException.ThrowIfNull([|Name.Length|]);
+                    ArgumentNullException.ThrowIfNull({|MA0015:Name.Length|});
                 }
 
                 public static string Name { get; } = "";
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_ExplicitDottedParamName_OptionEnabled_ShouldNotReportError()
+    public Task ThrowIfNull_ExplicitDottedParamName_OptionEnabled_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -1052,36 +1024,34 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThrowIfNull_ExplicitDottedParamName_OptionDisabled_ShouldReportError()
+    public Task ThrowIfNull_ExplicitDottedParamName_OptionDisabled_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(Request request)
                 {
-                    ArgumentNullException.ThrowIfNull(request.Definition, [|"request.Definition"|]);
+                    ArgumentNullException.ThrowIfNull(request.Definition, {|MA0015:"request.Definition"|});
                 }
             }
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNullException_Constructor_DottedParamName_OptionEnabled_ShouldNotReportError()
+    public Task ArgumentNullException_Constructor_DottedParamName_OptionEnabled_ShouldNotReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
+        test.TestCode = """
             using System;
             class Sample
             {
@@ -1094,30 +1064,26 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0015.consider_member_access_as_parameter", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ArgumentNullException_Constructor_DottedParamName_OptionDisabled_ShouldReportError()
+    public Task ArgumentNullException_Constructor_DottedParamName_OptionDisabled_ShouldReportError()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Sample
             {
                 void Test(Request request)
                 {
                     if (request.Definition is null)
-                        throw new ArgumentNullException([|"request.Definition"|]);
+                        throw new ArgumentNullException({|MA0015:"request.Definition"|});
                 }
             }
             class Request { public string? Definition { get; set; } }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

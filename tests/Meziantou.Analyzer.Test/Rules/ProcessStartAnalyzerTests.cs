@@ -1,367 +1,383 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ProcessStartAnalyzer,
+    Meziantou.Analyzer.Rules.UseShellExecuteMustBeSetFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ProcessStartAnalyzerTests
 {
-    [Fact]
-    public async Task Process_start_should_not_report_when_use_shell_execute_is_set_to_false()
+    private static CodeFixTest CreateTest(string id)
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = new CodeFixTest();
+        foreach (var other in new[] { "MA0161", "MA0162", "MA0163" })
+        {
+            if (other != id)
+            {
+                test.DisabledDiagnostics.Add(other);
+            }
+        }
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          Process.Start(new ProcessStartInfo { UseShellExecute = false });
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test;
     }
 
     [Fact]
-    public async Task Process_start_should_not_report_when_use_shell_execute_is_set_to_true()
+    public Task Process_start_should_not_report_when_use_shell_execute_is_set_to_false()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          Process.Start(new ProcessStartInfo { UseShellExecute = true });
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    Process.Start(new ProcessStartInfo { UseShellExecute = false });
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set()
+    public Task Process_start_should_not_report_when_use_shell_execute_is_set_to_true()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    Process.Start(new ProcessStartInfo { UseShellExecute = true });
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_fix_when_use_shell_execute_is_not_set()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        const string CodeFix = """
-                               using System.Diagnostics;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
 
-                               class TypeName
-                               {
-                                   public void Test()
-                                   {
-                                       var processStartInfo = new ProcessStartInfo() { UseShellExecute = false };
-                                       Process.Start(processStartInfo);
-                                   }
-                               }
-                               """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
+    public Task Process_start_should_fix_when_use_shell_execute_is_not_set()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          const bool useShellExecute = true;
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              RedirectStandardOutput = true,
-                                              UseShellExecute = useShellExecute,
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0163")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|MA0161:new ProcessStartInfo()|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = new ProcessStartInfo() { UseShellExecute = false };
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_output_redirected()
+    public Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0163");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              RedirectStandardOutput = true,
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0163")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    const bool useShellExecute = true;
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        RedirectStandardOutput = true,
+                        UseShellExecute = useShellExecute,
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_error_redirected()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_output_redirected()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0163");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              RedirectStandardError = true,
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0163")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        RedirectStandardOutput = true,
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_and_input_redirected()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_error_redirected()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0163");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              RedirectStandardInput = true,
-                                              UseShellExecute = true,
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0163")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Set UseShellExecute to false when redirecting standard input or output")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        RedirectStandardError = true,
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_false_positives()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_input_redirected()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0163");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()|];
-                                          processStartInfo.UseShellExecute = false;
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        RedirectStandardInput = true,
+                        UseShellExecute = true,
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_2()
+    public Task Process_start_should_report_false_positives()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              FileName = "notepad",
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()|};
+                    processStartInfo.UseShellExecute = false;
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_fix_when_use_shell_execute_is_not_set_and_initializer_exists()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_2()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo()
-                                          {
-                                              FileName = "notepad",
-                                          }|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        const string CodeFix = """
-                               using System.Diagnostics;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        FileName = "notepad",
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
 
-                               class TypeName
-                               {
-                                   public void Test()
-                                   {
-                                       var processStartInfo = new ProcessStartInfo()
-                                       {
-                                           FileName = "notepad",
-                                           UseShellExecute = false,
-                                       };
-                                       Process.Start(processStartInfo);
-                                   }
-                               }
-                               """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_3()
+    public Task Process_start_should_fix_when_use_shell_execute_is_not_set_and_initializer_exists()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo("notepad")|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|MA0161:new ProcessStartInfo()
+                    {
+                        FileName = "notepad",
+                    }|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = new ProcessStartInfo()
+                    {
+                        FileName = "notepad",
+                        UseShellExecute = false,
+                    };
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_use_shell_execute_is_not_set_4()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_3()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          var processStartInfo = [|new ProcessStartInfo("notepad", string.Empty)|];
-                                          Process.Start(processStartInfo);
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0161")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo("notepad")|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_using_overload_with_no_process_start_info()
+    public Task Process_start_should_report_when_use_shell_execute_is_not_set_4()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0161");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          [|Process.Start("notepad")|];
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0162")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Use an overload of Process.Start that has a ProcessStartInfo parameter")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo("notepad", string.Empty)|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Process_start_should_report_when_using_overload_with_no_process_start_info_2()
+    public Task Process_start_should_report_when_using_overload_with_no_process_start_info()
     {
-        const string SourceCode = """
-                                  using System.Diagnostics;
+        var test = CreateTest("MA0162");
+        test.TestCode = """
+            using System.Diagnostics;
 
-                                  class TypeName
-                                  {
-                                      public void Test()
-                                      {
-                                          [|Process.Start("notepad", "file.txt")|];
-                                      }
-                                  }
-                                  """;
-        await CreateProjectBuilder("MA0162")
-            .WithSourceCode(SourceCode)
-            .ShouldReportDiagnosticWithMessage("Use an overload of Process.Start that has a ProcessStartInfo parameter")
-            .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:Process.Start("notepad")|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0162", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of Process.Start that has a ProcessStartInfo parameter"));
+
+        return test.RunAsync();
     }
 
-    private static ProjectBuilder CreateProjectBuilder(string id) => new ProjectBuilder()
-        .WithAnalyzer<ProcessStartAnalyzer>(id)
-        .WithCodeFixProvider<UseShellExecuteMustBeSetFixer>();
+    [Fact]
+    public Task Process_start_should_report_when_using_overload_with_no_process_start_info_2()
+    {
+        var test = CreateTest("MA0162");
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:Process.Start("notepad", "file.txt")|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0162", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of Process.Start that has a ProcessStartInfo parameter"));
+
+        return test.RunAsync();
+    }
 }

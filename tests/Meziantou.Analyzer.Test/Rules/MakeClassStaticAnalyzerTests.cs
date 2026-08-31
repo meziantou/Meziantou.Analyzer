@@ -1,32 +1,43 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MakeClassStaticAnalyzer,
+    Meziantou.Analyzer.Rules.MakeClassStaticFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MakeClassStaticAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<MakeClassStaticAnalyzer>()
-            .WithCodeFixProvider<MakeClassStaticFixer>();
+        var test = new CodeFixTest();
+
+        // The rule is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // which the testing library rejects for a code fix by default
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task AbstractClass_NoDiagnostic()
+    public Task AbstractClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class AbstractClass
             {
                 static void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Inherited_NoDiagnostic()
+    public Task Inherited_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void A() { }
@@ -34,95 +45,94 @@ public sealed class MakeClassStaticAnalyzerTests
 
             class Test2 : Test { }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InstanceField_NoDiagnostic()
+    public Task InstanceField_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test4
             {
                 int _a;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplementInterface_NoDiagnostic()
+    public Task ImplementInterface_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test : ITest
             {
             }
 
             interface ITest { }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMethodAndConstField_Diagnostic()
+    public Task StaticMethodAndConstField_Diagnostic()
     {
-        const string SourceCode = """
-            public class [|Test|]
+        var test = CreateTest();
+        test.TestCode = """
+            public class {|MA0036:Test|}
             {
                 const int a = 10;
                 static void A() { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             public static class Test
             {
                 const int a = 10;
                 static void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConversionOperator_NoDiagnostic()
+    public Task ConversionOperator_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public static implicit operator int(Test _) => 1;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AddOperator_NoDiagnostic()
+    public Task AddOperator_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public static Test operator +(Test a, Test b) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComImport_NoDiagnostic()
+    public Task ComImport_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [System.Runtime.InteropServices.CoClass(typeof(Test))]
             interface ITest
             {
@@ -132,64 +142,62 @@ public sealed class MakeClassStaticAnalyzerTests
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Instantiation_NoDiagnostic()
+    public Task Instantiation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 public static void A() => new Test();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MsTestClass_NoDiagnostic()
+    public Task MsTestClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.TestCode = """
             [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
             class Test
             {
             }
             """;
-        await CreateProjectBuilder()
-              .AddMSTestApi()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedClass_NoDiagnostic()
+    public Task SealedClass_NoDiagnostic()
     {
-        const string SourceCode = """
-            public sealed class [|Test|]
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class {|MA0036:Test|}
             {
             }
-        """;
-        const string CodeFix = """
+            """;
+        test.FixedCode = """
             public static class Test
             {
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericClass_NoDiagnostic()
+    public Task GenericClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void A<T>() => throw null;
@@ -197,30 +205,28 @@ public sealed class MakeClassStaticAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Array_NoDiagnostic()
+    public Task Array_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void A() => _ = new Test[0];
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericObjectCreation_NoDiagnostic()
+    public Task GenericObjectCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void A() => new Test2<Test>();
@@ -231,15 +237,14 @@ public sealed class MakeClassStaticAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericInvocation_NoDiagnostic()
+    public Task GenericInvocation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 static void A() => Test2.A<Test>();
@@ -251,73 +256,65 @@ public sealed class MakeClassStaticAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixShouldAddStaticBeforePartial()
+    public Task FixShouldAddStaticBeforePartial()
     {
-        const string SourceCode = """
-            public partial class [|Test|]
+        var test = CreateTest();
+        test.TestCode = """
+            public partial class {|MA0036:Test|}
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             public static partial class Test
             {
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericType()
+    public Task GenericType()
     {
-        const string SourceCode = """
-public class Query : IQuery<Result<QueryResult>> { }
-public sealed record QueryResult();
-public interface IQuery<T> { }
-public class Result<T> { }
-""";
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            public class Query : IQuery<Result<QueryResult>> { }
+            public sealed record QueryResult();
+            public interface IQuery<T> { }
+            public class Result<T> { }
+            """;
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement_9()
+    public Task TopLevelStatement_9()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             System.Console.WriteLine();
             """;
 
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement_10()
+    public Task TopLevelStatement_10()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             System.Console.WriteLine();
             """;
 
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

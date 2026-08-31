@@ -43,9 +43,7 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
 
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(
-                generator.MemberAccessExpression(
-                    generator.TypeExpression(stringComparer, addImport: true),
-                    nameof(StringComparer.Ordinal)),
+                generator.TypeMemberAccessExpression(stringComparer, nameof(StringComparer.Ordinal), addImport: true),
                 nameof(StringComparer.GetHashCode)),
             memberAccessExpression.Expression);
 

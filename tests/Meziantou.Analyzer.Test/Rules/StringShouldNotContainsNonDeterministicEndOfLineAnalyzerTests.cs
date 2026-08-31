@@ -1,19 +1,28 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.StringShouldNotContainsNonDeterministicEndOfLineAnalyzer,
+    Meziantou.Analyzer.Rules.StringShouldNotContainsNonDeterministicEndOfLineFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
+public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-            .WithAnalyzer<StringShouldNotContainsNonDeterministicEndOfLineAnalyzer>()
-            .WithCodeFixProvider<StringShouldNotContainsNonDeterministicEndOfLineFixer>();
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        return test;
     }
 
+
     [Fact]
-    public async Task Valid()
+    public Task Valid()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Dummy
             {
                 void Test()
@@ -30,26 +39,27 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VerbatimString()
+    public Task VerbatimString()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|@"line1
-            line2"|];
+                    _ = {|MA0101:@"line1
+            line2"|};
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
             class Dummy
             {
                 void Test()
@@ -59,27 +69,28 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VerbatimString2()
+    public Task VerbatimString2()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|@"line1""\t
-            line2"|];
+                    _ = {|MA0101:@"line1""\t
+            line2"|};
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.CodeActionIndex = 2;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
             class Dummy
             {
                 void Test()
@@ -89,35 +100,35 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(2, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VerbatimInterpolatedString()
+    public Task VerbatimInterpolatedString()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|$@"line1{0}
-            line2"|];
+                    _ = {|MA0101:$@"line1{0}
+            line2"|};
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task U8String()
+    public Task U8String()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
             class Dummy
             {
                 void Test()
@@ -125,64 +136,59 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
                     _ = "line1"u8;
                 }
             }
-            """"";
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VerbatimU8String()
+    public Task VerbatimU8String()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|@"line1
-                    line2"u8|];
+                    _ = {|MA0101:@"line1
+                    line2"u8|};
                 }
             }
-            """"";
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task U8RawString()
+    public Task U8RawString()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """"
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|"""
+                    _ = {|MA0136:"""
                         line1
                         line2
-                        """u8|];
+                        """u8|};
                 }
             }
-            """"";
+            """";
 
-        await CreateProjectBuilder()
-              .WithDefaultAnalyzerId("MA0136")
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleLineRawString1()
+    public Task SingleLineRawString1()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """"
             class Dummy
             {
                 void Test()
@@ -192,18 +198,17 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
                     """;
                 }
             }
-            """"";
+            """";
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleLineRawString2()
+    public Task SingleLineRawString2()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """"
             class Dummy
             {
                 void Test()
@@ -211,57 +216,50 @@ public class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTests
                     _ = """line1""";
                 }
             }
-            """"";
+            """";
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RawString()
+    public Task RawString()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """"
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|"""
+                    _ = {|MA0136:"""
                     line1
                     line2
-                    """|];
+                    """|};
                 }
             }
-            """"";
+            """";
 
-        await CreateProjectBuilder()
-              .WithDefaultAnalyzerId("MA0136")
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedRawString()
+    public Task InterpolatedRawString()
     {
-        const string SourceCode = """""
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """"
             class Dummy
             {
                 void Test()
                 {
-                    _ = [|$"""
+                    _ = {|MA0136:$"""
                     line1{0}
                     line2
-                    """|];
+                    """|};
                 }
             }
-            """"";
+            """";
 
-        await CreateProjectBuilder()
-              .WithDefaultAnalyzerId("MA0136")
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

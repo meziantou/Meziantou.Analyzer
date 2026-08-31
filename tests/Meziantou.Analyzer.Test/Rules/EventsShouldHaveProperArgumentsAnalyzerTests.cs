@@ -1,17 +1,27 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.EventsShouldHaveProperArgumentsAnalyzer>;
+using EventArgsFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EventsShouldHaveProperArgumentsAnalyzer,
+    Meziantou.Analyzer.Rules.UseEventArgsEmptyFixer>;
+using SenderFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.EventsShouldHaveProperArgumentsAnalyzer,
+    Meziantou.Analyzer.Rules.EventsShouldHaveProperArgumentsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<EventsShouldHaveProperArgumentsAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
+
+    private static SenderFixTest CreateSenderFixTest() => new();
+
+    private static EventArgsFixTest CreateEventArgsFixTest() => new();
 
     [Fact]
-    public async Task InvalidArguments_InstanceEvent_ConditionalAccess()
+    public Task InvalidArguments_InstanceEvent_ConditionalAccess()
     {
-        const string SourceCode = """
+        var test = CreateSenderFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -19,11 +29,11 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent?.Invoke([|null|], EventArgs.Empty);
+                    MyEvent?.Invoke({|MA0091:null|}, EventArgs.Empty);
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -35,17 +45,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<EventsShouldHaveProperArgumentsFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidArguments_InstanceEvent()
+    public Task ValidArguments_InstanceEvent()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -57,15 +65,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidSender_Instance()
+    public Task InvalidSender_Instance()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -73,19 +81,19 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
                 void OnEvent()
                 {
-                    MyEvent.Invoke([|null|], EventArgs.Empty);
+                    MyEvent.Invoke({|MA0091:null|}, EventArgs.Empty);
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidSender_Static()
+    public Task InvalidSender_Static()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -97,15 +105,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidEventArgs()
+    public Task InvalidEventArgs()
     {
-        const string SourceCode = """
+        var test = CreateEventArgsFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -117,7 +125,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -129,17 +137,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidEventArgs_NamedArgument()
+    public Task InvalidEventArgs_NamedArgument()
     {
-        const string SourceCode = """
+        var test = CreateEventArgsFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -151,7 +157,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -163,17 +169,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EventIsStoredInVariable()
+    public Task EventIsStoredInVariable()
     {
-        const string SourceCode = """
+        var test = CreateEventArgsFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -189,7 +193,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -205,17 +209,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EventIsStoredInVariableInVariable()
+    public Task EventIsStoredInVariableInVariable()
     {
-        const string SourceCode = """
+        var test = CreateEventArgsFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -232,7 +234,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -249,17 +251,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EventIsStoredInVariableAndConditionalAccess()
+    public Task EventIsStoredInVariableAndConditionalAccess()
     {
-        const string SourceCode = """
+        var test = CreateEventArgsFixTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -272,7 +272,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -285,17 +285,15 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithCodeFixProvider<UseEventArgsEmptyFixer>()
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidEventArgs_GenericTypeParameterConstraint()
+    public Task InvalidEventArgs_GenericTypeParameterConstraint()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             delegate void CustomEventHandler<TEventArgs>(object sender, TEventArgs e) where TEventArgs : EventArgs;
             class Test<TEventArgs> where TEventArgs : EventArgs
@@ -308,49 +306,46 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CyclicLocalInitializers()
+    public Task CyclicLocalInitializers()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
                 void OnEvent()
                 {
-                    EventHandler a = b;
+                    EventHandler a = {|CS0841:b|};
                     EventHandler b = a;
                     a.Invoke(this, EventArgs.Empty);
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithNoCompilation()
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SelfReferencingLocalInitializer()
+    public Task SelfReferencingLocalInitializer()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
                 void OnEvent()
                 {
-                    EventHandler a = a;
+                    EventHandler a = {|CS0165:a|};
                     a.Invoke(this, EventArgs.Empty);
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithNoCompilation()
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

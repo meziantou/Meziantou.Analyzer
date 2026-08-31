@@ -84,7 +84,7 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
             generator.MemberAccessExpression(generator.TypeExpression(SpecialType.System_String), nameof(string.Equals)),
             operation.LeftOperand.Syntax,
             operation.RightOperand.Syntax,
-            generator.MemberAccessExpression(generator.TypeExpression(stringComparison, addImport: true), comparisonMode));
+            generator.TypeMemberAccessExpression(stringComparison, comparisonMode, addImport: true));
 
         if (operation.OperatorKind == BinaryOperatorKind.NotEquals)
         {

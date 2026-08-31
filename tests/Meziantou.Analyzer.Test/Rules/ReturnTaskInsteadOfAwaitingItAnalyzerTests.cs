@@ -1,14 +1,15 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ReturnTaskInsteadOfAwaitingItAnalyzer,
+    Meziantou.Analyzer.Rules.ReturnTaskInsteadOfAwaitingItFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ReturnTaskInsteadOfAwaitingItAnalyzer>()
-            .WithCodeFixProvider<ReturnTaskInsteadOfAwaitingItFixer>()
-            .WithTargetFramework(TargetFramework.Net8_0);
-    }
+    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
 
     [Fact]
     public void Rule_IsDisabledByDefault()
@@ -18,873 +19,903 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
     }
 
     [Fact]
-    public async Task Issue1280_StaticVoidTaskWithConfigureAwaitAndLambdaArgument()
+    public Task Issue1280_StaticVoidTaskWithConfigureAwaitAndLambdaArgument()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    static Task InvokeDialogActionAsync(Action action) => throw null;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task InvokeDialogActionAsync(Action action) => throw null;
 
-                    internal static async Task CloseNotifyIconAsync()
-                    {
-                        [|await InvokeDialogActionAsync(() => { }).ConfigureAwait(false)|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+                internal static async Task CloseNotifyIconAsync()
                 {
-                    static Task InvokeDialogActionAsync(Action action) => throw null;
-
-                    internal static Task CloseNotifyIconAsync()
-                    {
-                        return InvokeDialogActionAsync(() => { });
-                    }
+                    {|MA0215:await InvokeDialogActionAsync(() => { }).ConfigureAwait(false)|};
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task InvokeDialogActionAsync(Action action) => throw null;
+
+                internal static Task CloseNotifyIconAsync()
+                {
+                    return InvokeDialogActionAsync(() => { });
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnAwait_TaskOfT()
+    public Task ReturnAwait_TaskOfT()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
                 {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
-                    {
-                        return [|await Inner()|];
-                    }
+                    return {|MA0215:await Inner()|};
                 }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A()
                 {
-                    Task<int> Inner() => throw null;
-                    Task<int> A()
-                    {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExpressionBody_TaskOfT()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A() => {|MA0215:await Inner()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Await_NonGenericTask_AddsReturn()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                Task A()
+                {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExpressionBody_NonGenericTask()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A() => {|MA0215:await Inner()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                Task A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwait_IsStripped()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    {|MA0215:await Inner().ConfigureAwait(false)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                Task A()
+                {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExpressionBody_ValueTaskOfT()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                ValueTask<int> Inner() => throw null;
+                async ValueTask<int> A() => {|MA0215:await Inner()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                ValueTask<int> Inner() => throw null;
+                ValueTask<int> A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitTrue_Generic_IsStripped()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
+                {
+                    return {|MA0215:await Inner().ConfigureAwait(true)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A()
+                {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StaticLocalFunction()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                void A()
+                {
+                    static async Task<int> Local() => {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                void A()
+                {
+                    static Task<int> Local() => Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SimpleLambda()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner(int x) => throw null;
+                void A()
+                {
+                    Func<int, Task<int>> f = async x => {|MA0215:await Inner(x)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner(int x) => throw null;
+                void A()
+                {
+                    Func<int, Task<int>> f = x => Inner(x);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AnonymousMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    Func<Task<int>> f = async delegate { return {|MA0215:await Inner()|}; };
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    Func<Task<int>> f = delegate { return Inner(); };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedAwaitInOperand_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> Outer(int value) => throw null;
+                async Task<int> A()
+                {
+                    return await Outer(await Inner());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CovariantReturnTypeMismatch_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<string> Inner() => throw null;
+                async Task<object> A()
+                {
+                    return await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CustomAwaitableNotAssignableToTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A()
+                {
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitAssignedToDiscard_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task A()
+                {
+                    _ = await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalFunction()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    async Task<int> Local() => {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    Task<int> Local() => Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Lambda()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    Func<Task<int>> f = async () => {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                void A()
+                {
+                    Func<Task<int>> f = () => Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultipleMethods_BatchFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task Inner2() => throw null;
+                async Task<int> A() => {|MA0215:await Inner()|};
+                async Task B() => {|MA0215:await Inner2()|};
+                async Task<int> C()
+                {
+                    return {|MA0215:await Inner()|};
+                }
+                async Task D()
+                {
+                    {|MA0215:await Inner2()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task Inner2() => throw null;
+                Task<int> A() => Inner();
+                Task B() => Inner2();
+                Task<int> C()
+                {
+                    return Inner();
+                }
+                Task D()
+                {
+                    return Inner2();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrecedingStatement()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
+                {
+                    System.Console.WriteLine();
+                    return {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A()
+                {
+                    System.Console.WriteLine();
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultipleReturns_TaskOfT()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(bool condition)
+                {
+                    if (condition)
+                        return {|MA0215:await Inner()|};
+
+                    return {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A(bool condition)
+                {
+                    if (condition)
                         return Inner();
-                    }
+
+                    return Inner();
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExpressionBody_TaskOfT()
+    public Task NestedLocalFunctionAwait_DoesNotAffectParent()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
                 {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A() => [|await Inner()|];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> A() => Inner();
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Await_NonGenericTask_AddsReturn()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    async Task A()
-                    {
-                        [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    Task A()
-                    {
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExpressionBody_NonGenericTask()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    async Task A() => [|await Inner()|];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    Task A() => Inner();
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ConfigureAwait_IsStripped()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    async Task A()
-                    {
-                        [|await Inner().ConfigureAwait(false)|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    Task A()
-                    {
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ExpressionBody_ValueTaskOfT()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    ValueTask<int> Inner() => throw null;
-                    async ValueTask<int> A() => [|await Inner()|];
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    ValueTask<int> Inner() => throw null;
-                    ValueTask<int> A() => Inner();
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ConfigureAwaitTrue_Generic_IsStripped()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
-                    {
-                        return [|await Inner().ConfigureAwait(true)|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> A()
-                    {
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StaticLocalFunction()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    static Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        static async Task<int> Local() => [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    static Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        static Task<int> Local() => Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task SimpleLambda()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner(int x) => throw null;
-                    void A()
-                    {
-                        Func<int, Task<int>> f = async x => [|await Inner(x)|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner(int x) => throw null;
-                    void A()
-                    {
-                        Func<int, Task<int>> f = x => Inner(x);
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AnonymousMethod()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        Func<Task<int>> f = async delegate { return [|await Inner()|]; };
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        Func<Task<int>> f = delegate { return Inner(); };
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NestedAwaitInOperand_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> Outer(int value) => throw null;
-                    async Task<int> A()
-                    {
-                        return await Outer(await Inner());
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CovariantReturnTypeMismatch_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<string> Inner() => throw null;
-                    async Task<object> A()
-                    {
-                        return await Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CustomAwaitableNotAssignableToTask_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    async Task A()
-                    {
-                        await Task.Yield();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AwaitAssignedToDiscard_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task A()
-                    {
-                        _ = await Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task LocalFunction()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        async Task<int> Local() => [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        Task<int> Local() => Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Lambda()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        Func<Task<int>> f = async () => [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    void A()
-                    {
-                        Func<Task<int>> f = () => Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MultipleMethods_BatchFix()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task Inner2() => throw null;
-                    async Task<int> A() => [|await Inner()|];
-                    async Task B() => [|await Inner2()|];
-                    async Task<int> C()
-                    {
-                        return [|await Inner()|];
-                    }
-                    async Task D()
-                    {
-                        [|await Inner2()|];
-                    }
-                }
-                """)
-            .ShouldBatchFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task Inner2() => throw null;
-                    Task<int> A() => Inner();
-                    Task B() => Inner2();
-                    Task<int> C()
-                    {
-                        return Inner();
-                    }
-                    Task D()
-                    {
-                        return Inner2();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task PrecedingStatement()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
-                    {
-                        System.Console.WriteLine();
-                        return [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> A()
-                    {
-                        System.Console.WriteLine();
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MultipleReturns_TaskOfT()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A(bool condition)
-                    {
-                        if (condition)
-                            return [|await Inner()|];
-
-                        return [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> A(bool condition)
-                    {
-                        if (condition)
-                            return Inner();
-
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NestedLocalFunctionAwait_DoesNotAffectParent()
-    {
-        // The local function has a non-removable await (Task.Yield) but must not prevent the parent from being reported
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> Parent()
-                    {
-                        async Task<int> Local()
-                        {
-                            await Task.Yield();
-                            return await Inner();
-                        }
-
-                        return [|await Local()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> Parent()
-                    {
-                        async Task<int> Local()
-                        {
-                            await Task.Yield();
-                            return await Inner();
-                        }
-
-                        return Local();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task LocalFunctionReported_ParentIsNot()
-    {
-        // The parent has a non-removable await (Task.Yield); only the local function is reported
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> Parent()
-                    {
-                        async Task<int> Local() => [|await Inner()|];
-
-                        await Task.Yield();
-                        return await Local();
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> Parent()
-                    {
-                        Task<int> Local() => Inner();
-
-                        await Task.Yield();
-                        return await Local();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NestedLambdaAwait_DoesNotAffectParent()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> Parent()
-                    {
-                        Func<Task> f = async () => await Task.Yield();
-                        _ = f();
-                        return [|await Inner()|];
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> Parent()
-                    {
-                        Func<Task> f = async () => await Task.Yield();
-                        _ = f();
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task OtherAwaitInMethod_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
+                    async Task<int> Local()
                     {
                         await Task.Yield();
                         return await Inner();
                     }
+
+                    return {|MA0215:await Local()|};
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> Parent()
+                {
+                    async Task<int> Local()
+                    {
+                        await Task.Yield();
+                        return await Inner();
+                    }
+
+                    return Local();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SomeReturnsNotAwaited_NoDiagnostic()
+    public Task LocalFunctionReported_ParentIsNot()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
                 {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A(bool condition)
-                    {
-                        if (condition)
-                            return await Inner();
+                    async Task<int> Local() => {|MA0215:await Inner()|};
 
+                    await Task.Yield();
+                    return await Local();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
+                {
+                    Task<int> Local() => Inner();
+
+                    await Task.Yield();
+                    return await Local();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedLambdaAwait_DoesNotAffectParent()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
+                {
+                    Func<Task> f = async () => await Task.Yield();
+                    _ = f();
+                    return {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> Parent()
+                {
+                    Func<Task> f = async () => await Task.Yield();
+                    _ = f();
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OtherAwaitInMethod_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
+                {
+                    await Task.Yield();
+                    return await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SomeReturnsNotAwaited_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(bool condition)
+                {
+                    if (condition)
+                        return await Inner();
+
+                    return 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnAwaitInUsingBlock_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(IDisposable d)
+                {
+                    using (d)
+                    {
+                        return await Inner();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UsingDeclarationInChildBlock_OutOfScope()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(bool condition)
+                {
+                    if (condition)
+                    {
+                        using var d = (IDisposable)null;
+                        d.ToString();
+                    }
+
+                    return {|MA0215:await Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A(bool condition)
+                {
+                    if (condition)
+                    {
+                        using var d = (IDisposable)null;
+                        d.ToString();
+                    }
+
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnAwaitWithUsingDeclaration_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner(IDisposable d) => throw null;
+                async Task<int> A()
+                {
+                    using var d = (IDisposable)null;
+                    return await Inner(d);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InsideTry_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
+                {
+                    try
+                    {
+                        return await Inner();
+                    }
+                    catch
+                    {
                         return 0;
                     }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnAwaitInUsingBlock_NoDiagnostic()
+    public Task InsideUsing_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(IDisposable d)
                 {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A(IDisposable d)
+                    using (d)
                     {
-                        using (d)
-                        {
-                            return await Inner();
-                        }
+                        return await Inner();
                     }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingDeclarationInChildBlock_OutOfScope()
+    public Task MultipleAwaits_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A()
                 {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A(bool condition)
-                    {
-                        if (condition)
-                        {
-                            using var d = (IDisposable)null;
-                            d.ToString();
-                        }
-
-                        return [|await Inner()|];
-                    }
+                    return await Inner() + await Inner();
                 }
-                """)
-            .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    Task<int> A(bool condition)
-                    {
-                        if (condition)
-                        {
-                            using var d = (IDisposable)null;
-                            d.ToString();
-                        }
+            }
+            """;
 
-                        return Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnAwaitWithUsingDeclaration_NoDiagnostic()
+    public Task NotAssignable_ValueTaskAwaitingTask_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async ValueTask A()
                 {
-                    Task<int> Inner(IDisposable d) => throw null;
-                    async Task<int> A()
-                    {
-                        using var d = (IDisposable)null;
-                        return await Inner(d);
-                    }
+                    await Inner();
                 }
-                """)
-            .ValidateAsync();
-    }
+            }
+            """;
 
-    [Fact]
-    public async Task InsideTry_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
-                    {
-                        try
-                        {
-                            return await Inner();
-                        }
-                        catch
-                        {
-                            return 0;
-                        }
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task InsideUsing_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A(IDisposable d)
-                    {
-                        using (d)
-                        {
-                            return await Inner();
-                        }
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MultipleAwaits_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task<int> Inner() => throw null;
-                    async Task<int> A()
-                    {
-                        return await Inner() + await Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NotAssignable_ValueTaskAwaitingTask_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    Task Inner() => throw null;
-                    async ValueTask A()
-                    {
-                        await Inner();
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

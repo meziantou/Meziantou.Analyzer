@@ -1,18 +1,21 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.RemoveEmptyBlockAnalyzer,
+    Meziantou.Analyzer.Rules.RemoveEmptyBlockFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RemoveEmptyBlockAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<RemoveEmptyBlockAnalyzer>()
-            .WithCodeFixProvider<RemoveEmptyBlockFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task EmptyElseBlock()
+    public Task EmptyElseBlock()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -20,21 +23,21 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     if (condition)
                     {
                     }
-                    [|else
+                    {|MA0090:else
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyElseBlock_CodeFix()
+    public Task EmptyElseBlock_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -42,14 +45,13 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     if (condition)
                     {
                     }
-                    [|else
+                    {|MA0090:else
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class Test
             {
                 void A(bool condition)
@@ -61,16 +63,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ElseBlockContainingABlock()
+    public Task ElseBlockContainingABlock()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -86,15 +86,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ElseBlockWithComment()
+    public Task ElseBlockWithComment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -109,15 +109,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ElseBlockWithMultilineComment()
+    public Task ElseBlockWithMultilineComment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -134,15 +134,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ElseBlockWithStatement()
+    public Task ElseBlockWithStatement()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -157,17 +157,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
-    //
-
     [Fact]
-    public async Task EmptyFinallyBlock()
+    public Task EmptyFinallyBlock()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -175,21 +173,21 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     try
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyFinallyBlock_CodeFix()
+    public Task EmptyFinallyBlock_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -197,14 +195,13 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     try
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class Test
             {
                 void A()
@@ -215,16 +212,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyFinallyBlock_WithCatch_CodeFix()
+    public Task EmptyFinallyBlock_WithCatch_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -235,14 +230,13 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     catch
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class Test
             {
                 void A()
@@ -257,16 +251,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyBlockWithComment()
+    public Task FinallyBlockWithComment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -281,15 +273,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyBlockWithMultilineComment()
+    public Task FinallyBlockWithMultilineComment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -306,15 +298,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FinallyBlockWithStatement()
+    public Task FinallyBlockWithStatement()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(bool condition)
@@ -329,15 +321,15 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyFinallyBlockInsideElseBlock_CodeFix()
+    public Task EmptyFinallyBlockInsideElseBlock_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void Foo() => throw null;
@@ -353,15 +345,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                         {
                             Foo();
                         }
-                        [|finally
+                        {|MA0090:finally
                         {
-                        }|]
+                        }|}
                     }
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class Test
             {
                 void Foo() => throw null;
@@ -381,16 +372,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyElseBlockInsideFinallyBlock_CodeFix()
+    public Task EmptyElseBlockInsideFinallyBlock_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void Foo() => throw null;
@@ -406,15 +395,14 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                         {
                             Foo();
                         }
-                        [|else
+                        {|MA0090:else
                         {
-                        }|]
+                        }|}
                     }
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class Test
             {
                 void Foo() => throw null;
@@ -435,9 +423,6 @@ public sealed class RemoveEmptyBlockAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,19 +1,19 @@
 #pragma warning disable CA1030 // Use events where appropriate
 
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotRaiseNotImplementedExceptionAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotRaiseNotImplementedExceptionAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
+    public Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
@@ -31,45 +31,44 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RaiseNotImplementedException_ShouldReportErrorAsync()
+    public Task RaiseNotImplementedException_ShouldReportErrorAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
                 void Test()
                 {
-                    [|throw new NotImplementedException();|]
+                    {|MA0025:throw new NotImplementedException();|}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RaiseNotImplementedException_FlowedFromLocal_ShouldReportErrorAsync()
+    public Task RaiseNotImplementedException_FlowedFromLocal_ShouldReportErrorAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class TestAttribute
             {
                 void Test()
                 {
                     Exception exception = new NotImplementedException();
-                    [|throw exception;|]
+                    {|MA0025:throw exception;|}
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

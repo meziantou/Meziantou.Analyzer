@@ -1,34 +1,37 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AvoidComparisonWithBoolConstantAnalyzer,
+    Meziantou.Analyzer.Rules.AvoidComparisonWithBoolConstantFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AvoidComparisonWithBoolConstantAnalyzer>()
-            .WithCodeFixProvider<AvoidComparisonWithBoolConstantFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("==", "true", null)]
     [InlineData("==", "false", "!")]
     [InlineData("!=", "true", "!")]
     [InlineData("!=", "false", null)]
-    public async Task ComparingVariableWithBoolLiteral_RemovesComparisonAndKeepsVariable(string op, string literal, string? expectedPrefix)
+    public Task ComparingVariableWithBoolLiteral_RemovesComparisonAndKeepsVariable(string op, string literal, string? expectedPrefix)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test()
                 {
                     var value = false;
-                    if (value [|{{op}}|] {{literal}})
+                    if (value {|MA0073:{{op}}|} {{literal}})
                     {
                     }
                 }
             }
             """;
-        var modifiedCode = $$"""
+        test.FixedCode = $$"""
             class TestClass
             {
                 void Test()
@@ -40,10 +43,8 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -51,19 +52,20 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
     [InlineData("false", "==", "(GetSomeNumber() == 15)", "!(GetSomeNumber() == 15)")]
     [InlineData("true", "!=", "(GetSomeNumber() == 15)", "!(GetSomeNumber() == 15)")]
     [InlineData("false", "!=", "(GetSomeNumber() == 15)", "GetSomeNumber() == 15")]
-    public async Task ComparingBoolLiteralWithExpression_RemovesComparisonAndKeepsExpression(string literal, string op, string originalExpression, string modifiedExpression)
+    public Task ComparingBoolLiteralWithExpression_RemovesComparisonAndKeepsExpression(string literal, string op, string originalExpression, string modifiedExpression)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test()
                 {
-                    var value = {{literal}} [|{{op}}|] {{originalExpression}};
+                    var value = {{literal}} {|MA0073:{{op}}|} {{originalExpression}};
                     int GetSomeNumber() => 12;
                 }
             }
             """;
-        var modifiedCode = $$"""
+        test.FixedCode = $$"""
             class TestClass
             {
                 void Test()
@@ -73,25 +75,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsPatternComparedWithFalse_ParenthesizesExpression()
+    public Task IsPatternComparedWithFalse_ParenthesizesExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(object o)
                 {
-                    _ = o is string [|==|] false;
+                    _ = o is string {|MA0073:==|} false;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(object o)
@@ -100,25 +101,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsPatternComparedWithTrue_KeepsExpression()
+    public Task IsPatternComparedWithTrue_KeepsExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(object o)
                 {
-                    _ = o is string [|==|] true;
+                    _ = o is string {|MA0073:==|} true;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(object o)
@@ -127,25 +127,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsPatternNotEqualToTrue_ParenthesizesExpression()
+    public Task IsPatternNotEqualToTrue_ParenthesizesExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(object o)
                 {
-                    _ = o is string [|!=|] true;
+                    _ = o is string {|MA0073:!=|} true;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(object o)
@@ -154,25 +153,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsPatternNotEqualToFalse_KeepsExpression()
+    public Task IsPatternNotEqualToFalse_KeepsExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(object o)
                 {
-                    _ = o is string [|!=|] false;
+                    _ = o is string {|MA0073:!=|} false;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(object o)
@@ -181,25 +179,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComparisonComparedWithFalse_ParenthesizesExpression()
+    public Task ComparisonComparedWithFalse_ParenthesizesExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(int a, int b)
                 {
-                    _ = a < b [|==|] false;
+                    _ = a < b {|MA0073:==|} false;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(int a, int b)
@@ -208,25 +205,24 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComparisonComparedWithTrue_KeepsExpression()
+    public Task ComparisonComparedWithTrue_KeepsExpression()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(int a, int b)
                 {
-                    _ = a < b [|==|] true;
+                    _ = a < b {|MA0073:==|} true;
                 }
             }
             """;
-        var modifiedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(int a, int b)
@@ -235,10 +231,8 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -246,20 +240,21 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
     [InlineData("==", "false", "!")]
     [InlineData("!=", "true", "!")]
     [InlineData("!=", "false", null)]
-    public async Task ComparingVariableWithBoolConstant_RemovesComparisonAndKeepsVariable(string op, string constBool, string? expectedPrefix)
+    public Task ComparingVariableWithBoolConstant_RemovesComparisonAndKeepsVariable(string op, string constBool, string? expectedPrefix)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test()
                 {
                     const bool MyConstant = {{constBool}};
                     bool value = false;
-                    _ = value [|{{op}}|] MyConstant;
+                    _ = value {|MA0073:{{op}}|} MyConstant;
                 }
             }
             """;
-        var modifiedCode = $$"""
+        test.FixedCode = $$"""
             class TestClass
             {
                 void Test()
@@ -270,29 +265,28 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("!=", "true", "!")]
     [InlineData("==", "MyConstant2", null)]
-    public async Task ComparingBoolConstantsAndLiterals_RemovesComparisonAndKeepsRightOperand(string op, string rightOperand, string? expectedPrefix)
+    public Task ComparingBoolConstantsAndLiterals_RemovesComparisonAndKeepsRightOperand(string op, string rightOperand, string? expectedPrefix)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test()
                 {
                     const bool MyConstant1 = true;
                     const bool MyConstant2 = false;
-                    _ = MyConstant1 [|{{op}}|] {{rightOperand}};
+                    _ = MyConstant1 {|MA0073:{{op}}|} {{rightOperand}};
                 }
             }
             """;
-        var modifiedCode = $$"""
+        test.FixedCode = $$"""
             class TestClass
             {
                 void Test()
@@ -303,16 +297,15 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComparingNullableBoolVariableWithBoolLiteral_NoDiagnosticReported()
+    public Task ComparingNullableBoolVariableWithBoolLiteral_NoDiagnosticReported()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -324,18 +317,18 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("dynamicValue == true")]
     [InlineData("true == AsDynamic().MaybeBoolean")]
     [InlineData("((dynamic)this.TrulyBoolean) == true")]
-    public async Task ComparingDynamicVariableWithBoolLiteral_NoDiagnosticReported(string expression)
+    public Task ComparingDynamicVariableWithBoolLiteral_NoDiagnosticReported(string expression)
     {
-        var originalCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 public bool? MaybeBoolean { get; set; }
@@ -352,15 +345,15 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotComparingBoolVariable_NoDiagnosticReported()
+    public Task NotComparingBoolVariable_NoDiagnosticReported()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -375,15 +368,15 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComparingNullableLongVariableWithNullLiteral_NoDiagnosticReported()
+    public Task ComparingNullableLongVariableWithNullLiteral_NoDiagnosticReported()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(long? number)
@@ -394,8 +387,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

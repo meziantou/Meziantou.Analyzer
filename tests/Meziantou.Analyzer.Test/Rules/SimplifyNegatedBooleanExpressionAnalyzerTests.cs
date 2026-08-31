@@ -1,23 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.SimplifyNegatedBooleanExpressionAnalyzer,
+    Meziantou.Analyzer.Rules.SimplifyNegatedBooleanExpressionFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<SimplifyNegatedBooleanExpressionAnalyzer>()
-            .WithCodeFixProvider<SimplifyNegatedBooleanExpressionFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task Issue1264()
+    public Task Issue1264()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(char key, object target)
                 {
-                    if ([|!(key == 'y' && !IsEditable(target))|])
+                    if ({|MA0213:!(key == 'y' && !IsEditable(target))|})
                     {
                     }
                 }
@@ -25,8 +28,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
                 bool IsEditable(object target) => true;
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(char key, object target)
@@ -40,26 +42,23 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DoubleNegation()
+    public Task DoubleNegation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(bool a, bool b)
                 {
-                    _ = [|!(!a && !b)|];
+                    _ = {|MA0213:!(!a && !b)|};
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(bool a, bool b)
@@ -69,26 +68,23 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LogicalOr()
+    public Task LogicalOr()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(bool a, int b)
                 {
-                    _ = [|!(!a || b == 0)|];
+                    _ = {|MA0213:!(!a || b == 0)|};
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(bool a, int b)
@@ -98,16 +94,14 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RelationalComparisonsWithoutInnerNegation_NoDiagnostic()
+    public Task RelationalComparisonsWithoutInnerNegation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(int value, int min, int max)
@@ -117,25 +111,23 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnExpression()
+    public Task ReturnExpression()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 bool Test(bool a, bool b)
                 {
-                    return [|!(a || !b)|];
+                    return {|MA0213:!(a || !b)|};
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 bool Test(bool a, bool b)
@@ -145,26 +137,23 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParentContextPrecedence()
+    public Task ParentContextPrecedence()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(bool a, bool b, bool c)
                 {
-                    _ = a && [|!(b && !c)|];
+                    _ = a && {|MA0213:!(b && !c)|};
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(bool a, bool b, bool c)
@@ -174,26 +163,23 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ChildPrecedence()
+    public Task ChildPrecedence()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(bool a, bool b, bool c)
                 {
-                    _ = [|!(!(a || b) || c)|];
+                    _ = {|MA0213:!(!(a || b) || c)|};
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             class TestClass
             {
                 void Test(bool a, bool b, bool c)
@@ -203,10 +189,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -214,9 +197,10 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
     [InlineData("!(x || y)")]
     [InlineData("!(x && a == 0)")]
     [InlineData("!(a == 0 && b == 0)")]
-    public async Task PlainNegatedGroups_NoDiagnostic(string expression)
+    public Task PlainNegatedGroups_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class TestClass
             {
                 void Test(bool x, bool y, int a, int b)
@@ -226,15 +210,14 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DynamicOperand_NoDiagnostic()
+    public Task DynamicOperand_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(dynamic a, bool b)
@@ -244,15 +227,14 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UserDefinedOperator_NoDiagnostic()
+    public Task UserDefinedOperator_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TestBoolean
             {
                 public static TestBoolean operator &(TestBoolean left, TestBoolean right) => left;
@@ -270,15 +252,14 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullableRelationalComparison_NoDiagnostic()
+    public Task NullableRelationalComparison_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(int? a, int? b)
@@ -288,15 +269,14 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FloatingPointRelationalComparison_NoDiagnostic()
+    public Task FloatingPointRelationalComparison_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test(double value, double max)
@@ -306,8 +286,6 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

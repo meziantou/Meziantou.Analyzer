@@ -102,7 +102,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         }
 
         var isNaNInvocation = (ExpressionSyntax)generator.InvocationExpression(
-            generator.MemberAccessExpression(generator.TypeExpression(nanType, addImport: true), "IsNaN"),
+            generator.TypeMemberAccessExpression(nanType, "IsNaN", addImport: true),
             otherOperand.Syntax);
 
         replacement = binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals

@@ -1,18 +1,18 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.PreserveParamsOnOverrideAnalyzer,
+    Meziantou.Analyzer.Rules.PreserveParamsOnOverrideFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class PreserveParamsOnOverrideAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<PreserveParamsOnOverrideAnalyzer>()
-            .WithCodeFixProvider<PreserveParamsOnOverrideFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task MissingParamsFromBaseClass()
+    public Task MissingParamsFromBaseClass()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 protected virtual void A(params string[] a) => throw null;
@@ -20,61 +20,10 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
 
             class Test2 : Test
             {
-                protected override void A(string[] [|a|]) => throw null;
+                protected override void A(string[] {|MA0081:a|}) => throw null;
             }
             """;
-        const string Fix = """
-            class Test
-            {
-                protected virtual void A(params string[] a) => throw null;
-            }
-
-            class Test2 : Test
-            {
-                protected override void A(params string[] a) => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task MissingParamsFromInterface()
-    {
-        const string SourceCode = """
-            interface ITest
-            {
-                void A(params string[] a);
-            }
-
-            class Test2 : ITest
-            {
-                public void A(string[] [|a|]) => throw null;
-            }
-            """;
-        const string Fix = """
-            interface ITest
-            {
-                void A(params string[] a);
-            }
-
-            class Test2 : ITest
-            {
-                public void A(params string[] a) => throw null;
-            }
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ParamsFromBaseClass()
-    {
-        const string SourceCode = """
+        test.FixedCode = """
             class Test
             {
                 protected virtual void A(params string[] a) => throw null;
@@ -85,15 +34,26 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
                 protected override void A(params string[] a) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParamsFromInterface()
+    public Task MissingParamsFromInterface()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+                void A(params string[] a);
+            }
+
+            class Test2 : ITest
+            {
+                public void A(string[] {|MA0081:a|}) => throw null;
+            }
+            """;
+        test.FixedCode = """
             interface ITest
             {
                 void A(params string[] a);
@@ -104,8 +64,45 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
                 public void A(params string[] a) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsFromBaseClass()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                protected virtual void A(params string[] a) => throw null;
+            }
+
+            class Test2 : Test
+            {
+                protected override void A(params string[] a) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsFromInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+                void A(params string[] a);
+            }
+
+            class Test2 : ITest
+            {
+                public void A(params string[] a) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

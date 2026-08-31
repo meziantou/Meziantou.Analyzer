@@ -108,6 +108,14 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             }
         }
 
+        // The suggested name may come from a local that stays in the code, and the generated member would then be
+        // hidden by it at the call site, so the name must also be free in the scope the member is used from
+        while (semanticModel.LookupSymbols(nodeToFix.SpanStart, name: methodName)
+                            .Any(symbol => !shouldRemoveFieldOrVariable || !SymbolEqualityComparer.Default.Equals(symbol, fieldOrVariableSymbol)))
+        {
+            methodName += "_";
+        }
+
         // If we need to rename the field/variable to match the property name, do it first
         // But only if there are references beyond the declaration
         if (shouldRemoveFieldOrVariable && fieldOrVariableSymbol!.Name != methodName)

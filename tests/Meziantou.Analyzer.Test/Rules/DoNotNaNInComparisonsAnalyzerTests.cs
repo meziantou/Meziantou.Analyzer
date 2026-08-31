@@ -1,66 +1,65 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotNaNInComparisonsAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotNaNInComparisonsFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotNaNInComparisonsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotNaNInComparisonsAnalyzer>()
-            .WithCodeFixProvider<DoNotNaNInComparisonsFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task Comparisons()
+    public Task Comparisons()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
                 {
                     _ = 1d == 0d;
                     _ = 1d != 0d;
-                    _ = 0d == [|double.NaN|];
-                    _ = 0d != [|double.NaN|];
-                    _ = [|double.NaN|] == 0d;
-                    _ = [|double.NaN|] != 0d;
+                    _ = 0d == {|MA0082:double.NaN|};
+                    _ = 0d != {|MA0082:double.NaN|};
+                    _ = {|MA0082:double.NaN|} == 0d;
+                    _ = {|MA0082:double.NaN|} != 0d;
 
                     _ = 1f == 0f;
                     _ = 1f != 0f;
-                    _ = 0f == [|float.NaN|];
-                    _ = 0f != [|float.NaN|];
-                    _ = [|float.NaN|] == 0f;
-                    _ = [|float.NaN|] != 0f;
+                    _ = 0f == {|MA0082:float.NaN|};
+                    _ = 0f != {|MA0082:float.NaN|};
+                    _ = {|MA0082:float.NaN|} == 0f;
+                    _ = {|MA0082:float.NaN|} != 0f;
 
-                    _ = (double)[|float.NaN|] != 1f;
+                    _ = (double){|MA0082:float.NaN|} != 1f;
 
                     System.Half halfValue = (System.Half)0;
-                    _ = halfValue == [|System.Half.NaN|];
-                    _ = halfValue != [|System.Half.NaN|];
-                    _ = [|System.Half.NaN|] == halfValue;
-                    _ = [|System.Half.NaN|] != halfValue;
+                    _ = halfValue == {|MA0082:System.Half.NaN|};
+                    _ = halfValue != {|MA0082:System.Half.NaN|};
+                    _ = {|MA0082:System.Half.NaN|} == halfValue;
+                    _ = {|MA0082:System.Half.NaN|} != halfValue;
 
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix()
+    public Task Comparisons_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(double value)
                 {
-                    _ = value == [|double.NaN|];
+                    _ = value == {|MA0082:double.NaN|};
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(double value)
@@ -70,26 +69,23 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix_Float()
+    public Task Comparisons_CodeFix_Float()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(float value)
                 {
-                    _ = value != [|float.NaN|];
+                    _ = value != {|MA0082:float.NaN|};
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             class Test
             {
                 void A(float value)
@@ -99,27 +95,24 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Comparisons_CodeFix_Half()
+    public Task Comparisons_CodeFix_Half()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
                 void A(Half value)
                 {
-                    _ = value == [|Half.NaN|];
+                    _ = value == {|MA0082:Half.NaN|};
                 }
             }
             """;
-
-        const string Fix = """
+        test.FixedCode = """
             using System;
             class Test
             {
@@ -130,9 +123,6 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

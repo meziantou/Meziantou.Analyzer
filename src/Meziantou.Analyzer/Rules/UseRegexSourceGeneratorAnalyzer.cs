@@ -157,7 +157,13 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 return true;
 
             if (valueOperation.Type.IsEqualTo(_timespanSymbol))
-                return _timeSpanOperation.GetMilliseconds(valueOperation).HasValue;
+            {
+                // GeneratedRegex only accepts an infinite or strictly positive match timeout, so a Regex built with
+                // any other value cannot be converted: the source generator would reject the generated attribute
+                const long Infinite = -1;
+                var milliseconds = _timeSpanOperation.GetMilliseconds(valueOperation);
+                return milliseconds is Infinite || milliseconds > 0;
+            }
 
             return false;
         }

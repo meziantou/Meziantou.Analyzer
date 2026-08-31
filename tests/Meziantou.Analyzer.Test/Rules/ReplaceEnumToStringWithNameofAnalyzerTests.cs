@@ -1,23 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ReplaceEnumToStringWithNameofAnalyzer,
+    Meziantou.Analyzer.Rules.ReplaceEnumToStringWithNameofFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ReplaceEnumToStringWithNameofAnalyzer>()
-            .WithCodeFixProvider<ReplaceEnumToStringWithNameofFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task ConstantEnumValueToString()
+    public Task ConstantEnumValueToString()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
                 {
-                    _ = [|MyEnum.A.ToString()|];
+                    _ = {|MA0052:MyEnum.A.ToString()|};
                 }
             }
 
@@ -26,8 +29,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
                 A,
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Test
             {
                 void A()
@@ -41,16 +43,15 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
                 A,
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumVariableToString()
+    public Task EnumVariableToString()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -66,9 +67,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -78,42 +77,39 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     [InlineData("\"g\"")]
     [InlineData("\"F\"")]
     [InlineData("\"f\"")]
-    public async Task ToString_Formats(string format)
+    public Task ToString_Formats(string format)
     {
-        var sourceCode = $$"""
-class Test
-{
-    void A()
-    {
-        _ = [|MyEnum.A.ToString(format: {{format}})|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0052:MyEnum.A.ToString(format: {{format}})|};
+                }
+            }
 
-enum MyEnum
-{
-    A,
-}
-""";
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = nameof(MyEnum.A);
+                }
+            }
 
-        var fix = """
-class Test
-{
-    void A()
-    {
-        _ = nameof(MyEnum.A);
-    }
-}
+            enum MyEnum
+            {
+                A,
+            }
+            """;
 
-enum MyEnum
-{
-    A,
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -121,97 +117,92 @@ enum MyEnum
     [InlineData("\"X\"")]
     [InlineData("\"d\"")]
     [InlineData("\"D\"")]
-    public async Task ToString_IncompatibleFormats(string format)
+    public Task ToString_IncompatibleFormats(string format)
     {
-        var sourceCode = $$"""
-class Test
-{
-    void A()
-    {
-        _ = MyEnum.A.ToString(format: {{format}});
-    }
-}
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                void A()
+                {
+                    _ = MyEnum.A.ToString(format: {{format}});
+                }
+            }
 
-enum MyEnum
-{
-    A,
-}
-""";
+            enum MyEnum
+            {
+                A,
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ToString_DynamicFormat()
-    {
-        var sourceCode = $$"""
-class Test
-{
-    void A(string format)
-    {
-        _ = MyEnum.A.ToString(format);
-    }
-}
-
-enum MyEnum
-{
-    A,
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString()
+    public Task ToString_DynamicFormat()
     {
-        const string SourceCode = """"
-class Test
-{
-    void A()
-    {
-        _ = $"[|{MyEnum.A}|]";
-        _ = $"[|{MyEnum.A:g}|]";
-        _ = $"[|{MyEnum.A:G}|]";
-        _ = $"[|{MyEnum.A:f}|]";
-        _ = $"{MyEnum.A:D}";
-        _ = $"{MyEnum.A:x}";
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                void A(string format)
+                {
+                    _ = MyEnum.A.ToString(format);
+                }
+            }
+
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
 
-enum MyEnum
-{
-    A,
-}
-"""";
-
-        const string CodeFix = """"
-class Test
-{
-    void A()
+    [Fact]
+    public Task InterpolatedString()
     {
-        _ = $"{nameof(MyEnum.A)}";
-        _ = $"{nameof(MyEnum.A)}";
-        _ = $"{nameof(MyEnum.A)}";
-        _ = $"{nameof(MyEnum.A)}";
-        _ = $"{MyEnum.A:D}";
-        _ = $"{MyEnum.A:x}";
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = $"{|MA0052:{MyEnum.A}|}";
+                    _ = $"{|MA0052:{MyEnum.A:g}|}";
+                    _ = $"{|MA0052:{MyEnum.A:G}|}";
+                    _ = $"{|MA0052:{MyEnum.A:f}|}";
+                    _ = $"{MyEnum.A:D}";
+                    _ = $"{MyEnum.A:x}";
+                }
+            }
 
-enum MyEnum
-{
-    A,
-}
-"""";
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = $"{nameof(MyEnum.A)}";
+                    _ = $"{nameof(MyEnum.A)}";
+                    _ = $"{nameof(MyEnum.A)}";
+                    _ = $"{nameof(MyEnum.A)}";
+                    _ = $"{MyEnum.A:D}";
+                    _ = $"{MyEnum.A:x}";
+                }
+            }
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldBatchFixCodeWith(CodeFix)
-              .ValidateAsync();
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -1,17 +1,17 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task DontReport()
+    public Task DontReport()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test2
             {
                 int _a;
@@ -19,23 +19,22 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
                 static int _b;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Report()
+    public Task Report()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test2
             {
                 [System.ThreadStatic]
-                int [|_a|];
+                int {|MA0033:_a|};
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

@@ -1,356 +1,344 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseRegexSourceGeneratorAnalyzer,
+    Meziantou.Analyzer.Rules.UseRegexSourceGeneratorFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public class UseRegexSourceGeneratorAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithFrameworkSourceGenerators()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation(); // requires the regex source generator
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
     }
 
     [Fact]
-    public async Task NewRegex_Options_Timeout()
+    public Task NewRegex_Options_Timeout()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                Regex a = MyRegex();
 
-partial class Test
-{
-    Regex a = MyRegex();
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewRegex_Options()
+    public Task NewRegex_Options()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                Regex a = MyRegex();
 
-partial class Test
-{
-    Regex a = MyRegex();
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewRegex()
+    public Task NewRegex()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern")|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                Regex a = MyRegex();
 
-partial class Test
-{
-    Regex a = MyRegex();
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexIsMatch_Options_Timeout()
+    public Task RegexIsMatch_Options_Timeout()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex().IsMatch("test");
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexIsMatch_Options()
+    public Task RegexIsMatch_Options()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex().IsMatch("test");
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexIsMatch()
+    public Task RegexIsMatch()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern")|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex().IsMatch("test");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexReplace_Options_Timeout()
+    public Task RegexReplace_Options_Timeout()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
-}
-""";
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                string a = MyRegex().Replace("test", "newValue");
 
-partial class Test
-{
-    string a = MyRegex().Replace("test", "newValue");
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexReplace_Options()
+    public Task RegexReplace_Options()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture)|];
-}
-""";
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                string a = MyRegex().Replace("test", "newValue");
 
-partial class Test
-{
-    string a = MyRegex().Replace("test", "newValue");
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexReplace()
+    public Task RegexReplace()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    string a = [|Regex.Replace("test", "testpattern", "newValue")|];
-}
-""";
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                string a = MyRegex().Replace("test", "newValue");
 
-partial class Test
-{
-    string a = MyRegex().Replace("test", "newValue");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexReplace_MatchEvaluator()
+    public Task RegexReplace_MatchEvaluator()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    string a = [|Regex.Replace("test", "testpattern", evaluator: match => "")|];
-}
-""";
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace("test", "testpattern", evaluator: match => "")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                string a = MyRegex().Replace("test", evaluator: match => "");
 
-partial class Test
-{
-    string a = MyRegex().Replace("test", evaluator: match => "");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex();
-}
-""";
+        return test.RunAsync();
+    }
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+    [Theory]
+    [InlineData("TimeSpan.Zero")]
+    [InlineData("TimeSpan.FromMilliseconds(-2)")]
+    public Task Timeout_NotSupportedByTheGenerator_NoDiagnostic(string timeout)
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+
+        // GeneratedRegex only accepts an infinite or strictly positive match timeout
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                Regex a = new Regex("testpattern", RegexOptions.None, {{timeout}});
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -359,157 +347,142 @@ partial class Test
     [InlineData("TimeSpan.FromMinutes(1)", "60000")]
     [InlineData("TimeSpan.FromHours(1)", "3600000")]
     [InlineData("TimeSpan.FromDays(1)", "86400000")]
-    [InlineData("TimeSpan.Zero", "0")]
     [InlineData("new TimeSpan(10000)", "1")]
     [InlineData("new TimeSpan(1, 2, 3)", "3723000")]
     [InlineData("new TimeSpan(1, 2, 3, 4)", "93784000")]
     [InlineData("new TimeSpan(1, 2, 3, 4, 5)", "93784005")]
-    public async Task Timeout(string timeout, string milliseconds)
+    public Task Timeout(string timeout, string milliseconds)
     {
-        var sourceCode = $$"""
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.None, {{timeout}})|};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
 
-        var codeFix = $$"""
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                Regex a = MyRegex();
 
-partial class Test
-{
-    Regex a = MyRegex();
+                [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: {{milliseconds}})]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: {{milliseconds}})]
-    private static partial Regex MyRegex();
-}
-""";
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(
-                  codeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
-    public async Task New_Timeout_Infinite(string timeout)
+    public Task New_Timeout_Infinite(string timeout)
     {
-        var sourceCode = $$"""
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.None, {{timeout}})|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        var codeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                Regex a = MyRegex();
 
-partial class Test
-{
-    Regex a = MyRegex();
+                [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(
-                  codeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
-    public async Task Static_Timeout_Infinite(string timeout)
+    public Task Static_Timeout_Infinite(string timeout)
     {
-        var sourceCode = $$"""
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("input", "testpattern", RegexOptions.None, {{timeout}})|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("input", "testpattern", RegexOptions.None, {{timeout}})|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        var codeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch("input");
 
-partial class Test
-{
-    bool a = MyRegex().IsMatch("input");
+                [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: -1)]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(
-                  codeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenerateUniqueMethodName()
+    public Task GenerateUniqueMethodName()
     {
-        var sourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("input", "testpattern")|];
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
 
-    private static Regex MyRegex() => throw null;
-}
-""";
+                private static Regex MyRegex() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        var codeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex_().IsMatch("input");
 
-partial class Test
-{
-    bool a = MyRegex_().IsMatch("input");
+                private static Regex MyRegex() => throw null;
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex_();
+            }
+            """;
 
-    private static Regex MyRegex() => throw null;
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex_();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(
-                  codeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonConstantPattern()
+    public Task NonConstantPattern()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
 
@@ -519,1084 +492,932 @@ partial class Test
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedTypeShouldAddPartialToAllAncestorTypes()
+    public Task NestedTypeShouldAddPartialToAllAncestorTypes()
     {
-        var sourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private partial class Inner1
-    {
-        class Inner
-        {
-            bool a = [|Regex.IsMatch("input", "testpattern")|];
-        }
-    }
-}
-""";
+            class Sample
+            {
+                private partial class Inner1
+                {
+                    class Inner
+                    {
+                        bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        var codeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Sample
+            {
+                private partial class Inner1
+                {
+                    partial class Inner
+                    {
+                        bool a = MyRegex().IsMatch("input");
 
-partial class Sample
-{
-    private partial class Inner1
-    {
-        partial class Inner
-        {
-            bool a = MyRegex().IsMatch("input");
+                        [GeneratedRegex("testpattern")]
+                        private static partial Regex MyRegex();
+                    }
+                }
+            }
+            """;
 
-            [GeneratedRegex("testpattern")]
-            private static partial Regex MyRegex();
-        }
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(
-                  codeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task NewRegex_PartialProperty()
+    public Task NewRegex_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern")|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-partial class Test
-{
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewRegex_Options_PartialProperty()
+    public Task NewRegex_Options_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-partial class Test
-{
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NewRegex_Options_Timeout_PartialProperty()
+    public Task NewRegex_Options_Timeout_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
-}
-""";
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-partial class Test
-{
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, matchTimeoutMilliseconds: 1000)]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexIsMatch_PartialProperty()
+    public Task RegexIsMatch_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern")|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex.IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex.IsMatch("test");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexIsMatch_Options_PartialProperty()
+    public Task RegexIsMatch_Options_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex.IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex.IsMatch("test");
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture)]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegexReplace_PartialProperty()
+    public Task RegexReplace_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    string a = [|Regex.Replace("test", "testpattern", "newValue")|];
-}
-""";
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                string a = MyRegex.Replace("test", "newValue");
 
-partial class Test
-{
-    string a = MyRegex.Replace("test", "newValue");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedTypeShouldAddPartialToAllAncestorTypes_PartialProperty()
+    public Task NestedTypeShouldAddPartialToAllAncestorTypes_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private partial class Inner1
-    {
-        class Inner
-        {
-            bool a = [|Regex.IsMatch("input", "testpattern")|];
-        }
+            class Sample
+            {
+                private partial class Inner1
+                {
+                    class Inner
+                    {
+                        bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                private partial class Inner1
+                {
+                    partial class Inner
+                    {
+                        bool a = MyRegex.IsMatch("input");
+
+                        [GeneratedRegex("testpattern")]
+                        private static partial Regex MyRegex { get; }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Sample
-{
-    private partial class Inner1
-    {
-        partial class Inner
-        {
-            bool a = MyRegex.IsMatch("input");
-
-            [GeneratedRegex("testpattern")]
-            private static partial Regex MyRegex { get; }
-        }
-    }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
-    }
 #endif
-
     [Fact]
-    public async Task Field_SuggestFieldName()
+    public Task Field_SuggestFieldName()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private static readonly Regex SampleRegex = [|new Regex("pattern")|];
+            class Sample
+            {
+                private static readonly Regex SampleRegex = {|MA0110:new Regex("pattern")|};
 
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
-}
-""";
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Sample
+            {
+                private static readonly Regex SampleRegex = SampleRegex_();
 
-partial class Sample
-{
-    private static readonly Regex SampleRegex = SampleRegex_();
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
 
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex_();
+            }
+            """;
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex_();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_SuggestFieldNameWithoutRegexSuffix()
+    public Task Field_SuggestFieldNameWithoutRegexSuffix()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private static readonly Regex EmailPattern = [|new Regex("pattern")|];
+            class Sample
+            {
+                private static readonly Regex EmailPattern = {|MA0110:new Regex("pattern")|};
 
-    void M()
-    {
-        _ = EmailPattern.IsMatch("value");
-    }
-}
-""";
+                void M()
+                {
+                    _ = EmailPattern.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Sample
+            {
+                private static readonly Regex EmailPattern = EmailPattern_();
 
-partial class Sample
-{
-    private static readonly Regex EmailPattern = EmailPattern_();
+                void M()
+                {
+                    _ = EmailPattern.IsMatch("value");
+                }
 
-    void M()
-    {
-        _ = EmailPattern.IsMatch("value");
-    }
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailPattern_();
+            }
+            """;
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailPattern_();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Variable_SuggestPascalCaseName()
+    public Task Variable_SuggestPascalCaseName()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Foo
-{
-    void A()
-    {
-        Regex sampleRegex = [|new Regex("pattern")|];
-        _ = sampleRegex.IsMatch("value");
-    }
-}
-""";
+            class Foo
+            {
+                void A()
+                {
+                    Regex sampleRegex = {|MA0110:new Regex("pattern")|};
+                    _ = sampleRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Foo
+            {
+                void A()
+                {
+                    Regex sampleRegex = SampleRegex();
+                    _ = sampleRegex.IsMatch("value");
+                }
 
-partial class Foo
-{
-    void A()
-    {
-        Regex sampleRegex = SampleRegex();
-        _ = sampleRegex.IsMatch("value");
-    }
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex();
+            }
+            """;
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Variable_AlreadyPascalCase()
+    public Task Variable_AlreadyPascalCase()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Foo
-{
-    void A()
-    {
-        Regex EmailRegex = [|new Regex("pattern")|];
-        _ = EmailRegex.IsMatch("value");
-    }
-}
-""";
+            class Foo
+            {
+                void A()
+                {
+                    Regex EmailRegex = {|MA0110:new Regex("pattern")|};
+                    _ = EmailRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Foo
+            {
+                void A()
+                {
+                    Regex EmailRegex = EmailRegex_();
+                    _ = EmailRegex.IsMatch("value");
+                }
 
-partial class Foo
-{
-    void A()
-    {
-        Regex EmailRegex = EmailRegex();
-        _ = EmailRegex.IsMatch("value");
-    }
-
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailRegex_();
+            }
+            """;
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMethod_UseDefaultName()
+    public Task StaticMethod_UseDefaultName()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Test
-{
-    bool a = [|Regex.IsMatch("test", "testpattern")|];
-}
-""";
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch("test");
 
-partial class Test
-{
-    bool a = MyRegex().IsMatch("test");
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-    [GeneratedRegex("testpattern")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task Field_RemoveAndReplaceWithProperty_PartialProperty()
+    public Task Field_RemoveAndReplaceWithProperty_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private static readonly Regex SampleRegex = [|new Regex("pattern")|];
+            class Sample
+            {
+                private static readonly Regex SampleRegex = {|MA0110:new Regex("pattern")|};
 
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
-}
-""";
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            partial class Sample
+            {
 
-partial class Sample
-{
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
 
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Variable_RemoveAndReplaceWithProperty_PartialProperty()
+    public Task Variable_RemoveAndReplaceWithProperty_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-class Foo
-{
-    void A()
-    {
-        Regex sampleRegex = [|new Regex("pattern")|];
-        _ = sampleRegex.IsMatch("value");
+            class Foo
+            {
+                void A()
+                {
+                    Regex sampleRegex = {|MA0110:new Regex("pattern")|};
+                    _ = sampleRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Foo
+            {
+                void A()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Foo
-{
-    void A()
+    [Fact]
+    public Task PropertyInitializer_RemoveAndReplaceWithProperty_PartialMethod()
     {
-        _ = SampleRegex.IsMatch("value");
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.CodeActionIndex = 1;
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Sample
+            {
+                public Regex SampleRegex { get; } = {|MA0110:new Regex("pattern")|};
+
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                public Regex SampleRegex { get; } = SampleRegex_();
+
+                void M()
+                {
+                    _ = SampleRegex.IsMatch("value");
+                }
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex_();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex { get; }
-}
-""";
+    [Fact]
+    public Task PropertyInitializer_NoReferences_RemoveAndReplaceWithProperty_PartialMethod()
+    {
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.CodeActionIndex = 1;
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+            class Sample
+            {
+                public Regex EmailRegex { get; } = {|MA0110:new Regex("pattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                public Regex EmailRegex { get; } = EmailRegex_();
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailRegex_();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PropertyInitializer_WithOptions_RemoveAndReplaceWithProperty_PartialMethod()
+    {
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.CodeActionIndex = 1;
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Sample
+            {
+                public Regex Pattern { get; } = {|MA0110:new Regex("pattern", RegexOptions.IgnoreCase)|};
+
+                void M()
+                {
+                    _ = Pattern.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                public Regex Pattern { get; } = Pattern_();
+
+                void M()
+                {
+                    _ = Pattern.IsMatch("value");
+                }
+
+                [GeneratedRegex("pattern", RegexOptions.IgnoreCase)]
+                private static partial Regex Pattern_();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PropertyInitializer_PartialMethod()
+    {
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.CodeActionIndex = 1;
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Sample
+            {
+                public Regex Pattern { get; } = {|MA0110:new Regex("pattern")|};
+
+                void M()
+                {
+                    _ = Pattern.IsMatch("value");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                public Regex Pattern { get; } = Pattern_();
+
+                void M()
+                {
+                    _ = Pattern.IsMatch("value");
+                }
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex Pattern_();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Sample
+            {
+                private static readonly Regex EmailPattern = {|MA0110:new Regex("pattern")|};
+
+                void M1()
+                {
+                    _ = EmailPattern.IsMatch("value1");
+                }
+
+                void M2()
+                {
+                    _ = EmailPattern.IsMatch("value2");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+
+                void M1()
+                {
+                    _ = EmailPattern.IsMatch("value1");
+                }
+
+                void M2()
+                {
+                    _ = EmailPattern.IsMatch("value2");
+                }
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailPattern { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#endif
+    [Fact]
+    public Task TopLevelStatement_NewRegex_PartialMethod()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            var emailRegex = {|MA0110:new Regex("pattern")|};
+            emailRegex.Match("value");
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            var emailRegex = EmailRegex();
+            emailRegex.Match("value");
+
+            partial class Program
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailRegex();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
     [Fact]
-    public async Task PropertyInitializer_RemoveAndReplaceWithProperty_PartialMethod()
+    public Task TopLevelStatement_NewRegex_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    public Regex SampleRegex { get; } = [|new Regex("pattern")|];
+            var emailRegex = {|MA0110:new Regex("pattern")|};
+            emailRegex.Match("value");
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+            EmailRegex.Match("value");
 
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
-}
-""";
+            partial class Program
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex EmailRegex { get; }
+            }
+            """;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Sample
-{
-    public Regex SampleRegex { get; } = SampleRegex_();
-
-    void M()
-    {
-        _ = SampleRegex.IsMatch("value");
-    }
-
-    [GeneratedRegex("pattern")]
-    private static partial Regex SampleRegex_();
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(1, CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PropertyInitializer_NoReferences_RemoveAndReplaceWithProperty_PartialMethod()
+    public Task TopLevelStatement_StaticMethod_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    public Regex EmailRegex { get; } = [|new Regex("pattern")|];
-}
-""";
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            var result = MyRegex.IsMatch("test");
 
-partial class Sample
-{
-    public Regex EmailRegex { get; } = EmailRegex_();
+            partial class Program
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailRegex_();
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(1, CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PropertyInitializer_WithOptions_RemoveAndReplaceWithProperty_PartialMethod()
+    public Task TopLevelStatement_WithExistingProgramClass_PartialProperty()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    public Regex Pattern { get; } = [|new Regex("pattern", RegexOptions.IgnoreCase)|];
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
 
-    void M()
-    {
-        _ = Pattern.IsMatch("value");
-    }
-}
-""";
+            partial class Program
+            {
+                private static void Helper() { }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
+            var result = MyRegex.IsMatch("test");
 
-partial class Sample
-{
-    public Regex Pattern { get; } = Pattern_();
+            partial class Program
+            {
+                private static void Helper() { }
 
-    void M()
-    {
-        _ = Pattern.IsMatch("value");
-    }
+                [GeneratedRegex("pattern")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
 
-    [GeneratedRegex("pattern", RegexOptions.IgnoreCase)]
-    private static partial Regex Pattern_();
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(1, CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
-    [Fact]
-    public async Task PropertyInitializer_PartialMethod()
-    {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
-
-class Sample
-{
-    public Regex Pattern { get; } = [|new Regex("pattern")|];
-
-    void M()
-    {
-        _ = Pattern.IsMatch("value");
-    }
-}
-""";
-
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Sample
-{
-    public Regex Pattern { get; } = Pattern_();
-
-    void M()
-    {
-        _ = Pattern.IsMatch("value");
-    }
-
-    [GeneratedRegex("pattern")]
-    private static partial Regex Pattern_();
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(1, CodeFix)
-            .ValidateAsync();
-    }
 #endif
-
     [Fact]
-    public async Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
+    public Task TopLevelStatement_StaticMethod_PartialMethod()
     {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-class Sample
-{
-    private static readonly Regex EmailPattern = [|new Regex("pattern")|];
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
 
-    void M1()
-    {
-        _ = EmailPattern.IsMatch("value1");
-    }
+            var result = MyRegex().IsMatch("test");
 
-    void M2()
-    {
-        _ = EmailPattern.IsMatch("value2");
-    }
-}
-""";
+            partial class Program
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Sample
-{
-
-    void M1()
-    {
-        _ = EmailPattern.IsMatch("value1");
-    }
-
-    void M2()
-    {
-        _ = EmailPattern.IsMatch("value2");
-    }
-
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailPattern { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
-    }
-#endif
-
-    [Fact]
-    public async Task TopLevelStatement_NewRegex_PartialMethod()
-    {
-        const string SourceCode = """
-using System.Text.RegularExpressions;
-
-var emailRegex = [|new Regex("pattern")|];
-emailRegex.Match("value");
-""";
-
-        const string CodeFix = """
-using System.Text.RegularExpressions;
-
-var emailRegex = EmailRegex();
-emailRegex.Match("value");
-
-partial class Program
-{
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
-    }
-
-#if CSHARP14_OR_GREATER
-    [Fact]
-    public async Task TopLevelStatement_NewRegex_PartialProperty()
-    {
-        const string SourceCode = """
-using System.Text.RegularExpressions;
-
-var emailRegex = [|new Regex("pattern")|];
-emailRegex.Match("value");
-""";
-
-        const string CodeFix = """
-using System.Text.RegularExpressions;
-EmailRegex.Match("value");
-
-partial class Program
-{
-    [GeneratedRegex("pattern")]
-    private static partial Regex EmailRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement_StaticMethod_PartialProperty()
+    public Task BatchFix_MultipleRegex()
     {
-        const string SourceCode = """
-using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-var result = [|Regex.IsMatch("test", "pattern")|];
-""";
+            class Test1
+            {
+                Regex a = {|MA0110:new Regex("pattern1")|};
+            }
 
-        const string CodeFix = """
-using System.Text.RegularExpressions;
+            class Test2
+            {
+                Regex b = {|MA0110:new Regex("pattern2")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
 
-var result = MyRegex.IsMatch("test");
+            partial class Test1
+            {
+                Regex a = MyRegex();
 
-partial class Program
-{
-    [GeneratedRegex("pattern")]
-    private static partial Regex MyRegex { get; }
-}
-""";
+                [GeneratedRegex("pattern1")]
+                private static partial Regex MyRegex();
+            }
 
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
-    }
+            partial class Test2
+            {
+                Regex b = MyRegex();
 
-    [Fact]
-    public async Task TopLevelStatement_WithExistingProgramClass_PartialProperty()
-    {
-        const string SourceCode = """
-using System.Text.RegularExpressions;
+                [GeneratedRegex("pattern2")]
+                private static partial Regex MyRegex();
+            }
+            """;
 
-var result = [|Regex.IsMatch("test", "pattern")|];
-
-partial class Program
-{
-    private static void Helper() { }
-}
-""";
-
-        const string CodeFix = """
-using System.Text.RegularExpressions;
-
-var result = MyRegex.IsMatch("test");
-
-partial class Program
-{
-    private static void Helper() { }
-
-    [GeneratedRegex("pattern")]
-    private static partial Regex MyRegex { get; }
-}
-""";
-
-        await new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp14)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseRegexSourceGeneratorAnalyzer>()
-            .WithCodeFixProvider<UseRegexSourceGeneratorFixer>()
-            .WithNoFixCompilation()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
-    }
-#endif
-
-    [Fact]
-    public async Task TopLevelStatement_StaticMethod_PartialMethod()
-    {
-        const string SourceCode = """
-using System.Text.RegularExpressions;
-
-var result = [|Regex.IsMatch("test", "pattern")|];
-""";
-
-        const string CodeFix = """
-using System.Text.RegularExpressions;
-
-var result = MyRegex().IsMatch("test");
-
-partial class Program
-{
-    [GeneratedRegex("pattern")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(
-                  CodeFix)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task BatchFix_MultipleRegex()
-    {
-        const string SourceCode = """
-using System;
-using System.Text.RegularExpressions;
-
-class Test1
-{
-    Regex a = [|new Regex("pattern1")|];
-}
-
-class Test2
-{
-    Regex b = [|new Regex("pattern2")|];
-}
-""";
-
-        const string CodeFix = """
-using System;
-using System.Text.RegularExpressions;
-
-partial class Test1
-{
-    Regex a = MyRegex();
-
-    [GeneratedRegex("pattern1")]
-    private static partial Regex MyRegex();
-}
-
-partial class Test2
-{
-    Regex b = MyRegex();
-
-    [GeneratedRegex("pattern2")]
-    private static partial Regex MyRegex();
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode(SourceCode)
-              .ShouldBatchFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
-}
+        return test.RunAsync();
+    }}

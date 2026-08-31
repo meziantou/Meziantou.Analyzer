@@ -1,175 +1,186 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseSystemThreadingLockInsteadOfObjectAnalyzer,
+    Meziantou.Analyzer.Rules.UseSystemThreadingLockInsteadOfObjectFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net9_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-            .WithAnalyzer<UseSystemThreadingLockInsteadOfObjectAnalyzer>()
-            .WithCodeFixProvider<UseSystemThreadingLockInsteadOfObjectFixer>();
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.Preview;
+
+        // The rule is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // which the testing library rejects for a code fix by default
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task Field_CSharp12()
+    public Task Field_CSharp12()
     {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp7;
+        test.TestCode = """
+            class TypeName
+            {
+                string _lock = "dummy";
 
-        await CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7)
-            .WithSourceCode("""
-                class TypeName
-                {
-                    string _lock = "dummy";
+                void A() { lock(_lock) { } }
+            }
+            """;
 
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
-    }
-
-#if CSHARP13_OR_GREATER
-    [Fact]
-    public async Task Field_NoUsage()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
-                {
-                    object _lock = new();
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_NotObject_OnlyLockUsage()
+    public Task Field_NoUsage()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                object _lock = new();
+            }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
-                {
-                    string _lock = "dummy";
-
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_OnlyLockUsage()
+    public Task Field_NotObject_OnlyLockUsage()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                string _lock = "dummy";
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
-                {
-                    object [|_lock|] = new();
+                void A() { lock(_lock) { } }
+            }
+            """;
 
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                class TypeName
-                {
-                    System.Threading.Lock _lock = new();
-
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_OnlyLockUsage_NET8()
+    public Task Field_OnlyLockUsage()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                object {|MA0158:_lock|} = new();
 
-        await CreateProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithSourceCode("""
-                class TypeName
-                {
-                    object _lock = new();
+                void A() { lock(_lock) { } }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                System.Threading.Lock _lock = new();
 
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_LockAndOtherUsages()
+    public Task Field_OnlyLockUsage_NET8()
     {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            class TypeName
+            {
+                object _lock = new();
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
-                {
-                    object _lock = new();
+                void A() { lock(_lock) { } }
+            }
+            """;
 
-                    void A() { lock(_lock) { } }
-                    void B() { _lock.ToString(); }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_OtherUsagesInDerivedClass()
+    public Task Field_LockAndOtherUsages()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                object _lock = new();
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class BaseClass
-                {
-                    private protected object _lock = new();
+                void A() { lock(_lock) { } }
+                void B() { _lock.ToString(); }
+            }
+            """;
 
-                    void A() { lock(_lock) { } }
-                }
-
-                class ChildClass : BaseClass
-                {
-                    void B() { _lock.ToString(); }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_LockInDerivedClass()
+    public Task Field_OtherUsagesInDerivedClass()
     {
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseClass
+            {
+                private protected object _lock = new();
 
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class BaseClass
-                {
-                    private protected object [|_lock|] = new();
-                }
+                void A() { lock(_lock) { } }
+            }
 
-                class ChildClass : BaseClass
-                {
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+            class ChildClass : BaseClass
+            {
+                void B() { _lock.ToString(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_LockInDerivedClass()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseClass
+            {
+                private protected object {|MA0158:_lock|} = new();
+            }
+
+            class ChildClass : BaseClass
+            {
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("public", "protected")]
     [InlineData("public", "public")]
-    public async Task Field_Public(string classVisibility, string fieldVisibility)
+    public Task Field_Public(string classVisibility, string fieldVisibility)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                {{classVisibility}} class BaseClass
-                {
-                    {{fieldVisibility}} object _lock = new();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{classVisibility}} class BaseClass
+            {
+                {{fieldVisibility}} object _lock = new();
 
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -177,203 +188,207 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
     [InlineData("public", "private protected")]
     [InlineData("public", "internal")]
     [InlineData("internal", "public")]
-    public async Task Field_Private(string classVisibility, string fieldVisibility)
+    public Task Field_Private(string classVisibility, string fieldVisibility)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                {{classVisibility}} class BaseClass
-                {
-                    {{fieldVisibility}} object [|_lock|] = new();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{classVisibility}} class BaseClass
+            {
+                {{fieldVisibility}} object {|MA0158:_lock|} = new();
 
-                    void A() { lock(_lock) { } }
-                }
-                """)
-            .ValidateAsync();
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariable_Lock()
+    public Task LocalVariable_Lock()
     {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var [|o|] = new object();
-                        lock(o) { }
-                    }
+                    var {|MA0158:o|} = new object();
+                    lock(o) { }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariable_LockAndOtherUsages()
+    public Task LocalVariable_LockAndOtherUsages()
     {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var o = new object();
-                        lock(o) { }
-                        o.ToString();
-                    }
+                    var o = new object();
+                    lock(o) { }
+                    o.ToString();
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariable_Lambda()
+    public Task LocalVariable_Lambda()
     {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var [|o|] = new object();
-                        System.Threading.Tasks.Task.Run(() => { lock(o) { } });
-                        lock(o) { }
-                    }
+                    var {|MA0158:o|} = new object();
+                    System.Threading.Tasks.Task.Run(() => { lock(o) { } });
+                    lock(o) { }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LocalVariable_Lambda_OtherUsage()
+    public Task LocalVariable_Lambda_OtherUsage()
     {
-
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class TypeName
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        var o = new object();
-                        System.Threading.Tasks.Task.Run(() => { lock(o) { o.ToString(); } });
-                        lock(o) { }
-                    }
+                    var o = new object();
+                    System.Threading.Tasks.Task.Run(() => { lock(o) { o.ToString(); } });
+                    lock(o) { }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_InitializedInConstructor_OnlyLockUsage()
+    public Task Field_InitializedInConstructor_OnlyLockUsage()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed class A
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class A
+            {
+                private readonly object {|MA0158:_lock|};
+
+                public A()
                 {
-                    private readonly object [|_lock|];
-
-                    public A()
-                    {
-                        _lock = new object();
-                    }
-
-                    public void Run()
-                    {
-                        lock (_lock) { }
-                    }
+                    _lock = new object();
                 }
-                """)
-            .ShouldFixCodeWith("""
-                public sealed class A
+
+                public void Run()
                 {
-                    private readonly System.Threading.Lock _lock;
-
-                    public A()
-                    {
-                        _lock = new();
-                    }
-
-                    public void Run()
-                    {
-                        lock (_lock) { }
-                    }
+                    lock (_lock) { }
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            public sealed class A
+            {
+                private readonly System.Threading.Lock _lock;
+
+                public A()
+                {
+                    _lock = new();
+                }
+
+                public void Run()
+                {
+                    lock (_lock) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_InitializedInConstructor_LockAndOtherUsages()
+    public Task Field_InitializedInConstructor_LockAndOtherUsages()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed class A
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class A
+            {
+                private readonly object _lock;
+
+                public A()
                 {
-                    private readonly object _lock;
-
-                    public A()
-                    {
-                        _lock = new object();
-                    }
-
-                    public void Run()
-                    {
-                        lock (_lock) { }
-                        _lock.ToString();
-                    }
+                    _lock = new object();
                 }
-                """)
-            .ValidateAsync();
+
+                public void Run()
+                {
+                    lock (_lock) { }
+                    _lock.ToString();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticField_InitializedInStaticConstructor_OnlyLockUsage()
+    public Task StaticField_InitializedInStaticConstructor_OnlyLockUsage()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed class B
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class B
+            {
+                private static readonly object {|MA0158:Lock|};
+
+                static B()
                 {
-                    private static readonly object [|Lock|];
-
-                    static B()
-                    {
-                        Lock = new object();
-                    }
-
-                    public void Run()
-                    {
-                        lock (Lock) { }
-                    }
+                    Lock = new object();
                 }
-                """)
-            .ValidateAsync();
+
+                public void Run()
+                {
+                    lock (Lock) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticField_InitializedInStaticConstructor_LockAndOtherUsages()
+    public Task StaticField_InitializedInStaticConstructor_LockAndOtherUsages()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                public sealed class B
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class B
+            {
+                private static readonly object Lock;
+
+                static B()
                 {
-                    private static readonly object Lock;
-
-                    static B()
-                    {
-                        Lock = new object();
-                    }
-
-                    public void Run()
-                    {
-                        lock (Lock) { }
-                        Lock.ToString();
-                    }
+                    Lock = new object();
                 }
-                """)
-            .ValidateAsync();
+
+                public void Run()
+                {
+                    lock (Lock) { }
+                    Lock.ToString();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-#endif
 }

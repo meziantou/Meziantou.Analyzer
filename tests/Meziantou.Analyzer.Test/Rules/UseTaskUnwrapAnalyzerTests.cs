@@ -1,116 +1,127 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseTaskUnwrapAnalyzer,
+    Meziantou.Analyzer.Rules.UseTaskUnwrapFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseTaskUnwrapAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseTaskUnwrapAnalyzer>()
-            .WithCodeFixProvider<UseTaskUnwrapFixer>()
-            .WithTargetFramework(TargetFramework.Net6_0)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication);
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task TaskOfTask()
+    public Task TaskOfTask()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                [|await await a|];
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
+            Task<Task> a = null;
+            {|MA0152:await await a|};
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                await a.Unwrap();
-                """)
-            .ValidateAsync();
+            Task<Task> a = null;
+            await a.Unwrap();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTask_ConfigureAwait()
+    public Task TaskOfTask_ConfigureAwait()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                await (await a.ConfigureAwait(false));
-                """)
-            .ValidateAsync();
+            Task<Task> a = null;
+            await (await a.ConfigureAwait(false));
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTask_ConfigureAwait_Root()
+    public Task TaskOfTask_ConfigureAwait_Root()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                [|await (await a).ConfigureAwait(false)|];
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
+            Task<Task> a = null;
+            {|MA0152:await (await a).ConfigureAwait(false)|};
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                await a.Unwrap().ConfigureAwait(false);
-                """)
-            .ValidateAsync();
+            Task<Task> a = null;
+            await a.Unwrap().ConfigureAwait(false);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTask_Unwrap_ConfigureAwait_Root()
+    public Task TaskOfTask_Unwrap_ConfigureAwait_Root()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<Task> a = null;
-                await a.Unwrap().ConfigureAwait(false);
-                """)
-            .ValidateAsync();
+            Task<Task> a = null;
+            await a.Unwrap().ConfigureAwait(false);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTaskOfInt32()
+    public Task TaskOfTaskOfInt32()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<Task<int>> a = null;
-                int b = [|await await a|];
-                """)
-            .ValidateAsync();
+            Task<Task<int>> a = null;
+            int b = {|MA0152:await await a|};
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfValueTaskOfInt32()
+    public Task TaskOfValueTaskOfInt32()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                Task<ValueTask<int>> a = null;
-                int b = await await a;
-                """)
-            .ValidateAsync();
+            Task<ValueTask<int>> a = null;
+            int b = await await a;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValueTaskOfTaskOfInt32()
+    public Task ValueTaskOfTaskOfInt32()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
 
-                ValueTask<Task<int>> a = default;
-                int b = await await a;
-                """)
-            .ValidateAsync();
+            ValueTask<Task<int>> a = default;
+            int b = await await a;
+            """;
+
+        return test.RunAsync();
     }
 }

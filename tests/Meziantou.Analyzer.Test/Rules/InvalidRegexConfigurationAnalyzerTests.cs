@@ -1,66 +1,77 @@
+using Microsoft.CodeAnalysis;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.InvalidRegexConfigurationAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class InvalidRegexConfigurationAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<InvalidRegexConfigurationAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
+
+    /// <summary>
+    /// The rule reports the invalid configuration values of the whole compilation, so the diagnostic has no location.
+    /// </summary>
+    private static DiagnosticResult ExpectedInvalidRegex() =>
+        new(RuleIdentifiers.InvalidRegexConfiguration, DiagnosticSeverity.Warning);
 
     [Fact]
-    public async Task NoConfiguration_DoNotReportDiagnostic()
+    public Task NoConfiguration_DoNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class Test { }")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "class Test { }";
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("MA0003.excluded_methods_regex")]
     [InlineData("MA0104.namespaces_regex")]
     [InlineData("MA0104.namepaces_regex")]
-    public async Task ValidRegex_DoNotReportDiagnostic(string key)
+    public Task ValidRegex_DoNotReportDiagnostic(string key)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class Test { }")
-              .AddAnalyzerConfiguration(key, "^System($|\\.)")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "class Test { }";
+        test.TestState.SetConfiguration(key, "^System($|\\.)");
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("MA0003.excluded_methods_regex")]
     [InlineData("MA0104.namespaces_regex")]
     [InlineData("MA0104.namepaces_regex")]
-    public async Task InvalidRegex_ReportDiagnostic(string key)
+    public Task InvalidRegex_ReportDiagnostic(string key)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class Test { }")
-              .AddAnalyzerConfiguration(key, "[")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0220" })
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "class Test { }";
+        test.TestState.SetConfiguration(key, "[");
+        test.ExpectedDiagnostics.Add(ExpectedInvalidRegex());
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InvalidRegex_ReportDiagnosticOnlyOnceForMultipleFiles()
+    public Task InvalidRegex_ReportDiagnosticOnlyOnceForMultipleFiles()
     {
-        var builder = CreateProjectBuilder()
-              .WithSourceCode("class Test1 { }")
-              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "[")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0220" });
-        builder.ApiReferences.Add("class Test2 { }");
+        var test = CreateTest();
+        test.TestCode = "class Test1 { }";
+        test.TestState.Sources.Add("class Test2 { }");
+        test.TestState.SetConfiguration("MA0104.namespaces_regex", "[");
+        test.ExpectedDiagnostics.Add(ExpectedInvalidRegex());
 
-        await builder.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleInvalidRegex_ReportOneDiagnosticPerConfiguration()
+    public Task MultipleInvalidRegex_ReportOneDiagnosticPerConfiguration()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("class Test { }")
-              .AddAnalyzerConfiguration("MA0003.excluded_methods_regex", "[")
-              .AddAnalyzerConfiguration("MA0104.namespaces_regex", "(")
-              .ShouldReportDiagnostic(new DiagnosticResult { Id = "MA0220" }, new DiagnosticResult { Id = "MA0220" })
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = "class Test { }";
+        test.TestState.SetConfiguration(("MA0003.excluded_methods_regex", "["), ("MA0104.namespaces_regex", "("));
+        test.ExpectedDiagnostics.Add(ExpectedInvalidRegex());
+        test.ExpectedDiagnostics.Add(ExpectedInvalidRegex());
+
+        return test.RunAsync();
     }
 }

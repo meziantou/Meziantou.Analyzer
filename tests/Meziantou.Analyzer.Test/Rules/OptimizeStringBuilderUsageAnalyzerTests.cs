@@ -1,28 +1,32 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeStringBuilderUsageAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeStringBuilderUsageFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeStringBuilderUsageAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptimizeStringBuilderUsageAnalyzer>()
-            .WithCodeFixProvider<OptimizeStringBuilderUsageFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task AppendFormat_NoDiagnostic()
+    public Task AppendFormat_NoDiagnostic()
     {
-        const string SourceCode = @"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendFormat(""{10}"", 10);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat("{10}", 10);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -31,93 +35,101 @@ class Test
     [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"", true, false)")]
     [InlineData(@"new StringBuilder().AppendFormat(""NO PLACEHOLDERS"", true, false, 42)")]
     [InlineData(@"new StringBuilder().AppendFormat(null, ""NO PLACEHOLDERS"", true)")]
-    public async Task AppendFormat_NoPlaceholders_ReportDiagnostic(string expression)
+    public Task AppendFormat_NoPlaceholders_ReportDiagnostic(string expression)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                using System.Text;
-                class Test
-                {
-                    void A()
-                    {
-                        [|{{expression}}|];
-                    }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$$""""
+            {{{$$"""
+                            using System.Text;
+                            class Test
+                            {
+                                void A()
+                                {
+                                    {|MA0028:{{expression}}|};
+                                }
+                            }
+                            """}}}
+            """";
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"new StringBuilder().AppendFormat(""{0} {1}"", true, false)")]
     [InlineData(@"new StringBuilder().AppendFormat(null, ""{0} {1}"", true, false)")]
-    public async Task AppendFormat_WithPlaceholders_NoDiagnostic(string expression)
+    public Task AppendFormat_WithPlaceholders_NoDiagnostic(string expression)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                using System.Text;
-                class Test
-                {
-                    void A()
-                    {
-                        {{expression}};
-                    }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$$""""
+            {{{$$"""
+                            using System.Text;
+                            class Test
+                            {
+                                void A()
+                                {
+                                    {{expression}};
+                                }
+                            }
+                            """}}}
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendFormat_NoPlaceholders_FixReplacesWithAppend()
+    public Task AppendFormat_NoPlaceholders_FixReplacesWithAppend()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        [|new StringBuilder().AppendFormat("NO PLACEHOLDERS", true)|];
-                    }
+                    {|MA0028:new StringBuilder().AppendFormat("NO PLACEHOLDERS", true)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        new StringBuilder().Append("NO PLACEHOLDERS");
-                    }
+                    new StringBuilder().Append("NO PLACEHOLDERS");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendFormat_NoPlaceholders_WithProvider_FixReplacesWithAppend()
+    public Task AppendFormat_NoPlaceholders_WithProvider_FixReplacesWithAppend()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        [|new StringBuilder().AppendFormat(null, "NO PLACEHOLDERS", true)|];
-                    }
+                    {|MA0028:new StringBuilder().AppendFormat(null, "NO PLACEHOLDERS", true)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        new StringBuilder().Append("NO PLACEHOLDERS");
-                    }
+                    new StringBuilder().Append("NO PLACEHOLDERS");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -128,18 +140,21 @@ class Test
     [InlineData(@"$""abc{""test""}""")]
     [InlineData(@"""abc"" + ""test""")]
     [InlineData(@"$""abc{""test""}"" + ""test""")]
-    public async Task Append_NoDiagnostic(string text)
+    public Task Append_NoDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(" + text + @");
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append({{text}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -149,36 +164,42 @@ class Test
     [InlineData(@"""""")]
     [InlineData(@""""" + """"")]
     [InlineData(@""""".Substring(0, 10)")]
-    public async Task Append_ReportDiagnostic(string text)
+    public Task Append_ReportDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Append(" + text + @")|];
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().Append({{text}})|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""abc""")]
     [InlineData(@"$""abc""")]
-    public async Task AppendLine_NoDiagnostic(string text)
+    public Task AppendLine_NoDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendLine(" + text + @");
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendLine({{text}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -186,22 +207,25 @@ class Test
     [InlineData(@"$""abc""")]
     [InlineData(@"$""{0}abc""")]
 
-    public async Task AppendLine_Net8_NoDiagnostic(string text)
+    public Task AppendLine_Net8_NoDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                using System.Text;
-                class Test
-                {
-                    void A()
-                    {
-                        new StringBuilder().AppendLine({{text}});
-                    }
-                }
-                """)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = $$$""""
+            {{{$$"""
+                            using System.Text;
+                            class Test
+                            {
+                                void A()
+                                {
+                                    new StringBuilder().AppendLine({{text}});
+                                }
+                            }
+                            """}}}
+            """";
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -209,19 +233,22 @@ class Test
     [InlineData(@"""a"" + 10")]
     [InlineData(@"10 + 20 + ""a""")]
     [InlineData(@"10.ToString()")]
-    public async Task AppendLine_ReportDiagnostic(string text)
+    public Task AppendLine_ReportDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(" + text + @")|];
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine({{text}})|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -234,18 +261,21 @@ class Test
     // StringBuilder.Insert has no counterpart for some of the Append overloads, so the ToString call is kept
     [InlineData(@"10.ToString()")]
     [InlineData(@"new StringBuilder().ToString()")]
-    public async Task Insert_NoDiagnostic(string text)
+    public Task Insert_NoDiagnostic(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Insert(0, " + text + @");
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Insert(0, {{text}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     public static TheoryData<string> EmptyStringsArguments
@@ -265,687 +295,810 @@ class Test
 
     [Theory]
     [MemberData(nameof(EmptyStringsArguments))]
-    public async Task AppendLine_EmptyString(string text)
+    public Task AppendLine_EmptyString(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(" + text + @")|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendLine();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine({{text}})|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [MemberData(nameof(EmptyStringsArguments))]
-    public async Task Append_EmptyString(string text)
+    public Task Append_EmptyString(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Append(" + text + @")|].AppendLine();
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendLine();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().Append({{text}})|}.AppendLine();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [MemberData(nameof(EmptyStringsArguments))]
-    public async Task Insert_EmptyString(string text)
+    public Task Insert_EmptyString(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Insert(0, " + text + @")|].AppendLine();
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendLine();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().Insert(0, {{text}})|}.AppendLine();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""a""")]
-    public async Task Append_OneCharString(string text)
+    public Task Append_OneCharString(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append([|" + text + @"|]);
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append('a');
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append({|MA0028:{{text}}|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append('a');
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""a""")]
-    public async Task Insert_OneCharString(string text)
+    public Task Insert_OneCharString(string text)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Insert(0, [|" + text + @"|]);
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Insert(0, 'a');
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Append_InterpolatedString()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Append($""A{1}BC{2:X2}DEF{1,-2:N2}"")|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append(""DEF"").AppendFormat(""{0,-2:N2}"", 1);
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_InterpolatedString_FinishWithString()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine($""A{1}BC{2:X2}DEF"")|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).AppendLine(""DEF"");
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_InterpolatedString_FinishWithChar()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine($""A{1}BC{2:X2}D"")|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).Append('D').AppendLine();
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_InterpolatedString_FinishWithObject()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine($""A{1}BC{2:X2}"")|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append('A').Append(1).Append(""BC"").AppendFormat(""{0:X2}"", 2).AppendLine();
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Append_StringAdd()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        var a = """";
-        [|new StringBuilder().Append(""ab"" + a)|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        var a = """";
-        new StringBuilder().Append(""ab"").Append(a);
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_StringAdd()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        var a = """";
-        [|new StringBuilder().AppendLine(""ab"" + a)|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        var a = """";
-        new StringBuilder().Append(""ab"").AppendLine(a);
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_StringAdd_NonStringRightOperand()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count)
-                    {
-                        [|new StringBuilder().AppendLine("a" + count)|];
-                    }
+                    new StringBuilder().Insert(0, {|MA0028:{{text}}|});
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count)
-                    {
-                        new StringBuilder().Append("a").Append(count).AppendLine();
-                    }
+                    new StringBuilder().Insert(0, 'a');
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Append_StringAdd_NonStringRightOperand()
+    public Task Append_InterpolatedString()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count)
-                    {
-                        [|new StringBuilder().Append("a" + count)|];
-                    }
+                    {|MA0028:new StringBuilder().Append($"A{1}BC{2:X2}DEF{1,-2:N2}")|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count)
-                    {
-                        new StringBuilder().Append("a").Append(count);
-                    }
+                    new StringBuilder().Append('A').Append(1).Append("BC").AppendFormat("{0:X2}", 2).Append("DEF").AppendFormat("{0,-2:N2}", 1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_StringAdd_NonStringLeftOperand()
+    public Task AppendLine_InterpolatedString_FinishWithString()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count, string suffix)
-                    {
-                        [|new StringBuilder().AppendLine(count + suffix)|];
-                    }
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}DEF")|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(int count, string suffix)
-                    {
-                        new StringBuilder().Append(count).AppendLine(suffix);
-                    }
+                    new StringBuilder().Append('A').Append(1).Append("BC").AppendFormat("{0:X2}", 2).AppendLine("DEF");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_StringAdd_NullRightOperand()
+    public Task AppendLine_InterpolatedString_FinishWithChar()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(string prefix)
-                    {
-                        [|new StringBuilder().AppendLine(prefix + null)|];
-                    }
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}D")|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(string prefix)
-                    {
-                        new StringBuilder().Append(prefix).AppendLine(null);
-                    }
+                    new StringBuilder().Append('A').Append(1).Append("BC").AppendFormat("{0:X2}", 2).Append('D').AppendLine();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_StringAdd_CharArrayOperand_NoCodeFix()
+    public Task AppendLine_InterpolatedString_FinishWithObject()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Text;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(char[] value)
-                    {
-                        [|new StringBuilder().AppendLine("a" + value)|];
-                    }
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}")|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Text;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A(char[] value)
-                    {
-                        new StringBuilder().AppendLine("a" + value);
-                    }
+                    new StringBuilder().Append('A').Append(1).Append("BC").AppendFormat("{0:X2}", 2).AppendLine();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Append_ToString()
+    public Task Append_StringAdd()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().Append(1.ToString())|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(1);
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_ToString()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(1.ToString())|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(1).AppendLine();
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Append_ToStringWithFormatAndCulture()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(1.ToString(""N"", null));
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Append_AppendFormat_Variable()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        new StringBuilder().Append(1.ToString(format, null));
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Append_StringFormat_AppendFormat()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        [|new StringBuilder().Append(string.Format(""{0:N2}-{1:N0}"", 1, 2))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        new StringBuilder().AppendFormat(""{0:N2}-{1:N0}"", 1, 2);
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_AppendFormat()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(string.Format(null, ""{0:N}"", 1))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendFormat(null, ""{0:N}"", 1).AppendLine();
-    }
-}")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task AppendLine_AppendFormat_ImplicitParamsArray()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode(
-                """
-                using System.Globalization;
-                using System.Text;
-
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        [|new StringBuilder().AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment"))|];
-                    }
+                    var a = "";
+                    {|MA0028:new StringBuilder().Append("ab" + a)|};
                 }
-                """)
-              .ShouldFixCodeWith(
-                """
-                using System.Globalization;
-                using System.Text;
-
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        new StringBuilder().AppendFormat(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment").AppendLine();
-                    }
+                    var a = "";
+                    new StringBuilder().Append("ab").Append(a);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Append_StringJoin_AppendJoin_OldTargetFramework()
+    public Task AppendLine_StringAdd()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        new StringBuilder().Append(string.Join("", "", new[] { 1, 2, 3 }));
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    var a = "";
+                    {|MA0028:new StringBuilder().AppendLine("ab" + a)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    var a = "";
+                    new StringBuilder().Append("ab").AppendLine(a);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Append_StringJoin_AppendJoin()
+    public Task AppendLine_StringAdd_NonStringRightOperand()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        [|new StringBuilder().Append(string.Join("", "", new[] { 1, 2, 3 }))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A(string format)
-    {
-        new StringBuilder().AppendJoin("", "", new[] { 1, 2, 3 });
-    }
-}")
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count)
+                {
+                    {|MA0028:new StringBuilder().AppendLine("a" + count)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count)
+                {
+                    new StringBuilder().Append({|MA0028:"a"|}).Append(count).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_AppendJoin()
+    public Task Append_StringAdd_NonStringRightOperand()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(string.Join("", "", new[] { 1, 2, 3 }))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendJoin("", "", new[] { 1, 2, 3 }).AppendLine();
-    }
-}")
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count)
+                {
+                    {|MA0028:new StringBuilder().Append("a" + count)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count)
+                {
+                    new StringBuilder().Append({|MA0028:"a"|}).Append(count);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_AppendSubString()
+    public Task AppendLine_StringAdd_NonStringLeftOperand()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine("""".Substring(0, 1))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append("""", 0, 1).AppendLine();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count, string suffix)
+                {
+                    {|MA0028:new StringBuilder().AppendLine(count + suffix)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(int count, string suffix)
+                {
+                    new StringBuilder().Append(count).AppendLine(suffix);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_AppendSubStringWithoutLength()
+    public Task AppendLine_StringAdd_NullRightOperand()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        [|new StringBuilder().AppendLine(""abc"".Substring(2))|];
-    }
-}")
-              .ShouldFixCodeWith(@"using System.Text;
-class Test
-{
-    void A()
-    {
-        new StringBuilder().Append(""abc"", 2, ""abc"".Length - 2).AppendLine();
-    }
-}")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string prefix)
+                {
+                    {|MA0028:new StringBuilder().AppendLine(prefix + null)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string prefix)
+                {
+                    new StringBuilder().Append(prefix).AppendLine(null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AppendLine_CustomStructToString()
+    public Task AppendLine_StringAdd_CharArrayOperand_NoCodeFix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(@"using System.Text;
-struct MyStruct
-{
-}
+        var test = CreateTest();
+        // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(char[] value)
+                {
+                    {|MA0028:new StringBuilder().AppendLine("a" + value)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(char[] value)
+                {
+                    {|MA0028:new StringBuilder().AppendLine("a" + value)|};
+                }
+            }
+            """;
 
-class Test
-{
-    void A()
-    {
-        new StringBuilder().AppendLine(new MyStruct().ToString());
+        return test.RunAsync();
     }
-}")
-              .ValidateAsync();
+
+    [Fact]
+    public Task Append_ToString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().Append(1.ToString())|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_ToString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine(1.ToString())|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append(1).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_ToStringWithFormatAndCulture()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append(1.ToString("N", null));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_AppendFormat_Variable()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    new StringBuilder().Append(1.ToString(format, null));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringFormat_AppendFormat()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    {|MA0028:new StringBuilder().Append(string.Format("{0:N2}-{1:N0}", 1, 2))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    new StringBuilder().AppendFormat("{0:N2}-{1:N0}", 1, 2);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_AppendFormat()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine(string.Format(null, "{0:N}", 1))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat(null, "{0:N}", 1).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_AppendFormat_ImplicitParamsArray()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Globalization;
+            using System.Text;
+
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment"))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Globalization;
+            using System.Text;
+
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment").AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringJoin_AppendJoin_OldTargetFramework()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    new StringBuilder().Append(string.Join(", ", new[] { 1, 2, 3 }));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringJoin_AppendJoin()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    {|MA0028:new StringBuilder().Append(string.Join(", ", new[] { 1, 2, 3 }))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string format)
+                {
+                    new StringBuilder().AppendJoin(", ", new[] { 1, 2, 3 });
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_AppendJoin()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine(string.Join(", ", new[] { 1, 2, 3 }))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendJoin(", ", new[] { 1, 2, 3 }).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_AppendSubString()
+    {
+        var test = CreateTest();
+        // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine("".Substring(0, 1))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().Append("", 0, 1)|}.AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_AppendSubStringWithoutLength()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine("abc".Substring(2))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append("abc", 2, "abc".Length - 2).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendLine_CustomStructToString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            struct MyStruct
+            {
+            }
+
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendLine(new MyStruct().ToString());
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -967,24 +1120,30 @@ class Test
     [InlineData("ushort")]
     [InlineData("uint")]
     [InlineData("ulong")]
-    public async Task AppendLine_ValueToString_Report(string dataType)
+    public Task AppendLine_ValueToString_Report(string dataType)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""[|new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString())|];""")
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = $$$""""
+            {{{$$"""{|MA0028:new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString())|};"""}}}
+            """";
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("object")]
     [InlineData("System.ReadOnlySpan<bool>")]
-    public async Task AppendLine_ValueToString_NoReport(string dataType)
+    public Task AppendLine_ValueToString_NoReport(string dataType)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());""")
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = $$$""""
+            {{{$$"""new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());"""}}}
+            """";
+
+        return test.RunAsync();
     }
 }

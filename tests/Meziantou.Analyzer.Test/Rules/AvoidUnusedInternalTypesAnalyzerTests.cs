@@ -1,139 +1,147 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AvoidUnusedInternalTypesAnalyzer,
+    Meziantou.Analyzer.Rules.AvoidUnusedInternalTypesFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AvoidUnusedInternalTypesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<AvoidUnusedInternalTypesAnalyzer>()
-            .WithCodeFixProvider<AvoidUnusedInternalTypesFixer>();
+        var test = new CodeFixTest();
+
+        // The analyzer reports the unused types at the end of the compilation, so they are not local diagnostics
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task PublicClass_NoDiagnostic()
+    public Task PublicClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class PublicClass
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AbstractClass_NoDiagnostic()
+    public Task AbstractClass_NoDiagnostic()
     {
-        const string SourceCode = """
-            internal abstract class [|AbstractClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal abstract class {|MA0182:AbstractClass|}
             {
                 public abstract void Method();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticClass_Diagnostic()
+    public Task StaticClass_Diagnostic()
     {
-        const string SourceCode = """
-            internal static class [|StaticClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal static class {|MA0182:StaticClass|}
             {
                 public static void Method() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_NoDiagnostic()
+    public Task Interface_NoDiagnostic()
     {
-        const string SourceCode = """
-            internal interface [|ITest|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface {|MA0182:ITest|}
             {
                 void Method();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Enum_NoDiagnostic()
+    public Task Enum_NoDiagnostic()
     {
-        const string SourceCode = """
-            internal enum [|TestEnum|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal enum {|MA0182:TestEnum|}
             {
                 Value1,
                 Value2
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalClass_Diagnostic()
+    public Task UnusedInternalClass_Diagnostic()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedPrivateNestedClass_Diagnostic()
+    public Task UnusedPrivateNestedClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
-                private class [|UnusedNestedClass|]
+                private class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalNestedClass_Diagnostic()
+    public Task UnusedInternalNestedClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
-                internal class [|UnusedNestedClass|]
+                internal class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedProtectedNestedClass_NoDiagnostic()
+    public Task UnusedProtectedNestedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 protected class UnusedNestedClass
@@ -142,15 +150,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedProtectedInternalNestedClass_NoDiagnostic()
+    public Task UnusedProtectedInternalNestedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 protected internal class UnusedNestedClass
@@ -159,32 +167,32 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedPrivateProtectedNestedClass_Diagnostic()
+    public Task UnusedPrivateProtectedNestedClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
-                private protected class [|UnusedNestedClass|]
+                private protected class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsedPrivateNestedClass_NoDiagnostic()
+    public Task UsedPrivateNestedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 private class UsedNestedClass
@@ -198,15 +206,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PublicNestedClass_NoDiagnostic()
+    public Task PublicNestedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 public class NestedClass
@@ -215,63 +223,63 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateNestedClassInInternalClass_Diagnostic()
+    public Task PrivateNestedClassInInternalClass_Diagnostic()
     {
-        const string SourceCode = """
-            internal class [|OuterClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:OuterClass|}
             {
-                private class [|UnusedNestedClass|]
+                private class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalStruct_Diagnostic()
+    public Task UnusedInternalStruct_Diagnostic()
     {
-        const string SourceCode = """
-            internal struct [|UnusedStruct|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedPrivateNestedStruct_Diagnostic()
+    public Task UnusedPrivateNestedStruct_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
-                private struct [|UnusedNestedStruct|]
+                private struct {|MA0182:UnusedNestedStruct|}
                 {
                     public int Value;
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsedPrivateNestedStruct_NoDiagnostic()
+    public Task UsedPrivateNestedStruct_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 private struct UsedNestedStruct
@@ -285,45 +293,46 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalRecord_Diagnostic()
+    public Task UnusedInternalRecord_Diagnostic()
     {
-        const string SourceCode = """
-            internal record [|UnusedRecord|]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal record {|MA0182:UnusedRecord|}
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedPrivateNestedRecord_Diagnostic()
+    public Task UnusedPrivateNestedRecord_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             public class OuterClass
             {
-                private record [|UnusedNestedRecord|](string Name);
+                private record {|MA0182:UnusedNestedRecord|}(string Name);
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsedPrivateNestedRecord_NoDiagnostic()
+    public Task UsedPrivateNestedRecord_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             public class OuterClass
             {
                 private record UsedNestedRecord(string Name);
@@ -334,46 +343,46 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalRecordStruct_Diagnostic()
+    public Task UnusedInternalRecordStruct_Diagnostic()
     {
-        const string SourceCode = """
-            internal record struct [|UnusedRecordStruct|]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal record struct {|MA0182:UnusedRecordStruct|}
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedPrivateNestedRecordStruct_Diagnostic()
+    public Task UnusedPrivateNestedRecordStruct_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             public class OuterClass
             {
-                private record struct [|UnusedNestedRecordStruct|](int Id);
+                private record struct {|MA0182:UnusedNestedRecordStruct|}(int Id);
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsedPrivateNestedRecordStruct_NoDiagnostic()
+    public Task UsedPrivateNestedRecordStruct_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             public class OuterClass
             {
                 private record struct UsedNestedRecordStruct(int Id);
@@ -384,16 +393,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInObjectCreation_NoDiagnostic()
+    public Task InternalClassUsedInObjectCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class UsedClass
             {
                 public string Name { get; set; }
@@ -407,15 +415,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedInObjectCreation_NoDiagnostic()
+    public Task InternalStructUsedInObjectCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal struct UsedStruct
             {
                 public string Name { get; set; }
@@ -429,15 +437,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordUsedInObjectCreation_NoDiagnostic()
+    public Task InternalRecordUsedInObjectCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record UsedRecord(string Name);
 
             public class Consumer
@@ -448,16 +457,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordStructUsedInObjectCreation_NoDiagnostic()
+    public Task InternalRecordStructUsedInObjectCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record struct UsedRecordStruct(string Name);
 
             public class Consumer
@@ -468,16 +477,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedAsFieldType_NoDiagnostic()
+    public Task InternalClassUsedAsFieldType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Data
             {
                 public int Value;
@@ -488,15 +496,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal Data _data;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedAsFieldType_NoDiagnostic()
+    public Task InternalStructUsedAsFieldType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal struct Data
             {
                 public int Value;
@@ -507,15 +515,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal Data _data;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordUsedAsPropertyType_NoDiagnostic()
+    public Task InternalRecordUsedAsPropertyType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record Settings(string Key, string Value);
 
             public class Configuration
@@ -523,16 +532,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal Settings AppSettings { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordStructUsedAsParameterType_NoDiagnostic()
+    public Task InternalRecordStructUsedAsParameterType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record struct Point(int X, int Y);
 
             public class Graphics
@@ -542,16 +551,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedAsGenericTypeArgument_NoDiagnostic()
+    public Task InternalStructUsedAsGenericTypeArgument_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
 
             internal struct ItemData
@@ -567,15 +575,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordUsedInTypeOf_NoDiagnostic()
+    public Task InternalRecordUsedInTypeOf_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System;
 
             internal record Config(string Key);
@@ -588,16 +597,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordStructUsedInArrayCreation_NoDiagnostic()
+    public Task InternalRecordStructUsedInArrayCreation_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System;
 
             internal record struct Vector(double X, double Y);
@@ -610,16 +619,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalCollectionUsedInCollectionExpression_NoDiagnostic()
+    public Task InternalCollectionUsedInCollectionExpression_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System;
             using System.Collections;
             using System.Collections.Generic;
@@ -648,29 +657,29 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleInternalTypes_SomeUsedSomeNot()
+    public Task MultipleInternalTypes_SomeUsedSomeNot()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass|]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
 
-            internal struct [|UnusedStruct|]
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public int Value;
             }
 
-            internal record [|UnusedRecord|](string Data);
+            internal record {|MA0182:UnusedRecord|}(string Data);
 
-            internal record struct [|UnusedRecordStruct|](int Id);
+            internal record struct {|MA0182:UnusedRecordStruct|}(int Id);
 
             internal class UsedClass
             {
@@ -685,16 +694,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInTypeOfInAttribute_NoDiagnostic()
+    public Task InternalClassUsedInTypeOfInAttribute_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
 
             [AttributeUsage(AttributeTargets.Class)]
@@ -720,16 +729,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EntryPointClass_NoDiagnostic()
+    public Task EntryPointClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
             using System;
 
             internal sealed class Config
@@ -744,23 +753,22 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithOutputKind(OutputKind.ConsoleApplication)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EntryPointInClassLibrary_Reported()
+    public Task EntryPointInClassLibrary_Reported()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal sealed class Config
             {
             }
 
-            internal static class [|Program|]
+            internal static class {|MA0182:Program|}
             {
                 private static void Main(string[] args)
                 {
@@ -768,15 +776,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInGenericList_NoDiagnostic()
+    public Task InternalClassUsedInGenericList_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
 
             internal class Item
@@ -789,15 +797,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal List<Item> Items { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInNestedGenericType_NoDiagnostic()
+    public Task InternalClassUsedInNestedGenericType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
 
             internal class InnerData
@@ -810,15 +818,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal Dictionary<string, List<InnerData>> Data { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInMethodParameter_NoDiagnostic()
+    public Task InternalClassUsedInMethodParameter_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Config
             {
                 public string Value { get; set; }
@@ -831,15 +839,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedAsMethodReturnType_NoDiagnostic()
+    public Task InternalClassUsedAsMethodReturnType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Result
             {
                 public bool Success { get; set; }
@@ -853,18 +861,18 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleInternalClasses_SomeUsedSomeNot()
+    public Task MultipleInternalClasses_SomeUsedSomeNot()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -882,15 +890,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInMethodTypeParameter_NoDiagnostic()
+    public Task InternalClassUsedInMethodTypeParameter_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal class Settings
@@ -911,15 +919,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInActivatorCreateInstance_NoDiagnostic()
+    public Task InternalClassUsedInActivatorCreateInstance_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal class DynamicClass
@@ -935,15 +943,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInLocalFunction_NoDiagnostic()
+    public Task InternalClassUsedInLocalFunction_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Data
             {
                 public int Value { get; set; }
@@ -961,15 +969,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassOnlyUsedAsTypeOf_NoDiagnostic()
+    public Task InternalClassOnlyUsedAsTypeOf_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal class MetadataClass
@@ -985,29 +993,29 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalSealedClass_UnusedClass_Diagnostic()
+    public Task InternalSealedClass_UnusedClass_Diagnostic()
     {
-        const string SourceCode = """
-            internal sealed class [|SealedUnusedClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class {|MA0182:SealedUnusedClass|}
             {
                 public void Method() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedAsGenericTypeArgumentForStaticMemberAccess_NoDiagnostic()
+    public Task InternalClassUsedAsGenericTypeArgumentForStaticMemberAccess_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Sample<T>
             {
                 public static int Empty { get; } = 0;
@@ -1025,15 +1033,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedByXmlSerializer_NoDiagnostic()
+    public Task InternalClassUsedByXmlSerializer_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.IO;
             using System.Xml.Serialization;
 
@@ -1053,15 +1061,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedByNewtonsoftJsonSerializer_NoDiagnostic()
+    public Task InternalClassUsedByNewtonsoftJsonSerializer_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.TestCode = """
             using Newtonsoft.Json;
 
             internal class InternalData
@@ -1079,16 +1088,17 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .AddNuGetReference("Newtonsoft.Json", "13.0.3", "lib/netstandard2.0/")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedByYamlDotNetSerializer_NoDiagnostic()
+    public Task InternalClassUsedByYamlDotNetSerializer_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("YamlDotNet", "16.3.0")]);
+        test.TestCode = """
             using YamlDotNet.Serialization;
 
             internal class InternalData
@@ -1106,17 +1116,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .AddNuGetReference("YamlDotNet", "16.3.0", "lib/netstandard2.0/")
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInMethodGenericConstraint_NoDiagnostic()
+    public Task InternalClassUsedInMethodGenericConstraint_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class BaseConfig
             {
                 public string Value { get; set; }
@@ -1130,34 +1138,34 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInTypeGenericConstraint_NoDiagnostic()
+    public Task InternalClassUsedInTypeGenericConstraint_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class BaseEntity
             {
                 public int Id { get; set; }
             }
 
-            internal class [|Repository|]<T> where T : BaseEntity
+            internal class {|MA0182:Repository|}<T> where T : BaseEntity
             {
                 public T Get(int id) => null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInMultipleGenericConstraints_NoDiagnostic()
+    public Task InternalClassUsedInMultipleGenericConstraints_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal interface IValidator
             {
                 bool Validate();
@@ -1168,29 +1176,30 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            internal class [|Processor|]<T> where T : BaseModel, IValidator, new()
+            internal class {|MA0182:Processor|}<T> where T : BaseModel, IValidator, new()
             {
                 public void Process(T item)
                 {
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
 #if CSHARP14_OR_GREATER
+
     [Fact]
-    public async Task InternalClassUsedInImplicitExtensionType_NoDiagnostic()
+    public Task InternalClassUsedInImplicitExtensionType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class DataStore
             {
                 public string Value { get; set; }
             }
 
-            internal static class [|DataStoreExtensions|]
+            internal static class {|MA0182:DataStoreExtensions|}
             {
                 extension (DataStore datastore)
                 {
@@ -1200,21 +1209,21 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInExplicitExtensionType_Diagnostic()
+    public Task InternalClassUsedInExplicitExtensionType_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Settings
             {
                 public string Key { get; set; }
             }
 
-            internal static class [|DataStoreExtensions|]
+            internal static class {|MA0182:DataStoreExtensions|}
             {
                 extension (Settings settings)
                 {
@@ -1222,15 +1231,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInExplicitExtensionType_NoDiagnostic()
+    public Task InternalClassUsedInExplicitExtensionType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Settings
             {
                 public string Key { get; set; }
@@ -1253,21 +1262,21 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInGenericExtensionType_NoDiagnostic()
+    public Task InternalClassUsedInGenericExtensionType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Entity
             {
                 public int Id { get; set; }
             }
 
-            internal static class [|EntityExtension|]
+            internal static class {|MA0182:EntityExtension|}
             {
                 extension<T>(T entity) where T : Entity
                 {
@@ -1277,15 +1286,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInExtensionTypeWithMultipleConstraints_NoDiagnostic()
+    public Task InternalClassUsedInExtensionTypeWithMultipleConstraints_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal interface IIdentifiable
             {
                 int Id { get; }
@@ -1296,7 +1305,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            internal static class [|RepositoryExtension|]
+            internal static class {|MA0182:RepositoryExtension|}
             {
                 extension<T>(T entity) where T : BaseEntity, IIdentifiable, new()
                 {
@@ -1306,15 +1315,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedAsExtensionTypeParameter_NoDiagnostic()
+    public Task InternalClassUsedAsExtensionTypeParameter_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
 
             internal class Item
@@ -1330,36 +1339,37 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
+
 #endif
 
     [Fact]
-    public async Task DeeplyNestedPrivateClass_Diagnostic()
+    public Task DeeplyNestedPrivateClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class Level1
             {
                 public class Level2
                 {
-                    private class [|Level3|]
+                    private class {|MA0182:Level3|}
                     {
                         public string Name { get; set; }
                     }
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateNestedClassUsedInSameType_NoDiagnostic()
+    public Task PrivateNestedClassUsedInSameType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 private class NestedClass
@@ -1370,15 +1380,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 private NestedClass _field;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateNestedClassUsedAsMethodParameter_NoDiagnostic()
+    public Task PrivateNestedClassUsedAsMethodParameter_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
                 private class NestedClass
@@ -1391,29 +1401,29 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SelfReferencingInterface_Diagnostic()
+    public Task SelfReferencingInterface_Diagnostic()
     {
-        const string SourceCode = """
-            internal interface [|INumber|]<TSelf> where TSelf : INumber<TSelf>
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface {|MA0182:INumber|}<TSelf> where TSelf : INumber<TSelf>
             {
                 TSelf Add(TSelf other);
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SelfReferencingInterfaceUsedByType_NoDiagnostic()
+    public Task SelfReferencingInterfaceUsedByType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal interface INumber<TSelf> where TSelf : INumber<TSelf>
             {
                 TSelf Add(TSelf other);
@@ -1433,37 +1443,37 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SelfReferencingInterfaceWithMultipleConstraints_Diagnostic()
+    public Task SelfReferencingInterfaceWithMultipleConstraints_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
-            internal interface [|IComparable|]<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
+            internal interface {|MA0182:IComparable|}<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
             {
                 int CompareTo(TSelf other);
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterfaceWithCoClassAttribute_NoUsage_Diagnostic()
+    public Task InterfaceWithCoClassAttribute_NoUsage_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Runtime.InteropServices;
 
             [ComImport]
             [Guid("00000000-0000-0000-0000-000000000001")]
             [CoClass(typeof(FileSaveDialogRCW))]
-            internal interface [|NativeFileSaveDialog|]
+            internal interface {|MA0182:NativeFileSaveDialog|}
             {
             }
 
@@ -1475,15 +1485,14 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedAsPointerInMethodParameter_NoDiagnostic()
+    public Task InternalStructUsedAsPointerInMethodParameter_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal struct SECURITY_ATTRIBUTES
@@ -1504,15 +1513,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInVariableDeclaration_NoDiagnostic()
+    public Task InternalClassUsedInVariableDeclaration_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class Data
             {
                 public string Value { get; set; }
@@ -1527,15 +1536,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedInVariableDeclaration_NoDiagnostic()
+    public Task InternalStructUsedInVariableDeclaration_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal struct Point
             {
                 public int X;
@@ -1551,15 +1560,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordUsedInVariableDeclaration_NoDiagnostic()
+    public Task InternalRecordUsedInVariableDeclaration_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record Config(string Key);
 
             public class Service
@@ -1571,16 +1581,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordStructUsedInVariableDeclaration_NoDiagnostic()
+    public Task InternalRecordStructUsedInVariableDeclaration_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record struct Vector(double X, double Y);
 
             public class Math
@@ -1592,16 +1602,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInExplicitCast_NoDiagnostic()
+    public Task InternalClassUsedInExplicitCast_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class BaseData
             {
                 public string Value { get; set; }
@@ -1619,15 +1628,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedInExplicitCast_NoDiagnostic()
+    public Task InternalStructUsedInExplicitCast_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal struct CustomValue
             {
                 public int Value;
@@ -1646,15 +1655,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInAsOperator_NoDiagnostic()
+    public Task InternalClassUsedInAsOperator_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class SpecialData
             {
                 public string Value { get; set; }
@@ -1668,15 +1677,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructUsedInImplicitCast_NoDiagnostic()
+    public Task InternalStructUsedInImplicitCast_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal struct Wrapper
             {
                 public int Value;
@@ -1695,15 +1704,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalInterfaceOnlyUsedInTypeCheck_NoDiagnostic()
+    public Task InternalInterfaceOnlyUsedInTypeCheck_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public sealed class Foo
             {
                 public static string? Run(object x)
@@ -1722,15 +1731,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 void Run();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordUsedInPatternMatching_NoDiagnostic()
+    public Task InternalRecordUsedInPatternMatching_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record Message(string Text);
 
             public class Handler
@@ -1744,16 +1754,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalRecordStructUsedInPatternMatching_NoDiagnostic()
+    public Task InternalRecordStructUsedInPatternMatching_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             internal record struct Coordinate(int X, int Y);
 
             public class Mapper
@@ -1767,16 +1777,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassUsedInCastExpression_NoDiagnostic()
+    public Task InternalClassUsedInCastExpression_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal interface IData
             {
             }
@@ -1794,15 +1803,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleInternalTypesUsedInCastsAndDeclarations_NoDiagnostic()
+    public Task MultipleInternalTypesUsedInCastsAndDeclarations_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal class BaseType
             {
             }
@@ -1826,15 +1835,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    public Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)]
@@ -1843,16 +1853,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    public Task PrivateClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
             public class OuterClass
@@ -1864,16 +1874,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalStructWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
+    public Task InternalStructWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
             [DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.PublicFields)]
@@ -1882,17 +1892,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public int Value;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassAccessingOwnField_Diagnostic()
+    public Task InternalClassAccessingOwnField_Diagnostic()
     {
-        const string SourceCode = """
-            internal sealed class [|NotUsed|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class {|MA0182:NotUsed|}
             {
                 private readonly string _name;
 
@@ -1909,17 +1918,17 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassAttributeTypeOfOwnClass_Diagnostic()
+    public Task InternalClassAttributeTypeOfOwnClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [Sample(typeof(NotUsed))]
-            internal sealed class [|NotUsed|]
+            internal sealed class {|MA0182:NotUsed|}
             {
             }
 
@@ -1928,30 +1937,30 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public SampleAttribute(System.Type type) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassAttributeOwnClass_Diagnostic()
+    public Task InternalClassAttributeOwnClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [NotUsed]
-            internal sealed class [|NotUsedAttribute|] : System.Attribute
+            internal sealed class {|MA0182:NotUsedAttribute|} : System.Attribute
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassNotAccessingField_Diagnostic()
+    public Task InternalClassNotAccessingField_Diagnostic()
     {
-        const string SourceCode = """
-            internal sealed class [|NotUsed|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class {|MA0182:NotUsed|}
             {
                 private readonly string _name;
 
@@ -1963,31 +1972,31 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassInsidePublicClass_Diagnostic()
+    public Task InternalClassInsidePublicClass_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class PublicClass
             {
-                internal sealed class [|NotUsed|]
+                internal sealed class {|MA0182:NotUsed|}
                 {
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalDelegateUsedInNewExpression_NoDiagnostic()
+    public Task InternalDelegateUsedInNewExpression_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             internal delegate void MyDelegate(string key, string comment, TimeSpan timeout, out string lockToken);
@@ -2003,15 +2012,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrivateDelegateUsedInNewExpression_NoDiagnostic()
+    public Task PrivateDelegateUsedInNewExpression_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
             public class OuterClass
@@ -2027,18 +2036,18 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnusedInternalDelegate_Diagnostic()
+    public Task UnusedInternalDelegate_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
 
-            internal delegate void [|UnusedDelegate|](string message);
+            internal delegate void {|MA0182:UnusedDelegate|}(string message);
 
             public class Consumer
             {
@@ -2047,16 +2056,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
-
     [Fact]
-    public async Task InternalClassWithFactoryMethod_NoDiagnostic()
+    public Task InternalClassWithFactoryMethod_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal sealed class BugDemo
             {
                 private BugDemo()
@@ -2074,16 +2082,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassWithFactoryMethodNotUsed_Diagnostic()
+    public Task InternalClassWithFactoryMethodNotUsed_Diagnostic()
     {
-        const string SourceCode = """
-            internal sealed class [|UnusedFactory|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class {|MA0182:UnusedFactory|}
             {
                 private UnusedFactory()
                 {
@@ -2092,15 +2100,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public static UnusedFactory Create() => new();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InternalClassWithFactoryMethodInternalUsage_NoDiagnostic()
+    public Task InternalClassWithFactoryMethodInternalUsage_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal sealed class ConfigurableCertificateValidatingHttpClientHandler
             {
                 private ConfigurableCertificateValidatingHttpClientHandler()
@@ -2121,15 +2129,15 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedClass_NoDiagnostic()
+    public Task NestedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             internal sealed class Interop
             {
                 internal static class Kernel32
@@ -2146,15 +2154,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassWithModuleInitializerMethod_NoDiagnostic()
+    public Task ClassWithModuleInitializerMethod_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
             using System.Runtime.CompilerServices;
 
             internal class ModuleInit
@@ -2165,16 +2174,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassWithModuleInitializerMethodAndOtherMembers_NoDiagnostic()
+    public Task ClassWithModuleInitializerMethodAndOtherMembers_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
             using System.Runtime.CompilerServices;
 
             internal sealed class Startup
@@ -2190,96 +2199,94 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 internal static bool IsInitialized => _initialized;
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Class()
+    public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Class()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass|]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal class UnusedClass
             {
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Struct()
+    public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Struct()
     {
-        const string SourceCode = """
-            internal struct [|UnusedStruct|]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public int Value { get; set; }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal struct UnusedStruct
             {
                 public int Value { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_Record()
+    public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Record()
     {
-        const string SourceCode = """
-            internal record [|UnusedRecord|](string Name);
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            internal record {|MA0182:UnusedRecord|}(string Name);
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
             internal record UnusedRecord(string Name);
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_SingleTypeInFile()
+    public Task CodeFix_RemoveType_SingleTypeInFile()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = "";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_MultipleTypesInFile()
+    public Task CodeFix_RemoveType_MultipleTypesInFile()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2289,88 +2296,96 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public void Method() { }
             }
             """;
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
 
             public class UsedClass
             {
                 public void Method() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_NestedType()
+    public Task CodeFix_RemoveType_NestedType()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class OuterClass
             {
-                internal class [|UnusedNestedClass|]
+                internal class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
             public class OuterClass
             {
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_WithUsings()
+    public Task CodeFix_RemoveType_WithUsings()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Collections.Generic;
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = "";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_RecordStruct()
+    public Task CodeFix_RemoveType_RecordStruct()
     {
-        const string SourceCode = """
-            internal record struct [|UnusedRecordStruct|](int Value);
+        var test = CreateTest();
+        test.TestCode = """
+            internal record struct {|MA0182:UnusedRecordStruct|}(int Value);
             """;
-        const string CodeFix = "";
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_AddDynamicallyAccessedMembersAttribute_WithExistingAttributes()
+    public Task CodeFix_AddDynamicallyAccessedMembersAttribute_WithExistingAttributes()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System;
 
             [Obsolete]
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System;
 
             [Obsolete]
@@ -2380,79 +2395,80 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_WithNamespace()
+    public Task CodeFix_RemoveType_WithNamespace()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace MyNamespace
             {
-                internal class [|UnusedClass|]
+                internal class {|MA0182:UnusedClass|}
                 {
                     public string Name { get; set; }
                 }
             }
             """;
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
-            """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_TwoUnusedTypesInFile()
+    public Task CodeFix_RemoveType_TwoUnusedTypesInFile()
     {
-        const string SourceCode = """
-            internal class [|UnusedClass1|]
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass1|}
             {
                 public string Name { get; set; }
             }
 
-            internal class [|UnusedClass2|]
+            internal class {|MA0182:UnusedClass2|}
             {
                 public int Value { get; set; }
             }
             """;
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
 
-            internal class UnusedClass2
+            internal class {|MA0182:UnusedClass2|}
             {
                 public int Value { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_RemoveType_WithAssemblyAttribute()
+    public Task CodeFix_RemoveType_WithAssemblyAttribute()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
             """;
-        const string CodeFix = """
+        test.CodeActionIndex = 1;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.FixedCode = """
             [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(1, CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

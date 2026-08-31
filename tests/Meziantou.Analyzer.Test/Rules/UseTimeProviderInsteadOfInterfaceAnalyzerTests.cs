@@ -1,194 +1,210 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.UseTimeProviderInsteadOfInterfaceAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task Interface_UtcNowProperty_DateTime_ReportsDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseTimeProviderInsteadOfInterfaceAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTime UtcNow { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_UtcNowProperty_DateTime_ReportsDiagnostic()
+    public Task Interface_NowProperty_DateTimeOffset_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTime UtcNow { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTimeOffset Now { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_NowProperty_DateTimeOffset_ReportsDiagnostic()
+    public Task Interface_BothNowAndUtcNow_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTimeOffset Now { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTime Now { get; }
+                System.DateTime UtcNow { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_BothNowAndUtcNow_ReportsDiagnostic()
+    public Task Interface_GetNowMethod_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTime Now { get; }
-                      System.DateTime UtcNow { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTime GetNow();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_GetNowMethod_ReportsDiagnostic()
+    public Task Interface_GetUtcNowMethod_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTime GetNow();
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTimeOffset GetUtcNow();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_GetUtcNowMethod_ReportsDiagnostic()
+    public Task Interface_MixedProperties_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTimeOffset GetUtcNow();
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeService|}
+            {
+                System.DateTime GetNow();
+                System.DateTimeOffset GetUtcNow();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_MixedProperties_ReportsDiagnostic()
+    public Task Interface_EmptyInterface_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeService|]
-                  {
-                      System.DateTime GetNow();
-                      System.DateTimeOffset GetUtcNow();
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface IEmpty
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_EmptyInterface_NoDiagnostic()
+    public Task Interface_OtherMembers_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface IEmpty
-                  {
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITimeProvider
+            {
+                System.DateTime UtcNow { get; }
+                void DoSomething();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_OtherMembers_NoDiagnostic()
+    public Task Interface_WrongReturnType_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITimeProvider
-                  {
-                      System.DateTime UtcNow { get; }
-                      void DoSomething();
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITimeProvider
+            {
+                string UtcNow { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_WrongReturnType_NoDiagnostic()
+    public Task Interface_MethodWithParameters_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITimeProvider
-                  {
-                      string UtcNow { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITimeProvider
+            {
+                System.DateTime GetNow(string timeZone);
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_MethodWithParameters_NoDiagnostic()
+    public Task Interface_CurrentTimeProperty_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITimeProvider
-                  {
-                      System.DateTime GetNow(string timeZone);
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface {|MA0188:ITimeProvider|}
+            {
+                System.DateTime CurrentTime { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_CurrentTimeProperty_ReportsDiagnostic()
+    public Task Interface_WrongName_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface [|ITimeProvider|]
-                  {
-                      System.DateTime CurrentTime { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITimeProvider
+            {
+                System.DateTime GetCurrentTime();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_WrongName_NoDiagnostic()
+    public Task Class_NotAnInterface_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITimeProvider
-                  {
-                      System.DateTime GetCurrentTime();
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class TimeProvider
+            {
+                public System.DateTime UtcNow { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Class_NotAnInterface_NoDiagnostic()
+    public Task Interface_StaticMember_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class TimeProvider
-                  {
-                      public System.DateTime UtcNow { get; }
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITimeProvider
+            {
+                static System.DateTime UtcNow { get; }
+            }
+            """;
 
-    [Fact]
-    public async Task Interface_StaticMember_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITimeProvider
-                  {
-                      static System.DateTime UtcNow { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

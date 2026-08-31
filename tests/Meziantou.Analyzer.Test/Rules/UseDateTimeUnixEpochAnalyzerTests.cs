@@ -1,13 +1,13 @@
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseDateTimeUnixEpochAnalyzer,
+    Meziantou.Analyzer.Rules.UseDateTimeUnixEpochFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public class UseDateTimeUnixEpochAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithAnalyzer<UseDateTimeUnixEpochAnalyzer>()
-            .WithCodeFixProvider<UseDateTimeUnixEpochFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Theory]
     [InlineData("new DateTime(1970, 1, 1)")]
@@ -15,32 +15,31 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)")]
     [InlineData("new DateTime(621355968000000000)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Utc)")]
-    public async Task UnixEpoch_DateTime(string code)
+    public Task UnixEpoch_DateTime(string code)
     {
-        var sourceCode = $$"""
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = [|{{code}}|];
-   }
-}
-""";
-        var fix = """
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = DateTime.UnixEpoch;
-   }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = {|MA0113:{{code}}|};
+               }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = DateTime.UnixEpoch;
+               }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -51,32 +50,31 @@ class ClassTest
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, default(TimeSpan))")]
-    public async Task UnixEpoch_DateTimeOffset(string code)
+    public Task UnixEpoch_DateTimeOffset(string code)
     {
-        var sourceCode = $$"""
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = {|MA0114:{{code}}|};
-   }
-}
-""";
-        var fix = """
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = DateTimeOffset.UnixEpoch;
-   }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = {|MA0114:{{code}}|};
+               }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = DateTimeOffset.UnixEpoch;
+               }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -85,21 +83,21 @@ class ClassTest
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Local)")]
     [InlineData("new DateTime(621355968000000001)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Local)")]
-    public async Task NonUnixEpoch_DateTime(string code)
+    public Task NonUnixEpoch_DateTime(string code)
     {
-        var sourceCode = $$"""
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = {{code}};
-   }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = {{code}};
+               }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -109,39 +107,39 @@ class ClassTest
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.MinValue)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.FromMinutes(1))")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.FromHours(-1))")]
-    public async Task NonUnixEpoch_DateTimeOffset(string code)
+    public Task NonUnixEpoch_DateTimeOffset(string code)
     {
-        var sourceCode = $$"""
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = {{code}};
-   }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = {{code}};
+               }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonUnixEpoch_DateTime_OldFramework()
+    public Task NonUnixEpoch_DateTime_OldFramework()
     {
-        var sourceCode = """
-using System;
-class ClassTest
-{
-   void Test()
-   {
-       _ = new DateTime(1970, 1, 1);
-   }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = """
+            using System;
+            class ClassTest
+            {
+               void Test()
+               {
+                   _ = new DateTime(1970, 1, 1);
+               }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

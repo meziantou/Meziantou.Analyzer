@@ -60,9 +60,10 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
             generator.TypeExpression(dynamicallyAccessedMembersAttribute, addImport: true),
             [
                 generator.AttributeArgument(
-                    generator.MemberAccessExpression(
-                        generator.TypeExpression(dynamicallyAccessedMemberTypes, addImport: true),
-                        nameof(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All))),
+                    generator.TypeMemberAccessExpression(
+                        dynamicallyAccessedMemberTypes,
+                        nameof(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All),
+                        addImport: true)),
             ]);
 
         editor.AddAttribute(typeDeclarationSyntax, attribute);

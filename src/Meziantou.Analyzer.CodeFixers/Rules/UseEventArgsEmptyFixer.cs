@@ -34,7 +34,7 @@ public sealed class UseEventArgsEmptyFixer : CodeFixProvider
         if (typeSymbol is null)
             return context.Document;
 
-        var newExpression = generator.MemberAccessExpression(generator.TypeExpression(typeSymbol), nameof(EventArgs.Empty));
+        var newExpression = generator.TypeMemberAccessExpression(typeSymbol, nameof(EventArgs.Empty));
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }

@@ -1,40 +1,39 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.ObsoleteAttributesShouldIncludeExplanationsAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ObsoleteAttributesShouldIncludeExplanationsAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task HasMessage()
+    public Task HasMessage()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 [System.Obsolete("message")]
                 public void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HasNoMessage()
+    public Task HasNoMessage()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
-                [[|System.Obsolete()|]]
+                [{|MA0070:System.Obsolete()|}]
                 public void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

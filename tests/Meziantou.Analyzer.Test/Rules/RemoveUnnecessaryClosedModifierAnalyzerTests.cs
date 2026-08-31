@@ -1,36 +1,37 @@
 #if ROSLYN_5_9_OR_GREATER
 using Microsoft.CodeAnalysis.CSharp;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.RemoveUnnecessaryClosedModifierAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithLanguageVersion(LanguageVersion.Preview)
-            .WithTargetFramework(TargetFramework.Net11_0)
-            .WithAnalyzer<RemoveUnnecessaryClosedModifierAnalyzer>();
+        var test = new AnalyzerTest();
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
     }
 
     [Fact]
-    public async Task ClosedClass_WithoutDerivedType_ReportsDiagnostic()
+    public Task ClosedClass_WithoutDerivedType_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|closed|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0216:closed|} class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedClass_WithDerivedType_NoDiagnostic()
+    public Task ClosedClass_WithDerivedType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             closed class Sample
             {
             }
@@ -40,80 +41,74 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedClass_WithDerivedTypeInAnotherFile_NoDiagnostic()
+    public Task ClosedClass_WithDerivedTypeInAnotherFile_NoDiagnostic()
     {
-        var builder = CreateProjectBuilder();
-        builder.ApiReferences.Add("class Derived : Sample;");
+        var test = CreateTest();
+        test.TestCode = "closed class Sample;";
+        test.TestState.Sources.Add("class Derived : Sample;");
 
-        await builder
-            .WithSourceCode("closed class Sample;")
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedRecord_WithoutDerivedType_ReportsDiagnostic()
+    public Task ClosedRecord_WithoutDerivedType_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|closed|] record Sample;
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0216:closed|} record Sample;
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedRecord_WithDerivedType_NoDiagnostic()
+    public Task ClosedRecord_WithDerivedType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             closed record Sample;
             record Derived : Sample;
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonClosedClass_NoDiagnostic()
+    public Task NonClosedClass_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedClass_WithOtherModifiers_ReportsDiagnostic()
+    public Task ClosedClass_WithOtherModifiers_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            public [|closed|] partial class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            public {|MA0216:closed|} partial class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedPartialClass_WithoutDerivedType_ReportsDiagnosticOnDeclarationWithModifier()
+    public Task ClosedPartialClass_WithoutDerivedType_ReportsDiagnosticOnDeclarationWithModifier()
     {
-        const string SourceCode = """
-            [|closed|] partial class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0216:closed|} partial class Sample
             {
             }
 
@@ -122,67 +117,61 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedNestedClass_WithoutDerivedType_ReportsDiagnostic()
+    public Task ClosedNestedClass_WithoutDerivedType_ReportsDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Sample
             {
-                [|closed|] class Nested
+                {|MA0216:closed|} class Nested
                 {
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedGenericClass_WithDerivedType_NoDiagnostic()
+    public Task ClosedGenericClass_WithDerivedType_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             closed class Sample<T>;
             class Derived : Sample<int>;
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedDerivedType_WithoutDerivedType_ReportsDiagnostic()
+    public Task ClosedDerivedType_WithoutDerivedType_ReportsDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             closed class Sample;
-            [|closed|] class Derived : Sample;
+            {|MA0216:closed|} class Derived : Sample;
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClosedClass_WithAbstractMember_ReportsDiagnostic()
+    public Task ClosedClass_WithAbstractMember_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|closed|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0216:closed|} class Sample
             {
                 public abstract int Value { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }
 #endif

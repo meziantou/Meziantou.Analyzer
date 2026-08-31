@@ -1,48 +1,55 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseEqualsMethodInsteadOfOperatorAnalyzer,
+    Meziantou.Analyzer.Rules.UseEqualsMethodInsteadOfOperatorFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(Helpers.TargetFramework.Net9_0)
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<UseEqualsMethodInsteadOfOperatorAnalyzer>()
-            .WithCodeFixProvider<UseEqualsMethodInsteadOfOperatorFixer>();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Theory]
     [InlineData("System.Net.IPAddress")]
-    public async Task Report_EqualsOperator(string type)
+    public Task Report_EqualsOperator(string type)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                {{type}} a = null;
-                {{type}} b = null;
-                _ = [|a == b|];
-                """)
-              .ShouldFixCodeWith($$"""
-                {{type}} a = null;
-                {{type}} b = null;
-                _ = object.Equals(a, b);
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{type}} a = null;
+            {{type}} b = null;
+            _ = {|MA0169:a == b|};
+            """;
+        test.FixedCode = $$"""
+            {{type}} a = null;
+            {{type}} b = null;
+            _ = object.Equals(a, b);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Report_NotEqualsOperator()
+    public Task Report_NotEqualsOperator()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                System.Net.IPAddress a = null;
-                System.Net.IPAddress b = null;
-                _ = [|a != b|];
-                """)
-              .ShouldFixCodeWith("""
-                System.Net.IPAddress a = null;
-                System.Net.IPAddress b = null;
-                _ = !object.Equals(a, b);
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            System.Net.IPAddress a = null;
+            System.Net.IPAddress b = null;
+            _ = {|MA0169:a != b|};
+            """;
+        test.FixedCode = """
+            System.Net.IPAddress a = null;
+            System.Net.IPAddress b = null;
+            _ = !object.Equals(a, b);
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -64,63 +71,67 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
     [InlineData("decimal")]
     [InlineData("System.DayOfWeek")]
     [InlineData("System.DayOfWeek?")]
-    public async Task NoReport_EqualsOperator(string type)
+    public Task NoReport_EqualsOperator(string type)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                {{type}} a = default;
-                {{type}} b = default;
-                _ = a == b;
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{type}} a = default;
+            {{type}} b = default;
+            _ = a == b;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassWithParentEqualsMethod()
+    public Task ClassWithParentEqualsMethod()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                B a = default;
-                B b = default;
-                _ = a == b;
+        var test = CreateTest();
+        test.TestCode = """
+            B a = default;
+            B b = default;
+            _ = a == b;
 
-                class A
-                {
-                    public override bool Equals(object obj) => throw null;
-                }
+            class A
+            {
+                public override bool Equals(object obj) => throw null;
+            }
 
-                class B : A
-                {
-                }
-                """)
-              .ValidateAsync();
+            class B : A
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ClassWithoutEqualsMethod()
+    public Task ClassWithoutEqualsMethod()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                Sample a = default;
-                Sample b = default;
-                _ = a == b;
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            Sample b = default;
+            _ = a == b;
 
-                class Sample {}
-                """)
-              .ValidateAsync();
+            class Sample {}
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RecordWithoutEqualsMethod()
+    public Task RecordWithoutEqualsMethod()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                Sample a = default;
-                Sample b = default;
-                _ = a == b; // Operator is implemented by the record
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            Sample b = default;
+            _ = a == b; // Operator is implemented by the record
 
-                record Sample {}
-                """)
-              .ValidateAsync();
+            record Sample {}
+            """;
+
+        return test.RunAsync();
     }
 }

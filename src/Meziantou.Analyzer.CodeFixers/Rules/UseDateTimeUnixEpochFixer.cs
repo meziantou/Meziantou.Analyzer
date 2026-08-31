@@ -53,7 +53,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
         var symbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName(type)!;
 
         var generator = editor.Generator;
-        var member = generator.MemberAccessExpression(generator.TypeExpression(symbol), "UnixEpoch");
+        var member = generator.TypeMemberAccessExpression(symbol, "UnixEpoch");
         editor.ReplaceNode(node, member);
 
         return editor.GetChangedDocument();

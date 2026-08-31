@@ -1,58 +1,60 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.TaskInUsingAnalyzer,
+    Meziantou.Analyzer.Rules.TaskInUsingFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class TaskInUsingAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithOutputKind(OutputKind.ConsoleApplication)
-            .WithAnalyzer<TaskInUsingAnalyzer>()
-            .WithCodeFixProvider<TaskInUsingFixer>();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
     }
 
     [Fact]
-    public async Task SingleTaskInUsing()
+    public Task SingleTaskInUsing()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task t = null;
-            using ([|t|]) { }
+            using ({|MA0129:t|}) { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleTaskInUsing_CodeFix()
+    public Task SingleTaskInUsing_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t = null;
-            using ([|t|]) { }
+            using ({|MA0129:t|}) { }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t = null;
             using (await t) { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfNonDisposableInUsing_NoCodeFix()
+    public Task TaskOfNonDisposableInUsing_NoCodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
 
@@ -69,21 +71,20 @@ public sealed class TaskInUsingAnalyzerTests
                     Task<Dummy> t = null;
                     using (disposable)
                     {
-                        using (var d = [|t|]) { await Task.Yield(); }
+                        using (var d = {|MA0129:t|}) { await Task.Yield(); }
                     }
                 }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfDisposableInUsing_CodeFix()
+    public Task TaskOfDisposableInUsing_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
 
@@ -103,13 +104,12 @@ public sealed class TaskInUsingAnalyzerTests
                     Task<Dummy> t = null;
                     using (disposable)
                     {
-                        using (var d = [|t|]) { await Task.Yield(); }
+                        using (var d = {|MA0129:t|}) { await Task.Yield(); }
                     }
                 }
             }
             """;
-
-        const string FixedCode = """
+        test.FixedCode = """
             using System;
             using System.Threading.Tasks;
 
@@ -135,70 +135,63 @@ public sealed class TaskInUsingAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(FixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleTaskAssignedInUsing()
+    public Task SingleTaskAssignedInUsing()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task t = null;
-            using (var a = [|t|]) { }
+            using (var a = {|MA0129:t|}) { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleTasksInUsing()
+    public Task MultipleTasksInUsing()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task t1 = null;
             Task t2 = null;
-            using (Task a = [|t1|], b = [|t2|]) { }
+            using (Task a = {|MA0129:t1|}, b = {|MA0129:t2|}) { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTInUsing()
+    public Task TaskOfTInUsing()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t1 = null;
-            using ([|t1|]) { }
+            using ({|MA0129:t1|}) { }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskOfTInUsingStatement()
+    public Task TaskOfTInUsingStatement()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t1 = null;
-            using var a = [|t1|];
+            using var a = {|MA0129:t1|};
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

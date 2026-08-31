@@ -1,44 +1,44 @@
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.RemoveUselessToStringAnalyzer,
+    Meziantou.Analyzer.Rules.RemoveUselessToStringFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RemoveUselessToStringAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task IntToString_ShouldNotReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<RemoveUselessToStringAnalyzer>()
-            .WithCodeFixProvider<RemoveUselessToStringFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A() => 1.ToString();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IntToString_ShouldNotReportDiagnostic()
+    public Task StringToString_ShouldReportDiagnostic()
     {
-        var project = CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public void A() => 1.ToString();
-                }
-                """);
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public string A() => {|MA0044:"".ToString()|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public string A() => "";
+            }
+            """;
 
-        await project.ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringToString_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    public string A() => [|"".ToString()|];
-                }
-                """)
-              .ShouldFixCodeWith("""
-                class Test
-                {
-                    public string A() => "";
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

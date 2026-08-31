@@ -1,46 +1,50 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseAnOverloadThatHasMidpointRoundingAnalyzer,
+    Meziantou.Analyzer.Rules.UseAnOverloadThatHasMidpointRoundingFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task MathRoundWithoutMode_ReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseAnOverloadThatHasMidpointRoundingAnalyzer>()
-            .WithCodeFixProvider<UseAnOverloadThatHasMidpointRoundingFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.Math.Round(2.5)|};
+                    _ = {|MA0193:System.Math.Round(2.5, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MathRoundWithoutMode_ReportDiagnostic()
+    public Task MathRoundWithMode_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          _ = [|System.Math.Round(2.5)|];
-                          _ = [|System.Math.Round(2.5, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = System.Math.Round(2.5, System.MidpointRounding.AwayFromZero);
+                    _ = System.Math.Round(2.5, 1, System.MidpointRounding.AwayFromZero);
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task MathRoundWithMode_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          _ = System.Math.Round(2.5, System.MidpointRounding.AwayFromZero);
-                          _ = System.Math.Round(2.5, 1, System.MidpointRounding.AwayFromZero);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -49,9 +53,20 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     [InlineData(2, "ToZero")]
     [InlineData(3, "ToNegativeInfinity")]
     [InlineData(4, "ToPositiveInfinity")]
-    public async Task MathRound_CodeFix_SuggestsEachMidpointRoundingValue(int codeFixIndex, string midpointRoundingMember)
+    public Task MathRound_CodeFix_SuggestsEachMidpointRoundingValue(int codeFixIndex, string midpointRoundingMember)
     {
-        var fixedCode = $$"""
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.Math.Round(2.5)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = codeFixIndex;
+        test.FixedCode = $$"""
             class Test
             {
                 void A()
@@ -61,86 +76,79 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          _ = [|System.Math.Round(2.5)|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith(codeFixIndex, fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MathFRoundWithoutMode_ReportDiagnostic()
+    public Task MathFRoundWithoutMode_ReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          _ = [|System.MathF.Round(2.5f)|];
-                          _ = [|System.MathF.Round(2.5f, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.MathF.Round(2.5f)|};
+                    _ = {|MA0193:System.MathF.Round(2.5f, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MathFRoundWithMode_NoDiagnostic()
+    public Task MathFRoundWithMode_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A()
-                      {
-                          _ = System.MathF.Round(2.5f, System.MidpointRounding.AwayFromZero);
-                          _ = System.MathF.Round(2.5f, 1, System.MidpointRounding.AwayFromZero);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = System.MathF.Round(2.5f, System.MidpointRounding.AwayFromZero);
+                    _ = System.MathF.Round(2.5f, 1, System.MidpointRounding.AwayFromZero);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DecimalRoundWithoutMode_ReportDiagnostic()
+    public Task DecimalRoundWithoutMode_ReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(decimal value)
-                      {
-                          _ = [|decimal.Round(value)|];
-                          _ = [|decimal.Round(value, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(decimal value)
+                {
+                    _ = {|MA0193:decimal.Round(value)|};
+                    _ = {|MA0193:decimal.Round(value, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DecimalRoundWithMode_NoDiagnostic()
+    public Task DecimalRoundWithMode_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(decimal value)
-                      {
-                          _ = decimal.Round(value, System.MidpointRounding.AwayFromZero);
-                          _ = decimal.Round(value, 1, System.MidpointRounding.AwayFromZero);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(decimal value)
+                {
+                    _ = decimal.Round(value, System.MidpointRounding.AwayFromZero);
+                    _ = decimal.Round(value, 1, System.MidpointRounding.AwayFromZero);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -149,9 +157,20 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     [InlineData(2, "ToZero")]
     [InlineData(3, "ToNegativeInfinity")]
     [InlineData(4, "ToPositiveInfinity")]
-    public async Task DecimalRound_CodeFix_SuggestsEachMidpointRoundingValue(int codeFixIndex, string midpointRoundingMember)
+    public Task DecimalRound_CodeFix_SuggestsEachMidpointRoundingValue(int codeFixIndex, string midpointRoundingMember)
     {
-        var fixedCode = $$"""
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(decimal value)
+                {
+                    _ = {|MA0193:decimal.Round(value, 1)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = codeFixIndex;
+        test.FixedCode = $$"""
             class Test
             {
                 void A(decimal value)
@@ -161,105 +180,98 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(decimal value)
-                      {
-                          _ = [|decimal.Round(value, 1)|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith(codeFixIndex, fixedCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FloatingPointImplementationsRoundWithoutMode_ReportDiagnostic()
+    public Task FloatingPointImplementationsRoundWithoutMode_ReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(double d, float f, System.Half h)
-                      {
-                          _ = [|double.Round(d)|];
-                          _ = [|double.Round(d, 1)|];
-                          _ = [|float.Round(f)|];
-                          _ = [|float.Round(f, 1)|];
-                          _ = [|System.Half.Round(h)|];
-                          _ = [|System.Half.Round(h, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            class Test
+            {
+                void A(double d, float f, System.Half h)
+                {
+                    _ = {|MA0193:double.Round(d)|};
+                    _ = {|MA0193:double.Round(d, 1)|};
+                    _ = {|MA0193:float.Round(f)|};
+                    _ = {|MA0193:float.Round(f, 1)|};
+                    _ = {|MA0193:System.Half.Round(h)|};
+                    _ = {|MA0193:System.Half.Round(h, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FloatingPointImplementationsRoundWithMode_NoDiagnostic()
+    public Task FloatingPointImplementationsRoundWithMode_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode("""
-                  class Test
-                  {
-                      void A(double d, float f, System.Half h)
-                      {
-                          _ = double.Round(d, System.MidpointRounding.AwayFromZero);
-                          _ = double.Round(d, 1, System.MidpointRounding.AwayFromZero);
-                          _ = float.Round(f, System.MidpointRounding.AwayFromZero);
-                          _ = float.Round(f, 1, System.MidpointRounding.AwayFromZero);
-                          _ = System.Half.Round(h, System.MidpointRounding.AwayFromZero);
-                          _ = System.Half.Round(h, 1, System.MidpointRounding.AwayFromZero);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            class Test
+            {
+                void A(double d, float f, System.Half h)
+                {
+                    _ = double.Round(d, System.MidpointRounding.AwayFromZero);
+                    _ = double.Round(d, 1, System.MidpointRounding.AwayFromZero);
+                    _ = float.Round(f, System.MidpointRounding.AwayFromZero);
+                    _ = float.Round(f, 1, System.MidpointRounding.AwayFromZero);
+                    _ = System.Half.Round(h, System.MidpointRounding.AwayFromZero);
+                    _ = System.Half.Round(h, 1, System.MidpointRounding.AwayFromZero);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IFloatingPointRoundWithoutMode_ReportDiagnostic()
+    public Task IFloatingPointRoundWithoutMode_ReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode("""
-                  using System.Numerics;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Numerics;
 
-                  class Test
-                  {
-                      static T Round<T>(T value) where T : IFloatingPoint<T>
-                      {
-                          _ = [|T.Round(value)|];
-                          return [|T.Round(value, 1)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+            class Test
+            {
+                static T Round<T>(T value) where T : IFloatingPoint<T>
+                {
+                    _ = {|MA0193:T.Round(value)|};
+                    return {|MA0193:T.Round(value, 1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IFloatingPointRoundWithMode_NoDiagnostic()
+    public Task IFloatingPointRoundWithMode_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .WithSourceCode("""
-                  using System.Numerics;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Numerics;
 
-                  class Test
-                  {
-                      static T Round<T>(T value) where T : IFloatingPoint<T>
-                      {
-                          _ = T.Round(value, System.MidpointRounding.AwayFromZero);
-                          return T.Round(value, 1, System.MidpointRounding.AwayFromZero);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+            class Test
+            {
+                static T Round<T>(T value) where T : IFloatingPoint<T>
+                {
+                    _ = T.Round(value, System.MidpointRounding.AwayFromZero);
+                    return T.Round(value, 1, System.MidpointRounding.AwayFromZero);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

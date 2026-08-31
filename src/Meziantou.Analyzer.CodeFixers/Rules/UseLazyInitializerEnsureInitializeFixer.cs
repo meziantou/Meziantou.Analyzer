@@ -53,9 +53,7 @@ public sealed class UseLazyInitializerEnsureInitializeFixer : CodeFixProvider
             .WithExpressionBody(valueExpression.WithoutTrivia());
 
         var newInvocation = InvocationExpression(
-            (ExpressionSyntax)generator.MemberAccessExpression(
-                generator.TypeExpression(lazyInitializerType),
-                "EnsureInitialized"))
+            (ExpressionSyntax)generator.TypeMemberAccessExpression(lazyInitializerType, "EnsureInitialized"))
             .WithArgumentList(ArgumentList(SeparatedList<ArgumentSyntax>(
             [
                 refArgSyntax,

@@ -1,17 +1,23 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseDefaultEqualsOnValueTypeAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // This class covers MA0065 only, the way the original test filtered the diagnostics to that rule
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseDefaultEqualsOnValueTypeAnalyzer>(id: "MA0065");
+        var test = new AnalyzerTest();
+        test.DisabledDiagnostics.Add(RuleIdentifiers.StructWithDefaultEqualsImplementationUsedAsAKey);
+        return test;
     }
 
     [Fact]
-    public async Task Equals_DefaultImplementation()
+    public Task Equals_DefaultImplementation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
             }
@@ -20,36 +26,36 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
             {
                 public void A()
                 {
-                    _ = [|new Test().Equals(new Test())|];
+                    _ = {|MA0065:new Test().Equals(new Test())|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ObjectEquals_DefaultImplementation()
+    public Task ObjectEquals_DefaultImplementation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 public void A()
                 {
-                    _ = [|Equals(new Test())|];
+                    _ = {|MA0065:Equals(new Test())|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Equals_Override()
+    public Task Equals_Override()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 public override bool Equals(object o) => throw null;
@@ -64,15 +70,15 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetHashCode_DefaultImplementation()
+    public Task GetHashCode_DefaultImplementation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
             }
@@ -81,19 +87,19 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
             {
                 public void A()
                 {
-                    _ = [|new Test().GetHashCode()|];
+                    _ = {|MA0065:new Test().GetHashCode()|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetHashCode_Override()
+    public Task GetHashCode_Override()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 public override bool Equals(object o) => throw null;
@@ -108,15 +114,15 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetHashCode_Enum()
+    public Task GetHashCode_Enum()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum Test
             {
                 A,
@@ -131,15 +137,15 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetHashCode_EnumVariable()
+    public Task GetHashCode_EnumVariable()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum Test
             {
                 A,
@@ -155,8 +161,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer_EqualsTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

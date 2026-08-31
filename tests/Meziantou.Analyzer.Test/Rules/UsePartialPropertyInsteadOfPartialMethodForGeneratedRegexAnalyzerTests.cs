@@ -1,92 +1,100 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAnalyzer,
+    Meziantou.Analyzer.Rules.UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net9_0)
-            .WithFrameworkSourceGenerators()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-            .WithAnalyzer<UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAnalyzer>()
-            .WithCodeFixProvider<UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFixer>()
-            .WithNoFixCompilation();
+        var test = new CodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
     }
 
     [Fact]
-    public async Task NoGeneratedRegexAttribute_NoDiagnostic()
+    public Task NoGeneratedRegexAttribute_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                class Sample { }
-                """)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CSharp12_NoDiagnostic()
+    public Task CSharp12_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-                partial class Sample
-                {
-                    [GeneratedRegex("pattern")]
-                    private static partial Regex SampleRegex();
-                }
-                """)
-            .ValidateAsync();
+            partial class Sample
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
 #if CSHARP13_OR_GREATER
     [Fact]
-    public async Task GeneratedRegexPartialMethod_ReportsDiagnostic()
+    public Task GeneratedRegexPartialMethod_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Text.RegularExpressions;
-
-                partial class Sample
-                {
-                    [GeneratedRegex("pattern")]
-                    private static partial Regex [|SampleRegex|]();
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task GeneratedRegexPartialMethod_WithOptions_ReportsDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Text.RegularExpressions;
-
-                partial class Sample
-                {
-                    [GeneratedRegex("pattern", RegexOptions.CultureInvariant)]
-                    private static partial Regex [|SampleRegex|]();
-                }
-                """)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task CodeFix_ConvertsMethodToProperty()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
 
-        const string ExpectedFix = """
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GeneratedRegexPartialMethod_WithOptions_ReportsDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                [GeneratedRegex("pattern", RegexOptions.CultureInvariant)]
+                private static partial Regex {|MA0190:SampleRegex|}();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_ConvertsMethodToProperty()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex {|MA0190:SampleRegex|}();
+            }
+            """;
+        test.FixedCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -96,27 +104,24 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(ExpectedFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_ConvertsMethodToProperty_WithTimeout()
+    public Task CodeFix_ConvertsMethodToProperty_WithTimeout()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Text.RegularExpressions;
             using System.Threading;
 
             partial class Sample
             {
                 [GeneratedRegex(@"sample.*", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: Timeout.Infinite)]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
-
-        const string ExpectedFix = """
+        test.FixedCode = """
             using System.Text.RegularExpressions;
             using System.Threading;
 
@@ -127,22 +132,20 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(ExpectedFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_ReplacesInvocationsWithPropertyAccess()
+    public Task CodeFix_ReplacesInvocationsWithPropertyAccess()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
 
                 void M()
                 {
@@ -150,8 +153,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
                 }
             }
             """;
-
-        const string ExpectedFix = """
+        test.FixedCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -166,22 +168,20 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(ExpectedFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_ReplacesMultipleInvocationsWithPropertyAccess()
+    public Task CodeFix_ReplacesMultipleInvocationsWithPropertyAccess()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
 
                 void M()
                 {
@@ -190,8 +190,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
                 }
             }
             """;
-
-        const string ExpectedFix = """
+        test.FixedCode = """
             using System.Text.RegularExpressions;
 
             partial class Sample
@@ -207,11 +206,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(ExpectedFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 #endif
 }
-

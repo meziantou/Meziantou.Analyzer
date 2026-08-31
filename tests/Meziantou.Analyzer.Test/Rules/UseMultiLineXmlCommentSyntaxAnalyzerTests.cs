@@ -1,218 +1,232 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseMultiLineXmlCommentSyntaxAnalyzer,
+    Meziantou.Analyzer.Rules.UseMultiLineXmlCommentSyntaxFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task SummarySingleLine_ShouldReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseMultiLineXmlCommentSyntaxAnalyzer>()
-            .WithCodeFixProvider<UseMultiLineXmlCommentSyntaxFixer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>description</summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SummarySingleLine_ShouldReportDiagnostic()
+    public Task SingleLineSummaryWithNestedElement_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0211:<summary>description</summary>|}
-                  class Sample { }
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// description
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>This has <c>code</c> inside</summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// This has <c>code</c> inside
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleLineSummaryWithNestedElement_ShouldReportDiagnostic()
+    public Task SingleLineSummaryWithCData_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0211:<summary>This has <c>code</c> inside</summary>|}
-                  class Sample { }
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// This has <c>code</c> inside
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary><![CDATA[Sample]]></summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// <![CDATA[Sample]]>
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleLineSummaryWithCData_ShouldReportDiagnostic()
+    public Task FieldSummarySingleLine_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0211:<summary><![CDATA[Sample]]></summary>|}
-                  class Sample { }
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// <![CDATA[Sample]]>
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0211:<summary>description</summary>|}
+                public int Value;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <summary>
+                /// description
+                /// </summary>
+                public int Value;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FieldSummarySingleLine_ShouldReportDiagnostic()
+    public Task PropertySummarySingleLine_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// {|MA0211:<summary>description</summary>|}
-                      public int Value;
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class Sample
-                  {
-                      /// <summary>
-                      /// description
-                      /// </summary>
-                      public int Value;
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0211:<summary>description</summary>|}
+                public int Value { get; set; }
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <summary>
+                /// description
+                /// </summary>
+                public int Value { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PropertySummarySingleLine_ShouldReportDiagnostic()
+    public Task StructSummarySingleLine_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// {|MA0211:<summary>description</summary>|}
-                      public int Value { get; set; }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class Sample
-                  {
-                      /// <summary>
-                      /// description
-                      /// </summary>
-                      public int Value { get; set; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>description</summary>|}
+            struct Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            struct Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StructSummarySingleLine_ShouldReportDiagnostic()
+    public Task RecordSummarySingleLine_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0211:<summary>description</summary>|}
-                  struct Sample { }
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// description
-                  /// </summary>
-                  struct Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>description</summary>|}
+            record Sample;
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            record Sample;
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RecordSummarySingleLine_ShouldReportDiagnostic()
+    public Task EmptyContent_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// {|MA0211:<summary>description</summary>|}
-                  record Sample;
-                  """)
-              .ShouldFixCodeWith("""
-                  /// <summary>
-                  /// description
-                  /// </summary>
-                  record Sample;
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary></summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EmptyContent_ShouldNotReportDiagnostic()
+    public Task ParamSingleLine_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary></summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <param name="value">The value</param>
+                public void Method(int value) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ParamSingleLine_ShouldNotReportDiagnostic()
+    public Task SummaryContainingOnlyWhitespace_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// <param name="value">The value</param>
-                      public void Method(int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>   </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SummaryContainingOnlyWhitespace_ShouldNotReportDiagnostic()
+    public Task MultiLineDescription_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary>   </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultiLineDescription_ShouldNotReportDiagnostic()
+    public Task MultiLineSummaryWithNestedElement_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary>
-                  /// description
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// This has <c>code</c> inside
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultiLineSummaryWithNestedElement_ShouldNotReportDiagnostic()
+    public Task MultiLineSummaryWithCData_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary>
-                  /// This has <c>code</c> inside
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// <![CDATA[Sample]]>
+            /// </summary>
+            class Sample { }
+            """;
 
-    [Fact]
-    public async Task MultiLineSummaryWithCData_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <summary>
-                  /// <![CDATA[Sample]]>
-                  /// </summary>
-                  class Sample { }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

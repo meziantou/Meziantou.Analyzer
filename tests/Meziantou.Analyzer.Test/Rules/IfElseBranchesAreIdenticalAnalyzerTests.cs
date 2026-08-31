@@ -1,25 +1,40 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.IfElseBranchesAreIdenticalAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class IfElseBranchesAreIdenticalAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder() =>
-        new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<IfElseBranchesAreIdenticalAnalyzer>();
+    private static AnalyzerTest CreateTest()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
+    }
 
     [Fact]
-    public Task IfElse_SameCode() => CreateProjectBuilder()
-        .WithSourceCode("""
-            [|if(true)
+    public Task IfElse_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0140:if(true)
                 _ = "";
             else
-                _ = "";|]
-            """)
-        .ValidateAsync();
+                _ = "";|}
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_SameCode_WithComments() => CreateProjectBuilder()
-        .WithSourceCode("""
-            [|if(true)
+    public Task IfElse_SameCode_WithComments()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0140:if(true)
             {
                 _ = "";
             }
@@ -27,13 +42,17 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 // test
                 _ = "";
-            }|]
-            """)
-        .ValidateAsync();
+            }|}
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_DifferentBranches() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElse_DifferentBranches()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             if(true)
             {
                 _ = "";
@@ -43,33 +62,49 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
                 // test
                 _ = 10;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task If_WithoutElse() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task If_WithoutElse()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             if(true)
             {
                 _ = "";
             }
-        """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Ternary_SameCode() => CreateProjectBuilder()
-        .WithSourceCode("""_ = [|true ? 0 : 0|];""")
-        .ValidateAsync();
+    public Task Ternary_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """_ = {|MA0140:true ? 0 : 0|};""";
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Ternary_Different() => CreateProjectBuilder()
-        .WithSourceCode("""_ = true ? 0 : 1;""")
-        .ValidateAsync();
+    public Task Ternary_Different()
+    {
+        var test = CreateTest();
+        test.TestCode = """_ = true ? 0 : 1;""";
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_WithLocalFunction() => CreateProjectBuilder()
-        .WithSourceCode("""
-            [|if(true)
+    public Task IfElse_WithLocalFunction()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0140:if(true)
             {
                 _ = "";
                 void A() => A();
@@ -78,13 +113,17 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 _ = "";
                 void A() => A();
-            }|]
-            """)
-        .ValidateAsync();
+            }|}
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_WithLocalFunction_Different() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElse_WithLocalFunction_Different()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             if(true)
             {
                 _ = "";
@@ -95,94 +134,122 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
                 _ = "";
                 void A() => throw null;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement() => CreateProjectBuilder()
-        .WithSourceCode("""
-            [|if(true)
-                return 0;|]
+    public Task IfWithoutElse_ButSingleStatement()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0140:if(true)
+                return 0;|}
             return 0;
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_NotGlobalStatement() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_NotGlobalStatement()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             int A()
             {
-                [|if(true)
-                    return 0;|]
+                {|MA0140:if(true)
+                    return 0;|}
                 return 0;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_DeadCode() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_DeadCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             int A()
             {
-                [|if(true)
-                    return 0;|]
+                {|MA0140:if(true)
+                    return 0;|}
                 return 0;
                 System.Console.WriteLine();
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_Break() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_Break()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             void A()
             {
                 while (true){
-                    [|if (true)
-                        break;|]
+                    {|MA0140:if (true)
+                        break;|}
                     break;
                 }
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_Continue() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_Continue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             void A()
             {
                 while (true){
-                    [|if (true)
-                        continue;|]
+                    {|MA0140:if (true)
+                        continue;|}
                     continue;
                 }
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_goto() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_goto()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             void A()
             {
                 sample:
                 while (true){
-                    [|if (true)
-                        goto sample;|]
+                    {|MA0140:if (true)
+                        goto sample;|}
                     goto sample;
                 }
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_DifferentCode1() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_DifferentCode1()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             int A()
             {
@@ -192,12 +259,16 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
                 System.Console.WriteLine();
                 return 0;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_DifferentCode2() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_DifferentCode2()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             int A()
             {
@@ -205,12 +276,16 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
                     return 0;
                 return 1;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfWithoutElse_ButSingleStatement_SameCodeButNotReturn() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfWithoutElse_ButSingleStatement_SameCodeButNotReturn()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             A();
             int A()
             {
@@ -221,6 +296,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
                 System.Console.WriteLine();
                 return 0;
             }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 }

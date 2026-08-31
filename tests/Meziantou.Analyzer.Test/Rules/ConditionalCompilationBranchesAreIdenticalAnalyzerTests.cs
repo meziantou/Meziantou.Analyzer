@@ -1,16 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ConditionalCompilationBranchesAreIdenticalAnalyzer,
+    Meziantou.Analyzer.Rules.ConditionalCompilationBranchesAreIdenticalFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder() =>
-        new ProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithAnalyzer<ConditionalCompilationBranchesAreIdenticalAnalyzer>()
-            .WithCodeFixProvider<ConditionalCompilationBranchesAreIdenticalFixer>();
+    private static CodeFixTest CreateTest()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        return test;
+    }
 
     [Fact]
-    public Task IfElif_SameCode() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElif_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             {|MA0202:#elif B|}
@@ -18,23 +28,31 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             #else
             _ = 1;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_SameCode() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElse_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             {|MA0202:#else|}
             _ = 0;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task NonAdjacentDuplicateBranch() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task NonAdjacentDuplicateBranch()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             #elif B
@@ -42,12 +60,16 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             {|MA0202:#else|}
             _ = 0;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task SameCodeWithDifferentComments() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task SameCodeWithDifferentComments()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             {|MA0202:#elif B|}
@@ -56,12 +78,16 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             #else
             _ = 1;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task DifferentXmlCommentsOnly() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task DifferentXmlCommentsOnly()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             class C
             {
             #if A
@@ -73,12 +99,16 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             }
 
             static class Program { static void Main() { } }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task SameXmlCommentsOnly() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task SameXmlCommentsOnly()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             class C
             {
             #if A
@@ -90,12 +120,16 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             }
 
             static class Program { static void Main() { } }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task DifferentBranches() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task DifferentBranches()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             #elif B
@@ -103,24 +137,32 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             #else
             _ = 2;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_SameCode_PartialExpression() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElse_SameCode_PartialExpression()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             _ =
             #if A
              1;
             {|MA0202:#else|}
              1;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task IfElse_SameCode_PartialTypeDeclaration() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task IfElse_SameCode_PartialTypeDeclaration()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             interface ISample { }
             interface ISpanFormattable { }
 
@@ -138,12 +180,16 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             { }
 
             static class Program { static void Main() { } }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Fix_IfElif_SameCode_MergesConditions() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task Fix_IfElif_SameCode_MergesConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             {|MA0202:#elif B|}
@@ -151,44 +197,56 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             #else
             _ = 1;
             #endif
-            """)
-        .ShouldFixCodeWith("""
+            """;
+        test.FixedCode = """
             #if (A) || (B)
             _ = 0;
             #else
             _ = 1;
             #endif
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Fix_IfElse_SameCode_RemovesPreprocessor() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task Fix_IfElse_SameCode_RemovesPreprocessor()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             #if A
             _ = 0;
             {|MA0202:#else|}
             _ = 0;
             #endif
-            """)
-        .ShouldFixCodeWith("_ = 0;\n")
-        .ValidateAsync();
+            """;
+        test.FixedCode = "_ = 0;\n";
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Fix_IfElse_SameCode_PartialExpression_RemovesPreprocessor() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task Fix_IfElse_SameCode_PartialExpression_RemovesPreprocessor()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             _ =
             #if A
              1;
             {|MA0202:#else|}
              1;
             #endif
-            """)
-        .ShouldFixCodeWith("_ =\n 1;\n")
-        .ValidateAsync();
+            """;
+        test.FixedCode = "_ =\n 1;\n";
+
+        return test.RunAsync();
+    }
 
     [Fact]
-    public Task Fix_IfElse_SameCode_PartialTypeDeclaration_RemovesPreprocessor() => CreateProjectBuilder()
-        .WithSourceCode("""
+    public Task Fix_IfElse_SameCode_PartialTypeDeclaration_RemovesPreprocessor()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             interface ISample { }
             interface ISpanFormattable { }
 
@@ -206,8 +264,8 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             { }
 
             static class Program { static void Main() { } }
-            """)
-        .ShouldFixCodeWith("""
+            """;
+        test.FixedCode = """
             interface ISample { }
             interface ISpanFormattable { }
 
@@ -221,6 +279,8 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             { }
 
             static class Program { static void Main() { } }
-            """)
-        .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -1,161 +1,143 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.RemoveUnnecessaryPartialModifierAnalyzer,
+    Meziantou.Analyzer.Rules.RemoveUnnecessaryPartialModifierFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<RemoveUnnecessaryPartialModifierAnalyzer>()
-            .WithCodeFixProvider<RemoveUnnecessaryPartialModifierFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task PartialClass_WithSingleDeclaration_ReportsDiagnostic()
+    public Task PartialClass_WithSingleDeclaration_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} class Sample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithSingleDeclaration_PreserveComments_Keyword_ReportsDiagnostic()
+    public Task PartialClass_WithSingleDeclaration_PreserveComments_Keyword_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            /*sample*/[|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            /*sample*/{|MA0204:partial|} class Sample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             /*sample*/class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithSingleDeclaration_PreserveComments_Modifier_ReportsDiagnostic()
+    public Task PartialClass_WithSingleDeclaration_PreserveComments_Modifier_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            static /*sample*/[|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            static /*sample*/{|MA0204:partial|} class Sample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             static /*sample*/class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithOtherModifiers_ReportsDiagnostic()
+    public Task PartialClass_WithOtherModifiers_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            public sealed [|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed {|MA0204:partial|} class Sample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             public sealed class Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialRecord_WithSingleDeclaration_ReportsDiagnostic()
+    public Task PartialRecord_WithSingleDeclaration_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] record Sample;
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} record Sample;
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             record Sample;
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialStruct_WithSingleDeclaration_ReportsDiagnostic()
+    public Task PartialStruct_WithSingleDeclaration_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] struct Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} struct Sample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             struct Sample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialInterface_WithSingleDeclaration_ReportsDiagnostic()
+    public Task PartialInterface_WithSingleDeclaration_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] interface ISample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} interface ISample
             {
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             interface ISample
             {
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithMultipleDeclarations_NoDiagnostic()
+    public Task PartialClass_WithMultipleDeclarations_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             partial class Sample
             {
             }
@@ -165,31 +147,29 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithPartialMethod_NoDiagnostic()
+    public Task PartialClass_WithPartialMethod_NoDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} class Sample
             {
                 partial void M();
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_WithNestedPartialType_ReportsDiagnostic()
+    public Task PartialClass_WithNestedPartialType_ReportsDiagnostic()
     {
-        const string SourceCode = """
-            [|partial|] class Sample
+        var test = CreateTest();
+        test.TestCode = """
+            {|MA0204:partial|} class Sample
             {
                 partial class Nested
                 {
@@ -200,8 +180,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class Sample
             {
                 partial class Nested
@@ -214,16 +193,14 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_InheritingFromWpfUserControl_NoDiagnostic()
+    public Task PartialClass_InheritingFromWpfUserControl_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace System.Windows.Controls
             {
                 public class UserControl
@@ -235,15 +212,14 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_InheritingFromWpfPage_NoDiagnostic()
+    public Task PartialClass_InheritingFromWpfPage_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace System.Windows.Controls
             {
                 public class Page
@@ -255,15 +231,14 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_InheritingFromWpfApplication_NoDiagnostic()
+    public Task PartialClass_InheritingFromWpfApplication_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace System.Windows
             {
                 public class Application
@@ -275,15 +250,14 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PartialClass_InheritingFromWpfWindow_NoDiagnostic()
+    public Task PartialClass_InheritingFromWpfWindow_NoDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             namespace System.Windows
             {
                 public class Window
@@ -295,8 +269,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

@@ -1,87 +1,91 @@
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.UseEventHandlerOfTAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseEventHandlerOfTAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ValidEvent()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseEventHandlerOfTAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                event System.EventHandler<System.EventArgs> myevent;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidEvent()
+    public Task ValidEvent_CustomEventArgs()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test
-                {
-                    event System.EventHandler<System.EventArgs> myevent;
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class SampleEventArgs : System.EventArgs
+            {
+            }
+
+            class Test
+            {
+                event System.EventHandler<SampleEventArgs> myevent;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidEvent_CustomEventArgs()
+    public Task ValidEvent_CustomDelegate()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class SampleEventArgs : System.EventArgs
-                {
-                }
+        var test = CreateTest();
+        test.TestCode = """
+            class SampleEventArgs : System.EventArgs
+            {
+            }
 
-                class Test
-                {
-                    event System.EventHandler<SampleEventArgs> myevent;
-                }
-                """)
-              .ValidateAsync();
+            delegate void CustomEventHandler(object sender, SampleEventArgs e);
+
+            class Test
+            {
+                event CustomEventHandler myevent;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidEvent_CustomDelegate()
+    public Task ValidEvent_GenericTypeParameterConstraint()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class SampleEventArgs : System.EventArgs
-                {
-                }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test<TEventArgs> where TEventArgs : System.EventArgs
+            {
+                event System.EventHandler<TEventArgs> myevent;
+            }
+            """;
 
-                delegate void CustomEventHandler(object sender, SampleEventArgs e);
-
-                class Test
-                {
-                    event CustomEventHandler myevent;
-                }
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ValidEvent_GenericTypeParameterConstraint()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                class Test<TEventArgs> where TEventArgs : System.EventArgs
-                {
-                    event System.EventHandler<TEventArgs> myevent;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("System.Action<string>")]
     [InlineData("System.EventHandler<string>")]
-    public async Task InvalidEvent(string signature)
+    public Task InvalidEvent(string signature)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                class Test
-                {
-                    event {{signature}} [|myevent|];
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                event {{signature}} {|MA0046:myevent|};
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

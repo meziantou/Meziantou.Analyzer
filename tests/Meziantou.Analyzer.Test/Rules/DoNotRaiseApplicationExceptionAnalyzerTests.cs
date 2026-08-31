@@ -1,55 +1,56 @@
 #pragma warning disable CA1030 // Use events where appropriate
 
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotRaiseApplicationExceptionAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotRaiseApplicationExceptionAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotRaiseApplicationExceptionAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task RaiseNotReservedException_ShouldNotReportErrorAsync()
+    public Task RaiseNotReservedException_ShouldNotReportErrorAsync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class TestAttribute
-                  {
-                      void Test()
-                      {
-                          throw new Exception();
-                          throw new ArgumentException();
-
-                          try
-                          {
-                          }
-                          catch (ApplicationException)
-                          {
-                              throw;
-                          }
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task RaiseReservedException_ShouldReportErrorAsync()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                class TestAttribute
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
                 {
-                    void Test()
+                    throw new Exception();
+                    throw new ArgumentException();
+
+                    try
                     {
-                        [|throw new ApplicationException();|]
+                    }
+                    catch (ApplicationException)
+                    {
+                        throw;
                     }
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RaiseReservedException_ShouldReportErrorAsync()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class TestAttribute
+            {
+                void Test()
+                {
+                    {|MA0014:throw new ApplicationException();|}
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

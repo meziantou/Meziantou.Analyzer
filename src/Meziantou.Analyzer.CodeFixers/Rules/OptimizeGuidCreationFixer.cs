@@ -73,7 +73,27 @@ public sealed class OptimizeGuidCreationFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static LiteralExpressionSyntax CreateHexLiteral(int value, bool uppercase) => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal("0x" + value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture), value));
-    private static LiteralExpressionSyntax CreateHexLiteral(short value, bool uppercase) => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal("0x" + value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture), value));
-    private static LiteralExpressionSyntax CreateHexLiteral(byte value, bool uppercase) => SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, SyntaxFactory.Literal("0x" + value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture), value));
+    private static LiteralExpressionSyntax CreateHexLiteral(int value, bool uppercase) =>
+        CreateHexLiteral(unchecked((uint)value), value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture));
+
+    private static LiteralExpressionSyntax CreateHexLiteral(short value, bool uppercase) =>
+        CreateHexLiteral((ushort)value, value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture));
+
+    private static LiteralExpressionSyntax CreateHexLiteral(byte value, bool uppercase) =>
+        CreateHexLiteral(value, value.ToString(uppercase ? "X" : "x", CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Creates the hexadecimal literal the parser produces for <c>0x</c> followed by <paramref name="digits"/>.
+    /// The parser types such a literal as an <see cref="int"/>, or as an <see cref="uint"/> when the value does not
+    /// fit, so the token must carry the same value for the syntax tree to match the one of the parsed code.
+    /// </summary>
+    private static LiteralExpressionSyntax CreateHexLiteral(uint value, string digits)
+    {
+        var text = "0x" + digits;
+        var token = value <= int.MaxValue
+            ? SyntaxFactory.Literal(text, (int)value)
+            : SyntaxFactory.Literal(text, value);
+
+        return SyntaxFactory.LiteralExpression(SyntaxKind.NumericLiteralExpression, token);
+    }
 }

@@ -1,103 +1,125 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeLinqUsageFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeLinqUsageAnalyzerUseCastInsteadOfSelectTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptimizeLinqUsageAnalyzer>(id: RuleIdentifiers.OptimizeEnumerable_CastInsteadOfSelect)
-            .WithCodeFixProvider<OptimizeLinqUsageFixer>();
+        var test = new CodeFixTest();
+        test.DisabledDiagnostics.Add("MA0020");
+        test.DisabledDiagnostics.Add("MA0029");
+        test.DisabledDiagnostics.Add("MA0030");
+        test.DisabledDiagnostics.Add("MA0031");
+        test.DisabledDiagnostics.Add("MA0063");
+        test.DisabledDiagnostics.Add("MA0098");
+        test.DisabledDiagnostics.Add("MA0112");
+        test.DisabledDiagnostics.Add("MA0159");
+        return test;
     }
 
+
     [Theory]
-    [InlineData("source.[|Select|](dt => (BaseType)dt)",
+    [InlineData("source.{|MA0078:Select|}(dt => (BaseType)dt)",
                 "source.Cast<BaseType>()")]
-    [InlineData("Enumerable.[|Select|](source, dt => (Test.BaseType)dt).FirstOrDefault()",
+    [InlineData("Enumerable.{|MA0078:Select|}(source, dt => (Test.BaseType)dt).FirstOrDefault()",
                 "source.Cast<BaseType>().FirstOrDefault()")]
-    [InlineData("System.Linq.Enumerable.Empty<DerivedType>().[|Select|](dt => (Gen.IList<string>)dt)",
+    [InlineData("System.Linq.Enumerable.Empty<DerivedType>().{|MA0078:Select|}(dt => (Gen.IList<string>)dt)",
                             "Enumerable.Empty<DerivedType>().Cast<Gen.IList<string>>()")]
-    [InlineData("Enumerable.Range(0, 1).[|Select<int, object>|](i => i)",
+    [InlineData("Enumerable.Range(0, 1).{|MA0078:Select<int, object>|}(i => i)",
                 "Enumerable.Range(0, 1).Cast<object>()")]
-    [InlineData("source.[|Select|](i => (object?)i)",
+    [InlineData("source.{|MA0078:Select|}(i => (object?)i)",
                 "source.Cast<object?>()",
                 true)]
-    [InlineData("source.[|Select|](i => (object)i)",
+    [InlineData("source.{|MA0078:Select|}(i => (object)i)",
                 "source.Cast<object>()",
                 true)]
-    [InlineData("source.[|Select<DerivedType, object?>|](i => i)",
+    [InlineData("source.{|MA0078:Select<DerivedType, object?>|}(i => i)",
                 "source.Cast<object?>()",
                 true)]
-    [InlineData("source.[|Select<DerivedType, object>|](i => i)",
+    [InlineData("source.{|MA0078:Select<DerivedType, object>|}(i => i)",
                 "source.Cast<object>()",
                 true)]
-    public async Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
+    public Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
         string selectInvocation,
         string expectedReplacement,
         bool enableNullable = false)
     {
-        var originalCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
-using System.Linq;
-using Gen = System.Collections.Generic;
+        var test = CreateTest();
+        test.TestCode = $$"""
+            #nullable {{(enableNullable ? "enable" : "disable")}}
+            using System.Linq;
+            using Gen = System.Collections.Generic;
 
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
+            class Test
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
 
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {selectInvocation};
-    }}
-}}";
-        var modifiedCode = $@"#nullable {(enableNullable ? "enable" : "disable")}
-using System.Linq;
-using Gen = System.Collections.Generic;
+                public Test()
+                {
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {{selectInvocation}};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            #nullable {{(enableNullable ? "enable" : "disable")}}
+            using System.Linq;
+            using Gen = System.Collections.Generic;
 
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
+            class Test
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
 
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {expectedReplacement};
-    }}
-}}";
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+                public Test()
+                {
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {{expectedReplacement}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("source.Select(dt => dt.Name)")]            // No cast
     [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
-    public async Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
+    public Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
-        var originalCode = $@"using System.Linq;
-class Test
-{{
-    class BaseType {{ public string Name {{ get; set; }} }}
-    class DerivedType : BaseType {{}}
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                class BaseType { public string Name { get; set; } }
+                class DerivedType : BaseType {}
 
-    public Test()
-    {{
-        var source = System.Linq.Enumerable.Empty<DerivedType>();
-        {selectInvocation};
-    }}
-}}";
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+                public Test()
+                {
+                    var source = System.Linq.Enumerable.Empty<DerivedType>();
+                    {{selectInvocation}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptimizeLinq_ExplicitCastIsRequired()
+    public Task OptimizeLinq_ExplicitCastIsRequired()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -110,16 +132,16 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
-    public async Task OptimizeLinq_UserDefinedImplicitOperator()
+    public Task OptimizeLinq_UserDefinedImplicitOperator()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq;
 
@@ -143,16 +165,16 @@ class Test
                 public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/176")]
-    public async Task OptimizeLinq_UserDefinedImplicitOperator_ImplicitUse()
+    public Task OptimizeLinq_UserDefinedImplicitOperator_ImplicitUse()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq;
 
@@ -176,15 +198,15 @@ class Test
                 public static implicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptimizeLinq_UserDefinedExplicitOperator()
+    public Task OptimizeLinq_UserDefinedExplicitOperator()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq;
 
@@ -208,15 +230,15 @@ class Test
                 public static explicit operator int(Foo foo) => int.Parse(foo._value, System.Globalization.CultureInfo.InvariantCulture);
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptimizeLinq_IntToObject()
+    public Task OptimizeLinq_IntToObject()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -225,11 +247,11 @@ class Test
                 public Test()
                 {
                     var source = System.Linq.Enumerable.Empty<int>();
-                    source.[|Select|](item => (System.Object)item);
+                    source.{|MA0078:Select|}(item => (System.Object)item);
                 }
             }
             """;
-        var fixedCode = """
+        test.FixedCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -242,16 +264,15 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptimizeLinq_IntEnumToByte()
+    public Task OptimizeLinq_IntEnumToByte()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -270,15 +291,15 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OptimizeLinq_ByteEnumToByte()
+    public Task OptimizeLinq_ByteEnumToByte()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -293,11 +314,11 @@ class Test
                 public Test()
                 {
                     var source = System.Linq.Enumerable.Empty<TestEnum>();
-                    source.[|Select|](item => (System.Byte)item);
+                    source.{|MA0078:Select|}(item => (System.Byte)item);
                 }
             }
             """;
-        var fixedCode = """
+        test.FixedCode = """
             using System.Linq;
             using System.Collections.Generic;
 
@@ -316,9 +337,7 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(fixedCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

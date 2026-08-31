@@ -1,17 +1,20 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.TypeCannotBeUsedInAnAttributeParameterAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net9_0)
-            .WithAnalyzer<TypeCannotBeUsedInAnAttributeParameterAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task Ctor_NoParameter()
+    public Task Ctor_NoParameter()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [Sample()]
             public class SampleAttribute : System.Attribute
             {
@@ -19,9 +22,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -41,9 +42,10 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
     [InlineData("string")]
     [InlineData("System.DayOfWeek")]
     [InlineData("System.DayOfWeek[]")]
-    public async Task Ctor_Valid(string type)
+    public Task Ctor_Valid(string type)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             [Sample(default)]
             public class SampleAttribute : System.Attribute
             {
@@ -51,220 +53,204 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("System.Action")]
     [InlineData("System.DayOfWeek[,]")]
-    public async Task Ctor_Invalid(string type)
+    public Task Ctor_Invalid(string type)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             public class SampleAttribute : System.Attribute
             {
-                public SampleAttribute({{type}} [|a|]) { }
+                public SampleAttribute({{type}} {|MA0170:a|}) { }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Internal()
+    public Task Property_Internal()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 internal System.Action A { get; set; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Valid()
+    public Task Property_Valid()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public int A { get; set; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Invalid()
+    public Task Property_Invalid()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|] { get; set; }
+                public System.Action {|MA0170:A|} { get; set; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Private()
+    public Task Property_Private()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 private System.Action A { get; set; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Static()
+    public Task Property_Static()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public static System.Action A { get; set; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_GetOnly()
+    public Task Property_GetOnly()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public System.Action A { get; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Property_Init()
+    public Task Property_Init()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|] { get; init; }
+                public System.Action {|MA0170:A|} { get; init; }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Internal()
+    public Task Field_Internal()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 internal System.Action A;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Valid()
+    public Task Field_Valid()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public int A;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Invalid()
+    public Task Field_Invalid()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|];
+                public System.Action {|MA0170:A|};
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Private()
+    public Task Field_Private()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 private System.Action A;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Static()
+    public Task Field_Static()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public static System.Action A;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Field_Const()
+    public Task Field_Const()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
                 public const int A = 1;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

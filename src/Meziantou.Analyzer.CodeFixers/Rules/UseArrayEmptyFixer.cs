@@ -60,7 +60,7 @@ public sealed class UseArrayEmptyFixer : CodeFixProvider
     {
         var arrayTypeSymbol = semanticModel.Compilation.GetSpecialType(SpecialType.System_Array);
         var arrayEmptyName = generator.MemberAccessExpression(
-            generator.TypeExpression(arrayTypeSymbol),
+            ((TypeSyntax)generator.TypeExpression(arrayTypeSymbol)).AsExpressionSyntax(),
             generator.GenericName("Empty", elementType));
         return generator.InvocationExpression(arrayEmptyName);
     }

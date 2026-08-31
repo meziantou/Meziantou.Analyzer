@@ -1,13 +1,15 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotUseZeroToInitializeAnEnumValue,
+    Meziantou.Analyzer.Rules.DoNotUseZeroToInitializeAnEnumValueFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class DoNotUseZeroToInitializeAnEnumValueTests
+public sealed class DoNotUseZeroToInitializeAnEnumValueTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseZeroToInitializeAnEnumValue>()
-            .WithCodeFixProvider<DoNotUseZeroToInitializeAnEnumValueFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     public static TheoryData<string, string> GetCombinationZero()
     {
@@ -73,227 +75,238 @@ public class DoNotUseZeroToInitializeAnEnumValueTests
 
     [Theory]
     [MemberData(nameof(GetCombinationZero))]
-    public async Task EnumBaseType_Zero(string baseType, string value)
+    public Task EnumBaseType_Zero(string baseType, string value)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum : {{baseType}} { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum : {{baseType}} { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum a = [|{{value}}|];
-    }
-}
-""")
-              .ValidateAsync();
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = {|MA0099:{{value}}|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [MemberData(nameof(GetCombinationNonZero))]
-    public async Task EnumBaseType_NonZero(string baseType, string value)
+    public Task EnumBaseType_NonZero(string baseType, string value)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum : {{baseType}} { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum : {{baseType}} { A = 0, B = 1 }
 
-class Test
-{
-    void A()
-    {
-        MyEnum a = (MyEnum){{value}};
-    }
-}
-""")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Assignation_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
-
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum a = MyEnum.A;
-                    }
+                    MyEnum a = (MyEnum){{value}};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_CodeFix()
+    public Task Assignation_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum a = [|0|];
-                    }
+                    MyEnum a = MyEnum.A;
                 }
-                """)
-              .ShouldFixCodeWith("""
-                enum MyEnum { A = 0, B = 1 }
+            }
+            """;
 
-                class Test
-                {
-                    void A()
-                    {
-                        MyEnum a = MyEnum.A;
-                    }
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_CodeFix_NoNamedZero()
+    public Task Assignation_CodeFix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 1, B = 2 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum a = [|0|];
-                    }
+                    MyEnum a = {|MA0099:0|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                enum MyEnum { A = 1, B = 2 }
+            }
+            """;
+        test.FixedCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum a = (MyEnum)0;
-                    }
+                    MyEnum a = MyEnum.A;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Reassignation()
+    public Task Assignation_CodeFix_NoNamedZero()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 1, B = 2 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum a = default;
-                        a = [|0|];
-                    }
+                    MyEnum a = {|MA0099:0|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            enum MyEnum { A = 1, B = 2 }
+
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = (MyEnum)0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_ExplicitCast()
+    public Task Reassignation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum b = (MyEnum)0;
-                        b = (MyEnum)0;
-                    }
+                    MyEnum a = default;
+                    a = {|MA0099:0|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_EnumValue_Zero()
+    public Task Assignation_ExplicitCast()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum c = MyEnum.A;
-                    }
+                    MyEnum b = (MyEnum)0;
+                    b = (MyEnum)0;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_EnumValue_NonZero()
+    public Task Assignation_EnumValue_Zero()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum d = MyEnum.B;
-                    }
+                    MyEnum c = MyEnum.A;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_Default()
+    public Task Assignation_EnumValue_NonZero()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        MyEnum e = default;
-                    }
+                    MyEnum d = MyEnum.B;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Assignation_NonEnumType()
+    public Task Assignation_Default()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        long f = 0;
-                        long g = (long)0;
-                    }
+                    MyEnum e = default;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Assignation_NonEnumType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void A()
+                {
+                    long f = 0;
+                    long g = (long)0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -302,60 +315,63 @@ class Test
     [InlineData("(MyEnum)0")]
     [InlineData("(MyEnum)0u")]
     [InlineData("a")]
-    public async Task MethodInvocation(string code)
+    public Task MethodInvocation(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A(MyEnum a)
                 {
-                    void A(MyEnum a)
-                    {
-                        A({{code}});
-                    }
+                    A({{code}});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("0")]
     [InlineData("0u")]
-    public async Task MethodInvocation_Diagnostic(string code)
+    public Task MethodInvocation_Diagnostic(string code)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
 
-                class Test
+            class Test
+            {
+                void A(MyEnum a)
                 {
-                    void A(MyEnum a)
-                    {
-                        A([|{{code}}|]);
-                    }
+                    A({|MA0099:{{code}}|});
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("MyEnum.A")]
     [InlineData("(MyEnum)0")]
-    public async Task OptionalParameter(string defaultValue)
+    public Task OptionalParameter(string defaultValue)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum { A = 0, B = 1 }
-class Test
-{
-    void A(MyEnum a = {{defaultValue}})
-    {
-        A();
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = {{defaultValue}})
+                {
+                    A();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -373,186 +389,195 @@ class Test
     [InlineData("(int)0")]
     [InlineData("(uint)0")]
     [InlineData("(float)0")]
-    public async Task OptionalParameter_Diagnostic(string defaultValue)
+    public Task OptionalParameter_Diagnostic(string defaultValue)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum { A = 0, B = 1 }
-class Test
-{
-    void A(MyEnum a = [|{{defaultValue}}|])
-    {
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = {|MA0099:{{defaultValue}}|})
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitOptionalParameter()
+    public Task ImplicitOptionalParameter()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum { A = 0, B = 1 }
-class Test
-{
-    void A(MyEnum a = [|0|])
-    {
-        A(); // ok
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = {|MA0099:0|})
+                {
+                    A(); // ok
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitOptionalParameter_NonZero()
+    public Task ImplicitOptionalParameter_NonZero()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-enum MyEnum { A = 0, B = 1 }
-class Test
-{
-    void A(MyEnum a = MyEnum.B)
-    {
-        A();
-    }
-}
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = MyEnum.B)
+                {
+                    A();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/525")]
-    public async Task ImplicitParameterInAttribute()
+    public Task ImplicitParameterInAttribute()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-using System;
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
 
-public enum MyEnum
-{
-    None = 0,
-    Some = 1,
-}
+            public enum MyEnum
+            {
+                None = 0,
+                Some = 1,
+            }
 
-[AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
-public class MyAttribute : Attribute
-{
-    public MyAttribute(MyEnum bar = MyEnum.None) { }
-}
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            public class MyAttribute : Attribute
+            {
+                public MyAttribute(MyEnum bar = MyEnum.None) { }
+            }
 
-[MyAttribute]
-[MyAttribute(MyEnum.None)]
-[MyAttribute(MyEnum.Some)]
-[MyAttribute([|0|])]
-public class MyClass
-{
-    public MyClass(MyEnum foo = MyEnum.None) { }
-}
-""")
-              .ValidateAsync();
+            [MyAttribute]
+            [MyAttribute(MyEnum.None)]
+            [MyAttribute(MyEnum.Some)]
+            [MyAttribute({|MA0099:0|})]
+            public class MyClass
+            {
+                public MyClass(MyEnum foo = MyEnum.None) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
-    public async Task ExcludeEnumWithoutZeroMember_NoZeroMember_NoDiagnostic()
+    public Task ExcludeEnumWithoutZeroMember_NoZeroMember_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0099.exclude_enum_without_zero_member", "true")
-              .WithSourceCode("""
-enum MyEnum { A = 1, B = 2 }
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.exclude_enum_without_zero_member", "true");
+        test.TestCode = """
+            enum MyEnum { A = 1, B = 2 }
 
-class Test
-{
-    void M()
-    {
-        MyEnum a = 0;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class Test
+            {
+                void M()
+                {
+                    MyEnum a = 0;
+                }
+            }
+            """;
 
-    [Fact]
-    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
-    public async Task ExcludeEnumWithoutZeroMember_HasZeroMember_Diagnostic()
-    {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0099.exclude_enum_without_zero_member", "true")
-              .WithSourceCode("""
-enum MyEnum { A = 0, B = 1 }
-
-class Test
-{
-    void M()
-    {
-        MyEnum a = [|0|];
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
-    public async Task ReportOnArgument_ZeroInArgument_Diagnostic()
+    public Task ExcludeEnumWithoutZeroMember_HasZeroMember_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
-              .WithSourceCode("""
-enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.exclude_enum_without_zero_member", "true");
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void M(MyEnum x) { }
+            class Test
+            {
+                void M()
+                {
+                    MyEnum a = {|MA0099:0|};
+                }
+            }
+            """;
 
-    void A()
-    {
-        M([|0|]);
-    }
-}
-""")
-              .ValidateAsync();
-    }
-
-    [Fact]
-    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
-    public async Task ReportOnArgument_ZeroInAssignment_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
-              .WithSourceCode("""
-enum MyEnum { A = 0, B = 1 }
-
-class Test
-{
-    void M()
-    {
-        MyEnum a = 0;
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
-    public async Task ReportOnArgument_ZeroInOptionalParameterDefault_NoDiagnostic()
+    public Task ReportOnArgument_ZeroInArgument_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0099.report_on", "argument")
-              .WithSourceCode("""
-enum MyEnum { A = 0, B = 1 }
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.report_on", "argument");
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
 
-class Test
-{
-    void M(MyEnum x = 0)
-    {
-        M();
+            class Test
+            {
+                void M(MyEnum x) { }
+
+                void A()
+                {
+                    M({|MA0099:0|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""")
-              .ValidateAsync();
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public Task ReportOnArgument_ZeroInAssignment_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.report_on", "argument");
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void M()
+                {
+                    MyEnum a = 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
+    public Task ReportOnArgument_ZeroInOptionalParameterDefault_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.report_on", "argument");
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void M(MyEnum x = 0)
+                {
+                    M();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

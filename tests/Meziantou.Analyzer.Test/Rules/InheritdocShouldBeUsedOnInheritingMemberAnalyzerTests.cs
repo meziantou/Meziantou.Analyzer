@@ -1,194 +1,206 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.InheritdocShouldBeUsedOnInheritingMemberAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task ReportDiagnostic_MethodIsNotOverrideOrInterfaceImplementation()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<InheritdocShouldBeUsedOnInheritingMemberAnalyzer>()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0196:<inheritdoc />|}
+                public void M() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_MethodIsNotOverrideOrInterfaceImplementation()
+    public Task ReportDiagnostic_PropertyIsNotOverrideOrInterfaceImplementation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// [|<inheritdoc />|]
-                      public void M() { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0196:<inheritdoc />|}
+                public int P { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_PropertyIsNotOverrideOrInterfaceImplementation()
+    public Task ReportDiagnostic_ConstructorIsNotOverrideOrInterfaceImplementation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// [|<inheritdoc />|]
-                      public int P { get; }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0196:<inheritdoc />|}
+                public Sample(int value) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_ConstructorIsNotOverrideOrInterfaceImplementation()
+    public Task NoDiagnostic_ConstructorHasSameSignatureAsBaseConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// [|<inheritdoc />|]
-                      public Sample(int value) { }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseType
+            {
+                public BaseType(int value) { }
+            }
+
+            class Sample : BaseType
+            {
+                /// <inheritdoc />
+                public Sample(int value) : this() { }
+
+                private Sample() : base(0) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_ConstructorHasSameSignatureAsBaseConstructor()
+    public Task NoDiagnostic_ConstructorHasSameSignatureAsBaseParameterlessConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseType
-                  {
-                      public BaseType(int value) { }
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseType
+            {
+                public BaseType() { }
+            }
 
-                  class Sample : BaseType
-                  {
-                      /// <inheritdoc />
-                      public Sample(int value) : this() { }
+            class Sample : BaseType
+            {
+                /// <inheritdoc />
+                public Sample() { }
+            }
+            """;
 
-                      private Sample() : base(0) { }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_ConstructorHasSameSignatureAsBaseParameterlessConstructor()
+    public Task ReportDiagnostic_ConstructorDoesNotMatchBaseConstructorSignature()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseType
-                  {
-                      public BaseType() { }
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseType
+            {
+                public BaseType(int value) { }
+            }
 
-                  class Sample : BaseType
-                  {
-                      /// <inheritdoc />
-                      public Sample() { }
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample : BaseType
+            {
+                /// {|MA0196:<inheritdoc />|}
+                public Sample(string value) : base(0) { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_ConstructorDoesNotMatchBaseConstructorSignature()
+    public Task NoDiagnostic_WhenInheritdocIsOnTypeWithPrimaryConstructor()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseType
-                  {
-                      public BaseType(int value) { }
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc />
+            public class Sample() { }
+            """;
 
-                  class Sample : BaseType
-                  {
-                      /// [|<inheritdoc />|]
-                      public Sample(string value) : base(0) { }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_WhenInheritdocIsOnTypeWithPrimaryConstructor()
+    public Task NoDiagnostic_MethodIsOverride()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  /// <inheritdoc />
-                  public class Sample() { }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseType
+            {
+                public virtual void M() { }
+            }
+
+            class Sample : BaseType
+            {
+                /// <inheritdoc />
+                public override void M() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_MethodIsOverride()
+    public Task NoDiagnostic_MethodIsInterfaceImplementation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class BaseType
-                  {
-                      public virtual void M() { }
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+                void M();
+            }
 
-                  class Sample : BaseType
-                  {
-                      /// <inheritdoc />
-                      public override void M() { }
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample : ITest
+            {
+                /// <inheritdoc />
+                public void M() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_MethodIsInterfaceImplementation()
+    public Task NoDiagnostic_MethodIsExplicitInterfaceImplementation()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITest
-                  {
-                      void M();
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+                void M();
+            }
 
-                  class Sample : ITest
-                  {
-                      /// <inheritdoc />
-                      public void M() { }
-                  }
-                  """)
-              .ValidateAsync();
+            class Sample : ITest
+            {
+                /// <inheritdoc />
+                void ITest.M() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NoDiagnostic_MethodIsExplicitInterfaceImplementation()
+    public Task NoDiagnostic_WhenCrefIsPresent()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  interface ITest
-                  {
-                      void M();
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <inheritdoc cref="object.ToString" />
+                public void M() { }
+            }
+            """;
 
-                  class Sample : ITest
-                  {
-                      /// <inheritdoc />
-                      void ITest.M() { }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NoDiagnostic_WhenCrefIsPresent()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class Sample
-                  {
-                      /// <inheritdoc cref="object.ToString" />
-                      public void M() { }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }
