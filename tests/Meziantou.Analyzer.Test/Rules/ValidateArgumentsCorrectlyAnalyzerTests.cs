@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.ValidateArgumentsCorrectlyAnalyzer,
     Meziantou.Analyzer.Rules.ValidateArgumentsCorrectlyFixer>;
@@ -208,7 +207,6 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     public Task ValidValidation_ThrowIfNull()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Collections.Generic;
             class TypeName
@@ -238,7 +236,6 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     public Task ValidValidation_ArgumentExceptionThrowIfNullOrEmpty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Collections.Generic;
             class TypeName
@@ -268,7 +265,6 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     public Task ReportDiagnostic_ArgumentExceptionThrowIfNullOrEmpty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Collections.Generic;
             class TypeName
@@ -394,7 +390,6 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     public Task ReportDiagnostic_IAsyncEnumerable_ThrowIfNull()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Collections.Generic;
             class TypeName
@@ -435,7 +430,6 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
     public Task ReportDiagnostic_FixerPreserveEnumerableCancellationAttribute()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Runtime.CompilerServices;
             using System.Collections.Generic;

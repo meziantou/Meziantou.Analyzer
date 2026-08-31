@@ -29,7 +29,6 @@ public sealed class OptimizeLinqUsageAnalyzerUseDirectMethodsTests
     public Task FirstOrDefaultAsync_Net9()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Linq;
             class Test

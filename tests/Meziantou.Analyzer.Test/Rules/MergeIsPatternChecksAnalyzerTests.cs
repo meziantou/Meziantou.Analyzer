@@ -335,7 +335,6 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     public Task PrimaryConstructorParameter()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             _ = new Sample(1).M();
 

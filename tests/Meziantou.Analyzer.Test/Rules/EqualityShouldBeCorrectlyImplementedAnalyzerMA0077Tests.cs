@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedAnalyzer,
     Meziantou.Analyzer.Rules.EqualityShouldBeCorrectlyImplementedFixer>;
@@ -65,7 +64,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp12;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             ref struct Test
             {
@@ -81,8 +79,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     public Task RefStruct_CSharp13()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp13;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             ref struct {|MA0077:Test|}
             {

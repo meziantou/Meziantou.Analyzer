@@ -445,7 +445,6 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     public Task PrimaryConstructor()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             using System;
 

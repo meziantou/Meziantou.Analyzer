@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
@@ -134,7 +133,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     public Task DoesMatchFileName_RecordStructWithArityGreaterThan1UsingOfT_WithConfiguration()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.SetConfiguration("MA0048.allow_oft_for_all_generic_types", "true");
         test.TestState.Sources.Add(("/0/FooOfT.cs", """
             public record struct Foo<T1, T2>(T1 Key, T2 Value);
@@ -375,7 +373,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     public Task MatchOnlyFirstType_RecordStruct()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
             record struct {|MA0048:Foo|} {}
@@ -613,7 +610,6 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     public Task TypeKindIncludedInMessage_RecordStruct()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.Sources.Add(("/0/Test.cs", """
             record struct {|#0:Sample|};
             """));

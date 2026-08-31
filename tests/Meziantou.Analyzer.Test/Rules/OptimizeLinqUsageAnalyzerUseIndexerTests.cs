@@ -170,7 +170,6 @@ public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
     public Task Last_Array_CSharp8_IndexNotAvailable()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Default;
         test.TestCode = """
             using System.Linq;
@@ -207,8 +206,6 @@ public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
     public Task Last_Array_CSharp8_IndexAvailable()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Linq;
             class Test

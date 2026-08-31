@@ -12,7 +12,7 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
     // This class covers MA0159 only, the way the original test filtered the diagnostics to that rule
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
+        var test = new CodeFixTest();
         test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy);
         test.DisabledDiagnostics.Add(RuleIdentifiers.DuplicateEnumerable_OrderBy);
         return test;
@@ -48,7 +48,6 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
     public Task IEnumerable_Order_LambdaNotValid()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;
@@ -69,7 +68,6 @@ public sealed class OptimizeLinqUsageAnalyzerOrderTests
     public Task IEnumerable_Order_LambdaReferenceAnotherParameter()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Collections.Generic;
             using System.Linq;

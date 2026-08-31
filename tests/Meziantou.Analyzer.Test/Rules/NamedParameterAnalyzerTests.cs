@@ -12,7 +12,6 @@ public sealed class NamedParameterAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.Preview;
         return test;
     }
 
@@ -714,7 +713,6 @@ public sealed class NamedParameterAnalyzerTests
     public Task ValueTask_FromResult_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class TypeName
             {
@@ -779,7 +777,6 @@ public sealed class NamedParameterAnalyzerTests
     public Task Expression_ParamsInLambda_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp14;
         test.TestCode = """
             using System.Linq;
             class Test

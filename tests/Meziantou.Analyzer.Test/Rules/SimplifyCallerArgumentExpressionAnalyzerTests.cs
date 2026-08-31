@@ -11,7 +11,6 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         return test;
     }
 

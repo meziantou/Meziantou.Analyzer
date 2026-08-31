@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.LocalVariablesShouldNotHideSymbolsAnalyzer>;
@@ -74,7 +73,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
     public Task LocalVariableHidePrimaryConstructorParameter()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class Test(int a)
             {
@@ -92,7 +90,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
     public Task LocalVariableDoesNotHidePrimaryConstructorParameterInStaticMethod()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class Test(int a)
             {
@@ -110,7 +107,6 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
     public Task LocalVariableDoesNotHidePrimaryConstructorParameter()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class Test(int a)
             {

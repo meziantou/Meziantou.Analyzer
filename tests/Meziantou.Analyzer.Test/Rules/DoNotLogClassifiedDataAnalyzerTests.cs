@@ -13,7 +13,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
     {
         var test = new AnalyzerTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages([
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([
             new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0"),
             new PackageIdentity("Microsoft.Extensions.Compliance.Abstractions", "8.0.0"),
         ]);

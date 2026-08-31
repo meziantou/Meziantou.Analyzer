@@ -247,7 +247,6 @@ public sealed class UseIFormatProviderAnalyzerTests
     public Task StringBuilder_AppendLine_AllStringParams_Net7()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System;
             var sb = new System.Text.StringBuilder();
@@ -262,7 +261,6 @@ public sealed class UseIFormatProviderAnalyzerTests
     public Task StringBuilder_AppendLine_Int32Params_Net7()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             var sb = new System.Text.StringBuilder();
             int value = 0;
@@ -282,7 +280,6 @@ public sealed class UseIFormatProviderAnalyzerTests
     public Task StringBuilder_AppendLine_DateTime_InvariantFormat_Net7(string format)
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = $$$""""
             {{{$$"""
                         var sb = new System.Text.StringBuilder();
@@ -298,7 +295,6 @@ public sealed class UseIFormatProviderAnalyzerTests
     public Task StringBuilder_AppendLine_DateTime_Net7()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             var sb = new System.Text.StringBuilder();
             System.DateTime value = default;

@@ -210,8 +210,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_Net8_NoDiagnostic(string text)
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = $$$""""
             {{{$$"""
                             using System.Text;
@@ -966,7 +964,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task Append_StringJoin_AppendJoin()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Text;
             class Test
@@ -995,7 +992,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_AppendJoin()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Text;
             class Test
@@ -1123,7 +1119,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_ValueToString_Report(string dataType)
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = $$$""""
             {{{$$"""{|MA0028:new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString())|};"""}}}
@@ -1138,7 +1133,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_ValueToString_NoReport(string dataType)
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = $$$""""
             {{{$$"""new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());"""}}}

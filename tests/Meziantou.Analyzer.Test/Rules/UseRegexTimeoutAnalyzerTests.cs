@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
@@ -61,7 +60,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     public Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
             class TestClass
@@ -116,7 +114,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     public Task Ctor_WithoutTimeout_NonBacktracking_ShouldNotReportError()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
             class TestClass
@@ -153,7 +150,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -172,7 +168,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -191,7 +186,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -214,7 +208,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -234,7 +227,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -254,7 +246,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Text.RegularExpressions;

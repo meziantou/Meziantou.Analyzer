@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.DoNotUseToStringIfObjectAnalyzer>;
 
@@ -594,7 +593,6 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
     public Task InterpolatedString_Struct_Interpolation_Net8()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             var o = new A();
             System.Diagnostics.Debug.Assert(false, $"foo{{|MA0150:o|}}bar");
@@ -609,7 +607,6 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
     public Task InterpolatedString_Struct_Interpolation_CustomStringHandler()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             var o = new A();
             Foo($"foo{o}bar");
@@ -635,7 +632,6 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
     public Task InterpolatedString_SealedType_CustomStringHandler()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             var o = new A();
             Foo($"foo{o}bar");

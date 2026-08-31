@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.StringFormatShouldBeConstantAnalyzer>;
 
@@ -643,7 +642,6 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
     public Task StringFormat_WithMultiplePlaceholdersAndArguments_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             string.Format("Zero: {0}, One: {1}, Two: {2}, Four: {3}", "Answer is", 42, true, false);
@@ -932,7 +930,6 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
     public Task StringFormat_WithParenthesizedArgAndPlaceholder_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -953,7 +950,6 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
     public Task StringFormat_WithParenthesizedArgAndNoPlaceholder_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
         test.TestCode = """
             using System;
             using System.Globalization;

@@ -118,7 +118,6 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {
@@ -133,7 +132,6 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
     public Task Net7WithoutInlineArrayAttribute_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             unsafe struct IpAddressBuffer

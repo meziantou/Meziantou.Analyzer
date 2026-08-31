@@ -12,7 +12,6 @@ public sealed class UseStringComparerAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         return test;
     }
 
@@ -26,7 +25,6 @@ public sealed class UseStringComparerAnalyzerTests
     private static CodeFixTest CreateMSTestTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("MSTest.TestFramework", "4.3.3")]);
         return test;
     }
@@ -273,7 +271,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -291,7 +288,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task HashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -309,7 +305,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task Dictionary_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -328,7 +323,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task HashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -347,7 +341,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task HashSet_String_CollectionExpression_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration((ReportCollectionExpressionsConfigurationName, "true"), (ReportOnlyNonOrdinalConfigurationName, "true"));
         test.TestCode = """
             class TypeName
@@ -366,7 +359,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task HashSet_String_CollectionExpression_WithElements_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -385,7 +377,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task HashSet_String_CollectionExpression_WithElements_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration((ReportCollectionExpressionsConfigurationName, "true"), (ReportOnlyNonOrdinalConfigurationName, "true"));
         test.TestCode = """
             class TypeName
@@ -404,7 +395,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task FrozenSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -422,7 +412,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task FrozenSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -441,7 +430,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ImmutableHashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -459,7 +447,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ImmutableHashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -905,7 +892,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task MeziantouFrameworkAssertions_Assert_WithoutComparerOverload_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework.Assertions", "2.0.1")]);
         test.TestCode = """
             class TypeName
@@ -1114,7 +1100,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ReportOnlyNonOrdinal_Order_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
         test.TestCode = """
             using System.Linq;
@@ -1282,7 +1267,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task Order_String_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1508,7 +1492,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ISet_Contain()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1528,7 +1511,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task IReadOnlySet_Contain()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1548,7 +1530,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task IImmutableSet_Contain()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1611,7 +1592,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_OrderBy_NoConfiguration()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1633,7 +1613,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_OrderBy()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
         test.TestCode = """
             using System.Linq;
@@ -1656,7 +1635,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_OrderByDescending_NoConfiguration()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1678,7 +1656,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_OrderByDescending()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
         test.TestCode = """
             using System.Linq;
@@ -1701,7 +1678,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_Join_NoConfiguration()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1723,7 +1699,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_Join()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
         test.TestCode = """
             using System.Linq;
@@ -1746,7 +1721,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_JoinInto_NoConfiguration()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Linq;
             class TypeName
@@ -1768,7 +1742,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task StringArray_QuerySyntax_JoinInto()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
         test.TestCode = """
             using System.Linq;

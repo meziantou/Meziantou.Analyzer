@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.AwaitTaskBeforeDisposingResourcesAnalyzer>;
@@ -466,7 +465,6 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
     public Task ReturnInUsingStatement()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TestClass
             {
@@ -485,7 +483,6 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
     public Task UsingBlockBeforeAReturn()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TestClass
             {
@@ -507,7 +504,6 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
     public Task UsingBeforeAReturnWithLabel()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TestClass
             {

@@ -143,7 +143,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteConnection_CreateCommand_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
             using Microsoft.Data.Sqlite;
@@ -165,7 +164,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteCommand_Prepare_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
             using Microsoft.Data.Sqlite;
@@ -187,7 +185,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteConnection_Close_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
             using Microsoft.Data.Sqlite;
@@ -209,7 +206,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteConnection_Close_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
@@ -232,7 +228,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
@@ -255,7 +250,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteDataReader_Read_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
             using Microsoft.Data.Sqlite;
@@ -277,7 +271,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_SqliteDataReader_Read_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
         test.TestCode = """
@@ -300,7 +293,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -332,7 +324,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_NonAsyncContextTe
     public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
