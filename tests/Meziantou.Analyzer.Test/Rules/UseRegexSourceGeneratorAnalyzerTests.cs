@@ -14,15 +14,25 @@ public class UseRegexSourceGeneratorAnalyzerTests
     {
         var test = new CodeFixTest();
         test.UseFrameworkSourceGenerators = true;
+        return test;
+    }
+
+    /// <summary>
+    /// The code fixer generates a partial property when the language supports them,
+    /// so the tests that expect a partial method must use a language version that does not.
+    /// </summary>
+    private static CodeFixTest CreatePartialMethodTest()
+    {
+        var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.LanguageVersion = LanguageVersion.CSharp11;
         return test;
     }
 
     [Fact]
     public Task NewRegex_Options_Timeout()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -51,8 +61,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task NewRegex_Options()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -81,8 +90,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task NewRegex()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -111,8 +119,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexIsMatch_Options_Timeout()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -141,8 +148,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexIsMatch_Options()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -171,8 +177,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexIsMatch()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -201,8 +206,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexReplace_Options_Timeout()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -231,8 +235,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexReplace_Options()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -261,8 +264,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexReplace()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -291,8 +293,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task RegexReplace_MatchEvaluator()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -325,6 +326,9 @@ public class UseRegexSourceGeneratorAnalyzerTests
     {
         var test = CreateTest();
 
+        // The generator of .NET 11 requires C# 12, which is not the default language version of every supported Roslyn version
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+
         // GeneratedRegex only accepts an infinite or strictly positive match timeout
         test.TestCode = $$"""
             using System;
@@ -351,8 +355,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [InlineData("new TimeSpan(1, 2, 3, 4, 5)", "93784005")]
     public Task Timeout(string timeout, string milliseconds)
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = $$"""
             using System;
             using System.Text.RegularExpressions;
@@ -384,8 +387,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [InlineData("Regex.InfiniteMatchTimeout")]
     public Task New_Timeout_Infinite(string timeout)
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = $$"""
             using System;
             using System.Text.RegularExpressions;
@@ -416,8 +418,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [InlineData("Regex.InfiniteMatchTimeout")]
     public Task Static_Timeout_Infinite(string timeout)
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = $$"""
             using System;
             using System.Text.RegularExpressions;
@@ -446,8 +447,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task GenerateUniqueMethodName()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -480,6 +480,9 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task NonConstantPattern()
     {
         var test = CreateTest();
+
+        // The generator of .NET 11 requires C# 12, which is not the default language version of every supported Roslyn version
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -496,8 +499,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task NestedTypeShouldAddPartialToAllAncestorTypes()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -540,7 +542,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task NewRegex_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -568,7 +569,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task NewRegex_Options_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -596,7 +596,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task NewRegex_Options_Timeout_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -624,7 +623,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task RegexIsMatch_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -654,7 +652,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task RegexIsMatch_Options_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -684,7 +681,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task RegexReplace_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -714,7 +710,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task NestedTypeShouldAddPartialToAllAncestorTypes_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -756,8 +751,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task Field_SuggestFieldName()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -796,8 +790,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task Field_SuggestFieldNameWithoutRegexSuffix()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -836,8 +829,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task Variable_SuggestPascalCaseName()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -874,8 +866,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task Variable_AlreadyPascalCase()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -911,8 +902,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task StaticMethod_UseDefaultName()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -943,7 +933,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task Field_RemoveAndReplaceWithProperty_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -982,7 +971,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task Variable_RemoveAndReplaceWithProperty_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -1173,7 +1161,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task Field_MultipleReferences_RemoveAndReplaceWithProperty_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
@@ -1222,8 +1209,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task TopLevelStatement_NewRegex_PartialMethod()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -1252,7 +1238,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task TopLevelStatement_NewRegex_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -1278,7 +1263,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task TopLevelStatement_StaticMethod_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -1304,7 +1288,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
     public Task TopLevelStatement_WithExistingProgramClass_PartialProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -1337,8 +1320,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task TopLevelStatement_StaticMethod_PartialMethod()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System.Text.RegularExpressions;
@@ -1363,8 +1345,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [Fact]
     public Task BatchFix_MultipleRegex()
     {
-        var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
+        var test = CreatePartialMethodTest();
         test.TestCode = """
             using System;
             using System.Text.RegularExpressions;
