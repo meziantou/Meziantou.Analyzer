@@ -1,3 +1,4 @@
+using Meziantou.Analyzer.Annotations;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
 using Microsoft.CodeAnalysis.CSharp;
@@ -26,6 +27,7 @@ internal sealed class CSharpCodeFixTest<TAnalyzer, TCodeFix>
     /// Runs the test with the cancellation token of the running test, which the base method cannot default to.
     /// This overload wins over the inherited <c>RunAsync(CancellationToken)</c> as it has no optional parameter.
     /// </summary>
+    [ExcludeFromCancellationTokenAnalysis]
     public Task RunAsync() => RunAsync(TestContext.Current.CancellationToken);
 
     /// <summary>
