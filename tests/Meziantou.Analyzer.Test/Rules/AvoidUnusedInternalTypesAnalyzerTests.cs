@@ -2403,16 +2403,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        // Only one type is removed, and MarkupMode.Allow is needed for the fixed code to declare the diagnostic still reported on the other one
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
-        test.FixedCode = """
-
-            internal class {|MA0182:UnusedClass2|}
-            {
-                public int Value { get; set; }
-            }
-            """;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
     }
