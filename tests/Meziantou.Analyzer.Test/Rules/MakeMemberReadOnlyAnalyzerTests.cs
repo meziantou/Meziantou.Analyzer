@@ -1,94 +1,100 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MakeMemberReadOnlyAnalyzer,
+    Meziantou.Analyzer.Rules.MakeMemberReadOnlyFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class MakeMemberReadOnlyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<MakeMemberReadOnlyAnalyzer>()
-            .WithCodeFixProvider<MakeMemberReadOnlyFixer>();
+        var test = new CodeFixTest();
+
+        // The rule is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // which the testing library rejects for a code fix by default
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_CSharp7()
+    public Task CannotBeReadOnly_CSharp7()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp7_3;
+        test.TestCode = """
             struct Test
             {
                 void A() { }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp7_3)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_Class()
+    public Task CannotBeReadOnly_Class()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 int A => throw null;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_ReadOnlyStruct()
+    public Task CannotBeReadOnly_ReadOnlyStruct()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             readonly struct Test
             {
                 int A => throw null;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_Constructor()
+    public Task CannotBeReadOnly_Constructor()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 Test(int a) { }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_StaticConstructor()
+    public Task CannotBeReadOnly_StaticConstructor()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 static Test() { }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_LocalFunction()
+    public Task CannotBeReadOnly_LocalFunction()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -103,15 +109,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_Delegate()
+    public Task CannotBeReadOnly_Delegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             struct Test
             {
@@ -125,15 +130,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_ReadOnlyStructMethod()
+    public Task CannotBeReadOnly_ReadOnlyStructMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -141,15 +145,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_ReadOnlyStructProperty()
+    public Task CannotBeReadOnly_ReadOnlyStructProperty()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -157,60 +160,56 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_Events()
+    public Task CannotBeReadOnly_Events()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 event System.Action<System.EventArgs> MyEvent;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_StaticMethod()
+    public Task CannotBeReadOnly_StaticMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 static void A() { }
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_StaticProperty()
+    public Task CannotBeReadOnly_StaticProperty()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 static int A => 0;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_ReadOnlyStructPropertyGetter()
+    public Task CannotBeReadOnly_ReadOnlyStructPropertyGetter()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -222,30 +221,28 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_SetThis()
+    public Task CannotBeReadOnly_SetThis()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 void A() => this = default;
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_SetField()
+    public Task CannotBeReadOnly_SetField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -253,15 +250,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_MethodBlock_SetField()
+    public Task CannotBeReadOnly_MethodBlock_SetField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -269,15 +265,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_CallNonReadOnlyMember()
+    public Task CannotBeReadOnly_CallNonReadOnlyMember()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -287,15 +282,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_MethodReferenceField()
+    public Task CanBeReadOnly_MethodReferenceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -303,7 +297,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 int [|A|]() => a;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -312,16 +306,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_PropertyGetOnlyReferenceField()
+    public Task CanBeReadOnly_PropertyGetOnlyReferenceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -329,7 +321,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 int [|A|] => a;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -337,16 +329,15 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 readonly int A => a;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_PropertyFullGetterAndSetterReferenceField()
+    public Task CanBeReadOnly_PropertyFullGetterAndSetterReferenceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -358,7 +349,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -371,16 +362,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldBatchFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_PropertyFullSetterReferenceField()
+    public Task CanBeReadOnly_PropertyFullSetterReferenceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -392,7 +381,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -405,16 +394,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_PropertyFullGetterReferenceField()
+    public Task CanBeReadOnly_PropertyFullGetterReferenceField()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -425,7 +412,10 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        // Roslyn 4.8 inserts CRLF where the newer versions insert LF, and the testing library
+        // compares the text of the fixed code exactly
+#if ROSLYN_4_14_OR_GREATER
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -436,16 +426,16 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+#endif
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_SetArrayValue()
+    public Task CanBeReadOnly_SetArrayValue()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int[] a;
@@ -456,7 +446,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int[] a;
@@ -467,16 +457,15 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_CallReadOnlyMember()
+    public Task CanBeReadOnly_CallReadOnlyMember()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -485,7 +474,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 void [|B|]() => A();
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 int a;
@@ -495,16 +484,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CanBeReadOnly_Event()
+    public Task CanBeReadOnly_Event()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 public event System.Action<System.EventArgs> [|Event1|]
@@ -514,7 +501,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             struct Test
             {
                 public readonly event System.Action<System.EventArgs> Event1
@@ -525,18 +512,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_EventWithOnlyOneReadOnlyAccessor()
+    public Task CannotBeReadOnly_EventWithOnlyOneReadOnlyAccessor()
     {
-        // 'readonly' applies to both accessors of an event, so an event whose remove writes to a field cannot be
-        // made readonly, even though its add could
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int a;
@@ -549,15 +532,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_ReadOnlyEvent()
+    public Task CannotBeReadOnly_ReadOnlyEvent()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 public readonly event System.Action<System.EventArgs> Event1
@@ -568,15 +550,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadOnly_CallNonReadOnlyMethod()
+    public Task CannotBeReadOnly_CallNonReadOnlyMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int _a;
@@ -586,15 +567,14 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadonly_CallNonReadOnlyPropertyGetFromMethod()
+    public Task CannotBeReadonly_CallNonReadOnlyPropertyGetFromMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Test
             {
                 int _a;
@@ -604,15 +584,15 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CannotBeReadonly_AccessNonReadOnlyMember()
+    public Task CannotBeReadonly_AccessNonReadOnlyMember()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
             using System;
             internal ref struct PathReader
             {
@@ -633,16 +613,15 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefFixedMember()
+    public Task RefFixedMember()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
             using System;
             using System.Runtime.InteropServices;
             struct Repro
@@ -656,9 +635,6 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

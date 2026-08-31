@@ -73,9 +73,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersFixer : CodeFixPr
         var receiverExpression = elementAccess.Expression;
 
         var replacement = generator.InvocationExpression(
-            generator.MemberAccessExpression(
-                generator.TypeExpression(memoryMarshalType),
-                methodName),
+            generator.TypeMemberAccessExpression(memoryMarshalType, methodName),
             receiverExpression.WithoutTrivia())
             .WithTriviaFrom(elementAccess);
 

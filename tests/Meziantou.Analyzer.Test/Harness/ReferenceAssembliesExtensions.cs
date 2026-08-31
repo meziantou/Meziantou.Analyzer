@@ -13,4 +13,19 @@ internal static class ReferenceAssembliesExtensions
     /// <inheritdoc cref="AddAspNetCore(ReferenceAssemblies)" />
     public static ReferenceAssemblies AddAspNetCore(this ReferenceAssemblies referenceAssemblies, string version) =>
         referenceAssemblies.AddPackages([new PackageIdentity("Microsoft.AspNetCore.App.Ref", version)]);
+
+    /// <summary>
+    /// Adds the MSTest API, the way <see cref="TestHelper.ProjectBuilder.AddMSTestApi"/> does.
+    /// </summary>
+    public static ReferenceAssemblies AddMSTestApi(this ReferenceAssemblies referenceAssemblies) =>
+        referenceAssemblies.AddPackages([new PackageIdentity("MSTest.TestFramework", "2.1.1")]);
+
+    /// <summary>
+    /// Adds the xUnit API, the way <see cref="TestHelper.ProjectBuilder.AddXUnitApi"/> does.
+    /// </summary>
+    public static ReferenceAssemblies AddXUnitApi(this ReferenceAssemblies referenceAssemblies) =>
+        referenceAssemblies.AddPackages([
+            new PackageIdentity("xunit.extensibility.core", "2.4.1"),
+            new PackageIdentity("xunit.assert", "2.4.1"),
+        ]);
 }

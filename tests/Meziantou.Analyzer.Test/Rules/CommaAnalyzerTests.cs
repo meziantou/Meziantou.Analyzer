@@ -1,18 +1,21 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.CommaAnalyzer,
+    Meziantou.Analyzer.Rules.CommaFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class CommaAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<CommaAnalyzer>()
-            .WithCodeFixProvider<CommaFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
+    public Task OneLineDeclarationWithMissingTrailingComma_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -24,15 +27,15 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
+    public Task MultipleLinesDeclarationWithTrailingComma_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -48,15 +51,15 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
+    public Task MultipleLinesDeclarationWithMissingTrailingComma_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -72,7 +75,7 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -88,16 +91,15 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumsWithLeadingComma()
+    public Task EnumsWithLeadingComma()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum TypeName
             {
                 A = 1,
@@ -105,38 +107,36 @@ public sealed class CommaAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumsWithoutLeadingComma()
+    public Task EnumsWithoutLeadingComma()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum TypeName
             {
                 A = 1,
                 [|B = 2|]
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             enum TypeName
             {
                 A = 1,
                 B = 2,
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AnonymousObjectWithLeadingComma()
+    public Task AnonymousObjectWithLeadingComma()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -150,15 +150,14 @@ public sealed class CommaAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AnonymousObjectWithoutLeadingComma()
+    public Task AnonymousObjectWithoutLeadingComma()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -171,7 +170,7 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -184,16 +183,15 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplicitCtorWithoutLeadingComma()
+    public Task ImplicitCtorWithoutLeadingComma()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -209,7 +207,7 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public int A { get; set; }
@@ -225,357 +223,393 @@ public sealed class CommaAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnNextLine()
+    public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnNextLine()
     {
-        const string SourceCode = """
-class TypeName
-{
-    public void Test()
-    {
-        int[] a =
-        [
-            1,
-            [|2|]
-        ];
-    }
-}
-""";
-        const string CodeFix = """
-class TypeName
-{
-    public void Test()
-    {
-        int[] a =
-        [
-            1,
-            2,
-        ];
-    }
-}
-""";
-        await CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    int[] a =
+                    [
+                        1,
+                        [|2|]
+                    ];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    int[] a =
+                    [
+                        1,
+                        2,
+                    ];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(int[] source)
                 {
-                    public void Test(int[] source)
-                    {
-                        int[] a =
-                        [
-                            .. source];
-                    }
+                    int[] a =
+                    [
+                        .. source];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine_WithPreviousValue()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(int[] source)
                 {
-                    public void Test(int[] source)
-                    {
-                        int[] a =
-                        [
-                            1,
-                            .. source];
-                    }
+                    int[] a =
+                    [
+                        1,
+                        .. source];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task CollectionExpressionWithoutLeadingComma_SpreadElementWithComment()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(int[] source)
                 {
-                    public void Test(int[] source)
-                    {
-                        int[] a =
-                        [
-                            1,
-                            [|.. source|] // comment
-                        ];
-                    }
+                    int[] a =
+                    [
+                        1,
+                        [|.. source|] // comment
+                    ];
                 }
-                """)
-            .ShouldFixCodeWith("""
-                class TypeName
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test(int[] source)
                 {
-                    public void Test(int[] source)
-                    {
-                        int[] a =
-                        [
-                            1,
-                            .. source, // comment
-                        ];
-                    }
+                    int[] a =
+                    [
+                        1,
+                        .. source, // comment
+                    ];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task SwitchExpressionWithoutLeadingComma_CatchAll()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            [|_ => 2|]
-                        };
-                    }
+                        1 => 1,
+                        [|_ => 2|]
+                    };
                 }
-                """)
-            .ShouldFixCodeWith("""
-                class TypeName
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            _ => 2,
-                        };
-                    }
+                        1 => 1,
+                        _ => 2,
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task SwitchExpressionWithoutLeadingComma_IgnoreCatchAll()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .AddAnalyzerConfiguration("MA0007.IgnoreCatchAllArm", "true")
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestState.SetConfiguration("MA0007.IgnoreCatchAllArm", "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            _ => 2
-                        };
-                    }
+                        1 => 1,
+                        _ => 2
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task SwitchExpressionWithoutLeadingComma()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            [|2 => 2|]
-                        };
-                    }
+                        1 => 1,
+                        [|2 => 2|]
+                    };
                 }
-                """)
-            .ShouldFixCodeWith("""
-                class TypeName
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            2 => 2,
-                        };
-                    }
+                        1 => 1,
+                        2 => 2,
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task SwitchExpressionWithLeadingComma()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
+                    _ = 0 switch
                     {
-                        _ = 0 switch
-                        {
-                            1 => 1,
-                            2 => 2,
-                        };
-                    }
+                        1 => 1,
+                        2 => 2,
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task WithExpressionWithoutLeadingComma()
-        => CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest)
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithSourceCode("""
-                var a = new Sample(1, 2);
-                _ = a with
-                {
-                    A = 3,
-                    [|B = 4|]
-                };
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.Latest;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var a = new Sample(1, 2);
+            _ = a with
+            {
+                A = 3,
+                [|B = 4|]
+            };
 
-                record Sample(int A, int B);
-                """)
-            .ShouldFixCodeWith("""
-                var a = new Sample(1, 2);
-                _ = a with
-                {
-                    A = 3,
-                    B = 4,
-                };
+            record Sample(int A, int B);
+            """;
+        test.FixedCode = """
+            var a = new Sample(1, 2);
+            _ = a with
+            {
+                A = 3,
+                B = 4,
+            };
 
-                record Sample(int A, int B);
-                """)
-            .ValidateAsync();
+            record Sample(int A, int B);
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task WithExpressionWithLeadingComma()
-        => CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest)
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithSourceCode("""
-                var a = new Sample(1, 2);
-                _ = a with
-                {
-                    A = 3,
-                    B = 4,
-                };
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.Latest;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var a = new Sample(1, 2);
+            _ = a with
+            {
+                A = 3,
+                B = 4,
+            };
 
-                record Sample(int A, int B);
-                """)
-            .ValidateAsync();
+            record Sample(int A, int B);
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task WithExpressionWithoutLeadingCommaSingleLine()
-        => CreateProjectBuilder()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest)
-            .WithSourceCode("""
-                var a = new Sample(1, 2);
-                _ = a with { A = 3, B = 4 };
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.Latest;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var a = new Sample(1, 2);
+            _ = a with { A = 3, B = 4 };
 
-                record Sample(int A, int B);
-                """)
-            .ValidateAsync();
+            record Sample(int A, int B);
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyPatternWithoutTrailingComma()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
-                {
-                    public int A { get; set; }
-                    public int B { get; set; }
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
 
-                    public void Test()
-                    {
-                        var obj = new TypeName();
-                        _ = obj is
-                        {
-                            A: 1,
-                            [|B: 2|]
-                        };
-                    }
-                }
-                """)
-            .ShouldFixCodeWith("""
-                class TypeName
+                public void Test()
                 {
-                    public int A { get; set; }
-                    public int B { get; set; }
-
-                    public void Test()
+                    var obj = new TypeName();
+                    _ = obj is
                     {
-                        var obj = new TypeName();
-                        _ = obj is
-                        {
-                            A: 1,
-                            B: 2,
-                        };
-                    }
+                        A: 1,
+                        [|B: 2|]
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
+
+                public void Test()
+                {
+                    var obj = new TypeName();
+                    _ = obj is
+                    {
+                        A: 1,
+                        B: 2,
+                    };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyPatternWithTrailingComma()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
-                {
-                    public int A { get; set; }
-                    public int B { get; set; }
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
 
-                    public void Test()
+                public void Test()
+                {
+                    var obj = new TypeName();
+                    _ = obj is
                     {
-                        var obj = new TypeName();
-                        _ = obj is
-                        {
-                            A: 1,
-                            B: 2,
-                        };
-                    }
+                        A: 1,
+                        B: 2,
+                    };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyPatternSingleLine()
-        => CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-            .WithSourceCode("""
-                class TypeName
-                {
-                    public int A { get; set; }
-                    public int B { get; set; }
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TypeName
+            {
+                public int A { get; set; }
+                public int B { get; set; }
 
-                    public void Test()
-                    {
-                        var obj = new TypeName();
-                        _ = obj is { A: 1, B: 2 };
-                    }
+                public void Test()
+                {
+                    var obj = new TypeName();
+                    _ = obj is { A: 1, B: 2 };
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

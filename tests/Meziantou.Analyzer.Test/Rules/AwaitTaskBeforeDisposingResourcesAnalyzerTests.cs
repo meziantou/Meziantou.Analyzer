@@ -1,18 +1,20 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.AwaitTaskBeforeDisposingResourcesAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
+public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net5_0)
-            .WithAnalyzer<AwaitTaskBeforeDisposingResourcesAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task NotAwaitedTask_InUsing()
+    public Task NotAwaitedTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -27,15 +29,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedTaskMethod_InUsing()
+    public Task NotAwaitedTaskMethod_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -52,15 +53,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedTaskYieldMethod_InUsing()
+    public Task NotAwaitedTaskYieldMethod_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -76,15 +76,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedExtensionMethodOnInt32_InUsing()
+    public Task NotAwaitedExtensionMethodOnInt32_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             static class TestClass
@@ -102,15 +101,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedExtensionMethodOnValueTuple_InUsing()
+    public Task NotAwaitedExtensionMethodOnValueTuple_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             static class TestClass
@@ -128,15 +126,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedValueTask_InUsing()
+    public Task NotAwaitedValueTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -151,15 +148,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AwaitedTaskInUsing()
+    public Task AwaitedTaskInUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -174,15 +170,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitedTaskFromResultInUsing()
+    public Task NonAwaitedTaskFromResultInUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -197,15 +192,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitedTaskFromResultInUsingVariable()
+    public Task NonAwaitedTaskFromResultInUsingVariable()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -218,15 +212,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedTask_NotInUsing()
+    public Task NotAwaitedTask_NotInUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -238,15 +231,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedValueTaskWithValue_InUsing()
+    public Task NotAwaitedValueTaskWithValue_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -261,15 +253,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedValueTaskWithTaskValue_InUsing()
+    public Task NotAwaitedValueTaskWithTaskValue_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -284,15 +275,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedNullTask_InUsing()
+    public Task NotAwaitedNullTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -307,15 +297,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedDefaultTask_InUsing()
+    public Task NotAwaitedDefaultTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -330,15 +319,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedDefaultValueTask_InUsing()
+    public Task NotAwaitedDefaultValueTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -353,15 +341,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedNewValueTask_InUsing()
+    public Task NotAwaitedNewValueTask_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -376,15 +363,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NotAwaitedTaskCompleted_InUsing()
+    public Task NotAwaitedTaskCompleted_InUsing()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -399,15 +385,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnWithoutValue()
+    public Task ReturnWithoutValue()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -417,15 +402,14 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskRun()
+    public Task TaskRun()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class TestClass
@@ -440,16 +424,15 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("IssueId", "https://github.com/meziantou/Meziantou.Analyzer/issues/219")]
-    public async Task Lambda()
+    public Task Lambda()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Net.Http;
             using System.Threading.Tasks;
@@ -476,15 +459,15 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReturnInUsingStatement()
+    public Task ReturnInUsingStatement()
     {
-        var originalCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
             class TestClass
             {
                 System.Threading.Tasks.Task Test()
@@ -495,93 +478,102 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-                .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
     public Task UsingBlockBeforeAReturn()
-        => CreateProjectBuilder()
-                .WithSourceCode("""
-                    class TestClass
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TestClass
+            {
+                System.Threading.Tasks.Task Test()
+                {
+                    using (var disposable = (System.IDisposable)null)
                     {
-                        System.Threading.Tasks.Task Test()
-                        {
-                            using (var disposable = (System.IDisposable)null)
-                            {
-                            }
-
-                            return System.Threading.Tasks.Task.Delay(1);
-                        }
                     }
-                    """)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-                .ValidateAsync();
+
+                    return System.Threading.Tasks.Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task UsingBeforeAReturnWithLabel()
-        => CreateProjectBuilder()
-                .WithSourceCode("""
-                    class TestClass
-                    {
-                        System.Threading.Tasks.Task Test(bool test)
-                        {
-                            if (test) goto a;
-                                return System.Threading.Tasks.Task.Delay(1);
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp8;
+        test.TestCode = """
+            class TestClass
+            {
+                System.Threading.Tasks.Task Test(bool test)
+                {
+                    if (test) goto a;
+                        return System.Threading.Tasks.Task.Delay(1);
 
-                            a:
-                            using var disposable = (System.IDisposable) null;
-                            [|return System.Threading.Tasks.Task.Delay(1);|]
-                        }
+                    a:
+                    using var disposable = (System.IDisposable) null;
+                    [|return System.Threading.Tasks.Task.Delay(1);|]
+                }
 
-                    }
-                    """)
-                .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp8)
-                .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task ExecutionContext_SuppressFlow_NoAlert()
-        => CreateProjectBuilder()
-                .WithSourceCode("""
-                    using System;
-                    using System.Threading;
-                    using System.Threading.Tasks;
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                    class TestClass
+            class TestClass
+            {
+                protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
+                {
+                    using (ExecutionContext.SuppressFlow())
                     {
-                        protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
-                        {
-                            using (ExecutionContext.SuppressFlow())
-                            {
-                                // This is safe because ExecutionContext is captured at task creation
-                                // No need to await before the using block ends
-                                return Task.Run(func, ct);
-                            }
-                        }
+                        // This is safe because ExecutionContext is captured at task creation
+                        // No need to await before the using block ends
+                        return Task.Run(func, ct);
                     }
-                    """)
-                .ValidateAsync();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task ExecutionContext_SuppressFlow_UsingDeclaration_NoAlert()
-        => CreateProjectBuilder()
-                .WithSourceCode("""
-                    using System;
-                    using System.Threading;
-                    using System.Threading.Tasks;
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                    class TestClass
-                    {
-                        protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
-                        {
-                            using var flowControl = ExecutionContext.SuppressFlow();
-                            // This is safe because ExecutionContext is captured at task creation
-                            // No need to await before the using block ends
-                            return Task.Run(func, ct);
-                        }
-                    }
-                    """)
-                .ValidateAsync();
+            class TestClass
+            {
+                protected Task RunInNewContextAsync(Func<Task> func, CancellationToken ct)
+                {
+                    using var flowControl = ExecutionContext.SuppressFlow();
+                    // This is safe because ExecutionContext is captured at task creation
+                    // No need to await before the using block ends
+                    return Task.Run(func, ct);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -1,225 +1,235 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStructLayoutAttributeAnalyzer,
+    Meziantou.Analyzer.Rules.UseStructLayoutAttributeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStructLayoutAttributeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task SingleField_ShouldNotReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseStructLayoutAttributeAnalyzer>()
-            .WithCodeFixProvider<UseStructLayoutAttributeFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            struct TypeName
+            {
+                static int s_a;
+                const int constant = 0;
+                int a;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleField_ShouldNotReportDiagnostic()
+    public Task MissingAttribute_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"struct TypeName
-{
-    static int s_a;
-    const int constant = 0;
-    int a;
-}";
+        var test = CreateTest();
+        test.TestCode = """
+            struct [|TypeName|]
+            {
+                int a;
+                int b;
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.InteropServices;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+            [StructLayout(LayoutKind.Auto)]
+            struct TypeName
+            {
+                int a;
+                int b;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MissingAttribute_ShouldReportDiagnostic()
+    public Task AddAttributeShouldUseShortname()
     {
-        const string SourceCode = @"struct [|TypeName|]
-{
-    int a;
-    int b;
-}";
-        const string CodeFix = @"using System.Runtime.InteropServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.InteropServices;
+            struct [|TypeName|]
+            {
+                int a;
+                int b;
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.InteropServices;
 
-[StructLayout(LayoutKind.Auto)]
-struct TypeName
-{
-    int a;
-    int b;
-}";
+            [StructLayout(LayoutKind.Auto)]
+            struct TypeName
+            {
+                int a;
+                int b;
+            }
+            """;
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AddAttributeShouldUseShortname()
+    public Task WithAttribute_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"using System.Runtime.InteropServices;
-struct [|TypeName|]
-{
-    int a;
-    int b;
-}";
-        const string CodeFix = @"using System.Runtime.InteropServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.InteropServices;
+            [StructLayout(LayoutKind.Sequential)]
+            struct TypeName
+            {
+                int a;
+            }
+            """;
 
-[StructLayout(LayoutKind.Auto)]
-struct TypeName
-{
-    int a;
-    int b;
-}";
-
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithAttribute_ShouldNotReportDiagnostic()
+    public Task Enum_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = @"using System.Runtime.InteropServices;
-[StructLayout(LayoutKind.Sequential)]
-struct TypeName
-{
-    int a;
-}";
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Enum_ShouldNotReportDiagnostic()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum TypeName
             {
                 None,
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithReferenceType_ShouldNotReportDiagnostic()
+    public Task WithReferenceType_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
                 string a;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Empty_ShouldNotReportDiagnostic()
+    public Task Empty_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithBoolFields_ShouldNotReportDiagnostic()
+    public Task WithBoolFields_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
                 bool a;
                 bool b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithCharFields_ShouldNotReportDiagnostic()
+    public Task WithCharFields_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
                 char a;
                 char b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithDecimalFields_ShouldNotReportDiagnostic()
+    public Task WithDecimalFields_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
                 decimal a;
                 decimal b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithIntPtrFields_ShouldReportDiagnostic()
+    public Task WithIntPtrFields_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct [|TypeName|]
             {
                 nint a;
                 nint b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithUIntPtrFields_ShouldReportDiagnostic()
+    public Task WithUIntPtrFields_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct [|TypeName|]
             {
                 nuint a;
                 nuint b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithFloatAndDoubleFields_ShouldReportDiagnostic()
+    public Task WithFloatAndDoubleFields_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct [|TypeName|]
             {
                 float a;
                 double b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithEnumFields_ShouldReportDiagnostic()
+    public Task WithEnumFields_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             enum MyEnum { A, B }
             struct [|TypeName|]
             {
@@ -227,15 +237,15 @@ struct TypeName
                 MyEnum b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithBlittableNestedStruct_ShouldReportDiagnostic()
+    public Task WithBlittableNestedStruct_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Inner
             {
                 int x;
@@ -246,15 +256,15 @@ struct TypeName
                 int b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithNonBlittableNestedStruct_ShouldNotReportDiagnostic()
+    public Task WithNonBlittableNestedStruct_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct Inner
             {
                 bool x;
@@ -265,43 +275,43 @@ struct TypeName
                 int b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task WithMixedBlittableAndNonBlittable_ShouldNotReportDiagnostic()
+    public Task WithMixedBlittableAndNonBlittable_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             struct TypeName
             {
                 int a;
                 bool b;
             }
             """;
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RecordStruct()
+    public Task RecordStruct()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             record struct [|TypeName|](int A, int B);
             """;
-
-        const string CodeFix = """
+        // Roslyn 4.8 inserts CRLF where the newer versions insert LF, and the testing library
+        // compares the text of the fixed code exactly
+#if ROSLYN_4_14_OR_GREATER
+        test.FixedCode = """
             using System.Runtime.InteropServices;
 
             [StructLayout(LayoutKind.Auto)]
             record struct TypeName(int A, int B);
             """;
+#endif
 
-        await CreateProjectBuilder()
-            .WithSourceCode(SourceCode)
-            .ShouldFixCodeWith(CodeFix)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 }

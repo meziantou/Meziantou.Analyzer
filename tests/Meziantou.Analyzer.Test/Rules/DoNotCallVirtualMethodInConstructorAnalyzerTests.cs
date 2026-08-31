@@ -1,17 +1,20 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotCallVirtualMethodInConstructorAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotCallVirtualMethodInConstructorAnalyzer>();
-    }
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
-    public async Task CtorWithVirtualCall()
+    public Task CtorWithVirtualCall()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -22,15 +25,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithAbstractCall()
+    public Task CtorWithAbstractCall()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             abstract class Test
             {
                 Test()
@@ -41,15 +44,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public abstract void A();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithNoVirtualCall()
+    public Task CtorWithNoVirtualCall()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -60,15 +63,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualCallOnAnotherInstance()
+    public Task CtorWithVirtualCallOnAnotherInstance()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -80,15 +83,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualPropertyAssignment()
+    public Task CtorWithVirtualPropertyAssignment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -99,15 +102,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual int A { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
+    public Task CtorWithVirtualPropertyAssignmentOnAnotherInstance()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -119,15 +122,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual int A { get; set; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualPropertyGet()
+    public Task CtorWithVirtualPropertyGet()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -138,15 +141,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual int A => 10;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithOverridedMethod()
+    public Task CtorWithOverridedMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Base
             {
                 public virtual void A() { }
@@ -162,15 +165,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public override void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualPropertyReferenceInNameOf()
+    public Task CtorWithVirtualPropertyReferenceInNameOf()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -181,15 +184,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual int A => 10;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignVirtualEvent()
+    public Task AssignVirtualEvent()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 protected virtual event System.Action SampleEvent;
@@ -202,15 +205,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AssignEvent()
+    public Task AssignEvent()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 protected event System.Action SampleEvent;
@@ -223,15 +226,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VirtualDelegate()
+    public Task VirtualDelegate()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -242,15 +245,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VirtualDelegate2()
+    public Task VirtualDelegate2()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -261,15 +264,15 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual void A() { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CtorWithVirtualGetOnlyPropertyAssignment()
+    public Task CtorWithVirtualGetOnlyPropertyAssignment()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 Test()
@@ -280,8 +283,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
                 public virtual int A { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

@@ -1,323 +1,335 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer,
+    Meziantou.Analyzer.Rules.UseMemoryMarshalGetReferenceForEmptyBuffersFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task RefSpanArgument_ReportsDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer>()
-            .WithCodeFixProvider<UseMemoryMarshalGetReferenceForEmptyBuffersFixer>()
-            .WithTargetFramework(TargetFramework.Net6_0);
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span)
+                {
+                    M(ref [|span[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span)
+                {
+                    M(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefSpanArgument_ReportsDiagnostic()
+    public Task InSpanArgument_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          M(ref [|span[0]|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          M(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(in byte b) { }
+                void Test(Span<byte> span)
+                {
+                    M(in [|span[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                static void M(in byte b) { }
+                void Test(Span<byte> span)
+                {
+                    M(in System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InSpanArgument_ReportsDiagnostic()
+    public Task InReadOnlySpanArgument_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(in byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          M(in [|span[0]|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      static void M(in byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          M(in System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(in byte b) { }
+                void Test(ReadOnlySpan<byte> span)
+                {
+                    M(in [|span[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                static void M(in byte b) { }
+                void Test(ReadOnlySpan<byte> span)
+                {
+                    M(in System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InReadOnlySpanArgument_ReportsDiagnostic()
+    public Task RefArrayArgument_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(in byte b) { }
-                      void Test(ReadOnlySpan<byte> span)
-                      {
-                          M(in [|span[0]|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      static void M(in byte b) { }
-                      void Test(ReadOnlySpan<byte> span)
-                      {
-                          M(in System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(byte[] array)
+                {
+                    M(ref [|array[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(byte[] array)
+                {
+                    M(ref System.Runtime.InteropServices.MemoryMarshal.GetArrayDataReference(array));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefArrayArgument_ReportsDiagnostic()
+    public Task RefSpanReturn_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(byte[] array)
-                      {
-                          M(ref [|array[0]|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(byte[] array)
-                      {
-                          M(ref System.Runtime.InteropServices.MemoryMarshal.GetArrayDataReference(array));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                ref byte Test(Span<byte> span)
+                {
+                    return ref [|span[0]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                ref byte Test(Span<byte> span)
+                {
+                    return ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefSpanReturn_ReportsDiagnostic()
+    public Task RefLocalAssignment_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      ref byte Test(Span<byte> span)
-                      {
-                          return ref [|span[0]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      ref byte Test(Span<byte> span)
-                      {
-                          return ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void Test(Span<byte> span)
+                {
+                    ref byte r = ref [|span[0]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void Test(Span<byte> span)
+                {
+                    ref byte r = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefLocalAssignment_ReportsDiagnostic()
+    public Task RefSpanConstantZero_ReportsDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void Test(Span<byte> span)
-                      {
-                          ref byte r = ref [|span[0]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      void Test(Span<byte> span)
-                      {
-                          ref byte r = ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span)
+                {
+                    const int zero = 0;
+                    M(ref [|span[zero]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span)
+                {
+                    const int zero = 0;
+                    M(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefSpanConstantZero_ReportsDiagnostic()
+    public Task ValueAccessSpanNotByRef_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          const int zero = 0;
-                          M(ref [|span[zero]|]);
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          const int zero = 0;
-                          M(ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span));
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void Test(Span<byte> span)
+                {
+                    _ = span[0];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValueAccessSpanNotByRef_NoDiagnostic()
+    public Task RefSpanNonZeroIndex_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      void Test(Span<byte> span)
-                      {
-                          _ = span[0];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span)
+                {
+                    M(ref span[1]);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefSpanNonZeroIndex_NoDiagnostic()
+    public Task RefArrayNonZeroIndex_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span)
-                      {
-                          M(ref span[1]);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(byte[] array)
+                {
+                    M(ref array[1]);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefArrayNonZeroIndex_NoDiagnostic()
+    public Task RefNonConstantIndex_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(byte[] array)
-                      {
-                          M(ref array[1]);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(Span<byte> span, int index)
+                {
+                    M(ref span[index]);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefNonConstantIndex_NoDiagnostic()
+    public Task RefCustomRefReturningIndexer_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  using System;
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(Span<byte> span, int index)
-                      {
-                          M(ref span[index]);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                static void M(ref int v) { }
+                void Test(MyCollection col)
+                {
+                    M(ref col[0]);
+                }
+            }
+            struct MyCollection
+            {
+                private int[] _items;
+                public ref int this[int index] => ref _items[index];
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RefCustomRefReturningIndexer_NoDiagnostic()
+    public Task ArrayOnNet5_DiagnosticFiresButNoCodeFix()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  class C
-                  {
-                      static void M(ref int v) { }
-                      void Test(MyCollection col)
-                      {
-                          M(ref col[0]);
-                      }
-                  }
-                  struct MyCollection
-                  {
-                      private int[] _items;
-                      public ref int this[int index] => ref _items[index];
-                  }
-                  """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            class C
+            {
+                static void M(ref byte b) { }
+                void Test(byte[] array)
+                {
+                    M(ref [|array[0]|]);
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task ArrayOnNet5_DiagnosticFiresButNoCodeFix()
-    {
-        await new ProjectBuilder()
-              .WithAnalyzer<UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer>()
-              .WithCodeFixProvider<UseMemoryMarshalGetReferenceForEmptyBuffersFixer>()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode("""
-                  class C
-                  {
-                      static void M(ref byte b) { }
-                      void Test(byte[] array)
-                      {
-                          M(ref [|array[0]|]);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

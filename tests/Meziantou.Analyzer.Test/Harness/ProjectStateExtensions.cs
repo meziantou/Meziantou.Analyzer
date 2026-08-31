@@ -1,4 +1,6 @@
+using Meziantou.Analyzer.Annotations;
 using Microsoft.CodeAnalysis.Testing;
+using MetadataReference = Microsoft.CodeAnalysis.MetadataReference;
 
 namespace Meziantou.Analyzer.Test.Harness;
 
@@ -26,4 +28,11 @@ internal static class ProjectStateExtensions
         _ = state.AnalyzerConfigFiles.RemoveAll(file => file.filename == EditorConfigFileName);
         state.AnalyzerConfigFiles.Add((EditorConfigFileName, content.ToString()));
     }
+
+    /// <summary>
+    /// References the <c>Meziantou.Analyzer.Annotations</c> assembly, the way
+    /// <see cref="TestHelper.ProjectBuilder.AddMeziantouAttributes"/> does.
+    /// </summary>
+    public static void AddMeziantouAnnotations(this ProjectState state) =>
+        state.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(RequireNamedArgumentAttribute).Assembly.Location));
 }
