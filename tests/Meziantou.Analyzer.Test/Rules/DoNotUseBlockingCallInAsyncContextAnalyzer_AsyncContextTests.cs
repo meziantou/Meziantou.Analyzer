@@ -632,7 +632,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task ProcessWaitForExit_NET6()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Threading.Tasks;
             using System.Diagnostics;
@@ -1691,7 +1690,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Threading;
@@ -1987,7 +1985,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task CreateAsyncScope()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddAspNetCore("6.0.10");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -2034,8 +2032,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbContext_Add()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.EntityFrameworkCore;
@@ -2065,7 +2062,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task IDbContextFactory_CreateDbContext_NoReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3431,7 +3427,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3472,7 +3467,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3515,7 +3509,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3559,7 +3552,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
