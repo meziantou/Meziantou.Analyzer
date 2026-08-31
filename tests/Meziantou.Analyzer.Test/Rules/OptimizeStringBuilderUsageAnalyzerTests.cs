@@ -736,7 +736,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         var test = CreateTest();
         // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.TestCode = """
             using System.Text;
             class Test

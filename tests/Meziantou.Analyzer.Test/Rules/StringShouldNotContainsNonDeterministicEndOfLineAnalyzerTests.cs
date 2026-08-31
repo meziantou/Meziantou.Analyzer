@@ -56,7 +56,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             class Dummy
             {
@@ -87,7 +86,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
             """;
         test.CodeActionIndex = 2;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             class Dummy
             {

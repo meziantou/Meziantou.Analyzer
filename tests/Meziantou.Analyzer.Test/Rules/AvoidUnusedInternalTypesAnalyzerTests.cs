@@ -2249,7 +2249,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
@@ -2272,7 +2271,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
 
             public class UsedClass
@@ -2299,7 +2297,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             public class OuterClass
             {
@@ -2324,7 +2321,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
@@ -2339,7 +2335,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
@@ -2387,7 +2382,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
@@ -2409,15 +2403,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
-        test.FixedCode = """
-
-            internal class {|MA0182:UnusedClass2|}
-            {
-                public int Value { get; set; }
-            }
-            """;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
 
         return test.RunAsync();
     }
@@ -2436,7 +2423,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 
