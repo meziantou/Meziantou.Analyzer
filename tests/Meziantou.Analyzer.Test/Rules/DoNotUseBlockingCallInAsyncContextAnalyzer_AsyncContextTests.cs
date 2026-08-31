@@ -668,7 +668,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task Using_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             using System;
             using System.Threading.Tasks;

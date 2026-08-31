@@ -210,7 +210,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_Net8_NoDiagnostic(string text)
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = $$$""""
             {{{$$"""
                             using System.Text;

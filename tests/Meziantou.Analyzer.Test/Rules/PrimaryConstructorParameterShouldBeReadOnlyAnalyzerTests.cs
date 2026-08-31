@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.PrimaryConstructorParameterShouldBeReadOnlyAnalyzer>;
@@ -11,7 +10,6 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
     private static AnalyzerTest CreateTest()
     {
         var test = new AnalyzerTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         return test;
     }
 

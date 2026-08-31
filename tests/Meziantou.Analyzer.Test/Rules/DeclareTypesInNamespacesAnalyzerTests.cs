@@ -43,7 +43,6 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
     public Task TopLevelProgram_9()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             System.Console.WriteLine();
@@ -56,7 +55,6 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
     public Task TopLevelProgram_10()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             System.Console.WriteLine();
@@ -69,7 +67,6 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
     public Task TopLevelProgram_10_partial()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             System.Console.WriteLine();

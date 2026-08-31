@@ -79,7 +79,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerMA0077Tests
     public Task RefStruct_CSharp13()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp13;
         test.TestCode = """
             ref struct {|MA0077:Test|}
             {

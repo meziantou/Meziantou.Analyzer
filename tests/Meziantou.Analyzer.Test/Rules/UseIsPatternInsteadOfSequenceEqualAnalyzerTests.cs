@@ -11,7 +11,6 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         return test;
     }

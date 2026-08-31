@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
@@ -13,7 +12,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         return test;
     }
 
@@ -126,7 +124,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task U8String()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             class Dummy
             {
@@ -144,7 +141,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task VerbatimU8String()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             class Dummy
             {
@@ -163,7 +159,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task U8RawString()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class Dummy
             {
@@ -184,7 +179,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task SingleLineRawString1()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class Dummy
             {
@@ -204,7 +198,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task SingleLineRawString2()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class Dummy
             {
@@ -222,7 +215,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task RawString()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class Dummy
             {
@@ -243,7 +235,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     public Task InterpolatedRawString()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class Dummy
             {

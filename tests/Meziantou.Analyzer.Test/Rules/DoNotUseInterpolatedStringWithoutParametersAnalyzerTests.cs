@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersAnalyzer,
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersFixer>;
@@ -282,7 +281,6 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     public Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """"
             class TypeName
             {

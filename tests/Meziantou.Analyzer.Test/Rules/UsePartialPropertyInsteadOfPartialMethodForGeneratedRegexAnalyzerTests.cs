@@ -13,7 +13,6 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
         var test = new CodeFixTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
-        test.LanguageVersion = LanguageVersion.Preview;
         return test;
     }
 

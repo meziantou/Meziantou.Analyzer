@@ -73,7 +73,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task FormattableStringInvariant()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             using System;
 
@@ -105,7 +104,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task FormattableStringCurrentCulture()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             using System;
 

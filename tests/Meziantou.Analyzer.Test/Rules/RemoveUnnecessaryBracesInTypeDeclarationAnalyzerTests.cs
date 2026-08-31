@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.RemoveUnnecessaryBracesInTypeDeclarationAnalyzer,
@@ -15,7 +14,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task PositionalRecord_WithEmptyBraces()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
@@ -27,7 +25,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task PositionalRecord_CodeFix()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
@@ -42,7 +39,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task PositionalRecord_WithSemicolon()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo(string Value1, string Value2);
             """;
@@ -54,7 +50,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task PositionalRecord_WithMember()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo(string Value1, string Value2)
             {
@@ -69,7 +64,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task PositionalRecord_WithComment()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo(string Value1, string Value2)
             {
@@ -84,7 +78,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task RecordWithoutParameterList()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             public record Foo {|MA0206:{|}}
             """;
@@ -99,7 +92,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task ClassPrimaryConstructor_WithEmptyBraces()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             public class Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
@@ -111,7 +103,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task ClassPrimaryConstructor_CodeFix()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             public class Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
@@ -126,7 +117,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task StructPrimaryConstructor_CodeFix()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             public struct Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
@@ -141,7 +131,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task ClassPrimaryConstructor_WithDocumentation()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             /// <summary>
             /// I show up when you hover my constructor invocation too!
@@ -162,7 +151,6 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
     public Task ClassWithoutPrimaryConstructor_WithDocumentation()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             /// <summary>
             /// I don't. :(

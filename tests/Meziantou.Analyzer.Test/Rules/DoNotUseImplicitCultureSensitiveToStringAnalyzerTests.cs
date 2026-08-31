@@ -21,8 +21,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     private static CodeFixTest CreateUnionTest()
     {
         var test = new CodeFixTest();
-        test.TestState.AddMeziantouAnnotations();
         test.LanguageVersion = LanguageVersion.Preview;
+        test.TestState.AddMeziantouAnnotations();
         return test;
     }
 #endif
@@ -199,7 +199,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     public Task InterpolatedStringDiagnostic_CodeFix()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             class Test
             {
@@ -229,7 +228,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     {
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             class Test
             {
@@ -284,7 +282,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     public Task InterpolatedStringNoDiagnostic_CSharp11(string content)
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = $$"""
             using System.Linq;
             class Test
@@ -442,7 +439,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     public Task ObjectToString_InterpolatedStringHandler_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             using System.Runtime.CompilerServices;
 

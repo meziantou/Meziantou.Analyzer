@@ -13,7 +13,6 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
     {
         var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         return test;
     }
 
@@ -172,7 +171,6 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
     public Task InjectProperty_AspNetCore8_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
         test.TestCode = """
             using Microsoft.AspNetCore.Components;

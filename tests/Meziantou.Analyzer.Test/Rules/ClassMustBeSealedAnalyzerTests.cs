@@ -215,7 +215,6 @@ public sealed class ClassMustBeSealedAnalyzerTests
     public Task TopLevelStatement_9()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             System.Console.WriteLine();
@@ -398,7 +397,6 @@ public sealed class ClassMustBeSealedAnalyzerTests
     public Task TopLevelStatement_10()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             System.Console.WriteLine();

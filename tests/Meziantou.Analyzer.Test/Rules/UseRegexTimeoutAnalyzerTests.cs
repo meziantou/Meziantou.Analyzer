@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
@@ -152,7 +151,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -171,7 +169,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -190,7 +187,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -213,7 +209,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 
@@ -233,7 +228,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 
@@ -253,7 +247,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 

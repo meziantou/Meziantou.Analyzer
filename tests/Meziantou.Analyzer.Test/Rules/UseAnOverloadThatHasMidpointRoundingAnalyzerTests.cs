@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasMidpointRoundingAnalyzer,
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasMidpointRoundingFixer>;
@@ -186,7 +185,6 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     public Task FloatingPointImplementationsRoundWithoutMode_ReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             class Test
             {
@@ -209,7 +207,6 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     public Task FloatingPointImplementationsRoundWithMode_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             class Test
             {
@@ -232,7 +229,6 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     public Task IFloatingPointRoundWithoutMode_ReportDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             using System.Numerics;
 
@@ -253,7 +249,6 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     public Task IFloatingPointRoundWithMode_NoDiagnostic()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             using System.Numerics;
 

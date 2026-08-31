@@ -230,7 +230,6 @@ public sealed class CommaAnalyzerTests
     public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnNextLine()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -265,7 +264,6 @@ public sealed class CommaAnalyzerTests
     public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -285,7 +283,6 @@ public sealed class CommaAnalyzerTests
     public Task CollectionExpressionWithoutLeadingComma_ClosingBracketOnSameLine_WithPreviousValue()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -306,7 +303,6 @@ public sealed class CommaAnalyzerTests
     public Task CollectionExpressionWithoutLeadingComma_SpreadElementWithComment()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             class TypeName
             {
@@ -341,7 +337,6 @@ public sealed class CommaAnalyzerTests
     public Task SwitchExpressionWithoutLeadingComma_CatchAll()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {
@@ -376,7 +371,6 @@ public sealed class CommaAnalyzerTests
     public Task SwitchExpressionWithoutLeadingComma_IgnoreCatchAll()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestState.SetConfiguration("MA0007.IgnoreCatchAllArm", "true");
         test.TestCode = """
             class TypeName
@@ -399,7 +393,6 @@ public sealed class CommaAnalyzerTests
     public Task SwitchExpressionWithoutLeadingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {
@@ -434,7 +427,6 @@ public sealed class CommaAnalyzerTests
     public Task SwitchExpressionWithLeadingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {
@@ -456,7 +448,6 @@ public sealed class CommaAnalyzerTests
     public Task WithExpressionWithoutLeadingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.Latest;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);
@@ -486,7 +477,6 @@ public sealed class CommaAnalyzerTests
     public Task WithExpressionWithLeadingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.Latest;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);
@@ -506,7 +496,6 @@ public sealed class CommaAnalyzerTests
     public Task WithExpressionWithoutLeadingCommaSingleLine()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.Latest;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);
@@ -522,7 +511,6 @@ public sealed class CommaAnalyzerTests
     public Task PropertyPatternWithoutTrailingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {
@@ -565,7 +553,6 @@ public sealed class CommaAnalyzerTests
     public Task PropertyPatternWithTrailingComma()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {
@@ -591,7 +578,6 @@ public sealed class CommaAnalyzerTests
     public Task PropertyPatternSingleLine()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp8;
         test.TestCode = """
             class TypeName
             {

@@ -133,7 +133,6 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
     {
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
-        test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {

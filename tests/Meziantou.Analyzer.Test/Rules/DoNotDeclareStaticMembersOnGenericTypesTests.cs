@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.DoNotDeclareStaticMembersOnGenericTypes>;
 
@@ -136,7 +135,6 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
     public Task StaticAbstract()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestCode = """
             public interface IFactory<TSelf> where TSelf : IFactory<TSelf>
             {
