@@ -1330,4 +1330,214 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExcludedMethod_Attribute_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    MethodWithCancellationToken();
+                }
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_AttributeOnTheOverloadWithCancellationToken_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    {|MA0040:MethodWithCancellationToken()|};
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_AssemblyAttributeWithDocumentationId_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis("M:Test.MethodWithCancellationToken")]
+
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    MethodWithCancellationToken();
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_AssemblyAttributeWithMemberName_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis(typeof(Test), "MethodWithCancellationToken")]
+
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    MethodWithCancellationToken();
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_AssemblyAttributeWithParameterTypes_ShouldReportDiagnosticForOtherOverloads()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis(typeof(Test), "MethodWithCancellationToken", typeof(int))]
+
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    MethodWithCancellationToken(0);
+                    {|MA0040:MethodWithCancellationToken("")|};
+                }
+
+                public void MethodWithCancellationToken(int value) => throw null;
+                public void MethodWithCancellationToken(int value, CancellationToken cancellationToken) => throw null;
+                public void MethodWithCancellationToken(string value) => throw null;
+                public void MethodWithCancellationToken(string value, CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_NoCancellationTokenInScope_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                public void A()
+                {
+                    MethodWithCancellationToken();
+                    {|MA0032:OtherMethodWithCancellationToken()|};
+                }
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+
+                public void OtherMethodWithCancellationToken() => throw null;
+                public void OtherMethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_AwaitForEach_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A(CancellationToken cancellationToken)
+                {
+                    await foreach (var item in Enumerate())
+                    {
+                    }
+                }
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public static IAsyncEnumerable<int> Enumerate() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedMethod_GenericAndExtensionMethods_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading;
+            static class Extensions
+            {
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public static void Extension<T>(this T value) => throw null;
+                public static void Extension<T>(this T value, CancellationToken cancellationToken) => throw null;
+            }
+
+            class Test
+            {
+                public void A(CancellationToken cancellationToken)
+                {
+                    this.Extension();
+                    Extensions.Extension(this);
+                    Generic<int>();
+                }
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public void Generic<T>() => throw null;
+                public void Generic<T>(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

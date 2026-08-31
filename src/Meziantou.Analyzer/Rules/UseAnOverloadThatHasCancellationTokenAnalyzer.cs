@@ -72,8 +72,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<ISymbol[]>?> _membersByType = new();
+        private readonly ConcurrentDictionary<ISymbol, bool> _excludedMethods = new(SymbolEqualityComparer.Default);
 
         private readonly OverloadFinder _overloadFinder = new(compilation);
+        private readonly HashSet<ISymbol> _excludedSymbols = AnnotationExclusions.GetExcludedSymbols(compilation, AnnotationAttributes.IsExcludeFromCancellationTokenAnalysisAttributeSymbol);
 
         public INamedTypeSymbol CancellationTokenSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
         public INamedTypeSymbol? CancellationTokenSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
@@ -82,6 +84,31 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
         private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
         private INamedTypeSymbol? XunitTestContextSymbol { get; } = compilation.GetBestTypeByMetadataName("Xunit.TestContext");
+
+        private bool IsExcluded(IMethodSymbol method)
+        {
+            if (_excludedMethods.TryGetValue(method, out var isExcluded))
+                return isExcluded;
+
+            isExcluded = ComputeIsExcluded(method);
+            _excludedMethods[method] = isExcluded;
+            return isExcluded;
+        }
+
+        private bool ComputeIsExcluded(IMethodSymbol method)
+        {
+            var definition = (method.ReducedFrom ?? method).OriginalDefinition;
+            if (_excludedSymbols.Count > 0 && (_excludedSymbols.Contains(method) || _excludedSymbols.Contains(definition)))
+                return true;
+
+            foreach (var attribute in definition.GetAttributes())
+            {
+                if (AnnotationAttributes.IsExcludeFromCancellationTokenAnalysisAttributeSymbol(attribute.AttributeClass))
+                    return true;
+            }
+
+            return false;
+        }
 
         private bool HasExplicitCancellationTokenArgument(IInvocationOperation operation)
         {
@@ -158,6 +185,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (!HasAnOverloadWithCancellationToken(context, operation, out var parameterInfo))
                 return;
 
+            if (IsExcluded(operation.TargetMethod))
+                return;
+
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
             {
@@ -196,6 +226,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
             while (collection is IInvocationOperation invocation)
             {
+                if (IsExcluded(invocation.TargetMethod))
+                    return;
+
                 if (HasExplicitCancellationTokenArgument(invocation))
                     return;
 
