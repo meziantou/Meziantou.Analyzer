@@ -8,28 +8,17 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
 {
     private static readonly ConfigurationDefinition<bool> EnableTryParsePatternConfiguration = new(RuleIdentifiers.DoNotIgnoreReturnValue + ".enable_tryparse_pattern", defaultValue: true);
 
-    private static readonly DiagnosticDescriptor ReturnValueRule = new(
+    private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.DoNotIgnoreReturnValue,
         title: "The return value of the method should be used",
-        messageFormat: "The return value of '{0}' should be used{1}",
+        messageFormat: "{0}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotIgnoreReturnValue));
 
-    private static readonly DiagnosticDescriptor OutParameterRule = new(
-        RuleIdentifiers.DoNotIgnoreReturnValue,
-        title: "The return value of the method should be used",
-        messageFormat: "The out parameter '{0}' of '{1}' should not be discarded{2}",
-        RuleCategories.Design,
-        DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
-        description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotIgnoreReturnValue));
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
-        ImmutableArray.Create(ReturnValueRule, OutParameterRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -85,8 +74,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             var methodName = argument.Parent is IInvocationOperation inv ? inv.TargetMethod.Name : "?";
             var attr = outParam.GetFirstAttribute(DoNotIgnoreAttributeSymbol);
             var message = attr is not null ? GetMessageFromAttributeData(attr) : null;
-            context.ReportDiagnostic(OutParameterRule, argument,
-                outParam.Name, methodName, message is null ? "" : ": " + message);
+            context.ReportDiagnostic(Rule, argument, $"The out parameter '{outParam.Name}' of '{methodName}' should not be discarded{GetMessageSuffix(message)}");
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
@@ -108,15 +96,14 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 if (attr is not null)
                 {
                     var message = GetMessageFromAttributeData(attr);
-                    context.ReportDiagnostic(ReturnValueRule, invocation,
-                        targetMethod.Name, message is null ? "" : ": " + message);
+                    context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used{GetMessageSuffix(message)}");
                     return;
                 }
             }
 
             if (AssemblyLevelDoNotIgnoreSymbols.Contains(targetMethod.OriginalDefinition))
             {
-                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+                context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used");
                 return;
             }
 
@@ -124,7 +111,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             if ((SystemDiagnosticsContractsPureAttributeSymbol is not null && targetMethod.HasAttribute(SystemDiagnosticsContractsPureAttributeSymbol)) ||
                 (JetBrainsAnnotationsPureAttributeSymbol is not null && targetMethod.HasAttribute(JetBrainsAnnotationsPureAttributeSymbol)))
             {
-                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+                context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used");
                 return;
             }
 
@@ -134,14 +121,14 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 if (IsIgnoredHResultMethod(targetMethod))
                     return;
 
-                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+                context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used");
                 return;
             }
 
             // Check built-in CLR list
             if (IsBuiltInMethod(context, targetMethod))
             {
-                context.ReportDiagnostic(ReturnValueRule, invocation, targetMethod.Name, "");
+                context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used");
             }
         }
 
@@ -263,6 +250,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 method.Parameters.Length >= 2 &&
                 method.Parameters[method.Parameters.Length - 1].RefKind != RefKind.None;
         }
+
+        private static string GetMessageSuffix(string? message) => message is null ? "" : ": " + message;
 
         private static string? GetMessageFromAttributeData(AttributeData attr)
         {

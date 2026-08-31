@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.DoNotIgnoreReturnValueAnalyzer>;
@@ -12,9 +11,6 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     {
         var test = new AnalyzerTest();
         test.TestState.AddMeziantouAnnotations();
-
-        // The analyzer declares two descriptors with the same MA0060 id, so the markup cannot tell them apart
-        test.MarkupOptions = MarkupOptions.UseFirstDescriptor;
         return test;
     }
 
@@ -224,10 +220,11 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    {|MA0060:Compute()|};
+                    {|#0:Compute()|};
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0060", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("The return value of 'Compute' should be used: Use the result to check success"));
 
         return test.RunAsync();
     }
@@ -244,10 +241,11 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    TryGet({|MA0060:out _|});
+                    TryGet({|#0:out _|});
                 }
             }
             """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0060", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("The out parameter 'value' of 'TryGet' should not be discarded"));
 
         return test.RunAsync();
     }
