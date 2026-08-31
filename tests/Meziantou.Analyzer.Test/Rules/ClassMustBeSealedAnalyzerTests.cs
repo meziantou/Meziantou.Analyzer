@@ -1,404 +1,409 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ClassMustBeSealedAnalyzer,
+    Meziantou.Analyzer.Rules.ClassMustBeSealedFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ClassMustBeSealedAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<ClassMustBeSealedAnalyzer>()
-            .WithCodeFixProvider<ClassMustBeSealedFixer>();
+        var test = new CodeFixTest();
+
+        // The rule is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // which the testing library rejects for a code fix by default
+        test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
+        return test;
     }
 
     [Fact]
-    public async Task AbstractClass_NoDiagnostic()
+    public Task AbstractClass_NoDiagnostic()
     {
-        const string SourceCode = """
-          abstract class AbstractClass
-          {
-              static void A() { }
-          }
-          """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            abstract class AbstractClass
+            {
+                static void A() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Inherited_Diagnostic()
+    public Task Inherited_Diagnostic()
     {
-        const string SourceCode = """
-          class Test
-          {
-          }
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+            }
 
-          class [|Test2|] : Test
-          {
-          }
-          """;
+            class [|Test2|] : Test
+            {
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+            }
 
-        const string CodeFix = """
-          class Test
-          {
-          }
+            sealed class Test2 : Test
+            {
+            }
+            """;
 
-          sealed class Test2 : Test
-          {
-          }
-          """;
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImplementInterface_Diagnostic()
+    public Task ImplementInterface_Diagnostic()
     {
-        const string SourceCode = """
-          interface ITest
-          {
-          }
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
 
-          class [|Test|] : ITest
-          {
-          }
-          """;
-        const string CodeFix = """
-          interface ITest
-          {
-          }
+            class [|Test|] : ITest
+            {
+            }
+            """;
+        test.FixedCode = """
+            interface ITest
+            {
+            }
 
-          sealed class Test : ITest
-          {
-          }
-          """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+            sealed class Test : ITest
+            {
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMethodAndConstField_NotReported()
+    public Task StaticMethodAndConstField_NotReported()
     {
-        const string SourceCode = """
-          public class Test
-          {
-              const int a = 10;
-              static void A() { }
-          }
-          """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            public class Test
+            {
+                const int a = 10;
+                static void A() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StaticMethodAndConstFieldWithEditorConfigTrue_Diagnostic()
+    public Task StaticMethodAndConstFieldWithEditorConfigTrue_Diagnostic()
     {
-        const string SourceCode = """
-          public class [|Test|]
-          {
-              const int a = 10;
-              static void A() { }
-          }
-          """;
-        const string CodeFix = """
-          public sealed class Test
-          {
-              const int a = 10;
-              static void A() { }
-          }
-          """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.public_class_should_be_sealed", "true");
+        test.TestCode = """
+            public class [|Test|]
+            {
+                const int a = 10;
+                static void A() { }
+            }
+            """;
+        test.FixedCode = """
+            public sealed class Test
+            {
+                const int a = 10;
+                static void A() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericBaseClass()
+    public Task GenericBaseClass()
     {
-        const string SourceCode = """
-          internal class Base<T>
-          {
-          }
+        var test = CreateTest();
+        test.TestCode = """
+            internal class Base<T>
+            {
+            }
 
-          internal sealed class Child : Base<int>
-          {
-          }
-        """;
+            internal sealed class Child : Base<int>
+            {
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Exception()
+    public Task Exception()
     {
-        const string SourceCode = """
-          internal class SampleException : System.Exception
-          {
-          }
-          """;
+        var test = CreateTest();
+        test.TestCode = """
+            internal class SampleException : System.Exception
+            {
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Exception_ConfigEnabled()
+    public Task Exception_ConfigEnabled()
     {
-        const string SourceCode = """
-          internal class [|SampleException|] : System.Exception
-          {
-          }
-          """;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.exceptions_should_be_sealed", "true");
+        test.TestCode = """
+            internal class [|SampleException|] : System.Exception
+            {
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0053.exceptions_should_be_sealed", "true")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VirtualMember()
+    public Task VirtualMember()
     {
-        const string SourceCode = """
-          internal class SampleException
-          {
-              protected virtual void A() => throw null;
-          }
-          """;
+        var test = CreateTest();
+        test.TestCode = """
+            internal class SampleException
+            {
+                protected virtual void A() => throw null;
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task VirtualMember_EditorConfig()
+    public Task VirtualMember_EditorConfig()
     {
-        const string SourceCode = """
-          internal class [|SampleException|]
-          {
-              protected virtual void A() => throw null;
-          }
-          """;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true");
+        test.TestCode = """
+            internal class [|SampleException|]
+            {
+                protected virtual void A() => throw null;
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ComImport()
+    public Task ComImport()
     {
-        const string SourceCode = """
-          [System.Runtime.InteropServices.ComImport]
-          [System.Runtime.InteropServices.Guid("1A894A19-2FCD-4F87-A5A2-83C64F9FA833")]
-          internal class SampleException
-          {
-          }
-          """;
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Runtime.InteropServices.ComImport]
+            [System.Runtime.InteropServices.Guid("1A894A19-2FCD-4F87-A5A2-83C64F9FA833")]
+            internal class SampleException
+            {
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement_9()
+    public Task TopLevelStatement_9()
     {
-        const string SourceCode = """
-          System.Console.WriteLine();
-          """;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
+            """;
 
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task BenchmarkDotNetAttributes()
+    public Task BenchmarkDotNetAttributes()
     {
-        const string SourceCode = """
-          using BenchmarkDotNet.Attributes;
-          internal class Test
-          {
-              [Benchmark(Baseline = true)]
-              public void A()
-              {
-              }
-          }
-          """;
-
-        await CreateProjectBuilder()
-              .AddNuGetReference("BenchmarkDotNet.Annotations", "0.13.2", "lib/netstandard2.0/")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Record()
-    {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true")
-              .WithSourceCode("""
-                internal record [|Sample|]();
-                """)
-              .ShouldFixCodeWith("""
-                internal sealed record Sample();
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Record_Inherited_Diagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                record Base();
-
-                record [|Derived|]() : Base();
-                """)
-              .ShouldFixCodeWith("""
-                record Base();
-
-                sealed record Derived() : Base();
-                """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Record_ImplementInterface_Diagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                interface ITest
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("BenchmarkDotNet.Annotations", "0.13.2")]);
+        test.TestCode = """
+            using BenchmarkDotNet.Attributes;
+            internal class Test
+            {
+                [Benchmark(Baseline = true)]
+                public void A()
                 {
                 }
+            }
+            """;
 
-                record [|Test|]() : ITest;
-                """)
-              .ShouldFixCodeWith("""
-                interface ITest
-                {
-                }
-
-                sealed record Test() : ITest;
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Record_Public_NotReported()
+    public Task Record()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                public record Sample();
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true");
+        test.TestCode = """
+            internal record [|Sample|]();
+            """;
+        test.FixedCode = """
+            internal sealed record Sample();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Record_Public_WithEditorConfig_Diagnostic()
+    public Task Record_Inherited_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0053.public_class_should_be_sealed", "true")
-              .WithSourceCode("""
-                public record [|Sample|]();
-                """)
-              .ShouldFixCodeWith("""
-                public sealed record Sample();
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            record Base();
+
+            record [|Derived|]() : Base();
+            """;
+        test.FixedCode = """
+            record Base();
+
+            sealed record Derived() : Base();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Record_ImplementInterface_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
+
+            record [|Test|]() : ITest;
+            """;
+        test.FixedCode = """
+            interface ITest
+            {
+            }
+
+            sealed record Test() : ITest;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Record_Public_NotReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record Sample();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Record_Public_WithEditorConfig_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.public_class_should_be_sealed", "true");
+        test.TestCode = """
+            public record [|Sample|]();
+            """;
+        test.FixedCode = """
+            public sealed record Sample();
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("private")]
     [InlineData("internal")]
     [InlineData("private protected")]
-    public async Task ClassWithPrivateCtor(string visibility)
+    public Task ClassWithPrivateCtor(string visibility)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                public class [|Sample|]
-                {
-                    {{visibility}} Sample() { }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class [|Sample|]
+            {
+                {{visibility}} Sample() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("private")]
     [InlineData("internal")]
     [InlineData("private protected")]
-    public async Task ClassWithMultiplePrivateCtors(string visibility)
+    public Task ClassWithMultiplePrivateCtors(string visibility)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                public class [|Sample|]
-                {
-                    private Sample(int a) { }
-                    {{visibility}} Sample() { }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class [|Sample|]
+            {
+                private Sample(int a) { }
+                {{visibility}} Sample() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("public")]
     [InlineData("protected")]
     [InlineData("protected internal")]
-    public async Task ClassWithPublicCtor(string visibility)
+    public Task ClassWithPublicCtor(string visibility)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                public class Sample
-                {
-                    {{visibility}} Sample() { }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Sample
+            {
+                {{visibility}} Sample() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("public")]
     [InlineData("protected")]
     [InlineData("protected internal")]
-    public async Task ClassWithPrivateAndPublicCtor(string visibility)
+    public Task ClassWithPrivateAndPublicCtor(string visibility)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                public class Sample
-                {
-                    private Sample(int a) { }
-                    {{visibility}} Sample() { }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Sample
+            {
+                private Sample(int a) { }
+                {{visibility}} Sample() { }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement_10()
+    public Task TopLevelStatement_10()
     {
-        const string SourceCode = """
-          System.Console.WriteLine();
-          """;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
+            """;
 
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

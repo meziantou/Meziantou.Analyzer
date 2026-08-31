@@ -28,4 +28,10 @@ internal static class ReferenceAssembliesExtensions
             new PackageIdentity("xunit.extensibility.core", "2.4.1"),
             new PackageIdentity("xunit.assert", "2.4.1"),
         ]);
+
+    /// <summary>
+    /// Adds the NUnit API, the way <see cref="TestHelper.ProjectBuilder.AddNUnitApi"/> does.
+    /// </summary>
+    public static ReferenceAssemblies AddNUnitApi(this ReferenceAssemblies referenceAssemblies) =>
+        referenceAssemblies.AddPackages([new PackageIdentity("NUnit", "3.12.0")]);
 }
