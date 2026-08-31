@@ -327,7 +327,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
             }
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted"));
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             class Test : ControllerBase
             {
@@ -386,7 +385,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted"));
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             class Test : ControllerBase
             {
