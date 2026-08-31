@@ -198,7 +198,6 @@ public sealed class UseStringEqualsAnalyzerTests
             """;
         test.CodeActionIndex = 2;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             using Meziantou.Framework;
 
@@ -230,7 +229,6 @@ public sealed class UseStringEqualsAnalyzerTests
             """;
         test.CodeActionIndex = 3;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
             using Meziantou.Framework;
 
