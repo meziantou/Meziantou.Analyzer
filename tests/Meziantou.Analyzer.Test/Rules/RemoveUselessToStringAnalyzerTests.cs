@@ -29,7 +29,7 @@ public sealed class RemoveUselessToStringAnalyzerTests
         test.TestCode = """
             class Test
             {
-                public string A() => [|"".ToString()|];
+                public string A() => {|MA0044:"".ToString()|};
             }
             """;
         test.FixedCode = """

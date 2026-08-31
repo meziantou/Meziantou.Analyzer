@@ -26,7 +26,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    [|await Task.Delay(1)|];
+                    {|MA0004:await Task.Delay(1)|};
                 }
             }
             """;
@@ -57,7 +57,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 {
                     IAsyncEnumerable<int> Enumerable() => throw null;
 
-                    await foreach(var item in [|Enumerable()|])
+                    await foreach(var item in {|MA0004:Enumerable()|})
                     {
                     }
                 }
@@ -96,7 +96,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 {
                     Task<IAsyncEnumerable<int>> Enumerable() => throw null;
 
-                    await foreach(var item in [|await Enumerable().ConfigureAwait(false)|])
+                    await foreach(var item in {|MA0004:await Enumerable().ConfigureAwait(false)|})
                     {
                     }
                 }
@@ -137,7 +137,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                     IAsyncEnumerable<int> Enumerable() => throw null;
 
                     CancellationToken ct = default;
-                    await foreach(var item in [|Enumerable().WithCancellation(ct)|])
+                    await foreach(var item in {|MA0004:Enumerable().WithCancellation(ct)|})
                     {
                     }
                 }
@@ -200,7 +200,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    await using var [|a = new AsyncDisposable()|];
+                    await using var {|MA0004:a = new AsyncDisposable()|};
                     Console.WriteLine();
                 }
             }
@@ -243,7 +243,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    await using (var [|a = new AsyncDisposable()|])
+                    await using (var {|MA0004:a = new AsyncDisposable()|})
                     {
                     }
                 }
@@ -284,7 +284,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             using System;
             using System.Threading.Tasks;
 
-            await using var [|a = new AsyncDisposable()|];
+            await using var {|MA0004:a = new AsyncDisposable()|};
             Console.WriteLine();
 
             class AsyncDisposable : IAsyncDisposable
@@ -320,7 +320,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
-            await using (var [|a = new AsyncDisposable()|])
+            await using (var {|MA0004:a = new AsyncDisposable()|})
             {
             }
 
@@ -358,7 +358,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    await using ([|new AsyncDisposable()|])
+                    await using ({|MA0004:new AsyncDisposable()|})
                     {
                     }
                 }
@@ -480,7 +480,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 {
                     await Task.Delay(1);
                     await Task.Delay(1).ConfigureAwait(false);
-                    [|await Task.Delay(1)|];
+                    {|MA0004:await Task.Delay(1)|};
                 }
             }
             """;
@@ -544,7 +544,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                     }
                     else
                     {
-                        [|await Task.Delay(1)|];
+                        {|MA0004:await Task.Delay(1)|};
                     }
                 }
             }
@@ -634,7 +634,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    [|await Task.Delay(1)|];
+                    {|MA0004:await Task.Delay(1)|};
                 }
             }
             """;
@@ -702,7 +702,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
             {
                 async Task Test()
                 {
-                    await using var [|a = await CreateDisposableAsync().ConfigureAwait(false)|];
+                    await using var {|MA0004:a = await CreateDisposableAsync().ConfigureAwait(false)|};
                 }
 
                 async Task<IAsyncDisposable> CreateDisposableAsync() => throw null;
@@ -742,7 +742,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 {
                     Stream stream = OpenWrite();
                     await using (stream.ConfigureAwait(false))
-                    await using (var [|streamWriter = new StreamWriter(stream)|])
+                    await using (var {|MA0004:streamWriter = new StreamWriter(stream)|})
                     {
                         await streamWriter.WriteAsync("test-data").ConfigureAwait(false);
                     }
@@ -789,7 +789,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
                     var connection = new AsyncDisposable();
                     await using (connection.ConfigureAwait(false))
                     {
-                        await using var [|command = new AsyncDisposable()|];
+                        await using var {|MA0004:command = new AsyncDisposable()|};
                     }
                 }
             }
@@ -832,7 +832,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
-            await using ([|await A().ConfigureAwait(false)|])
+            await using ({|MA0004:await A().ConfigureAwait(false)|})
             {
             }
 

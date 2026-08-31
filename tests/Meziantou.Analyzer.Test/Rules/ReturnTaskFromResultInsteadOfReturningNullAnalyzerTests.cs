@@ -19,7 +19,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             using System.Threading.Tasks;
             class Test
             {
-                Task A() { [|return null;|] }
+                Task A() { {|MA0022:return null;|} }
             }
             """;
         test.FixedCode = """
@@ -41,7 +41,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             using System.Threading.Tasks;
             class Test
             {
-                Task A() => [|null|];
+                Task A() => {|MA0022:null|};
             }
             """;
         test.FixedCode = """
@@ -63,7 +63,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             using System.Threading.Tasks;
             class Test
             {
-                Task<int> A() { [|return null;|] }
+                Task<int> A() { {|MA0022:return null;|} }
             }
             """;
         test.FixedCode = """
@@ -85,7 +85,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             using System.Threading.Tasks;
             class Test
             {
-                Task<string> A() => [|null|];
+                Task<string> A() => {|MA0022:null|};
             }
             """;
         test.FixedCode = """
@@ -100,18 +100,18 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
     }
 
     [Theory]
-    [InlineData("Task A() { [|return null;|] }")]
-    [InlineData("Task A() { [|return default;|] }")]
-    [InlineData("Task A() => [|null|];")]
-    [InlineData("Task A() => [|default|];")]
-    [InlineData("Task A() { [|return ((Test)null)?.A();|] }")]
-    [InlineData("Task A() { [|return 1 switch { _ => null };|] }")]
-    [InlineData("Task A(int value) { [|return value switch { 1 => A(0), _ => null };|] }")]
-    [InlineData("Task A(bool a) { [|return a ? null : A(a);|] }")]
-    [InlineData("Task<object> A() { [|return null;|] }")]
-    [InlineData("Task<object> A() { [|return default;|] }")]
-    [InlineData("Task<object> A() => [|null|];")]
-    [InlineData("Task<object> A() => [|default|];")]
+    [InlineData("Task A() { {|MA0022:return null;|} }")]
+    [InlineData("Task A() { {|MA0022:return default;|} }")]
+    [InlineData("Task A() => {|MA0022:null|};")]
+    [InlineData("Task A() => {|MA0022:default|};")]
+    [InlineData("Task A() { {|MA0022:return ((Test)null)?.A();|} }")]
+    [InlineData("Task A() { {|MA0022:return 1 switch { _ => null };|} }")]
+    [InlineData("Task A(int value) { {|MA0022:return value switch { 1 => A(0), _ => null };|} }")]
+    [InlineData("Task A(bool a) { {|MA0022:return a ? null : A(a);|} }")]
+    [InlineData("Task<object> A() { {|MA0022:return null;|} }")]
+    [InlineData("Task<object> A() { {|MA0022:return default;|} }")]
+    [InlineData("Task<object> A() => {|MA0022:null|};")]
+    [InlineData("Task<object> A() => {|MA0022:default|};")]
     [InlineData("async Task<object> Valid() { return null; }")]
     [InlineData("object Valid() { return null; }")]
     public Task Method(string code)
@@ -140,9 +140,9 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
                 {
                     Task<object> Valid1() { return Task.FromResult<object>(null); }
                     async Task<object> Valid2() { return null; }
-                    Task A() { [|return null;|] }
-                    Task<object> B() { [|return null;|] }
-                    Task<object> C() => [|null|];
+                    Task A() { {|MA0022:return null;|} }
+                    Task<object> B() { {|MA0022:return null;|} }
+                    Task<object> C() => {|MA0022:null|};
                     object       D() => null;
                 }
             }
@@ -161,9 +161,9 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             {
                 void A()
                 {
-                    System.Func<Task>         a = () => [|null|];
-                    System.Func<Task<object>> b = () => [|null|];
-                    System.Func<Task<object>> c = () => { [|return null;|] };
+                    System.Func<Task>         a = () => {|MA0022:null|};
+                    System.Func<Task<object>> b = () => {|MA0022:null|};
+                    System.Func<Task<object>> c = () => { {|MA0022:return null;|} };
                     System.Func<Task>         valid1 = async () => { };
                     System.Func<Task<object>> valid2 = async () => null;
                     System.Func<object>       valid3 = () => null;
@@ -185,8 +185,8 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
             {
                 void A()
                 {
-                    System.Func<Task> a = delegate () { [|return null;|] };
-                    System.Func<Task<object>> b = delegate () { [|return null;|] };
+                    System.Func<Task> a = delegate () { {|MA0022:return null;|} };
+                    System.Func<Task<object>> b = delegate () { {|MA0022:return null;|} };
                     System.Func<Task> c = async delegate () { };
                     System.Func<Task<object>> d = async delegate () { return null; };
                     System.Func<object> e = delegate () { return null; };

@@ -118,7 +118,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|Task.Delay(0)|];
+                    _ = {|MA0134:Task.Delay(0)|};
                 }
             }
             """;
@@ -137,7 +137,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 Test()
                 {
-                    _ = [|StartAsync()|];
+                    _ = {|MA0134:StartAsync()|};
                 }
 
                 Task StartAsync() => Task.Delay(0);
@@ -194,7 +194,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 Task A()
                 {
-                    [|Task.Delay(0)|];
+                    {|MA0134:Task.Delay(0)|};
                     return Task.CompletedTask;
                 }
             }
@@ -216,7 +216,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    [|B()|];
+                    {|MA0134:B()|};
                 }
 
                 Task<Result> B() => throw null;
@@ -241,7 +241,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    [|B()|];
+                    {|MA0134:B()|};
                 }
 
                 Task<Result<int>> B() => throw null;
@@ -263,7 +263,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    [|Task.Delay(0)|];
+                    {|MA0134:Task.Delay(0)|};
                 }
             }
             """;
@@ -281,7 +281,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    [|Task.Yield()|];
+                    {|MA0134:Task.Yield()|};
                 }
             }
             """;
@@ -301,7 +301,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     _ = new System.Action(() =>
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                     });
                 }
             }
@@ -320,7 +320,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    _ = new System.Action(() => [|Task.Delay(0)|]);
+                    _ = new System.Action(() => {|MA0134:Task.Delay(0)|});
                 }
             }
             """;
@@ -340,7 +340,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     _ = new System.Action(delegate
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                     });
                 }
             }
@@ -361,7 +361,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     _ = new System.Action(delegate()
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                     });
                 }
             }
@@ -382,7 +382,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                 {
                     get
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                         return 0;
                     }
                 }
@@ -405,7 +405,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
                     B();
                     void B()
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                     }
                 }
             }
@@ -428,7 +428,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
                     Task B()
                     {
-                        [|Task.Delay(0)|];
+                        {|MA0134:Task.Delay(0)|};
                         return Task.CompletedTask;
                     }
                 }
@@ -448,7 +448,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
             {
                 void A()
                 {
-                    [|Task.Delay(0).ConfigureAwait(false)|];
+                    {|MA0134:Task.Delay(0).ConfigureAwait(false)|};
                 }
             }
             """;
@@ -468,7 +468,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
                 void A(Test instance)
                 {
-                    instance?[|.ReturnTask()|];
+                    instance?{|MA0134:.ReturnTask()|};
                 }
             }
             """;
@@ -509,7 +509,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
                 void A(Test instance)
                 {
-                    _ = instance?[|.ReturnTask()|];
+                    _ = instance?{|MA0134:.ReturnTask()|};
                 }
             }
             """;

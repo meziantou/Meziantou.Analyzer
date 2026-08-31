@@ -18,7 +18,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                private static readonly bool[] Values = new[] { [|P1|], [|P2|] };
+                private static readonly bool[] Values = new[] { {|MA0195:P1|}, {|MA0195:P2|} };
                 private static readonly bool P1 = true;
                 private static readonly bool P2 = false;
             }
@@ -55,7 +55,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
 
             partial class Sample
             {
-                private static readonly bool[] Values = new[] { [|P1|] };
+                private static readonly bool[] Values = new[] { {|MA0195:P1|} };
             }
             """;
 
@@ -161,7 +161,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
             class Sample
             {
                 private static readonly string Path;
-                private static readonly string Value = Compute([|Path|]);
+                private static readonly string Value = Compute({|MA0195:Path|});
 
                 static Sample()
                 {
@@ -182,7 +182,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
         test.TestCode = """
             partial class Sample
             {
-                private static readonly int Value = [|Other|];
+                private static readonly int Value = {|MA0195:Other|};
             }
 
             partial class Sample
@@ -268,7 +268,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzerTests
             interface ISample
             {
                 private static readonly int Other;
-                private static readonly int Value = [|Other|];
+                private static readonly int Value = {|MA0195:Other|};
 
                 static ISample()
                 {

@@ -19,7 +19,7 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 void A()
                 {
                     MyEvent += (sender, e) => { };
-                    [|MyEvent -= (sender, e) => { }|];
+                    {|MA0085:MyEvent -= (sender, e) => { }|};
                 }
             }
             """;
@@ -82,7 +82,7 @@ public sealed class AnonymousDelegatesShouldNotBeUsedToUnsubscribeFromEventsAnal
                 void A()
                 {
                     MyEvent += delegate (object sender, EventArgs e) { };
-                    [|MyEvent -= delegate (object sender, EventArgs e) { }|];
+                    {|MA0085:MyEvent -= delegate (object sender, EventArgs e) { }|};
                 }
             }
             """;

@@ -26,7 +26,7 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomArgs|] : System.EventArgs
+            class {|MA0059:CustomArgs|} : System.EventArgs
             {
             }
             """;
@@ -39,7 +39,7 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomArgs|] : System.EventArgs
+            class {|MA0059:CustomArgs|} : System.EventArgs
             {
             }
             """;

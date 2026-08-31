@@ -29,7 +29,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                 void A()
                 {
                     var stream = File.OpenRead("");
-                    [|stream.Read(null, 0, 0)|];
+                    {|MA0060:stream.Read(null, 0, 0)|};
                 }
             }
             """;
@@ -48,7 +48,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
                 async void A()
                 {
                     var stream = File.OpenRead("");
-                    await [|stream.ReadAsync(null, 0, 0)|];
+                    await {|MA0060:stream.ReadAsync(null, 0, 0)|};
                 }
             }
             """;
@@ -182,7 +182,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Compute()|];
+                    {|MA0060:Compute()|};
                 }
             }
             """;
@@ -224,7 +224,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Compute()|];
+                    {|MA0060:Compute()|};
                 }
             }
             """;
@@ -285,7 +285,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Compute()|];
+                    {|MA0060:Compute()|};
                 }
             }
             """;
@@ -359,7 +359,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Compute()|];
+                    {|MA0060:Compute()|};
                 }
             }
             """;
@@ -376,7 +376,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(string s)
                 {
-                    [|s.Trim()|];
+                    {|MA0060:s.Trim()|};
                 }
             }
             """;
@@ -410,7 +410,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(string s)
                 {
-                    [|s.Replace("a", "b")|];
+                    {|MA0060:s.Replace("a", "b")|};
                 }
             }
             """;
@@ -425,7 +425,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
         test.TestCode = """
             class Test
             {
-                void A() => [|string.Format("{0}", 1)|];
+                void A() => {|MA0060:string.Format("{0}", 1)|};
             }
             """;
 
@@ -455,7 +455,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A()
                 {
-                    [|int.TryParse("42", out _)|];
+                    {|MA0060:int.TryParse("42", out _)|};
                 }
             }
             """;
@@ -491,7 +491,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|TryParseItem("42", out _)|];
+                    {|MA0060:TryParseItem("42", out _)|};
                 }
             }
             """;
@@ -527,7 +527,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A()
                 {
-                    [|int.TryParse("42", out _)|];
+                    {|MA0060:int.TryParse("42", out _)|};
                 }
             }
             """;
@@ -545,7 +545,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableList<int> list)
                 {
-                    [|list.Add(1)|];
+                    {|MA0060:list.Add(1)|};
                 }
             }
             """;
@@ -581,7 +581,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableDictionary<string, int> dict)
                 {
-                    [|dict.Remove("key")|];
+                    {|MA0060:dict.Remove("key")|};
                 }
             }
             """;
@@ -599,7 +599,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableStack<int> stack)
                 {
-                    [|stack.Push(1)|];
+                    {|MA0060:stack.Push(1)|};
                 }
             }
             """;
@@ -617,7 +617,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A()
                 {
-                    [|ImmutableArray.Create(1, 2, 3)|];
+                    {|MA0060:ImmutableArray.Create(1, 2, 3)|};
                 }
             }
             """;
@@ -635,7 +635,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(Stream stream, byte[] buffer)
                 {
-                    [|stream.ReadAtLeast(buffer, 1)|];
+                    {|MA0060:stream.ReadAtLeast(buffer, 1)|};
                 }
             }
             """;
@@ -653,7 +653,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(TextReader reader)
                 {
-                    [|reader.Read()|];
+                    {|MA0060:reader.Read()|};
                 }
             }
             """;
@@ -671,7 +671,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(BinaryReader reader)
                 {
-                    [|reader.Read()|];
+                    {|MA0060:reader.Read()|};
                 }
             }
             """;
@@ -688,7 +688,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(string s)
                 {
-                    [|s.ToUpper()|];
+                    {|MA0060:s.ToUpper()|};
                 }
             }
             """;
@@ -705,7 +705,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A()
                 {
-                    [|string.Join(", ", "a", "b")|];
+                    {|MA0060:string.Join(", ", "a", "b")|};
                 }
             }
             """;
@@ -723,7 +723,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableDictionary<string, int> dict)
                 {
-                    [|dict.Add("key", 1)|];
+                    {|MA0060:dict.Add("key", 1)|};
                 }
             }
             """;
@@ -741,7 +741,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableQueue<int> queue)
                 {
-                    [|queue.Enqueue(1)|];
+                    {|MA0060:queue.Enqueue(1)|};
                 }
             }
             """;
@@ -759,7 +759,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableHashSet<int> set)
                 {
-                    [|set.Add(1)|];
+                    {|MA0060:set.Add(1)|};
                 }
             }
             """;
@@ -777,7 +777,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A(ImmutableArray<int>.Builder builder)
                 {
-                    [|builder.IndexOf(1)|];
+                    {|MA0060:builder.IndexOf(1)|};
                 }
             }
             """;
@@ -794,7 +794,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
             {
                 void A()
                 {
-                    [|NativeMethod()|];
+                    {|MA0060:NativeMethod()|};
                 }
 
                 Windows.Win32.Foundation.HRESULT NativeMethod() => default;
@@ -872,7 +872,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Sample()|];
+                    {|MA0060:Sample()|};
                 }
             }
             """;
@@ -915,7 +915,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Nested.Sample()|];
+                    {|MA0060:Nested.Sample()|};
                 }
             }
             """;
@@ -935,7 +935,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Sample()|];
+                    {|MA0060:Sample()|};
                 }
             }
             """;
@@ -955,7 +955,7 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|Sample<int>()|];
+                    {|MA0060:Sample<int>()|};
                 }
             }
             """;
@@ -977,8 +977,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
                 void A()
                 {
-                    [|SampleA()|];
-                    [|SampleB()|];
+                    {|MA0060:SampleA()|};
+                    {|MA0060:SampleB()|};
                 }
             }
             """;

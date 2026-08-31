@@ -46,7 +46,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzerTests
             {
                 void Test()
                 {
-                    [|throw new ApplicationException();|]
+                    {|MA0014:throw new ApplicationException();|}
                 }
             }
             """;

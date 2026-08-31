@@ -52,7 +52,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.LogInformation("{Prop}", [|new Dummy().Prop|]);
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
 
             class Dummy
             {
@@ -77,7 +77,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.LogInformation("{Prop}", [|new Dummy().Prop[0]|]);
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop[0]|});
 
             class Dummy
             {
@@ -102,7 +102,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.LogInformation("{Prop}", [|new Dummy().Prop|]);
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
 
             class Dummy
             {
@@ -130,7 +130,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
 
             void A([TaxonomyAttribute]int param)
             {
-                logger.LogInformation("{Prop}", [|param|]);
+                logger.LogInformation("{Prop}", {|MA0153:param|});
             }
 
             class Dummy
@@ -159,7 +159,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
 
             void A([TaxonomyAttribute]int param)
             {
-                logger.LogInformation("{Prop}", [|param|]);
+                logger.LogInformation("{Prop}", {|MA0153:param|});
             }
 
             [TaxonomyAttribute()]
@@ -185,7 +185,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.BeginScope("{Prop}", [|new Dummy().Prop|]);
+            logger.BeginScope("{Prop}", {|MA0153:new Dummy().Prop|});
 
             class Dummy
             {
@@ -212,7 +212,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
 
             ILogger logger = null;
             PatientInfo p = new();
-            logger.LogInformation("{Patient}", [|p|]);
+            logger.LogInformation("{Patient}", {|MA0153:p|});
 
             class PatientInfo
             {
@@ -240,7 +240,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
 
             ILogger logger = null;
             PatientInfo p = new();
-            logger.LogInformation("{Patient}", [|p|]);
+            logger.LogInformation("{Patient}", {|MA0153:p|});
 
             class PatientInfo
             {
@@ -292,7 +292,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.LogInformation("{Patient}", [|new PatientInfo()|]);
+            logger.LogInformation("{Patient}", {|MA0153:new PatientInfo()|});
 
             class PatientInfo
             {
@@ -386,7 +386,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
 
             ILogger logger = null;
             PatientInfo p = new();
-            logger.LogInformation("{Patient}", [|p|]);
+            logger.LogInformation("{Patient}", {|MA0153:p|});
 
             class PatientInfo
             {
@@ -412,7 +412,7 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
             using Microsoft.Extensions.Logging;
 
             ILogger logger = null;
-            logger.LogInformation("{Prop}", [|new Dummy().Prop|]);
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
 
             class Dummy
             {

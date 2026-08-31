@@ -20,7 +20,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
             {
                 public void Test()
                 {
-                    var x = [|$"Required attribute 'output' not found."|];
+                    var x = {|MA0184:$"Required attribute 'output' not found."|};
                 }
             }
             """;
@@ -182,7 +182,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
             {
                 public string Test()
                 {
-                    return [|$"Required attribute 'output' not found."|];
+                    return {|MA0184:$"Required attribute 'output' not found."|};
                 }
             }
             """;
@@ -203,7 +203,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
 
                 public void Run()
                 {
-                    Test([|$"Required attribute 'output' not found."|]);
+                    Test({|MA0184:$"Required attribute 'output' not found."|});
                 }
             }
             """;
@@ -238,7 +238,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
             {
                 public void Test()
                 {
-                    var x = [|$"Required attribute 'output' not found."|];
+                    var x = {|MA0184:$"Required attribute 'output' not found."|};
                 }
             }
             """;
@@ -264,7 +264,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
             {
                 public void Test()
                 {
-                    var x = [|$"Line 1\nLine 2"|];
+                    var x = {|MA0184:$"Line 1\nLine 2"|};
                 }
             }
             """;
@@ -291,9 +291,9 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
             {
                 public void Test()
                 {
-                    _ = [|$"""
+                    _ = {|MA0184:$"""
                         Sample
-                        """|];
+                        """|};
                 }
             }
             """";

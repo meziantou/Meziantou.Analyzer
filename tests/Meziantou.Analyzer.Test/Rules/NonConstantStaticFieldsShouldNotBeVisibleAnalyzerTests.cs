@@ -14,7 +14,7 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzerTests
         test.TestCode = """
             public class Sample
             {
-                public static int [|a|] = 0;
+                public static int {|MA0069:a|} = 0;
             }
             """;
 

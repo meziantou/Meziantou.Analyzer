@@ -16,7 +16,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
             {
                 ~TestClass()
                 {
-                    [|throw new System.Exception("Unbecoming exception");|]
+                    {|MA0086:throw new System.Exception("Unbecoming exception");|}
                 }
             }
             """;
@@ -65,7 +65,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
                     {
                         {
                             Increment(ref value);
-                            [|throw new System.Exception($"Unbecoming exception No {value}");|]
+                            {|MA0086:throw new System.Exception($"Unbecoming exception No {value}");|}
                         }
                         void Increment(ref int val) => val++;
                     }
@@ -92,7 +92,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
                     {
                         try
                         {
-                            [|throw new System.Exception();|]
+                            {|MA0086:throw new System.Exception();|}
                         }
                         catch
                         {

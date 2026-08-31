@@ -32,7 +32,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 int a;
                 int b;
@@ -58,7 +58,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             using System.Runtime.InteropServices;
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 int a;
                 int b;
@@ -185,7 +185,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 nint a;
                 nint b;
@@ -200,7 +200,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 nuint a;
                 nuint b;
@@ -215,7 +215,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 float a;
                 double b;
@@ -231,7 +231,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             enum MyEnum { A, B }
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 MyEnum a;
                 MyEnum b;
@@ -250,7 +250,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
             {
                 int x;
             }
-            struct [|TypeName|]
+            struct {|MA0008:TypeName|}
             {
                 Inner a;
                 int b;
@@ -299,7 +299,7 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            record struct [|TypeName|](int A, int B);
+            record struct {|MA0008:TypeName|}(int A, int B);
             """;
         // Roslyn 4.8 inserts CRLF where the newer versions insert LF, and the testing library
         // compares the text of the fixed code exactly

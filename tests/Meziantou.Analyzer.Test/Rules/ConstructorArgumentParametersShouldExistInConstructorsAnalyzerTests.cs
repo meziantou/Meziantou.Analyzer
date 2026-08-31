@@ -23,7 +23,7 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
                     Value1 = value1;
                 }
 
-                [[|System.Windows.Markup.ConstructorArgument("value2")|]]
+                [{|MA0083:System.Windows.Markup.ConstructorArgument("value2")|}]
                 public object Value1 { get; set; }
             }
             """;

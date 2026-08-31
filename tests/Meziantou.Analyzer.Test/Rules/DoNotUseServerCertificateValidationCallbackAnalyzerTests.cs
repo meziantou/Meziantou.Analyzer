@@ -16,7 +16,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
             {
                 void A()
                 {
-                    [|System.Net.ServicePointManager.ServerCertificateValidationCallback|] += (sender, certification, chain, sslPolicyErrors) => throw null;
+                    {|MA0039:System.Net.ServicePointManager.ServerCertificateValidationCallback|} += (sender, certification, chain, sslPolicyErrors) => throw null;
                 }
             }
 
@@ -47,7 +47,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzerTests
                 void A()
                 {
                     var handler = new System.Net.Http.HttpClientHandler();
-                    [|handler.ServerCertificateCustomValidationCallback|] += (sender, certification, chain, sslPolicyErrors) => throw null;
+                    {|MA0039:handler.ServerCertificateCustomValidationCallback|} += (sender, certification, chain, sslPolicyErrors) => throw null;
                 }
             }
 

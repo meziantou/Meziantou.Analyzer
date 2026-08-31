@@ -116,7 +116,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             using System;
-            _ = [|"foo".AsSpan().Equals("bar", StringComparison.Ordinal)|];
+            _ = {|MA0128:"foo".AsSpan().Equals("bar", StringComparison.Ordinal)|};
             """;
         test.FixedCode = """
             using System;
@@ -144,7 +144,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             using System;
-            _ = [|"foo".AsSpan().SequenceEqual("bar")|];
+            _ = {|MA0128:"foo".AsSpan().SequenceEqual("bar")|};
             """;
         test.FixedCode = """
             using System;
@@ -161,7 +161,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
         test.TestCode = """
             using System;
             Span<char> str = default;
-            _ = [|str.SequenceEqual("bar")|];
+            _ = {|MA0128:str.SequenceEqual("bar")|};
             """;
         test.FixedCode = """
             using System;

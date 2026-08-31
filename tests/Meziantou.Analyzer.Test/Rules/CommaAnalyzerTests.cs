@@ -70,7 +70,7 @@ public sealed class CommaAnalyzerTests
                     new TypeName()
                     {
                         A = 1,
-                        [|B = 2|]
+                        {|MA0007:B = 2|}
                     };
                 }
             }
@@ -118,7 +118,7 @@ public sealed class CommaAnalyzerTests
             enum TypeName
             {
                 A = 1,
-                [|B = 2|]
+                {|MA0007:B = 2|}
             }
             """;
         test.FixedCode = """
@@ -165,7 +165,7 @@ public sealed class CommaAnalyzerTests
                     _ = new
                     {
                         A = 1,
-                        [|B = 2|]
+                        {|MA0007:B = 2|}
                     };
                 }
             }
@@ -202,7 +202,7 @@ public sealed class CommaAnalyzerTests
                     TypeName a = new()
                     {
                         A = 1,
-                        [|B = 2|]
+                        {|MA0007:B = 2|}
                     };
                 }
             }
@@ -240,7 +240,7 @@ public sealed class CommaAnalyzerTests
                     int[] a =
                     [
                         1,
-                        [|2|]
+                        {|MA0007:2|}
                     ];
                 }
             }
@@ -316,7 +316,7 @@ public sealed class CommaAnalyzerTests
                     int[] a =
                     [
                         1,
-                        [|.. source|] // comment
+                        {|MA0007:.. source|} // comment
                     ];
                 }
             }
@@ -351,7 +351,7 @@ public sealed class CommaAnalyzerTests
                     _ = 0 switch
                     {
                         1 => 1,
-                        [|_ => 2|]
+                        {|MA0007:_ => 2|}
                     };
                 }
             }
@@ -409,7 +409,7 @@ public sealed class CommaAnalyzerTests
                     _ = 0 switch
                     {
                         1 => 1,
-                        [|2 => 2|]
+                        {|MA0007:2 => 2|}
                     };
                 }
             }
@@ -465,7 +465,7 @@ public sealed class CommaAnalyzerTests
             _ = a with
             {
                 A = 3,
-                [|B = 4|]
+                {|MA0007:B = 4|}
             };
 
             record Sample(int A, int B);
@@ -539,7 +539,7 @@ public sealed class CommaAnalyzerTests
                     _ = obj is
                     {
                         A: 1,
-                        [|B: 2|]
+                        {|MA0007:B: 2|}
                     };
                 }
             }

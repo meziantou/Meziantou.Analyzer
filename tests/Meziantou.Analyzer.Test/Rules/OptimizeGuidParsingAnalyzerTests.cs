@@ -19,7 +19,7 @@ public sealed class OptimizeGuidParsingAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|new System.Guid("10752bc4-c151-50f5-f27b-df92d8af5a61")|];
+            _ = {|MA0176:new System.Guid("10752bc4-c151-50f5-f27b-df92d8af5a61")|};
             """;
         test.FixedCode = """
             _ = new System.Guid(0x10752bc4, 0xc151, 0x50f5, 0xf2, 0x7b, 0xdf, 0x92, 0xd8, 0xaf, 0x5a, 0x61) /* 10752bc4-c151-50f5-f27b-df92d8af5a61 */;
@@ -33,7 +33,7 @@ public sealed class OptimizeGuidParsingAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|System.Guid.Parse("10752BC4-C151-50F5-F27B-DF92D8AF5A61")|];
+            _ = {|MA0176:System.Guid.Parse("10752BC4-C151-50F5-F27B-DF92D8AF5A61")|};
             """;
         test.FixedCode = """
             _ = new System.Guid(0x10752BC4, 0xC151, 0x50F5, 0xF2, 0x7B, 0xDF, 0x92, 0xD8, 0xAF, 0x5A, 0x61) /* 10752BC4-C151-50F5-F27B-DF92D8AF5A61 */;

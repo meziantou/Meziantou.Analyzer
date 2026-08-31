@@ -23,7 +23,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                    _ = {|MA0179:member.GetCustomAttribute<ObsoleteAttribute>() != null|};
                 }
             }
             """;
@@ -55,7 +55,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() == null|];
+                    _ = {|MA0179:member.GetCustomAttribute<ObsoleteAttribute>() == null|};
                 }
             }
             """;
@@ -87,7 +87,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is null|];
+                    _ = {|MA0179:member.GetCustomAttribute<ObsoleteAttribute>() is null|};
                 }
             }
             """;
@@ -119,7 +119,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is not null|];
+                    _ = {|MA0179:member.GetCustomAttribute<ObsoleteAttribute>() is not null|};
                 }
             }
             """;
@@ -152,7 +152,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Any()|];
+                    _ = {|MA0179:member.GetCustomAttributes<ObsoleteAttribute>().Any()|};
                 }
             }
             """;
@@ -185,7 +185,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(Type type)
                 {
-                    _ = [|type.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                    _ = {|MA0179:type.GetCustomAttribute<ObsoleteAttribute>() != null|};
                 }
             }
             """;
@@ -217,7 +217,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(Assembly assembly)
                 {
-                    _ = [|assembly.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                    _ = {|MA0179:assembly.GetCustomAttribute<ObsoleteAttribute>() != null|};
                 }
             }
             """;
@@ -249,7 +249,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(Module module)
                 {
-                    _ = [|module.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                    _ = {|MA0179:module.GetCustomAttribute<ObsoleteAttribute>() != null|};
                 }
             }
             """;
@@ -281,7 +281,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null|];
+                    _ = {|MA0179:member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null|};
                 }
             }
             """;
@@ -314,7 +314,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any()|];
+                    _ = {|MA0179:member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any()|};
                 }
             }
             """;
@@ -457,7 +457,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0|];
+                    _ = {|MA0179:member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0|};
                 }
             }
             """;
@@ -511,7 +511,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|null != member.GetCustomAttribute<ObsoleteAttribute>()|];
+                    _ = {|MA0179:null != member.GetCustomAttribute<ObsoleteAttribute>()|};
                 }
             }
             """;
@@ -543,7 +543,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length > 0|];
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length > 0|};
                 }
             }
             """;
@@ -575,7 +575,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length != 0|];
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length != 0|};
                 }
             }
             """;
@@ -607,7 +607,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 0|];
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 0|};
                 }
             }
             """;
@@ -639,7 +639,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length >= 1|];
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length >= 1|};
                 }
             }
             """;
@@ -671,7 +671,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Length > 0|];
+                    _ = {|MA0179:Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Length > 0|};
                 }
             }
             """;
@@ -703,7 +703,7 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
             {
                 void Test(MemberInfo member)
                 {
-                    _ = [|Attribute.GetCustomAttribute(member, typeof(ObsoleteAttribute)) != null|];
+                    _ = {|MA0179:Attribute.GetCustomAttribute(member, typeof(ObsoleteAttribute)) != null|};
                 }
             }
             """;

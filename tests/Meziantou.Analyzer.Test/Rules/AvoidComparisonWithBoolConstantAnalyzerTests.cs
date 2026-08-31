@@ -25,7 +25,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 void Test()
                 {
                     var value = false;
-                    if (value [|{{op}}|] {{literal}})
+                    if (value {|MA0073:{{op}}|} {{literal}})
                     {
                     }
                 }
@@ -60,7 +60,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test()
                 {
-                    var value = {{literal}} [|{{op}}|] {{originalExpression}};
+                    var value = {{literal}} {|MA0073:{{op}}|} {{originalExpression}};
                     int GetSomeNumber() => 12;
                 }
             }
@@ -88,7 +88,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(object o)
                 {
-                    _ = o is string [|==|] false;
+                    _ = o is string {|MA0073:==|} false;
                 }
             }
             """;
@@ -114,7 +114,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(object o)
                 {
-                    _ = o is string [|==|] true;
+                    _ = o is string {|MA0073:==|} true;
                 }
             }
             """;
@@ -140,7 +140,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(object o)
                 {
-                    _ = o is string [|!=|] true;
+                    _ = o is string {|MA0073:!=|} true;
                 }
             }
             """;
@@ -166,7 +166,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(object o)
                 {
-                    _ = o is string [|!=|] false;
+                    _ = o is string {|MA0073:!=|} false;
                 }
             }
             """;
@@ -192,7 +192,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(int a, int b)
                 {
-                    _ = a < b [|==|] false;
+                    _ = a < b {|MA0073:==|} false;
                 }
             }
             """;
@@ -218,7 +218,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
             {
                 void Test(int a, int b)
                 {
-                    _ = a < b [|==|] true;
+                    _ = a < b {|MA0073:==|} true;
                 }
             }
             """;
@@ -250,7 +250,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 {
                     const bool MyConstant = {{constBool}};
                     bool value = false;
-                    _ = value [|{{op}}|] MyConstant;
+                    _ = value {|MA0073:{{op}}|} MyConstant;
                 }
             }
             """;
@@ -282,7 +282,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
                 {
                     const bool MyConstant1 = true;
                     const bool MyConstant2 = false;
-                    _ = MyConstant1 [|{{op}}|] {{rightOperand}};
+                    _ = MyConstant1 {|MA0073:{{op}}|} {{rightOperand}};
                 }
             }
             """;

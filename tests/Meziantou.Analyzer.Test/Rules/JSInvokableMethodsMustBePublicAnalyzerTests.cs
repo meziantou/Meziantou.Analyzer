@@ -29,10 +29,10 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                internal void [|B|]() => throw null;
+                internal void {|MA0118:B|}() => throw null;
 
                 [JSInvokable]
-                static void [|C|]() => throw null;
+                static void {|MA0118:C|}() => throw null;
             }
             """;
 
@@ -52,7 +52,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                internal void [|B|]() => throw null;
+                internal void {|MA0118:B|}() => throw null;
             }
             """;
         test.FixedCode = """
@@ -84,7 +84,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
                 public void A() => throw null;
 
                 [JSInvokable]
-                private static void [|C|]() => throw null;
+                private static void {|MA0118:C|}() => throw null;
             }
             """;
         test.FixedCode = """
@@ -113,7 +113,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
             class Test
             {
                 [JSInvokable]
-                static private void [|C|]() => throw null;
+                static private void {|MA0118:C|}() => throw null;
             }
             """;
         test.FixedCode = """
@@ -139,7 +139,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
             class Test
             {
                 [JSInvokable]
-                static void [|C|]() => throw null;
+                static void {|MA0118:C|}() => throw null;
             }
             """;
         test.FixedCode = """
@@ -165,7 +165,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
             class Test
             {
                 [JSInvokable]
-                private protected static void [|A|]() => throw null;
+                private protected static void {|MA0118:A|}() => throw null;
             }
             """;
         test.FixedCode = """

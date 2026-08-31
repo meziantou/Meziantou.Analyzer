@@ -20,8 +20,8 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|System.Math.Round(2.5)|];
-                    _ = [|System.Math.Round(2.5, 1)|];
+                    _ = {|MA0193:System.Math.Round(2.5)|};
+                    _ = {|MA0193:System.Math.Round(2.5, 1)|};
                 }
             }
             """;
@@ -61,7 +61,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|System.Math.Round(2.5)|];
+                    _ = {|MA0193:System.Math.Round(2.5)|};
                 }
             }
             """;
@@ -88,8 +88,8 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|System.MathF.Round(2.5f)|];
-                    _ = [|System.MathF.Round(2.5f, 1)|];
+                    _ = {|MA0193:System.MathF.Round(2.5f)|};
+                    _ = {|MA0193:System.MathF.Round(2.5f, 1)|};
                 }
             }
             """;
@@ -124,8 +124,8 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A(decimal value)
                 {
-                    _ = [|decimal.Round(value)|];
-                    _ = [|decimal.Round(value, 1)|];
+                    _ = {|MA0193:decimal.Round(value)|};
+                    _ = {|MA0193:decimal.Round(value, 1)|};
                 }
             }
             """;
@@ -165,7 +165,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A(decimal value)
                 {
-                    _ = [|decimal.Round(value, 1)|];
+                    _ = {|MA0193:decimal.Round(value, 1)|};
                 }
             }
             """;
@@ -194,12 +194,12 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 void A(double d, float f, System.Half h)
                 {
-                    _ = [|double.Round(d)|];
-                    _ = [|double.Round(d, 1)|];
-                    _ = [|float.Round(f)|];
-                    _ = [|float.Round(f, 1)|];
-                    _ = [|System.Half.Round(h)|];
-                    _ = [|System.Half.Round(h, 1)|];
+                    _ = {|MA0193:double.Round(d)|};
+                    _ = {|MA0193:double.Round(d, 1)|};
+                    _ = {|MA0193:float.Round(f)|};
+                    _ = {|MA0193:float.Round(f, 1)|};
+                    _ = {|MA0193:System.Half.Round(h)|};
+                    _ = {|MA0193:System.Half.Round(h, 1)|};
                 }
             }
             """;
@@ -244,8 +244,8 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
             {
                 static T Round<T>(T value) where T : IFloatingPoint<T>
                 {
-                    _ = [|T.Round(value)|];
-                    return [|T.Round(value, 1)|];
+                    _ = {|MA0193:T.Round(value)|};
+                    return {|MA0193:T.Round(value, 1)|};
                 }
             }
             """;

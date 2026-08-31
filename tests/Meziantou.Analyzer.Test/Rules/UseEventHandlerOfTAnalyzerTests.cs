@@ -82,7 +82,7 @@ public sealed class UseEventHandlerOfTAnalyzerTests
         test.TestCode = $$"""
             class Test
             {
-                event {{signature}} [|myevent|];
+                event {{signature}} {|MA0046:myevent|};
             }
             """;
 

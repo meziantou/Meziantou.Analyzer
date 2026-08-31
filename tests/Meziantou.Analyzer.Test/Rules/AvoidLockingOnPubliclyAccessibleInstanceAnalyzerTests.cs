@@ -33,7 +33,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
             {
                 void A()
                 {
-                    lock ([|this|]) {}
+                    lock ({|MA0064:this|}) {}
                 }
             }
             """;
@@ -50,7 +50,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
             {
                 void A()
                 {
-                    lock ([|typeof(Test)|])
+                    lock ({|MA0064:typeof(Test)|})
                     {
                         throw null;
                     }
@@ -71,7 +71,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 void A()
                 {
                     System.Type type = null;
-                    lock ([|type|]) {}
+                    lock ({|MA0064:type|}) {}
                 }
             }
             """;
@@ -89,7 +89,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzerTests
                 public string TestField;
                 void A()
                 {
-                    lock ([|TestField|]) {}
+                    lock ({|MA0064:TestField|}) {}
                 }
             }
             """;

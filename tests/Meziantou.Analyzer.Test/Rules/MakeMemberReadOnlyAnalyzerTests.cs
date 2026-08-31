@@ -294,7 +294,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             {
                 int a;
 
-                int [|A|]() => a;
+                int {|MA0102:A|}() => a;
             }
             """;
         test.FixedCode = """
@@ -318,7 +318,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
             {
                 int a;
 
-                int [|A|] => a;
+                int {|MA0102:A|} => a;
             }
             """;
         test.FixedCode = """
@@ -344,8 +344,8 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
 
                 int A
                 {
-                    [|get|] => a;
-                    [|set|] { }
+                    {|MA0102:get|} => a;
+                    {|MA0102:set|} { }
                 }
             }
             """;
@@ -377,7 +377,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 int A
                 {
                     readonly get => a;
-                    [|set|] { }
+                    {|MA0102:set|} { }
                 }
             }
             """;
@@ -407,7 +407,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 int a;
                 int A
                 {
-                    [|get|] => a;
+                    {|MA0102:get|} => a;
                     set => a = value;
                 }
             }
@@ -442,7 +442,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
 
                 int A
                 {
-                    [|set|] => a[0] = value;
+                    {|MA0102:set|} => a[0] = value;
                 }
             }
             """;
@@ -471,7 +471,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 int a;
                 readonly void A() { }
 
-                void [|B|]() => A();
+                void {|MA0102:B|}() => A();
             }
             """;
         test.FixedCode = """
@@ -494,7 +494,7 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
         test.TestCode = """
             struct Test
             {
-                public event System.Action<System.EventArgs> [|Event1|]
+                public event System.Action<System.EventArgs> {|MA0102:Event1|}
                 {
                     add { }
                     remove { }

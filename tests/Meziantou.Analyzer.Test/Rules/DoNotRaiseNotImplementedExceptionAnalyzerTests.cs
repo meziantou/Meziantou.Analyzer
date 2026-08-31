@@ -45,7 +45,7 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
             {
                 void Test()
                 {
-                    [|throw new NotImplementedException();|]
+                    {|MA0025:throw new NotImplementedException();|}
                 }
             }
             """;
@@ -64,7 +64,7 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzerTests
                 void Test()
                 {
                     Exception exception = new NotImplementedException();
-                    [|throw exception;|]
+                    {|MA0025:throw exception;|}
                 }
             }
             """;

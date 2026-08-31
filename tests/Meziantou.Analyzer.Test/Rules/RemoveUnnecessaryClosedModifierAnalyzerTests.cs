@@ -19,7 +19,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|closed|] class Sample
+            {|MA0216:closed|} class Sample
             {
             }
             """;
@@ -59,7 +59,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|closed|] record Sample;
+            {|MA0216:closed|} record Sample;
             """;
 
         return test.RunAsync();
@@ -95,7 +95,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public [|closed|] partial class Sample
+            public {|MA0216:closed|} partial class Sample
             {
             }
             """;
@@ -108,7 +108,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|closed|] partial class Sample
+            {|MA0216:closed|} partial class Sample
             {
             }
 
@@ -127,7 +127,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                [|closed|] class Nested
+                {|MA0216:closed|} class Nested
                 {
                 }
             }
@@ -154,7 +154,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             closed class Sample;
-            [|closed|] class Derived : Sample;
+            {|MA0216:closed|} class Derived : Sample;
             """;
 
         return test.RunAsync();
@@ -165,7 +165,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|closed|] class Sample
+            {|MA0216:closed|} class Sample
             {
                 public abstract int Value { get; }
             }

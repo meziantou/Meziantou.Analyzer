@@ -30,7 +30,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|};
             }
             """;
         test.FixedCode = """
@@ -60,7 +60,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture)|};
             }
             """;
         test.FixedCode = """
@@ -90,7 +90,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern")|];
+                Regex a = {|MA0110:new Regex("testpattern")|};
             }
             """;
         test.FixedCode = """
@@ -120,7 +120,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|};
             }
             """;
         test.FixedCode = """
@@ -150,7 +150,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|};
             }
             """;
         test.FixedCode = """
@@ -180,7 +180,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern")|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
             }
             """;
         test.FixedCode = """
@@ -210,7 +210,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|];
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture, TimeSpan.FromSeconds(1))|};
             }
             """;
         test.FixedCode = """
@@ -240,7 +240,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                string a = [|Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture)|];
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue", RegexOptions.ExplicitCapture)|};
             }
             """;
         test.FixedCode = """
@@ -270,7 +270,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                string a = [|Regex.Replace("test", "testpattern", "newValue")|];
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue")|};
             }
             """;
         test.FixedCode = """
@@ -300,7 +300,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                string a = [|Regex.Replace("test", "testpattern", evaluator: match => "")|];
+                string a = {|MA0110:Regex.Replace("test", "testpattern", evaluator: match => "")|};
             }
             """;
         test.FixedCode = """
@@ -340,7 +340,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.None, {{timeout}})|};
             }
             """;
         test.FixedCode = $$"""
@@ -379,7 +379,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.None, {{timeout}})|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.None, {{timeout}})|};
             }
             """;
         test.FixedCode = """
@@ -411,7 +411,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("input", "testpattern", RegexOptions.None, {{timeout}})|];
+                bool a = {|MA0110:Regex.IsMatch("input", "testpattern", RegexOptions.None, {{timeout}})|};
             }
             """;
         test.FixedCode = """
@@ -441,7 +441,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("input", "testpattern")|];
+                bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
 
                 private static Regex MyRegex() => throw null;
             }
@@ -495,7 +495,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
                 {
                     class Inner
                     {
-                        bool a = [|Regex.IsMatch("input", "testpattern")|];
+                        bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
                     }
                 }
             }
@@ -535,7 +535,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern")|];
+                Regex a = {|MA0110:new Regex("testpattern")|};
             }
             """;
         test.FixedCode = """
@@ -564,7 +564,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture)|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture)|};
             }
             """;
         test.FixedCode = """
@@ -593,7 +593,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                Regex a = [|new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|];
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.ExplicitCapture | RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))|};
             }
             """;
         test.FixedCode = """
@@ -622,7 +622,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern")|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
             }
             """;
         test.FixedCode = """
@@ -653,7 +653,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern", RegexOptions.ExplicitCapture)|};
             }
             """;
         test.FixedCode = """
@@ -684,7 +684,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                string a = [|Regex.Replace("test", "testpattern", "newValue")|];
+                string a = {|MA0110:Regex.Replace("test", "testpattern", "newValue")|};
             }
             """;
         test.FixedCode = """
@@ -719,7 +719,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
                 {
                     class Inner
                     {
-                        bool a = [|Regex.IsMatch("input", "testpattern")|];
+                        bool a = {|MA0110:Regex.IsMatch("input", "testpattern")|};
                     }
                 }
             }
@@ -758,7 +758,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                private static readonly Regex SampleRegex = [|new Regex("pattern")|];
+                private static readonly Regex SampleRegex = {|MA0110:new Regex("pattern")|};
 
                 void M()
                 {
@@ -798,7 +798,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                private static readonly Regex EmailPattern = [|new Regex("pattern")|];
+                private static readonly Regex EmailPattern = {|MA0110:new Regex("pattern")|};
 
                 void M()
                 {
@@ -840,7 +840,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
             {
                 void A()
                 {
-                    Regex sampleRegex = [|new Regex("pattern")|];
+                    Regex sampleRegex = {|MA0110:new Regex("pattern")|};
                     _ = sampleRegex.IsMatch("value");
                 }
             }
@@ -878,7 +878,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
             {
                 void A()
                 {
-                    Regex EmailRegex = [|new Regex("pattern")|];
+                    Regex EmailRegex = {|MA0110:new Regex("pattern")|};
                     _ = EmailRegex.IsMatch("value");
                 }
             }
@@ -916,7 +916,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test
             {
-                bool a = [|Regex.IsMatch("test", "testpattern")|];
+                bool a = {|MA0110:Regex.IsMatch("test", "testpattern")|};
             }
             """;
         test.FixedCode = """
@@ -948,7 +948,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                private static readonly Regex SampleRegex = [|new Regex("pattern")|];
+                private static readonly Regex SampleRegex = {|MA0110:new Regex("pattern")|};
 
                 void M()
                 {
@@ -990,7 +990,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
             {
                 void A()
                 {
-                    Regex sampleRegex = [|new Regex("pattern")|];
+                    Regex sampleRegex = {|MA0110:new Regex("pattern")|};
                     _ = sampleRegex.IsMatch("value");
                 }
             }
@@ -1027,7 +1027,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                public Regex SampleRegex { get; } = [|new Regex("pattern")|];
+                public Regex SampleRegex { get; } = {|MA0110:new Regex("pattern")|};
 
                 void M()
                 {
@@ -1069,7 +1069,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                public Regex EmailRegex { get; } = [|new Regex("pattern")|];
+                public Regex EmailRegex { get; } = {|MA0110:new Regex("pattern")|};
             }
             """;
         test.FixedCode = """
@@ -1101,7 +1101,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                public Regex Pattern { get; } = [|new Regex("pattern", RegexOptions.IgnoreCase)|];
+                public Regex Pattern { get; } = {|MA0110:new Regex("pattern", RegexOptions.IgnoreCase)|};
 
                 void M()
                 {
@@ -1143,7 +1143,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                public Regex Pattern { get; } = [|new Regex("pattern")|];
+                public Regex Pattern { get; } = {|MA0110:new Regex("pattern")|};
 
                 void M()
                 {
@@ -1184,7 +1184,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Sample
             {
-                private static readonly Regex EmailPattern = [|new Regex("pattern")|];
+                private static readonly Regex EmailPattern = {|MA0110:new Regex("pattern")|};
 
                 void M1()
                 {
@@ -1232,7 +1232,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
         test.TestCode = """
             using System.Text.RegularExpressions;
 
-            var emailRegex = [|new Regex("pattern")|];
+            var emailRegex = {|MA0110:new Regex("pattern")|};
             emailRegex.Match("value");
             """;
         test.FixedCode = """
@@ -1262,7 +1262,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
         test.TestCode = """
             using System.Text.RegularExpressions;
 
-            var emailRegex = [|new Regex("pattern")|];
+            var emailRegex = {|MA0110:new Regex("pattern")|};
             emailRegex.Match("value");
             """;
         test.FixedCode = """
@@ -1289,7 +1289,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
         test.TestCode = """
             using System.Text.RegularExpressions;
 
-            var result = [|Regex.IsMatch("test", "pattern")|];
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
             """;
         test.FixedCode = """
             using System.Text.RegularExpressions;
@@ -1316,7 +1316,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
         test.TestCode = """
             using System.Text.RegularExpressions;
 
-            var result = [|Regex.IsMatch("test", "pattern")|];
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
 
             partial class Program
             {
@@ -1350,7 +1350,7 @@ public class UseRegexSourceGeneratorAnalyzerTests
         test.TestCode = """
             using System.Text.RegularExpressions;
 
-            var result = [|Regex.IsMatch("test", "pattern")|];
+            var result = {|MA0110:Regex.IsMatch("test", "pattern")|};
             """;
         test.FixedCode = """
             using System.Text.RegularExpressions;
@@ -1378,12 +1378,12 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
             class Test1
             {
-                Regex a = [|new Regex("pattern1")|];
+                Regex a = {|MA0110:new Regex("pattern1")|};
             }
 
             class Test2
             {
-                Regex b = [|new Regex("pattern2")|];
+                Regex b = {|MA0110:new Regex("pattern2")|};
             }
             """;
         test.FixedCode = """

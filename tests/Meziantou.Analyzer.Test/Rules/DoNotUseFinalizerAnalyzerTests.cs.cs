@@ -17,7 +17,7 @@ public sealed class DoNotUseFinalizerAnalyzerTests
                 public Test() { }
                 internal void A() { }
 
-                ~[|Test|]()
+                ~{|MA0055:Test|}()
                 {
                 }
             }

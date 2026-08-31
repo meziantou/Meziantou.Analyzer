@@ -17,7 +17,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<inheritdoc />|]
+                /// {|MA0196:<inheritdoc />|}
                 public void M() { }
             }
             """;
@@ -32,7 +32,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<inheritdoc />|]
+                /// {|MA0196:<inheritdoc />|}
                 public int P { get; }
             }
             """;
@@ -47,7 +47,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<inheritdoc />|]
+                /// {|MA0196:<inheritdoc />|}
                 public Sample(int value) { }
             }
             """;
@@ -109,7 +109,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzerTests
 
             class Sample : BaseType
             {
-                /// [|<inheritdoc />|]
+                /// {|MA0196:<inheritdoc />|}
                 public Sample(string value) : base(0) { }
             }
             """;

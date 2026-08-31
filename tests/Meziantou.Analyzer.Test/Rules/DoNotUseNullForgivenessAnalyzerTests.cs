@@ -16,7 +16,7 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
             #nullable enable
             class Sample
             {
-                string _field = [|null!|];
+                string _field = {|MA0191:null!|};
             }
             """;
 
@@ -31,7 +31,7 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
             #nullable enable
             class Sample
             {
-                string _field = [|default!|];
+                string _field = {|MA0191:default!|};
             }
             """;
 
@@ -46,7 +46,7 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
             #nullable enable
             class Sample
             {
-                string _field = [|default(string)!|];
+                string _field = {|MA0191:default(string)!|};
             }
             """;
 
@@ -61,7 +61,7 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
             #nullable enable
             class Sample
             {
-                string Prop { get; set; } = [|null!|];
+                string Prop { get; set; } = {|MA0191:null!|};
             }
             """;
 
@@ -78,7 +78,7 @@ public sealed class DoNotUseNullForgivenessAnalyzerTests
             {
                 void M()
                 {
-                    string s = [|null!|];
+                    string s = {|MA0191:null!|};
                 }
             }
             """;

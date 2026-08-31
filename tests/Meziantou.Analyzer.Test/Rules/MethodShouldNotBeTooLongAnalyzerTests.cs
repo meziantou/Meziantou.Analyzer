@@ -21,7 +21,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
         test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;var b = 0;
                     void A(){var c = 0;}
@@ -56,7 +56,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
         test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;var d = 0;
                     var b = 0;var e = 0;
@@ -96,7 +96,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
         test.TestCode = """
             public class Test
             {
-                void [|Method|]()
+                void {|MA0051:Method|}()
                 {
                     var a = 0;
                     var b = 0;

@@ -53,7 +53,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} [|{{type}}|] _dummy;
+                {{visibility}} {|MA0016:{{type}}|} _dummy;
             }
             """;
 
@@ -104,7 +104,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} delegate [|{{type}}|] Dummy(int p);
+                {{visibility}} delegate {|MA0016:{{type}}|} Dummy(int p);
             }
             """;
 
@@ -121,7 +121,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} delegate void Dummy([|{{type}}|] p);
+                {{visibility}} delegate void Dummy({|MA0016:{{type}}|} p);
             }
             """;
 
@@ -172,7 +172,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} [|{{type}}|] this[int value] => throw null;
+                {{visibility}} {|MA0016:{{type}}|} this[int value] => throw null;
             }
             """;
 
@@ -189,7 +189,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} int this[[|{{type}}|] value] => throw null;
+                {{visibility}} int this[{|MA0016:{{type}}|} value] => throw null;
             }
             """;
 
@@ -223,7 +223,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} [|{{type}}|] Dummy => throw null;
+                {{visibility}} {|MA0016:{{type}}|} Dummy => throw null;
             }
             """;
 
@@ -241,7 +241,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             public class Test
             {
                 [XmlIgnore]
-                public [|List<int>|] A { get; set; }
+                public {|MA0016:List<int>|} A { get; set; }
             }
             """;
 
@@ -311,7 +311,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} [|{{type}}|] Dummy() => throw null;
+                {{visibility}} {|MA0016:{{type}}|} Dummy() => throw null;
             }
             """;
 
@@ -345,7 +345,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public class Test
             {
-                {{visibility}} void Dummy([|{{type}}|] p) => throw null;
+                {{visibility}} void Dummy({|MA0016:{{type}}|} p) => throw null;
             }
             """;
 
@@ -380,7 +380,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             using System.Threading.Tasks;
             public interface ITest
             {
-                [|List<int>|] A();
+                {|MA0016:List<int>|} A();
             }
 
             public class Test : ITest
@@ -414,7 +414,7 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
         test.TestCode = """
             public class Sample
             {
-                public static Sample operator+(Sample instance, [|System.Collections.Generic.List<int>|] value) => throw null;
+                public static Sample operator+(Sample instance, {|MA0016:System.Collections.Generic.List<int>|} value) => throw null;
             }
             """;
 

@@ -192,7 +192,7 @@ public sealed class UseStringEqualsAnalyzerTests
             {
                 public void Test()
                 {
-                    var a = [|"a" == "b"|];
+                    var a = {|MA0006:"a" == "b"|};
                 }
             }
             """;
@@ -224,7 +224,7 @@ public sealed class UseStringEqualsAnalyzerTests
             {
                 public void Test()
                 {
-                    var a = [|"a" == "b"|];
+                    var a = {|MA0006:"a" == "b"|};
                 }
             }
             """;

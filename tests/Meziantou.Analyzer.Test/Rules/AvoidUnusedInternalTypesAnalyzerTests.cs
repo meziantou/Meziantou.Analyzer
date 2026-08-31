@@ -37,7 +37,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal abstract class [|AbstractClass|]
+            internal abstract class {|MA0182:AbstractClass|}
             {
                 public abstract void Method();
             }
@@ -51,7 +51,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal static class [|StaticClass|]
+            internal static class {|MA0182:StaticClass|}
             {
                 public static void Method() { }
             }
@@ -65,7 +65,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal interface [|ITest|]
+            internal interface {|MA0182:ITest|}
             {
                 void Method();
             }
@@ -79,7 +79,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal enum [|TestEnum|]
+            internal enum {|MA0182:TestEnum|}
             {
                 Value1,
                 Value2
@@ -94,7 +94,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -110,7 +110,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                private class [|UnusedNestedClass|]
+                private class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -127,7 +127,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                internal class [|UnusedNestedClass|]
+                internal class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -178,7 +178,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                private protected class [|UnusedNestedClass|]
+                private protected class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -232,9 +232,9 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal class [|OuterClass|]
+            internal class {|MA0182:OuterClass|}
             {
-                private class [|UnusedNestedClass|]
+                private class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -249,7 +249,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal struct [|UnusedStruct|]
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public string Name { get; set; }
             }
@@ -265,7 +265,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                private struct [|UnusedNestedStruct|]
+                private struct {|MA0182:UnusedNestedStruct|}
                 {
                     public int Value;
                 }
@@ -303,7 +303,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal record [|UnusedRecord|]
+            internal record {|MA0182:UnusedRecord|}
             {
                 public string Name { get; set; }
             }
@@ -320,7 +320,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                private record [|UnusedNestedRecord|](string Name);
+                private record {|MA0182:UnusedNestedRecord|}(string Name);
             }
             """;
 
@@ -353,7 +353,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal record struct [|UnusedRecordStruct|]
+            internal record struct {|MA0182:UnusedRecordStruct|}
             {
                 public string Name { get; set; }
             }
@@ -370,7 +370,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                private record struct [|UnusedNestedRecordStruct|](int Id);
+                private record struct {|MA0182:UnusedNestedRecordStruct|}(int Id);
             }
             """;
 
@@ -667,19 +667,19 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
 
-            internal struct [|UnusedStruct|]
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public int Value;
             }
 
-            internal record [|UnusedRecord|](string Data);
+            internal record {|MA0182:UnusedRecord|}(string Data);
 
-            internal record struct [|UnusedRecordStruct|](int Id);
+            internal record struct {|MA0182:UnusedRecordStruct|}(int Id);
 
             internal class UsedClass
             {
@@ -768,7 +768,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             {
             }
 
-            internal static class [|Program|]
+            internal static class {|MA0182:Program|}
             {
                 private static void Main(string[] args)
                 {
@@ -872,7 +872,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             using System;
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -1002,7 +1002,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal sealed class [|SealedUnusedClass|]
+            internal sealed class {|MA0182:SealedUnusedClass|}
             {
                 public void Method() { }
             }
@@ -1152,7 +1152,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public int Id { get; set; }
             }
 
-            internal class [|Repository|]<T> where T : BaseEntity
+            internal class {|MA0182:Repository|}<T> where T : BaseEntity
             {
                 public T Get(int id) => null;
             }
@@ -1176,7 +1176,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            internal class [|Processor|]<T> where T : BaseModel, IValidator, new()
+            internal class {|MA0182:Processor|}<T> where T : BaseModel, IValidator, new()
             {
                 public void Process(T item)
                 {
@@ -1199,7 +1199,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Value { get; set; }
             }
 
-            internal static class [|DataStoreExtensions|]
+            internal static class {|MA0182:DataStoreExtensions|}
             {
                 extension (DataStore datastore)
                 {
@@ -1223,7 +1223,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Key { get; set; }
             }
 
-            internal static class [|DataStoreExtensions|]
+            internal static class {|MA0182:DataStoreExtensions|}
             {
                 extension (Settings settings)
                 {
@@ -1276,7 +1276,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public int Id { get; set; }
             }
 
-            internal static class [|EntityExtension|]
+            internal static class {|MA0182:EntityExtension|}
             {
                 extension<T>(T entity) where T : Entity
                 {
@@ -1305,7 +1305,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
                 public string Name { get; set; }
             }
 
-            internal static class [|RepositoryExtension|]
+            internal static class {|MA0182:RepositoryExtension|}
             {
                 extension<T>(T entity) where T : BaseEntity, IIdentifiable, new()
                 {
@@ -1354,7 +1354,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             {
                 public class Level2
                 {
-                    private class [|Level3|]
+                    private class {|MA0182:Level3|}
                     {
                         public string Name { get; set; }
                     }
@@ -1410,7 +1410,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal interface [|INumber|]<TSelf> where TSelf : INumber<TSelf>
+            internal interface {|MA0182:INumber|}<TSelf> where TSelf : INumber<TSelf>
             {
                 TSelf Add(TSelf other);
             }
@@ -1454,7 +1454,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             using System;
 
-            internal interface [|IComparable|]<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
+            internal interface {|MA0182:IComparable|}<TSelf> where TSelf : IComparable<TSelf>, IEquatable<TSelf>
             {
                 int CompareTo(TSelf other);
             }
@@ -1473,7 +1473,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             [ComImport]
             [Guid("00000000-0000-0000-0000-000000000001")]
             [CoClass(typeof(FileSaveDialogRCW))]
-            internal interface [|NativeFileSaveDialog|]
+            internal interface {|MA0182:NativeFileSaveDialog|}
             {
             }
 
@@ -1901,7 +1901,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal sealed class [|NotUsed|]
+            internal sealed class {|MA0182:NotUsed|}
             {
                 private readonly string _name;
 
@@ -1928,7 +1928,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             [Sample(typeof(NotUsed))]
-            internal sealed class [|NotUsed|]
+            internal sealed class {|MA0182:NotUsed|}
             {
             }
 
@@ -1947,7 +1947,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             [NotUsed]
-            internal sealed class [|NotUsedAttribute|] : System.Attribute
+            internal sealed class {|MA0182:NotUsedAttribute|} : System.Attribute
             {
             }
             """;
@@ -1960,7 +1960,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal sealed class [|NotUsed|]
+            internal sealed class {|MA0182:NotUsed|}
             {
                 private readonly string _name;
 
@@ -1983,7 +1983,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class PublicClass
             {
-                internal sealed class [|NotUsed|]
+                internal sealed class {|MA0182:NotUsed|}
                 {
                 }
             }
@@ -2047,7 +2047,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             using System;
 
-            internal delegate void [|UnusedDelegate|](string message);
+            internal delegate void {|MA0182:UnusedDelegate|}(string message);
 
             public class Consumer
             {
@@ -2091,7 +2091,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal sealed class [|UnusedFactory|]
+            internal sealed class {|MA0182:UnusedFactory|}
             {
                 private UnusedFactory()
                 {
@@ -2209,7 +2209,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2231,7 +2231,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal struct [|UnusedStruct|]
+            internal struct {|MA0182:UnusedStruct|}
             {
                 public int Value { get; set; }
             }
@@ -2253,7 +2253,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
-            internal record [|UnusedRecord|](string Name);
+            internal record {|MA0182:UnusedRecord|}(string Name);
             """;
         test.FixedCode = """
             [System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembers(System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes.All)]
@@ -2268,7 +2268,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2286,7 +2286,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2317,7 +2317,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             public class OuterClass
             {
-                internal class [|UnusedNestedClass|]
+                internal class {|MA0182:UnusedNestedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -2343,7 +2343,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             using System;
             using System.Collections.Generic;
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2361,7 +2361,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal record struct [|UnusedRecordStruct|](int Value);
+            internal record struct {|MA0182:UnusedRecordStruct|}(int Value);
             """;
         test.CodeActionIndex = 1;
         test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
@@ -2380,7 +2380,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             using System;
 
             [Obsolete]
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }
@@ -2406,7 +2406,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             namespace MyNamespace
             {
-                internal class [|UnusedClass|]
+                internal class {|MA0182:UnusedClass|}
                 {
                     public string Name { get; set; }
                 }
@@ -2425,12 +2425,12 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            internal class [|UnusedClass1|]
+            internal class {|MA0182:UnusedClass1|}
             {
                 public string Name { get; set; }
             }
 
-            internal class [|UnusedClass2|]
+            internal class {|MA0182:UnusedClass2|}
             {
                 public int Value { get; set; }
             }
@@ -2440,7 +2440,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.FixedState.MarkupHandling = MarkupMode.Allow;
         test.FixedCode = """
 
-            internal class [|UnusedClass2|]
+            internal class {|MA0182:UnusedClass2|}
             {
                 public int Value { get; set; }
             }
@@ -2456,7 +2456,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.TestCode = """
             [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 
-            internal class [|UnusedClass|]
+            internal class {|MA0182:UnusedClass|}
             {
                 public string Name { get; set; }
             }

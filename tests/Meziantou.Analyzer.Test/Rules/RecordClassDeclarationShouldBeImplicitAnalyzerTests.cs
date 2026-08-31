@@ -16,7 +16,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public record [|class|] Target { }
+            public record {|MA0175:class|} Target { }
             """;
 
         return test.RunAsync();
@@ -27,7 +27,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public sealed record [|class|] Target { }
+            public sealed record {|MA0175:class|} Target { }
             """;
 
         return test.RunAsync();
@@ -82,7 +82,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public record [|class|] Target(int Id) { }
+            public record {|MA0175:class|} Target(int Id) { }
             """;
 
         return test.RunAsync();
@@ -104,7 +104,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public record [|class|] Target<T> { }
+            public record {|MA0175:class|} Target<T> { }
             """;
 
         return test.RunAsync();
@@ -117,7 +117,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
         test.TestCode = """
             namespace MyNamespace
             {
-                public record [|class|] Target { }
+                public record {|MA0175:class|} Target { }
             }
             """;
 
@@ -130,7 +130,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             public abstract record BaseRecord { }
-            public record [|class|] Target : BaseRecord { }
+            public record {|MA0175:class|} Target : BaseRecord { }
             """;
 
         return test.RunAsync();
@@ -141,7 +141,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public record [|class|] Target { }
+            public record {|MA0175:class|} Target { }
             """;
         test.FixedCode = """
             public record Target { }
@@ -155,7 +155,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public sealed record [|class|] Target { }
+            public sealed record {|MA0175:class|} Target { }
             """;
         test.FixedCode = """
             public sealed record Target { }
@@ -169,7 +169,7 @@ public sealed class RecordClassDeclarationShouldBeImplicitAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public record [|class|] Target(int Id) { }
+            public record {|MA0175:class|} Target(int Id) { }
             """;
         test.FixedCode = """
             public record Target(int Id) { }

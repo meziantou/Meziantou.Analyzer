@@ -21,7 +21,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         var test = CreateTest();
         test.TestCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("{{{memberName}}}")|]]
+            [{|MA0151:DebuggerDisplay("{{{memberName}}}")|}]
             public class Dummy
             {
                 public string Display { get; }
@@ -41,7 +41,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         var test = CreateTest();
         test.TestCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Name = "{{{memberName}}}")|]]
+            [{|MA0151:DebuggerDisplay("", Name = "{{{memberName}}}")|}]
             public class Dummy
             {
                 public string Display { get; }
@@ -62,7 +62,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         var test = CreateTest();
         test.TestCode = $$"""
             using System.Diagnostics;
-            [[|DebuggerDisplay("", Type = "{{{memberName}}}")|]]
+            [{|MA0151:DebuggerDisplay("", Type = "{{{memberName}}}")|}]
             public class Dummy
             {
                 public string Display { get; }
@@ -231,7 +231,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         test.TestCode = """
             using System.Diagnostics;
 
-            [[|DebuggerDisplay(@"Person \\{NameInvalid}")|]]
+            [{|MA0151:DebuggerDisplay(@"Person \\{NameInvalid}")|}]
             public record Person(string Name);
             """;
 
@@ -339,7 +339,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         test.TestCode = $$"""
             using System.Diagnostics;
 
-            [[|DebuggerDisplay("{{{value}}}")|]]
+            [{|MA0151:DebuggerDisplay("{{{value}}}")|}]
             public record Person(int Value);
 
             public class Demo
@@ -374,7 +374,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         test.TestCode = $$"""
             using System.Diagnostics;
 
-            [[|DebuggerDisplay(@"{{{value}}}")|]]
+            [{|MA0151:DebuggerDisplay(@"{{{value}}}")|}]
             public record Person(bool Value);
             """;
 
@@ -416,7 +416,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         test.TestCode = """
             using System.Diagnostics;
 
-            [[|DebuggerDisplay(@"{System.Linq.Enumerable.InvalidMethod(Test)}")|]]
+            [{|MA0151:DebuggerDisplay(@"{System.Linq.Enumerable.InvalidMethod(Test)}")|}]
             public record Person(string[] Test);
             """;
 

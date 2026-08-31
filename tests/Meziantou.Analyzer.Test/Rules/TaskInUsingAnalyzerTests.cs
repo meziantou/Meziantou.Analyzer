@@ -24,7 +24,7 @@ public sealed class TaskInUsingAnalyzerTests
             using System.Threading.Tasks;
 
             Task t = null;
-            using ([|t|]) { }
+            using ({|MA0129:t|}) { }
             """;
 
         return test.RunAsync();
@@ -38,7 +38,7 @@ public sealed class TaskInUsingAnalyzerTests
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t = null;
-            using ([|t|]) { }
+            using ({|MA0129:t|}) { }
             """;
         test.FixedCode = """
             using System.Threading.Tasks;
@@ -71,7 +71,7 @@ public sealed class TaskInUsingAnalyzerTests
                     Task<Dummy> t = null;
                     using (disposable)
                     {
-                        using (var d = [|t|]) { await Task.Yield(); }
+                        using (var d = {|MA0129:t|}) { await Task.Yield(); }
                     }
                 }
             }
@@ -104,7 +104,7 @@ public sealed class TaskInUsingAnalyzerTests
                     Task<Dummy> t = null;
                     using (disposable)
                     {
-                        using (var d = [|t|]) { await Task.Yield(); }
+                        using (var d = {|MA0129:t|}) { await Task.Yield(); }
                     }
                 }
             }
@@ -146,7 +146,7 @@ public sealed class TaskInUsingAnalyzerTests
             using System.Threading.Tasks;
 
             Task t = null;
-            using (var a = [|t|]) { }
+            using (var a = {|MA0129:t|}) { }
             """;
 
         return test.RunAsync();
@@ -161,7 +161,7 @@ public sealed class TaskInUsingAnalyzerTests
 
             Task t1 = null;
             Task t2 = null;
-            using (Task a = [|t1|], b = [|t2|]) { }
+            using (Task a = {|MA0129:t1|}, b = {|MA0129:t2|}) { }
             """;
 
         return test.RunAsync();
@@ -175,7 +175,7 @@ public sealed class TaskInUsingAnalyzerTests
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t1 = null;
-            using ([|t1|]) { }
+            using ({|MA0129:t1|}) { }
             """;
 
         return test.RunAsync();
@@ -189,7 +189,7 @@ public sealed class TaskInUsingAnalyzerTests
             using System.Threading.Tasks;
 
             Task<System.IDisposable> t1 = null;
-            using var a = [|t1|];
+            using var a = {|MA0129:t1|};
             """;
 
         return test.RunAsync();

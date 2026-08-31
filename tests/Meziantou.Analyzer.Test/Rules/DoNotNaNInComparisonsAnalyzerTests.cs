@@ -19,25 +19,25 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 {
                     _ = 1d == 0d;
                     _ = 1d != 0d;
-                    _ = 0d == [|double.NaN|];
-                    _ = 0d != [|double.NaN|];
-                    _ = [|double.NaN|] == 0d;
-                    _ = [|double.NaN|] != 0d;
+                    _ = 0d == {|MA0082:double.NaN|};
+                    _ = 0d != {|MA0082:double.NaN|};
+                    _ = {|MA0082:double.NaN|} == 0d;
+                    _ = {|MA0082:double.NaN|} != 0d;
 
                     _ = 1f == 0f;
                     _ = 1f != 0f;
-                    _ = 0f == [|float.NaN|];
-                    _ = 0f != [|float.NaN|];
-                    _ = [|float.NaN|] == 0f;
-                    _ = [|float.NaN|] != 0f;
+                    _ = 0f == {|MA0082:float.NaN|};
+                    _ = 0f != {|MA0082:float.NaN|};
+                    _ = {|MA0082:float.NaN|} == 0f;
+                    _ = {|MA0082:float.NaN|} != 0f;
 
-                    _ = (double)[|float.NaN|] != 1f;
+                    _ = (double){|MA0082:float.NaN|} != 1f;
 
                     System.Half halfValue = (System.Half)0;
-                    _ = halfValue == [|System.Half.NaN|];
-                    _ = halfValue != [|System.Half.NaN|];
-                    _ = [|System.Half.NaN|] == halfValue;
-                    _ = [|System.Half.NaN|] != halfValue;
+                    _ = halfValue == {|MA0082:System.Half.NaN|};
+                    _ = halfValue != {|MA0082:System.Half.NaN|};
+                    _ = {|MA0082:System.Half.NaN|} == halfValue;
+                    _ = {|MA0082:System.Half.NaN|} != halfValue;
 
                 }
             }
@@ -55,7 +55,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             {
                 void A(double value)
                 {
-                    _ = value == [|double.NaN|];
+                    _ = value == {|MA0082:double.NaN|};
                 }
             }
             """;
@@ -81,7 +81,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             {
                 void A(float value)
                 {
-                    _ = value != [|float.NaN|];
+                    _ = value != {|MA0082:float.NaN|};
                 }
             }
             """;
@@ -108,7 +108,7 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
             {
                 void A(Half value)
                 {
-                    _ = value == [|Half.NaN|];
+                    _ = value == {|MA0082:Half.NaN|};
                 }
             }
             """;

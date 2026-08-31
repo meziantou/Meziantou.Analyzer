@@ -29,7 +29,7 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
                 async Task A()
                 {
                     IJSRuntime js = null;
-                    await [|js.InvokeAsync<string>("dummy")|];
+                    await {|MA0120:js.InvokeAsync<string>("dummy")|};
                 }
             }
             """;
@@ -63,7 +63,7 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
                 async Task A()
                 {
                     IJSRuntime js = null;
-                    await [|JSRuntimeExtensions.InvokeAsync<string>(js, "", System.Array.Empty<object>())|];
+                    await {|MA0120:JSRuntimeExtensions.InvokeAsync<string>(js, "", System.Array.Empty<object>())|};
                 }
             }
             """;
@@ -98,7 +98,7 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
                 async Task A()
                 {
                     IJSRuntime js = null;
-                    await [|js.InvokeAsync<string>("dummy", CancellationToken.None, new object?[1] { null })|];
+                    await {|MA0120:js.InvokeAsync<string>("dummy", CancellationToken.None, new object?[1] { null })|};
                 }
             }
             """;
@@ -238,7 +238,7 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
                 async Task A()
                 {
                     IJSInProcessRuntime js = null;
-                    await [|js.InvokeAsync<string>("dummy")|];
+                    await {|MA0120:js.InvokeAsync<string>("dummy")|};
                 }
             }
             """;
@@ -272,7 +272,7 @@ public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
                 void A()
                 {
                     IJSInProcessRuntime js = null;
-                    [|js.Invoke<string>("dummy")|];
+                    {|MA0120:js.Invoke<string>("dummy")|};
                 }
             }
             """;

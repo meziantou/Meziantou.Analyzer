@@ -64,12 +64,12 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData(""" System.TimeSpan.Zero.ToString() """)]
     [InlineData(""" System.TimeSpan.Zero.ToString("c") """)]
     [InlineData(""" System.TimeSpan.Zero.ToString("T") """)]
-    [InlineData(""" [|System.TimeSpan.Zero.ToString("G")|] """)]
+    [InlineData(""" {|MA0011:System.TimeSpan.Zero.ToString("G")|} """)]
     [InlineData(""" ' '.ToString(); """)]
-    [InlineData(""" [|System.DateTime.TryParse("", out _)|] """)]
-    [InlineData(""" [|System.DateTimeOffset.TryParse("", out _)|] """)]
-    [InlineData(""" [|"".ToLower()|] """)]
-    [InlineData(""" [|new System.Text.StringBuilder().AppendFormat("{0}", -1)|] """)]
+    [InlineData(""" {|MA0011:System.DateTime.TryParse("", out _)|} """)]
+    [InlineData(""" {|MA0011:System.DateTimeOffset.TryParse("", out _)|} """)]
+    [InlineData(""" {|MA0011:"".ToLower()|} """)]
+    [InlineData(""" {|MA0011:new System.Text.StringBuilder().AppendFormat("{0}", -1)|} """)]
     [InlineData(""" new System.Text.StringBuilder().AppendFormat("{0}", 10) """)]
     [InlineData(""" new System.Text.StringBuilder().AppendFormat("{0} / {1}", "X", "Y") """)]
     [InlineData(""" System.DayOfWeek.Monday.ToString() """)]
@@ -85,15 +85,15 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData(""" default(System.DateTimeOffset).ToString("R") """)]
     [InlineData(""" default(System.DateTimeOffset).ToString("s") """)]
     [InlineData(""" default(System.DateTimeOffset).ToString("u") """)]
-    [InlineData(""" [|default(System.DateTime).ToString("yyyy")|] """)]
+    [InlineData(""" {|MA0011:default(System.DateTime).ToString("yyyy")|} """)]
     [InlineData(""" System.Guid.Parse("o") """)]
     [InlineData(""" System.Guid.TryParse("o", out _) """)]
     [InlineData(""" ((int?)1)?.ToString(System.Globalization.CultureInfo.InvariantCulture) """)]
     [InlineData(""" string.Format("", "test", 1, 'c') """)]
     [InlineData(""" string.Format(default(System.IFormatProvider), "", -1) """)]
     [InlineData(""" string.Format("") """)]
-    [InlineData(""" [|string.Format("", -1)|] """)]
-    [InlineData(""" [|string.Format("", 0, 0, 0, 0, 0, 0, -1, 0 ,0 ,0, 0)|] """)]
+    [InlineData(""" {|MA0011:string.Format("", -1)|} """)]
+    [InlineData(""" {|MA0011:string.Format("", 0, 0, 0, 0, 0, 0, -1, 0 ,0 ,0, 0)|} """)]
     [InlineData(""" System.Convert.ToChar((object)null) """)]
     [InlineData(""" System.Convert.ToChar("") """)]
     [InlineData(""" System.Convert.ToBoolean((object)null) """)]
@@ -139,7 +139,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|int.Parse("")|];
+            {|MA0011:int.Parse("")|};
             """;
         test.FixedCode = """
             int.Parse("", System.Globalization.CultureInfo.InvariantCulture);
@@ -266,7 +266,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             var sb = new System.Text.StringBuilder();
             int value = 0;
-            [|sb.AppendLine($"foo{value}")|];
+            {|MA0011:sb.AppendLine($"foo{value}")|};
             """;
 
         return test.RunAsync();
@@ -302,7 +302,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             var sb = new System.Text.StringBuilder();
             System.DateTime value = default;
-            [|sb.AppendLine($"foo{value:yyyy}")|];
+            {|MA0011:sb.AppendLine($"foo{value:yyyy}")|};
             """;
 
         return test.RunAsync();
@@ -314,7 +314,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             int? i = -1;
-            [|i.ToString()|];
+            {|MA0011:i.ToString()|};
             """;
 
         return test.RunAsync();
@@ -355,7 +355,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
             _ = new System.DateTime().ToString("custom");
             _ = new System.DateTime().ToString("");
-            _ = [|new System.DateTime().ToString("dummy")|];
+            _ = {|MA0011:new System.DateTime().ToString("dummy")|};
             """;
 
         return test.RunAsync();
@@ -367,7 +367,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
-            _ = [|new System.DateTime().ToString("dummy")|];
+            _ = {|MA0011:new System.DateTime().ToString("dummy")|};
             _ = new System.DateTime().ToString(format: null);
             """;
 
@@ -381,7 +381,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             _ = Sample.Value.ToString();
             _ = Sample.Field.ToString();
-            _ = [|Sample.OtherValue.ToString()|];
+            _ = {|MA0011:Sample.OtherValue.ToString()|};
 
             static class Sample
             {
@@ -403,7 +403,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|new Sample().ToString()|];
+            _ = {|MA0011:new Sample().ToString()|};
 
             class Sample : System.IFormattable
             {
@@ -420,7 +420,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|new Sample().ToString()|];
+            _ = {|MA0011:new Sample().ToString()|};
 
             class Sample : System.ISpanFormattable
             {
@@ -438,7 +438,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|new Sample().ToString()|];
+            _ = {|MA0011:new Sample().ToString()|};
 
             class Sample : System.IFormattable
             {
@@ -464,7 +464,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            _ = [|new Location().ToString()|];
+            _ = {|MA0011:new Location().ToString()|};
 
             class Location
             {
@@ -484,7 +484,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             using System;
             using System.Runtime.CompilerServices;
 
-            [|A.Print($"{DateTime.Now:D}")|];
+            {|MA0011:A.Print($"{DateTime.Now:D}")|};
 
             class A
             {
@@ -544,7 +544,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             using System;
             using System.Runtime.CompilerServices;
 
-            [|A.Print($"{DateTime.Now:o} | {DateTime.Now:D}")|];
+            {|MA0011:A.Print($"{DateTime.Now:o} | {DateTime.Now:D}")|};
 
             class A
             {
@@ -592,7 +592,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             using System.Runtime.CompilerServices;
             using Meziantou.Analyzer.Annotations;
 
-            [|A.Print($"{new Bar():D}")|];
+            {|MA0011:A.Print($"{new Bar():D}")|};
 
             class A
             {
@@ -636,7 +636,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             using System;
 
-            [|A.Sample($"{DateTime.Now:D}")|];
+            {|MA0011:A.Sample($"{DateTime.Now:D}")|};
 
             class A
             {
@@ -714,7 +714,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             {
                 void A(object value)
                 {
-                    [|Formatter.Print($"Value: {value}")|];
+                    {|MA0011:Formatter.Print($"Value: {value}")|};
                 }
             }
 
@@ -776,7 +776,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             {
                 void A(IFormattable value)
                 {
-                    [|Formatter.Print($"Value: {value}")|];
+                    {|MA0011:Formatter.Print($"Value: {value}")|};
                 }
             }
 
@@ -839,7 +839,7 @@ public sealed class UseIFormatProviderAnalyzerTests
             {
                 void A(Value value)
                 {
-                    [|Formatter.Print($"Value: {value}")|];
+                    {|MA0011:Formatter.Print($"Value: {value}")|};
                 }
             }
 
@@ -927,7 +927,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             using System;
 
-            [|A.Sample($"{DateTime.Now:D}")|];
+            {|MA0011:A.Sample($"{DateTime.Now:D}")|};
 
             class A
             {
@@ -957,7 +957,7 @@ public sealed class UseIFormatProviderAnalyzerTests
         test.TestCode = """
             using System;
 
-            [|A.Sample("prefix", $"{DateTime.Now:D}")|];
+            {|MA0011:A.Sample("prefix", $"{DateTime.Now:D}")|};
 
             class A
             {

@@ -19,7 +19,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System.Collections.Generic;
             class C
             {
-                void M(List<int> list) => list.Sort([|(x, y) => x.CompareTo(y)|]);
+                void M(List<int> list) => list.Sort({|MA0217:(x, y) => x.CompareTo(y)|});
             }
             """;
         test.FixedCode = """
@@ -41,7 +41,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M() => _ = (Func<int, int>)([|x => x + 1|]);
+                void M() => _ = (Func<int, int>)({|MA0217:x => x + 1|});
             }
             """;
         test.FixedCode = """
@@ -63,7 +63,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M() => _ = (Func<int>)([|delegate { return 1; }|]);
+                void M() => _ = (Func<int>)({|MA0217:delegate { return 1; }|});
             }
             """;
         test.FixedCode = """
@@ -86,7 +86,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System.Threading.Tasks;
             class C
             {
-                void M() => _ = (Func<Task<int>>)([|async () => await Task.FromResult(1)|]);
+                void M() => _ = (Func<Task<int>>)({|MA0217:async () => await Task.FromResult(1)|});
             }
             """;
         test.FixedCode = """
@@ -112,7 +112,7 @@ public sealed class UseStaticLambdaAnalyzerTests
                 void M(List<int> list)
                 {
                     list.Sort(
-                        [|(x, y) => x.CompareTo(y)|]);
+                        {|MA0217:(x, y) => x.CompareTo(y)|});
                 }
             }
             """;
@@ -140,7 +140,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System.Linq.Expressions;
             class C
             {
-                void M() => _ = (Expression<Func<int, int>>)([|x => x + 1|]);
+                void M() => _ = (Expression<Func<int, int>>)({|MA0217:x => x + 1|});
             }
             """;
         test.FixedCode = """
@@ -165,7 +165,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             {
                 const int Constant = 1;
                 static int Field;
-                void M() => _ = (Func<int>)([|() => Field + Constant + Compute()|]);
+                void M() => _ = (Func<int>)({|MA0217:() => Field + Constant + Compute()|});
                 static int Compute() => 0;
             }
             """;
@@ -191,7 +191,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M(int parameter) => _ = (Func<string>)([|() => nameof(parameter)|]);
+                void M(int parameter) => _ = (Func<string>)({|MA0217:() => nameof(parameter)|});
             }
             """;
         test.FixedCode = """
@@ -213,7 +213,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M() => _ = (Func<int, Func<int>>)([|x => { var y = x; return () => y; }|]);
+                void M() => _ = (Func<int, Func<int>>)({|MA0217:x => { var y = x; return () => y; }|});
             }
             """;
         test.FixedCode = """
@@ -238,7 +238,7 @@ public sealed class UseStaticLambdaAnalyzerTests
                 void M()
                 {
                     static int Local() => 1;
-                    _ = (Func<int>)([|() => Local()|]);
+                    _ = (Func<int>)({|MA0217:() => Local()|});
                 }
             }
             """;
@@ -265,7 +265,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M() => _ = (Func<int>)([|() => { int Local() => 1; return Local(); }|]);
+                void M() => _ = (Func<int>)({|MA0217:() => { int Local() => 1; return Local(); }|});
             }
             """;
         test.FixedCode = """
@@ -466,7 +466,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M() => _ = (Func<int, int>)([|[Obsolete] (int x) => x|]);
+                void M() => _ = (Func<int, int>)({|MA0217:[Obsolete] (int x) => x|});
             }
             """;
         test.FixedCode = """
@@ -490,8 +490,8 @@ public sealed class UseStaticLambdaAnalyzerTests
             {
                 void M()
                 {
-                    _ = (Func<int>)([|() => 1|]);
-                    _ = (Func<int>)([|() => 2|]);
+                    _ = (Func<int>)({|MA0217:() => 1|});
+                    _ = (Func<int>)({|MA0217:() => 2|});
                 }
             }
             """;
@@ -518,7 +518,7 @@ public sealed class UseStaticLambdaAnalyzerTests
             using System;
             class C
             {
-                void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? [|() => 1|] : null);
+                void M(int value) => _ = (Func<Func<int>>)(() => value > 0 ? {|MA0217:() => 1|} : null);
             }
             """;
         test.FixedCode = """
@@ -540,7 +540,7 @@ public sealed class UseStaticLambdaAnalyzerTests
         test.TestCode = """
             using System;
             var value = 1;
-            _ = (Func<int>)([|() => 1|]);
+            _ = (Func<int>)({|MA0217:() => 1|});
             _ = (Func<int>)(() => value);
             """;
         test.FixedCode = """

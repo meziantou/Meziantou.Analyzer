@@ -34,7 +34,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
             public class Program
             {
                 public static void Main(string[] args) { }
-                public static void [|DoWork|](string[] data) { }
+                public static void {|MA0109:DoWork|}(string[] data) { }
             }
             """;
 
@@ -93,7 +93,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
         test.TestCode = """
             public class Test
             {
-                public void [|A|](string[] a)
+                public void {|MA0109:A|}(string[] a)
                 {
                 }
             }
@@ -109,7 +109,7 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
         test.TestCode = """
             public class Test
             {
-                public void [|A|](string[] a, int b) { }
+                public void {|MA0109:A|}(string[] a, int b) { }
                 public void A(System.ReadOnlySpan<string> a, string b) { } // Not same type for b
                 public void A(System.ReadOnlySpan<string> a, int b, int c) { } // not same number of parameters
                 public void A(System.ReadOnlySpan<string> a, System.ReadOnlySpan<int> b) { } // Not same type for b

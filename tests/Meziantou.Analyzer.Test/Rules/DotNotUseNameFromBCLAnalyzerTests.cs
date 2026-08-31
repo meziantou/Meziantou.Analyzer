@@ -11,8 +11,8 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         var genericStart = typeName.IndexOf('<', StringComparison.Ordinal);
         return genericStart >= 0
-            ? "[|" + typeName[..genericStart] + "|]" + typeName[genericStart..]
-            : "[|" + typeName + "|]";
+            ? "{|MA0104:" + typeName[..genericStart] + "|}" + typeName[genericStart..]
+            : "{|MA0104:" + typeName + "|}";
     }
 
     [Theory]
@@ -85,7 +85,7 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0104.namespaces_regex", "[");
-        test.TestCode = "public class [|Action|] { }";
+        test.TestCode = "public class {|MA0104:Action|} { }";
 
         return test.RunAsync();
     }
@@ -95,7 +95,7 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0104.namepaces_regex", "[");
-        test.TestCode = "public class [|Action|] { }";
+        test.TestCode = "public class {|MA0104:Action|} { }";
 
         return test.RunAsync();
     }

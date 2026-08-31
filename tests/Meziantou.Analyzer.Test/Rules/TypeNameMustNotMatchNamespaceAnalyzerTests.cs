@@ -30,7 +30,7 @@ public sealed class TypeNameMustNotMatchNamespaceAnalyzerTests
         test.TestCode = """
             namespace Test
             {
-                class [|Test|]
+                class {|MA0049:Test|}
                 {
                 }
             }

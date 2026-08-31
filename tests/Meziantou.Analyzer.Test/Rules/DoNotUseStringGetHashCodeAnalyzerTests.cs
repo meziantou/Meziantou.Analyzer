@@ -17,7 +17,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzerTests
             {
                 public void Test()
                 {
-                    [|"a".GetHashCode()|];
+                    {|MA0021:"a".GetHashCode()|};
                     System.StringComparer.Ordinal.GetHashCode("a");
                     new object().GetHashCode();
                 }

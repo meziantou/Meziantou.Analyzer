@@ -17,7 +17,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
         var test = CreateTest();
         test.TestCode = """
             [System.Flags]
-            enum [|Test|] : byte
+            enum {|MA0062:Test|} : byte
             {
                 A = 1,
                 B = 2,
@@ -34,7 +34,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
         var test = CreateTest();
         test.TestCode = """
             [System.Flags]
-            enum [|Test|] : byte
+            enum {|MA0062:Test|} : byte
             {
                 A = 1,
                 B = 2,
@@ -146,7 +146,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
         var test = CreateTest();
         test.TestCode = """
             [System.Flags]
-            enum [|Test|]
+            enum {|MA0062:Test|}
             {
                 None     = 0,
                 Option1  = 1,

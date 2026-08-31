@@ -34,7 +34,7 @@ public sealed class UseTimeSpanZeroAnalyzerTests
             {
                 void Test()
                 {
-                    _ = [|{{code}}|];
+                    _ = {|MA0178:{{code}}|};
                 }
             }
             """;
@@ -89,7 +89,7 @@ public sealed class UseTimeSpanZeroAnalyzerTests
             {
                 void Test()
                 {
-                    _ = [|System.TimeSpan.FromSeconds(0)|];
+                    _ = {|MA0178:System.TimeSpan.FromSeconds(0)|};
                 }
             }
             """;
@@ -116,7 +116,7 @@ public sealed class UseTimeSpanZeroAnalyzerTests
                 void Test()
                 {
                     var value = 0;
-                    _ = [|System.TimeSpan.FromSeconds(value)|];
+                    _ = {|MA0178:System.TimeSpan.FromSeconds(value)|};
                 }
             }
             """;

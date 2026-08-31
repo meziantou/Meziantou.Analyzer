@@ -20,10 +20,10 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|if(true)
+            {|MA0140:if(true)
                 _ = "";
             else
-                _ = "";|]
+                _ = "";|}
             """;
 
         return test.RunAsync();
@@ -34,7 +34,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|if(true)
+            {|MA0140:if(true)
             {
                 _ = "";
             }
@@ -42,7 +42,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 // test
                 _ = "";
-            }|]
+            }|}
             """;
 
         return test.RunAsync();
@@ -85,7 +85,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     public Task Ternary_SameCode()
     {
         var test = CreateTest();
-        test.TestCode = """_ = [|true ? 0 : 0|];""";
+        test.TestCode = """_ = {|MA0140:true ? 0 : 0|};""";
 
         return test.RunAsync();
     }
@@ -104,7 +104,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|if(true)
+            {|MA0140:if(true)
             {
                 _ = "";
                 void A() => A();
@@ -113,7 +113,7 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 _ = "";
                 void A() => A();
-            }|]
+            }|}
             """;
 
         return test.RunAsync();
@@ -144,8 +144,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|if(true)
-                return 0;|]
+            {|MA0140:if(true)
+                return 0;|}
             return 0;
             """;
 
@@ -160,8 +160,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             A();
             int A()
             {
-                [|if(true)
-                    return 0;|]
+                {|MA0140:if(true)
+                    return 0;|}
                 return 0;
             }
             """;
@@ -177,8 +177,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             A();
             int A()
             {
-                [|if(true)
-                    return 0;|]
+                {|MA0140:if(true)
+                    return 0;|}
                 return 0;
                 System.Console.WriteLine();
             }
@@ -196,8 +196,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             void A()
             {
                 while (true){
-                    [|if (true)
-                        break;|]
+                    {|MA0140:if (true)
+                        break;|}
                     break;
                 }
             }
@@ -215,8 +215,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             void A()
             {
                 while (true){
-                    [|if (true)
-                        continue;|]
+                    {|MA0140:if (true)
+                        continue;|}
                     continue;
                 }
             }
@@ -235,8 +235,8 @@ public sealed class IfElseBranchesAreIdenticalAnalyzerTests
             {
                 sample:
                 while (true){
-                    [|if (true)
-                        goto sample;|]
+                    {|MA0140:if (true)
+                        goto sample;|}
                     goto sample;
                 }
             }

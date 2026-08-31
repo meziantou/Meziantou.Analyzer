@@ -19,7 +19,7 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|"a".AsSpan() == "ab".AsSpan().Slice(0, 1)|];
+                    _ = {|MA0103:"a".AsSpan() == "ab".AsSpan().Slice(0, 1)|};
                 }
             }
             """;
@@ -47,7 +47,7 @@ public sealed class DoNotUseEqualityOperatorsForSpanOfCharAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|"a".AsSpan() != "ab".AsSpan().Slice(0, 1)|];
+                    _ = {|MA0103:"a".AsSpan() != "ab".AsSpan().Slice(0, 1)|};
                 }
             }
             """;

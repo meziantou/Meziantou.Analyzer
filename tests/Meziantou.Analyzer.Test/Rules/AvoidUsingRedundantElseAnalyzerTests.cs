@@ -43,7 +43,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("if (value < -5) return", false)]
     public Task Test_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
-        var @else = expectElseRemoval ? "[|else|]" : "else";
+        var @else = expectElseRemoval ? "{|MA0071:else|}" : "else";
         var originalCode = $$"""
             class TestClass
             {
@@ -98,7 +98,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("if (value < -5) yield break", false)]
     public Task Test_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
-        var @else = expectElseRemoval ? "[|else|]" : "else";
+        var @else = expectElseRemoval ? "{|MA0071:else|}" : "else";
         var originalCode = $$"""
             class TestClass
             {
@@ -164,7 +164,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                             break;
                             void Increment(ref int val) => val++;
                         }
-                        [|else|]
+                        {|MA0071:else|}
                         {
                             Decrement(ref value);
                             void Decrement(ref int val)
@@ -225,7 +225,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                                 break;
                             }
                         }
-                        [|else|]
+                        {|MA0071:else|}
                             // Decrement
                             value--;
                     }
@@ -280,7 +280,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                             }
                             void Increment(ref int val) => val++;
                         }
-                        [|else|]
+                        {|MA0071:else|}
                         {
                             {
                                 Decrement(ref value);
@@ -346,7 +346,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                         {
                             break;
                         }
-                        [|else|]
+                        {|MA0071:else|}
                         {
                             value--;
                         }
@@ -390,7 +390,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                while (true)
              {if (value < 0)
             {    break;
-            }[|else|]{                         value--;
+            }{|MA0071:else|}{                         value--;
              }
             }
             }
@@ -431,7 +431,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     {
                         return;
                     }
-                    [|else|]
+                    {|MA0071:else|}
                     {
                     }
                 }
@@ -538,17 +538,17 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                         {
                             return;
                         }
-                        [|else|] if (value < -10)
+                        {|MA0071:else|} if (value < -10)
                         {
                             continue;
                         }
-                        [|else|]
+                        {|MA0071:else|}
                         {
                             if (value < 0)
                             {
                                 break;
                             }
-                            [|else|]
+                            {|MA0071:else|}
                             {
                                 value++;
                             }
@@ -665,7 +665,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     {
                         return;
                     }
-                    [|else|]
+                    {|MA0071:else|}
                     {
                         using (var charEnumerator = string.Empty.GetEnumerator())
                         {
@@ -712,7 +712,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     {
                         return;
                     }
-                    [|else|]
+                    {|MA0071:else|}
                     {
                         {
                             using var charEnumerator = string.Empty.GetEnumerator();
@@ -792,7 +792,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     {
                         return 0;
                     }
-                    [|else|] if (value == 1)
+                    {|MA0071:else|} if (value == 1)
                     {
                         value++;
                     }

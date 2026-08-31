@@ -45,7 +45,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
         var test = CreateTest();
         test.TestCode = $$"""
             {{type}} obj = default;
-            [|System.ArgumentNullException.ThrowIfNull(obj)|];
+            {|MA0131:System.ArgumentNullException.ThrowIfNull(obj)|};
             """;
 
         return test.RunAsync();
@@ -57,7 +57,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             int obj = default;
-            [|System.ArgumentNullException.ThrowIfNull(obj)|];
+            {|MA0131:System.ArgumentNullException.ThrowIfNull(obj)|};
             """;
         test.FixedCode = """
             int obj = default;

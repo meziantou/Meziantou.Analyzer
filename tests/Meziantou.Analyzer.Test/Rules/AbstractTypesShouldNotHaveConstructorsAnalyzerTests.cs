@@ -38,7 +38,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
         test.TestCode = """
             abstract class Test
             {
-                public [|Test|]() { }
+                public {|MA0017:Test|}() { }
             }
             """;
         test.FixedCode = """
@@ -58,7 +58,7 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
         test.TestCode = """
             abstract class Test
             {
-                internal [|Test|]() { }
+                internal {|MA0017:Test|}() { }
             }
             """;
         test.FixedCode = """
@@ -78,9 +78,9 @@ public sealed class AbstractTypesShouldNotHaveConstructorsAnalyzerTests
         test.TestCode = """
             abstract class Test
             {
-                internal [|Test|]() { }
+                internal {|MA0017:Test|}() { }
 
-                internal [|Test|](int a) { }
+                internal {|MA0017:Test|}(int a) { }
             }
             """;
         test.FixedCode = """

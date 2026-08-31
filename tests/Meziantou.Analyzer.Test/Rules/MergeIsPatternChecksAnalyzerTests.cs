@@ -22,7 +22,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = 0;
-            _ = [|value is 1 || value is 2|];
+            _ = {|MA0194:value is 1 || value is 2|};
             """;
         test.FixedCode = """
             var value = 0;
@@ -38,7 +38,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = (System.DayOfWeek)0;
-            _ = [|value is System.DayOfWeek.Monday || value is System.DayOfWeek.Tuesday|];
+            _ = {|MA0194:value is System.DayOfWeek.Monday || value is System.DayOfWeek.Tuesday|};
             """;
         // A qualified enum member in a pattern is parsed as a type, whereas the fixer reuses the constant
         // the compiler binds it to, so the shape of the tree cannot be compared with the parsed one
@@ -57,7 +57,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = (System.DayOfWeek)0;
-            _ = [|value is System.DayOfWeek.Monday && value is System.DayOfWeek.Tuesday|];
+            _ = {|MA0194:value is System.DayOfWeek.Monday && value is System.DayOfWeek.Tuesday|};
             """;
 
         return test.RunAsync();
@@ -69,7 +69,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = (System.DayOfWeek)0;
-            _ = [|value is System.DayOfWeek.Monday && value is not System.DayOfWeek.Tuesday|];
+            _ = {|MA0194:value is System.DayOfWeek.Monday && value is not System.DayOfWeek.Tuesday|};
             """;
         // A qualified enum member in a pattern is parsed as a type, whereas the fixer reuses the constant
         // the compiler binds it to, so the shape of the tree cannot be compared with the parsed one
@@ -88,7 +88,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = MyEnum.Value1;
-            _ = [|value is (MyEnum.Value1 or MyEnum.Value2) && value is not MyEnum.Value2|];
+            _ = {|MA0194:value is (MyEnum.Value1 or MyEnum.Value2) && value is not MyEnum.Value2|};
 
             enum MyEnum { Value1, Value2 }
             """;
@@ -108,7 +108,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             byte marker = 0;
-            _ = [|marker is 0x01 || marker is >= 0xD0 and <= 0xD7|];
+            _ = {|MA0194:marker is 0x01 || marker is >= 0xD0 and <= 0xD7|};
             """;
         test.FixedCode = """
             byte marker = 0;
@@ -176,7 +176,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            static bool M(int value) => [|value is 1 || value is 2|];
+            static bool M(int value) => {|MA0194:value is 1 || value is 2|};
             """;
         test.FixedCode = """
             static bool M(int value) => value is 1 or 2;
@@ -191,7 +191,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var value = 0;
-            _ = [|value is 1 || value is 2|];
+            _ = {|MA0194:value is 1 || value is 2|};
             """;
         test.FixedCode = """
             var value = 0;
@@ -211,7 +211,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
             class Sample
             {
                 private int _value;
-                public bool M() => [|_value is 1 || this._value is 2|];
+                public bool M() => {|MA0194:_value is 1 || this._value is 2|};
             }
             """;
         test.FixedCode = """
@@ -237,7 +237,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
             class Sample
             {
                 private int fieldName;
-                public bool M() => [|fieldName is 1 || this.fieldName is 2|];
+                public bool M() => {|MA0194:fieldName is 1 || this.fieldName is 2|};
             }
             """;
         test.FixedCode = """
@@ -285,7 +285,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
             class Sample
             {
                 private int Value { get; set; }
-                public bool M() => [|Value is 1 || this.Value is 2|];
+                public bool M() => {|MA0194:Value is 1 || this.Value is 2|};
             }
             """;
         test.FixedCode = """
@@ -341,7 +341,7 @@ public sealed class MergeIsPatternChecksAnalyzerTests
 
             class Sample(int value)
             {
-                public bool M() => [|value is 1 || value is 2|];
+                public bool M() => {|MA0194:value is 1 || value is 2|};
             }
             """;
         test.FixedCode = """

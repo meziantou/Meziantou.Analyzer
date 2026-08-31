@@ -19,7 +19,7 @@ public sealed class UseArrayEmptyAnalyzerTests
             {
                 void Test()
                 {
-                    var a = [|{{code}}|];
+                    var a = {|MA0005:{{code}}|};
                 }
             }
             """;
@@ -65,7 +65,7 @@ public sealed class UseArrayEmptyAnalyzerTests
                 void Test()
                 {
                     int length = 0;
-                    var a = [|new int[length]|];
+                    var a = {|MA0005:new int[length]|};
                 }
             }
             """;

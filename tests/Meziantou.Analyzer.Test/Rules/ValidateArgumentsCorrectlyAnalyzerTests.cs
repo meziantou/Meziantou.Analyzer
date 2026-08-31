@@ -136,7 +136,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Collections.Generic;
             class TypeName
             {
-                IEnumerable<int> [|A|](string a)
+                IEnumerable<int> {|MA0050:A|}(string a)
                 {
                     if (a == null)
                         throw new System.ArgumentNullException(nameof(a));
@@ -273,7 +273,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Collections.Generic;
             class TypeName
             {
-                IEnumerable<int> [|A|](string a)
+                IEnumerable<int> {|MA0050:A|}(string a)
                 {
                     System.ArgumentException.ThrowIfNullOrEmpty(a);
                     yield return 0;
@@ -305,7 +305,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
 
             class TypeName
             {
-                IEnumerable<int> [|A|](string a)
+                IEnumerable<int> {|MA0050:A|}(string a)
                 {
                     CustomArgumentException.ThrowIf(a is null, nameof(a));
                     yield return 0;
@@ -337,7 +337,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
 
             class TypeName
             {
-                IEnumerable<int> [|A|](string a)
+                IEnumerable<int> {|MA0050:A|}(string a)
                 {
                     CustomArgumentException.Throw(a is null, nameof(a));
                     yield return 0;
@@ -356,7 +356,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Collections.Generic;
             class TypeName
             {
-                async IAsyncEnumerable<int> [|A|](string a)
+                async IAsyncEnumerable<int> {|MA0050:A|}(string a)
                 {
                     if (a == null)
                         throw new System.ArgumentNullException(nameof(a));
@@ -399,7 +399,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Collections.Generic;
             class TypeName
             {
-                async IAsyncEnumerable<int> [|A|](string a)
+                async IAsyncEnumerable<int> {|MA0050:A|}(string a)
                 {
                     System.ArgumentNullException.ThrowIfNull(a);
 
@@ -443,7 +443,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Threading.Tasks;
             class TypeName
             {
-                async IAsyncEnumerable<int> [|A|](string a, [EnumeratorCancellation] CancellationToken ct = default)
+                async IAsyncEnumerable<int> {|MA0050:A|}(string a, [EnumeratorCancellation] CancellationToken ct = default)
                 {
                     System.ArgumentNullException.ThrowIfNull(a);
 
@@ -487,7 +487,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
             using System.Collections.Generic;
             static class TypeName
             {
-                public static IEnumerable<int> [|A|](this string a)
+                public static IEnumerable<int> {|MA0050:A|}(this string a)
                 {
                     if (a is null)
                         throw new ArgumentNullException(nameof(a));

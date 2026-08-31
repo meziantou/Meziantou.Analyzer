@@ -20,7 +20,7 @@ public sealed class TypesShouldNotExtendSystemApplicationExceptionAnalyzerTests
     public Task InheritFromApplicationException_ShouldReportError()
     {
         var test = CreateTest();
-        test.TestCode = "class [|Test|] : System.ApplicationException { }";
+        test.TestCode = "class {|MA0013:Test|} : System.ApplicationException { }";
 
         return test.RunAsync();
     }

@@ -41,7 +41,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
+    [InlineData("""{|MA0089:"a"|}, StringComparison.Ordinal""", """'a'""")]
     public Task StartsWith_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -99,7 +99,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
+    [InlineData("""{|MA0089:"a"|}, StringComparison.Ordinal""", """'a'""")]
     public Task EndsWith_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -128,10 +128,10 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
-    [InlineData(@"[|""a""|], StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
-    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
-    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
+    [InlineData(@"{|MA0089:""a""|}, StringComparison.Ordinal", @"'a', StringComparison.Ordinal")]
+    [InlineData(@"{|MA0089:""a""|}, StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
+    [InlineData(@"{|MA0089:""a""|}, 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
+    [InlineData(@"{|MA0089:""a""|}, 1, StringComparison.Ordinal", @"'a', 1")]
     public Task IndexOf_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -207,9 +207,9 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a'")]
-    [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
-    [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
+    [InlineData(@"{|MA0089:""a""|}, StringComparison.Ordinal", @"'a'")]
+    [InlineData(@"{|MA0089:""a""|}, 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
+    [InlineData(@"{|MA0089:""a""|}, 1, StringComparison.Ordinal", @"'a', 1")]
     public Task LastIndexOf_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -322,7 +322,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
             {
                 void A(string str)
                 {
-                    _ = str.[|Replace|]({{method}});
+                    _ = str.{|MA0089:Replace|}({{method}});
                 }
             }
             """;
@@ -341,12 +341,12 @@ public sealed class OptimizeStartsWithAnalyzerTests
     }
 
     [Theory]
-    [InlineData(@"separator: [|"",""|], new object[0]")]
-    [InlineData(@"[|"",""|], new object[0]")]
-    [InlineData(@"[|"",""|], new string[0]")]
-    [InlineData(@"[|"",""|], new string[0], 0, 1")]
-    [InlineData(@"[|"",""|], Enumerable.Empty<object>()")]
-    [InlineData(@"[|"",""|], Enumerable.Empty<string>()")]
+    [InlineData(@"separator: {|MA0089:"",""|}, new object[0]")]
+    [InlineData(@"{|MA0089:"",""|}, new object[0]")]
+    [InlineData(@"{|MA0089:"",""|}, new string[0]")]
+    [InlineData(@"{|MA0089:"",""|}, new string[0], 0, 1")]
+    [InlineData(@"{|MA0089:"",""|}, Enumerable.Empty<object>()")]
+    [InlineData(@"{|MA0089:"",""|}, Enumerable.Empty<string>()")]
     public Task Join_Report(string method)
     {
         var test = CreateTest();

@@ -121,7 +121,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    var a = string.Compare("", "", [|true|]);
+                    var a = string.Compare("", "", {|MA0003:true|});
                 }
             }
             """;
@@ -151,7 +151,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 public void Test()
                 {
-                    this.InsertStatus([|null|], [|null|], [|null|], utcStatuses: null, [|null|]);
+                    this.InsertStatus({|MA0003:null|}, {|MA0003:null|}, {|MA0003:null|}, utcStatuses: null, {|MA0003:null|});
                 }
             }
             """;
@@ -218,7 +218,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    A([|default|]);
+                    A({|MA0003:default|});
                     void A(object value) { }
                 }
             }
@@ -238,9 +238,9 @@ public sealed class NamedParameterAnalyzerTests
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|""|],
-                                    [|""|],
-                                    [|true|]);
+                                    {|MA0003:""|},
+                                    {|MA0003:""|},
+                                    {|MA0003:true|});
                 }
             }
             """;
@@ -259,9 +259,9 @@ public sealed class NamedParameterAnalyzerTests
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|"""test"""|],
-                                    [|"""test"""|],
-                                    [|true|]);
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:true|});
                 }
             }
             """";
@@ -280,9 +280,9 @@ public sealed class NamedParameterAnalyzerTests
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|$"""test{0}"""|],
-                                    [|"""test"""|],
-                                    [|true|]);
+                                    {|MA0003:$"""test{0}"""|},
+                                    {|MA0003:"""test"""|},
+                                    {|MA0003:true|});
                 }
             }
             """";
@@ -301,13 +301,13 @@ public sealed class NamedParameterAnalyzerTests
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|"""
+                                    {|MA0003:"""
                                         test
-                                        """|],
-                                    [|"""
+                                        """|},
+                                    {|MA0003:"""
                                         test
-                                        """|],
-                                    [|true|]);
+                                        """|},
+                                    {|MA0003:true|});
                 }
             }
             """";
@@ -326,13 +326,13 @@ public sealed class NamedParameterAnalyzerTests
                 public void Test()
                 {
                     var a = string.Compare(
-                                    [|$"""
+                                    {|MA0003:$"""
                                         test{0}
-                                        """|],
-                                    [|"""
+                                        """|},
+                                    {|MA0003:"""
                                     test
-                                    """|],
-                                    [|true|]);
+                                    """|},
+                                    {|MA0003:true|});
                 }
             }
             """";
@@ -350,7 +350,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    A([|1|], [|1L|], [|3|]);
+                    A({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
                     void A(int a, long b, short c) { }
                 }
             }
@@ -412,7 +412,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    MyMethod([|1|], [|1L|], [|3|]);
+                    MyMethod({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
                 }
 
                 void MyMethod(int a, long b, short c) { }
@@ -482,7 +482,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    typeof(TypeName).GetMethod("").Invoke(null, [|null|]);
+                    typeof(TypeName).GetMethod("").Invoke(null, {|MA0003:null|});
                 }
             }
             """;
@@ -553,7 +553,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    new TypeName([|null|]);
+                    new TypeName({|MA0003:null|});
                 }
 
                 TypeName(string a) { }
@@ -583,7 +583,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 public void Test()
                 {
-                    TypeName a = new([|null|]);
+                    TypeName a = new({|MA0003:null|});
                 }
 
                 TypeName(string a) { }
@@ -612,7 +612,7 @@ public sealed class NamedParameterAnalyzerTests
             class TypeName
             {
                 public TypeName()
-                    : this([|null|])
+                    : this({|MA0003:null|})
                 {
                 }
 
@@ -646,7 +646,7 @@ public sealed class NamedParameterAnalyzerTests
             class TypeName: BaseType
             {
                 public TypeName()
-                    : base([|null|])
+                    : base({|MA0003:null|})
                 {
                 }
             }
@@ -741,7 +741,7 @@ public sealed class NamedParameterAnalyzerTests
                 public Test()
                 {
                     IEnumerable<string> query = null;
-                    query.Where(x => M([|false|]));
+                    query.Where(x => M({|MA0003:false|}));
                 }
 
                 static bool M(bool a) => false;
@@ -787,7 +787,7 @@ public sealed class NamedParameterAnalyzerTests
                 public Test()
                 {
                     IQueryable<string> query = null;
-                    query.Where(x => M([|false|]));
+                    query.Where(x => M({|MA0003:false|}));
                 }
 
                 static bool M(bool a) => false;
@@ -1009,7 +1009,7 @@ public sealed class NamedParameterAnalyzerTests
             {
                 void A()
                 {
-                    B([|null|]);
+                    B({|MA0003:null|});
                 }
 
                 void B(params int[] a) {}
@@ -1108,7 +1108,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 void A()
                 {
-                    _ = this[[|0|], [|0|]];
+                    _ = this[{|MA0003:0|}, {|MA0003:0|}];
                 }
             }
             """;
@@ -1127,7 +1127,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 void A()
                 {
-                    _ = (false, new Test([|null|]));
+                    _ = (false, new Test({|MA0003:null|}));
                 }
             }
             """;
@@ -1147,7 +1147,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 void A()
                 {
-                    _ = new Test([|new object()|]);
+                    _ = new Test({|MA0003:new object()|});
                 }
             }
             """;
@@ -1187,7 +1187,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 void A()
                 {
-                    _ = new Test([|new object()|]);
+                    _ = new Test({|MA0003:new object()|});
                 }
             }
             """;
@@ -1273,7 +1273,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 static void B()
                 {
-                    new object().A([|new object()|]);
+                    new object().A({|MA0003:new object()|});
                 }
             }
             """;
@@ -1423,7 +1423,7 @@ public sealed class NamedParameterAnalyzerTests
                 void A()
                 {
                     object _sample = null;
-                    _ = new Test([|_sample|]);
+                    _ = new Test({|MA0003:_sample|});
                 }
             }
             """;
@@ -1466,7 +1466,7 @@ public sealed class NamedParameterAnalyzerTests
                 void A()
                 {
                     object other = null;
-                    _ = new Test([|other|]);
+                    _ = new Test({|MA0003:other|});
                 }
             }
             """;
@@ -1488,7 +1488,7 @@ public sealed class NamedParameterAnalyzerTests
                 void A()
                 {
                     object sample = null;
-                    _ = new Test([|sample|]);
+                    _ = new Test({|MA0003:sample|});
                 }
             }
             """;
@@ -1509,7 +1509,7 @@ public sealed class NamedParameterAnalyzerTests
 
                 void A()
                 {
-                    _ = new Test([|new object()|]);
+                    _ = new Test({|MA0003:new object()|});
                 }
             }
             """;

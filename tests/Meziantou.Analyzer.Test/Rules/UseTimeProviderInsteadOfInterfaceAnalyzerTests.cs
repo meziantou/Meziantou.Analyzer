@@ -15,7 +15,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTime UtcNow { get; }
             }
@@ -29,7 +29,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTimeOffset Now { get; }
             }
@@ -43,7 +43,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTime Now { get; }
                 System.DateTime UtcNow { get; }
@@ -58,7 +58,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTime GetNow();
             }
@@ -72,7 +72,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTimeOffset GetUtcNow();
             }
@@ -86,7 +86,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeService|]
+            interface {|MA0188:ITimeService|}
             {
                 System.DateTime GetNow();
                 System.DateTimeOffset GetUtcNow();
@@ -157,7 +157,7 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            interface [|ITimeProvider|]
+            interface {|MA0188:ITimeProvider|}
             {
                 System.DateTime CurrentTime { get; }
             }

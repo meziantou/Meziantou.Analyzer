@@ -23,7 +23,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
             using System.Threading.Tasks;
 
             Task<Task> a = null;
-            [|await await a|];
+            {|MA0152:await await a|};
             """;
         test.FixedCode = """
             using System.Threading.Tasks;
@@ -57,7 +57,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
             using System.Threading.Tasks;
 
             Task<Task> a = null;
-            [|await (await a).ConfigureAwait(false)|];
+            {|MA0152:await (await a).ConfigureAwait(false)|};
             """;
         test.FixedCode = """
             using System.Threading.Tasks;
@@ -91,7 +91,7 @@ public sealed class UseTaskUnwrapAnalyzerTests
             using System.Threading.Tasks;
 
             Task<Task<int>> a = null;
-            int b = [|await await a|];
+            int b = {|MA0152:await await a|};
             """;
 
         return test.RunAsync();

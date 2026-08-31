@@ -19,7 +19,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
             {
                 Test()
                 {
-                    [|A()|];
+                    {|MA0056:A()|};
                 }
 
                 public virtual void A() { }
@@ -38,7 +38,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
             {
                 Test()
                 {
-                    [|A()|];
+                    {|MA0056:A()|};
                 }
 
                 public abstract void A();
@@ -96,7 +96,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
             {
                 Test()
                 {
-                    [|A|] = 10;
+                    {|MA0056:A|} = 10;
                 }
 
                 public virtual int A { get; set; }
@@ -135,7 +135,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
             {
                 Test()
                 {
-                    _ = [|A|];
+                    _ = {|MA0056:A|};
                 }
 
                 public virtual int A => 10;
@@ -159,7 +159,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
             {
                 Test()
                 {
-                    [|A()|];
+                    {|MA0056:A()|};
                 }
 
                 public override void A() { }
@@ -199,7 +199,7 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
 
                 Test()
                 {
-                    [|SampleEvent += A|];
+                    {|MA0056:SampleEvent += A|};
                 }
 
                 public void A() { }

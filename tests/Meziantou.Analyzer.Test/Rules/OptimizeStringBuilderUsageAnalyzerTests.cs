@@ -45,7 +45,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
                             {
                                 void A()
                                 {
-                                    [|{{expression}}|];
+                                    {|MA0028:{{expression}}|};
                                 }
                             }
                             """}}}
@@ -86,7 +86,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendFormat("NO PLACEHOLDERS", true)|];
+                    {|MA0028:new StringBuilder().AppendFormat("NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -114,7 +114,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendFormat(null, "NO PLACEHOLDERS", true)|];
+                    {|MA0028:new StringBuilder().AppendFormat(null, "NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -174,7 +174,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Append({{text}})|];
+                    {|MA0028:new StringBuilder().Append({{text}})|};
                 }
             }
             """;
@@ -243,7 +243,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine({{text}})|];
+                    {|MA0028:new StringBuilder().AppendLine({{text}})|};
                 }
             }
             """;
@@ -304,7 +304,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine({{text}})|];
+                    {|MA0028:new StringBuilder().AppendLine({{text}})|};
                 }
             }
             """;
@@ -333,7 +333,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Append({{text}})|].AppendLine();
+                    {|MA0028:new StringBuilder().Append({{text}})|}.AppendLine();
                 }
             }
             """;
@@ -362,7 +362,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Insert(0, {{text}})|].AppendLine();
+                    {|MA0028:new StringBuilder().Insert(0, {{text}})|}.AppendLine();
                 }
             }
             """;
@@ -391,7 +391,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    new StringBuilder().Append([|{{text}}|]);
+                    new StringBuilder().Append({|MA0028:{{text}}|});
                 }
             }
             """;
@@ -420,7 +420,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    new StringBuilder().Insert(0, [|{{text}}|]);
+                    new StringBuilder().Insert(0, {|MA0028:{{text}}|});
                 }
             }
             """;
@@ -449,7 +449,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Append($"A{1}BC{2:X2}DEF{1,-2:N2}")|];
+                    {|MA0028:new StringBuilder().Append($"A{1}BC{2:X2}DEF{1,-2:N2}")|};
                 }
             }
             """;
@@ -478,7 +478,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine($"A{1}BC{2:X2}DEF")|];
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}DEF")|};
                 }
             }
             """;
@@ -507,7 +507,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine($"A{1}BC{2:X2}D")|];
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}D")|};
                 }
             }
             """;
@@ -536,7 +536,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine($"A{1}BC{2:X2}")|];
+                    {|MA0028:new StringBuilder().AppendLine($"A{1}BC{2:X2}")|};
                 }
             }
             """;
@@ -565,7 +565,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
                 void A()
                 {
                     var a = "";
-                    [|new StringBuilder().Append("ab" + a)|];
+                    {|MA0028:new StringBuilder().Append("ab" + a)|};
                 }
             }
             """;
@@ -595,7 +595,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
                 void A()
                 {
                     var a = "";
-                    [|new StringBuilder().AppendLine("ab" + a)|];
+                    {|MA0028:new StringBuilder().AppendLine("ab" + a)|};
                 }
             }
             """;
@@ -627,7 +627,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(int count)
                 {
-                    [|new StringBuilder().AppendLine("a" + count)|];
+                    {|MA0028:new StringBuilder().AppendLine("a" + count)|};
                 }
             }
             """;
@@ -637,7 +637,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(int count)
                 {
-                    new StringBuilder().Append([|"a"|]).Append(count).AppendLine();
+                    new StringBuilder().Append({|MA0028:"a"|}).Append(count).AppendLine();
                 }
             }
             """;
@@ -658,7 +658,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(int count)
                 {
-                    [|new StringBuilder().Append("a" + count)|];
+                    {|MA0028:new StringBuilder().Append("a" + count)|};
                 }
             }
             """;
@@ -668,7 +668,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(int count)
                 {
-                    new StringBuilder().Append([|"a"|]).Append(count);
+                    new StringBuilder().Append({|MA0028:"a"|}).Append(count);
                 }
             }
             """;
@@ -686,7 +686,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(int count, string suffix)
                 {
-                    [|new StringBuilder().AppendLine(count + suffix)|];
+                    {|MA0028:new StringBuilder().AppendLine(count + suffix)|};
                 }
             }
             """;
@@ -714,7 +714,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(string prefix)
                 {
-                    [|new StringBuilder().AppendLine(prefix + null)|];
+                    {|MA0028:new StringBuilder().AppendLine(prefix + null)|};
                 }
             }
             """;
@@ -745,7 +745,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(char[] value)
                 {
-                    [|new StringBuilder().AppendLine("a" + value)|];
+                    {|MA0028:new StringBuilder().AppendLine("a" + value)|};
                 }
             }
             """;
@@ -755,7 +755,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(char[] value)
                 {
-                    [|new StringBuilder().AppendLine("a" + value)|];
+                    {|MA0028:new StringBuilder().AppendLine("a" + value)|};
                 }
             }
             """;
@@ -773,7 +773,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Append(1.ToString())|];
+                    {|MA0028:new StringBuilder().Append(1.ToString())|};
                 }
             }
             """;
@@ -801,7 +801,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine(1.ToString())|];
+                    {|MA0028:new StringBuilder().AppendLine(1.ToString())|};
                 }
             }
             """;
@@ -865,7 +865,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(string format)
                 {
-                    [|new StringBuilder().Append(string.Format("{0:N2}-{1:N0}", 1, 2))|];
+                    {|MA0028:new StringBuilder().Append(string.Format("{0:N2}-{1:N0}", 1, 2))|};
                 }
             }
             """;
@@ -893,7 +893,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine(string.Format(null, "{0:N}", 1))|];
+                    {|MA0028:new StringBuilder().AppendLine(string.Format(null, "{0:N}", 1))|};
                 }
             }
             """;
@@ -923,7 +923,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment"))|];
+                    {|MA0028:new StringBuilder().AppendLine(string.Format(CultureInfo.InvariantCulture, "{0} {1} {2} {3}", string.Empty, "MilliSec", "%", "Comment"))|};
                 }
             }
             """;
@@ -973,7 +973,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A(string format)
                 {
-                    [|new StringBuilder().Append(string.Join(", ", new[] { 1, 2, 3 }))|];
+                    {|MA0028:new StringBuilder().Append(string.Join(", ", new[] { 1, 2, 3 }))|};
                 }
             }
             """;
@@ -1002,7 +1002,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine(string.Join(", ", new[] { 1, 2, 3 }))|];
+                    {|MA0028:new StringBuilder().AppendLine(string.Join(", ", new[] { 1, 2, 3 }))|};
                 }
             }
             """;
@@ -1033,7 +1033,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine("".Substring(0, 1))|];
+                    {|MA0028:new StringBuilder().AppendLine("".Substring(0, 1))|};
                 }
             }
             """;
@@ -1043,7 +1043,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().Append("", 0, 1)|].AppendLine();
+                    {|MA0028:new StringBuilder().Append("", 0, 1)|}.AppendLine();
                 }
             }
             """;
@@ -1061,7 +1061,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    [|new StringBuilder().AppendLine("abc".Substring(2))|];
+                    {|MA0028:new StringBuilder().AppendLine("abc".Substring(2))|};
                 }
             }
             """;
@@ -1126,7 +1126,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = $$$""""
-            {{{$$"""[|new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString())|];"""}}}
+            {{{$$"""{|MA0028:new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString())|};"""}}}
             """";
 
         return test.RunAsync();

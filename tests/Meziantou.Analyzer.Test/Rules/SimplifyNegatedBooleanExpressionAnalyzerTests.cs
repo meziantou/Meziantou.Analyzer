@@ -20,7 +20,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 void Test(char key, object target)
                 {
-                    if ([|!(key == 'y' && !IsEditable(target))|])
+                    if ({|MA0213:!(key == 'y' && !IsEditable(target))|})
                     {
                     }
                 }
@@ -54,7 +54,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 void Test(bool a, bool b)
                 {
-                    _ = [|!(!a && !b)|];
+                    _ = {|MA0213:!(!a && !b)|};
                 }
             }
             """;
@@ -80,7 +80,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 void Test(bool a, int b)
                 {
-                    _ = [|!(!a || b == 0)|];
+                    _ = {|MA0213:!(!a || b == 0)|};
                 }
             }
             """;
@@ -123,7 +123,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 bool Test(bool a, bool b)
                 {
-                    return [|!(a || !b)|];
+                    return {|MA0213:!(a || !b)|};
                 }
             }
             """;
@@ -149,7 +149,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 void Test(bool a, bool b, bool c)
                 {
-                    _ = a && [|!(b && !c)|];
+                    _ = a && {|MA0213:!(b && !c)|};
                 }
             }
             """;
@@ -175,7 +175,7 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
             {
                 void Test(bool a, bool b, bool c)
                 {
-                    _ = [|!(!(a || b) || c)|];
+                    _ = {|MA0213:!(!(a || b) || c)|};
                 }
             }
             """;

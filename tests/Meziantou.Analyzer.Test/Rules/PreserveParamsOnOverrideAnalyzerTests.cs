@@ -20,7 +20,7 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
 
             class Test2 : Test
             {
-                protected override void A(string[] [|a|]) => throw null;
+                protected override void A(string[] {|MA0081:a|}) => throw null;
             }
             """;
         test.FixedCode = """
@@ -50,7 +50,7 @@ public sealed class PreserveParamsOnOverrideAnalyzerTests
 
             class Test2 : ITest
             {
-                public void A(string[] [|a|]) => throw null;
+                public void A(string[] {|MA0081:a|}) => throw null;
             }
             """;
         test.FixedCode = """

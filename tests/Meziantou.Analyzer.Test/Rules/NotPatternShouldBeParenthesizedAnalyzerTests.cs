@@ -32,7 +32,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             string a = default;
-            _ = a is [|not null|] or "";
+            _ = a is {|MA0164:not null|} or "";
             """;
         test.FixedCode = """
             string a = default;
@@ -60,7 +60,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             int a = default;
-            _ = a is [|not 1|] or > 2;
+            _ = a is {|MA0164:not 1|} or > 2;
             """;
         test.FixedCode = """
             int a = default;
@@ -112,7 +112,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             int a = 1;
-            _ = a is [|not 1|] or 2 or 3 or 4;
+            _ = a is {|MA0164:not 1|} or 2 or 3 or 4;
             """;
         test.FixedCode = """
             int a = 1;
@@ -128,7 +128,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             int a = 1;
-            _ = a is [|not 1|] or 2 or 3 or 4;
+            _ = a is {|MA0164:not 1|} or 2 or 3 or 4;
             """;
         test.FixedCode = """
             int a = 1;

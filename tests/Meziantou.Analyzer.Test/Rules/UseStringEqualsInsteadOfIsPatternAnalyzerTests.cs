@@ -71,7 +71,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
             {
                 public void Test(string str)
                 {
-                    _ = str is [|"b"|];
+                    _ = str is {|MA0127:"b"|};
                 }
             }
             """;
@@ -88,7 +88,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
             {
                 public void Test(string str)
                 {
-                    _ = str is [|"b"|];
+                    _ = str is {|MA0127:"b"|};
                 }
             }
             """;
@@ -114,7 +114,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
             {
                 public void Test(string str)
                 {
-                    _ = str is [|"b"|];
+                    _ = str is {|MA0127:"b"|};
                 }
             }
             """;
@@ -143,7 +143,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
 
                 public void Test(TypeName obj)
                 {
-                    _ = obj is { Value: [|"b"|]};
+                    _ = obj is { Value: {|MA0127:"b"|}};
                 }
             }
             """;
@@ -162,7 +162,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
 
                 public void Test(TypeName obj)
                 {
-                    _ = obj is { Value: [|"b"|] or [|"c"|]};
+                    _ = obj is { Value: {|MA0127:"b"|} or {|MA0127:"c"|}};
                 }
             }
             """;
@@ -181,7 +181,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
 
                 public void Test(TypeName obj)
                 {
-                    _ = obj is { Value: var a and ([|"b"|] or [|"c"|])};
+                    _ = obj is { Value: var a and ({|MA0127:"b"|} or {|MA0127:"c"|})};
                 }
             }
             """;

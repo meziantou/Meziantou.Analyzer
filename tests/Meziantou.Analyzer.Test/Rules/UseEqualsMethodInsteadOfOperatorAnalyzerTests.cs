@@ -23,7 +23,7 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
         test.TestCode = $$"""
             {{type}} a = null;
             {{type}} b = null;
-            _ = [|a == b|];
+            _ = {|MA0169:a == b|};
             """;
         test.FixedCode = $$"""
             {{type}} a = null;
@@ -41,7 +41,7 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
         test.TestCode = """
             System.Net.IPAddress a = null;
             System.Net.IPAddress b = null;
-            _ = [|a != b|];
+            _ = {|MA0169:a != b|};
             """;
         test.FixedCode = """
             System.Net.IPAddress a = null;

@@ -29,7 +29,7 @@ public sealed class DoNotUseAsyncVoidAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                async void [|A|]() => throw null;
+                async void {|MA0155:A|}() => throw null;
             }
             """;
 
@@ -76,7 +76,7 @@ public sealed class DoNotUseAsyncVoidAnalyzerTests
             {
                 void A()
                 {
-                  [|async void Local() => throw null;|]
+                  {|MA0155:async void Local() => throw null;|}
                 }
             }
             """;

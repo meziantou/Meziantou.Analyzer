@@ -16,7 +16,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] class Sample
+            {|MA0204:partial|} class Sample
             {
             }
             """;
@@ -34,7 +34,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /*sample*/[|partial|] class Sample
+            /*sample*/{|MA0204:partial|} class Sample
             {
             }
             """;
@@ -52,7 +52,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            static /*sample*/[|partial|] class Sample
+            static /*sample*/{|MA0204:partial|} class Sample
             {
             }
             """;
@@ -70,7 +70,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public sealed [|partial|] class Sample
+            public sealed {|MA0204:partial|} class Sample
             {
             }
             """;
@@ -88,7 +88,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] record Sample;
+            {|MA0204:partial|} record Sample;
             """;
         test.FixedCode = """
             record Sample;
@@ -102,7 +102,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] struct Sample
+            {|MA0204:partial|} struct Sample
             {
             }
             """;
@@ -120,7 +120,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] interface ISample
+            {|MA0204:partial|} interface ISample
             {
             }
             """;
@@ -155,7 +155,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] class Sample
+            {|MA0204:partial|} class Sample
             {
                 partial void M();
             }
@@ -169,7 +169,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|partial|] class Sample
+            {|MA0204:partial|} class Sample
             {
                 partial class Nested
                 {

@@ -30,7 +30,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test()
                 {
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:O}.")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Current time is {DateTime.Now:O}.")|};
                 }
             }
             """;
@@ -65,7 +65,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
                 public void Test()
                 {
                     var name = "test";
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"Name: {name}")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Name: {name}")|};
                 }
             }
             """;
@@ -101,7 +101,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
                 public void Test()
                 {
                     var id = Guid.NewGuid();
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"ID: {id}")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"ID: {id}")|};
                 }
             }
             """;
@@ -137,7 +137,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
                 public void Test()
                 {
                     var duration = TimeSpan.FromSeconds(42);
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"Duration: {duration:c}")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Duration: {duration:c}")|};
                 }
             }
             """;
@@ -239,7 +239,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test()
                 {
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"Hello World")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Hello World")|};
                 }
             }
             """;
@@ -342,7 +342,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(object value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
             """;
@@ -399,7 +399,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(IValue value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
 
@@ -459,7 +459,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(Value value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
 
@@ -522,7 +522,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test<T>(T value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
             """;
@@ -556,7 +556,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(Value value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
 
@@ -600,7 +600,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(Value value)
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {value}")|};
                 }
             }
 
@@ -646,7 +646,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test()
                 {
-                    _ = [|string.Create(CultureInfo.InvariantCulture, $"Value: {Value}")|];
+                    _ = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"Value: {Value}")|};
                 }
 
                 [Meziantou.Analyzer.Annotations.CultureInsensitive]
@@ -686,7 +686,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test()
                 {
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"")|};
                 }
             }
             """;
@@ -720,7 +720,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test()
                 {
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"This is a test message without any interpolations")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"This is a test message without any interpolations")|};
                 }
             }
             """;
@@ -756,7 +756,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             {
                 public void Test(StringComparison value)
                 {
-                    var x = [|string.Create(CultureInfo.InvariantCulture, $"abc{{content}}")|];
+                    var x = {|MA0185:string.Create(CultureInfo.InvariantCulture, $"abc{{content}}")|};
                 }
             }
             """;

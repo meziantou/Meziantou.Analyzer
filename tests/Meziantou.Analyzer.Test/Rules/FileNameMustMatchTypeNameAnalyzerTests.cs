@@ -108,7 +108,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.Sources.Add(("/0/Test0OfT.cs", """
-            class [|Test0|]<T1, T2>
+            class {|MA0048:Test0|}<T1, T2>
             {
             }
             """));
@@ -190,7 +190,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.Sources.Add(("/0/Test0{TKey}.cs", """
-            class [|Test0|]<TKey, TValue>
+            class {|MA0048:Test0|}<TKey, TValue>
             {
             }
             """));
@@ -203,7 +203,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.Sources.Add(("/0/Test0{TKey,TNotSame}.cs", """
-            class [|Test0|]<TKey, TValue>
+            class {|MA0048:Test0|}<TKey, TValue>
             {
             }
             """));
@@ -216,7 +216,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.Sources.Add(("/0/Perk.cs", """
-            class [|PerkQuery|] {}
+            class {|MA0048:PerkQuery|} {}
             """));
 
         return test.RunAsync();
@@ -257,8 +257,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         test.TestState.SetConfiguration("MA0048.mode", "LongestCommonPrefix");
         test.TestState.Sources.Add(("/0/Sample.cs", """
             class {|#0:SampleProjectHandler|} {}
-            class [|SampleProjectQuery|] {}
-            class [|SampleProjectResponse|] {}
+            class {|MA0048:SampleProjectQuery|} {}
+            class {|MA0048:SampleProjectResponse|} {}
             """));
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0048", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("File name must match type name (class SampleProjectHandler), expected file name: 'SampleProject'"));
 
@@ -299,7 +299,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            class [|Foo|] {}
+            class {|MA0048:Foo|} {}
             class Bar {}
             """));
 
@@ -325,7 +325,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            class [|Sample|] {}
+            class {|MA0048:Sample|} {}
             class Test0 {}
             """));
 
@@ -338,7 +338,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            enum [|Foo|] {}
+            enum {|MA0048:Foo|} {}
             enum Bar {}
             """));
 
@@ -351,7 +351,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            interface [|Foo|] {}
+            interface {|MA0048:Foo|} {}
             interface Bar {}
             """));
 
@@ -364,7 +364,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            record [|Foo|] {}
+            record {|MA0048:Foo|} {}
             record Bar {}
             """));
 
@@ -378,7 +378,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            record struct [|Foo|] {}
+            record struct {|MA0048:Foo|} {}
             record struct Bar {}
             """));
 
@@ -391,7 +391,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
-            struct [|Foo|] {}
+            struct {|MA0048:Foo|} {}
             struct Bar {}
             """));
 
@@ -406,7 +406,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         test.TestState.Sources.Add(("/0/Test0.cs", """
             namespace Sample
             {
-                struct [|Foo|] {}
+                struct {|MA0048:Foo|} {}
                 struct Bar {}
             }
             """));
@@ -421,7 +421,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
         test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
         test.TestState.Sources.Add(("/0/Test0.cs", """
             namespace Sample;
-            struct [|Foo|] {}
+            struct {|MA0048:Foo|} {}
             struct Bar {}
             """));
 

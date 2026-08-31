@@ -97,7 +97,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.SortedList<string, int>()|];
+                    {|MA0002:new System.Collections.Generic.SortedList<string, int>()|};
                 }
             }
             """;
@@ -123,7 +123,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.HashSet<string>()|];
+                    {|MA0002:new System.Collections.Generic.HashSet<string>()|};
                 }
             }
             """;
@@ -149,7 +149,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.SortedDictionary<string, int>()|];
+                    {|MA0002:new System.Collections.Generic.SortedDictionary<string, int>()|};
                 }
             }
             """;
@@ -175,7 +175,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.HashSet<string> a = [|new()|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:new()|};
                 }
             }
             """;
@@ -218,7 +218,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.Dictionary<string, int>()|];
+                    {|MA0002:new System.Collections.Generic.Dictionary<string, int>()|};
                 }
             }
             """;
@@ -244,10 +244,10 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.Dictionary<string, object?>
+                    {|MA0002:new System.Collections.Generic.Dictionary<string, object?>
                     {
                         ["c"] = true,
-                    }|];
+                    }|};
                 }
             }
             """;
@@ -316,7 +316,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                    System.Collections.Generic.Dictionary<string, int> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -335,7 +335,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.HashSet<string> a = [|[]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -373,7 +373,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:["a", "b"]|};
                 }
             }
             """;
@@ -429,7 +429,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -466,7 +466,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                    System.Collections.Immutable.ImmutableHashSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -487,7 +487,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                    System.Collections.Generic.Dictionary<string, int> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -513,7 +513,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.HashSet<string> a = [|[]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -573,7 +573,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.Dictionary<string, int> a = [|[with(10)]|];
+                    System.Collections.Generic.Dictionary<string, int> a = {|MA0002:[with(10)]|};
                 }
             }
             """;
@@ -590,7 +590,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:["a", "b"]|};
                 }
             }
             """;
@@ -617,7 +617,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     var other = new string[] { "a", "b" };
-                    System.Collections.Generic.HashSet<string> a = [|[.. other]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:[.. other]|};
                 }
             }
             """;
@@ -662,7 +662,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     var other = new string[] { "a", "b" };
-                    System.Collections.Generic.HashSet<string> a = [|[.. other, "c"]|];
+                    System.Collections.Generic.HashSet<string> a = {|MA0002:[.. other, "c"]|};
                 }
             }
             """;
@@ -689,7 +689,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -732,7 +732,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                    System.Collections.Immutable.ImmutableHashSet<string> a = {|MA0002:[]|};
                 }
             }
             """;
@@ -777,7 +777,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Concurrent.ConcurrentDictionary<string, int>()|];
+                    {|MA0002:new System.Collections.Concurrent.ConcurrentDictionary<string, int>()|};
                 }
             }
             """;
@@ -804,7 +804,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Immutable.ImmutableDictionary.[|CreateBuilder<string, string>()|];
+                    System.Collections.Immutable.ImmutableDictionary.{|MA0002:CreateBuilder<string, string>()|};
                 }
             }
             """;
@@ -840,7 +840,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Immutable.ImmutableDictionary.[|Create<string, string>()|];
+                    System.Collections.Immutable.ImmutableDictionary.{|MA0002:Create<string, string>()|};
                 }
             }
             """;
@@ -866,7 +866,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    Meziantou.Framework.Assertions.Assert.[|AreEqual("a", "b")|];
+                    Meziantou.Framework.Assertions.Assert.{|MA0002:AreEqual("a", "b")|};
                 }
             }
             """;
@@ -1064,7 +1064,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Immutable.ImmutableSortedDictionary.[|Create<string, string>()|];
+                    System.Collections.Immutable.ImmutableSortedDictionary.{|MA0002:Create<string, string>()|};
                 }
             }
             """;
@@ -1082,7 +1082,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    [|new System.Collections.Generic.SortedDictionary<string, int>()|];
+                    {|MA0002:new System.Collections.Generic.SortedDictionary<string, int>()|};
                 }
             }
             """;
@@ -1102,7 +1102,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|OrderBy(p => p)|];
+                    obj.{|MA0002:OrderBy(p => p)|};
                 }
             }
             """;
@@ -1123,7 +1123,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|Order()|];
+                    obj.{|MA0002:Order()|};
                 }
             }
             """;
@@ -1142,7 +1142,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|Contains("")|];
+                    obj.{|MA0002:Contains("")|};
                 }
             }
             """;
@@ -1172,7 +1172,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|Distinct()|];
+                    obj.{|MA0002:Distinct()|};
                 }
             }
             """;
@@ -1259,7 +1259,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|ToDictionary(p => p)|];
+                    obj.{|MA0002:ToDictionary(p => p)|};
                 }
             }
             """;
@@ -1290,7 +1290,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|Order()|];
+                    obj.{|MA0002:Order()|};
                 }
             }
             """;
@@ -1320,7 +1320,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|OrderBy(p => p)|];
+                    obj.{|MA0002:OrderBy(p => p)|};
                 }
             }
             """;
@@ -1350,7 +1350,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.[|OrderByDescending(p => p)|];
+                    obj.{|MA0002:OrderByDescending(p => p)|};
                 }
             }
             """;
@@ -1380,7 +1380,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenBy(p => p)|];
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).{|MA0002:ThenBy(p => p)|};
                 }
             }
             """;
@@ -1410,7 +1410,7 @@ public sealed class UseStringComparerAnalyzerTests
                 public void Test()
                 {
                     System.Collections.Generic.IEnumerable<string> obj = null;
-                    obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenByDescending(p => p)|];
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).{|MA0002:ThenByDescending(p => p)|};
                 }
             }
             """;
@@ -1453,7 +1453,7 @@ public sealed class UseStringComparerAnalyzerTests
                 void A()
                 {
                     var a = new TypeName();
-                    a.[|Test()|];
+                    a.{|MA0002:Test()|};
                 }
             }
             """;
@@ -1576,7 +1576,7 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     var collection = new string[0];
                     _ = from item in collection
-                        [|group item by item|] into g
+                        {|MA0002:group item by item|} into g
                         select g;
                 }
             }
@@ -1620,7 +1620,7 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     var collection = new string[0];
                     _ = from item in collection
-                        orderby [|item|]
+                        orderby {|MA0002:item|}
                         select item;
                 }
             }
@@ -1665,7 +1665,7 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     var collection = new string[0];
                     _ = from item in collection
-                        orderby [|item descending|]
+                        orderby {|MA0002:item descending|}
                         select item;
                 }
             }
@@ -1710,7 +1710,7 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     var collection = new string[0];
                     _ = from item1 in collection
-                        [|join item2 in collection on item1 equals item2|]
+                        {|MA0002:join item2 in collection on item1 equals item2|}
                         select (item1, item2);
                 }
             }
@@ -1755,7 +1755,7 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     var collection = new string[0];
                     _ = from item1 in collection
-                        [|join item2 in collection on item1 equals item2 into joinGroup|]
+                        {|MA0002:join item2 in collection on item1 equals item2 into joinGroup|}
                         select (item1, joinGroup);
                 }
             }
@@ -1823,7 +1823,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 void Test()
                 {
-                    AreEqual[|("a", "b", "message")|];
+                    AreEqual{|MA0002:("a", "b", "message")|};
                 }
 
                 static void AreEqual(string expected, string actual, string message) { }
@@ -1859,7 +1859,7 @@ public sealed class UseStringComparerAnalyzerTests
                 void Test(CancellationToken ct)
                 {
                     var list = new string[0];
-                    list.[|ToDictionaryCustom(s => s, ct)|];
+                    list.{|MA0002:ToDictionaryCustom(s => s, ct)|};
                 }
             }
             static class Extensions
@@ -1899,7 +1899,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 void Test(string[] fields)
                 {
-                    Assert.[|AreEqual("id", fields[0], "First field should be the ID")|];
+                    Assert.{|MA0002:AreEqual("id", fields[0], "First field should be the ID")|};
                 }
             }
             """;
@@ -1927,7 +1927,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 void Test(string[] fields)
                 {
-                    Assert.[|AreEqual("id", fields[0], $"First field should be the ID but was {fields[0]}")|];
+                    Assert.{|MA0002:AreEqual("id", fields[0], $"First field should be the ID but was {fields[0]}")|};
                 }
             }
             """;
@@ -1955,7 +1955,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 void Test(string[] fields)
                 {
-                    Assert.[|AreEqual(actual: fields[0], expected: "id")|];
+                    Assert.{|MA0002:AreEqual(actual: fields[0], expected: "id")|};
                 }
             }
             """;

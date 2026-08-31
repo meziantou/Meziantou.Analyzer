@@ -17,7 +17,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
-            public record Foo(string Value1, string Value2) [|{|]}
+            public record Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
 
         return test.RunAsync();
@@ -29,7 +29,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
-            public record Foo(string Value1, string Value2) [|{|]}
+            public record Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
         test.FixedCode = """
             public record Foo(string Value1, string Value2);
@@ -86,7 +86,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
-            public record Foo [|{|]}
+            public record Foo {|MA0206:{|}}
             """;
         test.FixedCode = """
             public record Foo;
@@ -101,7 +101,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
-            public class Foo(string Value1, string Value2) [|{|]}
+            public class Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
 
         return test.RunAsync();
@@ -113,7 +113,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
-            public class Foo(string Value1, string Value2) [|{|]}
+            public class Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
         test.FixedCode = """
             public class Foo(string Value1, string Value2);
@@ -128,7 +128,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp12;
         test.TestCode = """
-            public struct Foo(string Value1, string Value2) [|{|]}
+            public struct Foo(string Value1, string Value2) {|MA0206:{|}}
             """;
         test.FixedCode = """
             public struct Foo(string Value1, string Value2);
@@ -146,7 +146,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
             /// <summary>
             /// I show up when you hover my constructor invocation too!
             /// </summary>
-            public sealed class Documented() [|{|]}
+            public sealed class Documented() {|MA0206:{|}}
             """;
         test.FixedCode = """
             /// <summary>
@@ -167,7 +167,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzerTests
             /// <summary>
             /// I don't. :(
             /// </summary>
-            public sealed class HalfDocumented [|{|]}
+            public sealed class HalfDocumented {|MA0206:{|}}
             """;
         test.FixedCode = """
             /// <summary>

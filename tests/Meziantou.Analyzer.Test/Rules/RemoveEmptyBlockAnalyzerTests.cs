@@ -23,9 +23,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     if (condition)
                     {
                     }
-                    [|else
+                    {|MA0090:else
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
@@ -45,9 +45,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     if (condition)
                     {
                     }
-                    [|else
+                    {|MA0090:else
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
@@ -173,9 +173,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     try
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
@@ -195,9 +195,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     try
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
@@ -230,9 +230,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                     catch
                     {
                     }
-                    [|finally
+                    {|MA0090:finally
                     {
-                    }|]
+                    }|}
                 }
             }
             """;
@@ -345,9 +345,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                         {
                             Foo();
                         }
-                        [|finally
+                        {|MA0090:finally
                         {
-                        }|]
+                        }|}
                     }
                 }
             }
@@ -395,9 +395,9 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                         {
                             Foo();
                         }
-                        [|else
+                        {|MA0090:else
                         {
-                        }|]
+                        }|}
                     }
                 }
             }

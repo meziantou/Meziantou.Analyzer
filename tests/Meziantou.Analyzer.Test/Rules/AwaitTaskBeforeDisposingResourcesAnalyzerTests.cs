@@ -23,7 +23,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                 {
                     using ((IDisposable)null)
                     {
-                        [|return Task.Delay(1);|]
+                        {|MA0100:return Task.Delay(1);|}
                     }
                 }
             }
@@ -45,7 +45,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                 {
                     using ((IDisposable)null)
                     {
-                        [|return TestAsync().AsTask();|]
+                        {|MA0100:return TestAsync().AsTask();|}
                     }
                 }
 
@@ -70,7 +70,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                     using ((IDisposable)null)
                     {
                         // Custom awaitable type (not Task/ValueTask)
-                        [|return Task.Yield();|]
+                        {|MA0100:return Task.Yield();|}
                     }
                 }
             }
@@ -93,7 +93,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                     using ((IDisposable)null)
                     {
                         // It should detect the extension method
-                        [|return 1;|]
+                        {|MA0100:return 1;|}
                     }
                 }
 
@@ -118,7 +118,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                     using ((IDisposable)null)
                     {
                         // It should detect the extension method
-                        [|return (default(Task<int>), default(Task<string>));|]
+                        {|MA0100:return (default(Task<int>), default(Task<string>));|}
                     }
                 }
 
@@ -142,7 +142,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                 {
                     using ((IDisposable)null)
                     {
-                        [|return new ValueTask(Task.Delay(1));|]
+                        {|MA0100:return new ValueTask(Task.Delay(1));|}
                     }
                 }
             }
@@ -269,7 +269,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                 {
                     using ((IDisposable)null)
                     {
-                        [|return new ValueTask<int>(Task.FromResult(1));|]
+                        {|MA0100:return new ValueTask<int>(Task.FromResult(1));|}
                     }
                 }
             }
@@ -473,7 +473,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
                 System.Threading.Tasks.Task Test()
                 {
                     using var disposable = (System.IDisposable)null;
-                    [|return System.Threading.Tasks.Task.Delay(1);|]
+                    {|MA0100:return System.Threading.Tasks.Task.Delay(1);|}
                 }
             }
             """;
@@ -518,7 +518,7 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
 
                     a:
                     using var disposable = (System.IDisposable) null;
-                    [|return System.Threading.Tasks.Task.Delay(1);|]
+                    {|MA0100:return System.Threading.Tasks.Task.Delay(1);|}
                 }
 
             }

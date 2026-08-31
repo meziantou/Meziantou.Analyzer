@@ -21,7 +21,7 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
             {
                 void Test(bool x, bool y)
                 {
-                    _ = [|{{expression}}|];
+                    _ = {|MA0205:{{expression}}|};
                 }
             }
             """;
@@ -49,7 +49,7 @@ public sealed class UseExclusiveOrOperatorAnalyzerTests
                 {
                     var x = true;
                     var y = false;
-                    _ = [|(x && !y) || (!x && y)|];
+                    _ = {|MA0205:(x && !y) || (!x && y)|};
                 }
             }
             """;

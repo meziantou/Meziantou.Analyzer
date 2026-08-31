@@ -17,7 +17,7 @@ public sealed class UseEventArgsEmptyAnalyzerTests
             {
                 public void Test()
                 {
-                    _ = [|new System.EventArgs()|];
+                    _ = {|MA0019:new System.EventArgs()|};
                 }
             }
             """;

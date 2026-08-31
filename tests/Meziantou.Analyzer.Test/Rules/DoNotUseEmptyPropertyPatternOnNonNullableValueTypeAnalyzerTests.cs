@@ -18,7 +18,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
                 private static bool A()
                 {
                     int value = 0;
-                    return value is [|{ }|];
+                    return value is {|MA0200:{ }|};
                 }
             }
             """;
@@ -33,7 +33,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
         test.TestCode = """
             class Sample
             {
-                private static bool A<T>(T value) where T : struct => value is [|{ }|];
+                private static bool A<T>(T value) where T : struct => value is {|MA0200:{ }|};
             }
             """;
 
@@ -50,7 +50,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
                 private static bool A()
                 {
                     int value = 0;
-                    return value is [|{ } newName|];
+                    return value is {|MA0200:{ } newName|};
                 }
             }
             """;
@@ -82,7 +82,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
 
                 private static bool A(Nested value)
                 {
-                    return value is { Value: [|{ }|] };
+                    return value is { Value: {|MA0200:{ }|} };
                 }
             }
             """;
@@ -104,7 +104,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
 
                 private static bool A(Nested value)
                 {
-                    return value is { Value: [|{ } newName|] };
+                    return value is { Value: {|MA0200:{ } newName|} };
                 }
             }
             """;
@@ -141,7 +141,7 @@ public sealed class DoNotUseEmptyPropertyPatternOnNonNullableValueTypeAnalyzerTe
 
                 private static bool A(Nested value)
                 {
-                    return value is { Value1: [|{ } name1|], Value2: [|{ } name2|] };
+                    return value is { Value1: {|MA0200:{ } name1|}, Value2: {|MA0200:{ } name2|} };
                 }
             }
             """;

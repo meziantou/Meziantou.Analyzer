@@ -20,7 +20,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             object a = default;
-            [|System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|];
+            {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|};
             """;
         test.FixedCode = """
             object a = default;
@@ -36,7 +36,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             Sample a = default;
-            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
+            {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|};
             class Sample { };
             """;
         test.FixedCode = """
@@ -54,7 +54,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             object? a = default;
-            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|];
+            {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new Sample(), null)|};
             class Sample { };
             """;
         test.FixedCode = """
@@ -72,7 +72,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             Sample a = default;
-            [|System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|];
+            {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new Sample(), default)|};
             class Sample { };
             """;
         test.FixedCode = """
@@ -98,7 +98,7 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
                 public string M()
                 {
                     System.Func<string> getDisplayName = () => string.Empty;
-                    [|System.Threading.Interlocked.CompareExchange(ref s_getDisplayName, getDisplayName, comparand: null)|];
+                    {|MA0173:System.Threading.Interlocked.CompareExchange(ref s_getDisplayName, getDisplayName, comparand: null)|};
                     return getDisplayName();
                 }
             }

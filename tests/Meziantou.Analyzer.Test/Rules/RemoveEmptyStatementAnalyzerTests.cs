@@ -20,7 +20,7 @@ public sealed class RemoveEmptyStatementAnalyzerTests
             {
                 public void A()
                 {
-                    [|;|]
+                    {|MA0037:;|}
                 }
             }
             """;
@@ -47,7 +47,7 @@ public sealed class RemoveEmptyStatementAnalyzerTests
                 {
                     while(true)
                     {
-                        [|;|]
+                        {|MA0037:;|}
                     }
                 }
             }
@@ -77,7 +77,7 @@ public sealed class RemoveEmptyStatementAnalyzerTests
                 public void A()
                 {
                     while(true)
-                        [|;|]
+                        {|MA0037:;|}
                 }
             }
             """;
@@ -106,7 +106,7 @@ public sealed class RemoveEmptyStatementAnalyzerTests
                 public void A()
                 {
                     for(;;)
-                        [|;|]
+                        {|MA0037:;|}
                 }
             }
             """;
@@ -135,7 +135,7 @@ public sealed class RemoveEmptyStatementAnalyzerTests
                 public void A()
                 {
                     foreach(var a in new []{0})
-                        [|;|]
+                        {|MA0037:;|}
                 }
             }
             """;

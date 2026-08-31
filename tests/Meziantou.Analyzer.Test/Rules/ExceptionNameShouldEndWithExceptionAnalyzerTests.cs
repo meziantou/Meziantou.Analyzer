@@ -26,7 +26,7 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomEx|] : System.Exception
+            class {|MA0058:CustomEx|} : System.Exception
             {
             }
             """;
@@ -39,7 +39,7 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomEx|] : System.Exception
+            class {|MA0058:CustomEx|} : System.Exception
             {
             }
             """;

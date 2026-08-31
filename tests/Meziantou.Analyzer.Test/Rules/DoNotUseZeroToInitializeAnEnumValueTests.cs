@@ -85,7 +85,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             {
                 void A()
                 {
-                    MyEnum a = [|{{value}}|];
+                    MyEnum a = {|MA0099:{{value}}|};
                 }
             }
             """;
@@ -143,7 +143,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             {
                 void A()
                 {
-                    MyEnum a = [|0|];
+                    MyEnum a = {|MA0099:0|};
                 }
             }
             """;
@@ -173,7 +173,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             {
                 void A()
                 {
-                    MyEnum a = [|0|];
+                    MyEnum a = {|MA0099:0|};
                 }
             }
             """;
@@ -204,7 +204,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
                 void A()
                 {
                     MyEnum a = default;
-                    a = [|0|];
+                    a = {|MA0099:0|};
                 }
             }
             """;
@@ -346,7 +346,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             {
                 void A(MyEnum a)
                 {
-                    A([|{{code}}|]);
+                    A({|MA0099:{{code}}|});
                 }
             }
             """;
@@ -396,7 +396,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             enum MyEnum { A = 0, B = 1 }
             class Test
             {
-                void A(MyEnum a = [|{{defaultValue}}|])
+                void A(MyEnum a = {|MA0099:{{defaultValue}}|})
                 {
                 }
             }
@@ -413,7 +413,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             enum MyEnum { A = 0, B = 1 }
             class Test
             {
-                void A(MyEnum a = [|0|])
+                void A(MyEnum a = {|MA0099:0|})
                 {
                     A(); // ok
                 }
@@ -464,7 +464,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             [MyAttribute]
             [MyAttribute(MyEnum.None)]
             [MyAttribute(MyEnum.Some)]
-            [MyAttribute([|0|])]
+            [MyAttribute({|MA0099:0|})]
             public class MyClass
             {
                 public MyClass(MyEnum foo = MyEnum.None) { }
@@ -508,7 +508,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
             {
                 void M()
                 {
-                    MyEnum a = [|0|];
+                    MyEnum a = {|MA0099:0|};
                 }
             }
             """;
@@ -531,7 +531,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
 
                 void A()
                 {
-                    M([|0|]);
+                    M({|MA0099:0|});
                 }
             }
             """;

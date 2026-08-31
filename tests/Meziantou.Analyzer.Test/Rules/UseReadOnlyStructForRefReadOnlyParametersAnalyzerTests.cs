@@ -34,7 +34,7 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
         test.TestCode = """
             A(default);
 
-            void A(in Foo [|foo|]) { }
+            void A(in Foo {|MA0168:foo|}) { }
             struct Foo { }
             """;
 
@@ -48,7 +48,7 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
         test.TestCode = """
             A(default);
 
-            void A(ref readonly Foo [|foo|]) { }
+            void A(ref readonly Foo {|MA0168:foo|}) { }
             struct Foo { }
             """;
 
@@ -74,7 +74,7 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            A([|new Foo()|]);
+            A({|MA0168:new Foo()|});
 
             void A<T>(in T foo) where T: struct { }
             struct Foo { }

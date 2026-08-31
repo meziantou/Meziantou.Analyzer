@@ -52,7 +52,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
         test.TestCode = """
             public class Test<T>
             {
-                public static string [|field|];
+                public static string {|MA0018:field|};
             }
             """;
 
@@ -66,7 +66,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
         test.TestCode = """
             public class Test<T>
             {
-                public static string [|Prop|] => throw null;
+                public static string {|MA0018:Prop|} => throw null;
             }
             """;
 
@@ -80,7 +80,7 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
         test.TestCode = """
             public class Test<T>
             {
-                public static string [|Method|]() => throw null;
+                public static string {|MA0018:Method|}() => throw null;
             }
             """;
 

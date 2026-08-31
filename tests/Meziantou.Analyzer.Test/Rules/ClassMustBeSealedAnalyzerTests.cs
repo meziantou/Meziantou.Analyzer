@@ -42,7 +42,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
             {
             }
 
-            class [|Test2|] : Test
+            class {|MA0053:Test2|} : Test
             {
             }
             """;
@@ -68,7 +68,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
             {
             }
 
-            class [|Test|] : ITest
+            class {|MA0053:Test|} : ITest
             {
             }
             """;
@@ -106,7 +106,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0053.public_class_should_be_sealed", "true");
         test.TestCode = """
-            public class [|Test|]
+            public class {|MA0053:Test|}
             {
                 const int a = 10;
                 static void A() { }
@@ -159,7 +159,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0053.exceptions_should_be_sealed", "true");
         test.TestCode = """
-            internal class [|SampleException|] : System.Exception
+            internal class {|MA0053:SampleException|} : System.Exception
             {
             }
             """;
@@ -187,7 +187,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true");
         test.TestCode = """
-            internal class [|SampleException|]
+            internal class {|MA0053:SampleException|}
             {
                 protected virtual void A() => throw null;
             }
@@ -249,7 +249,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0053.class_with_virtual_member_shoud_be_sealed", "true");
         test.TestCode = """
-            internal record [|Sample|]();
+            internal record {|MA0053:Sample|}();
             """;
         test.FixedCode = """
             internal sealed record Sample();
@@ -265,7 +265,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         test.TestCode = """
             record Base();
 
-            record [|Derived|]() : Base();
+            record {|MA0053:Derived|}() : Base();
             """;
         test.FixedCode = """
             record Base();
@@ -285,7 +285,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
             {
             }
 
-            record [|Test|]() : ITest;
+            record {|MA0053:Test|}() : ITest;
             """;
         test.FixedCode = """
             interface ITest
@@ -315,7 +315,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0053.public_class_should_be_sealed", "true");
         test.TestCode = """
-            public record [|Sample|]();
+            public record {|MA0053:Sample|}();
             """;
         test.FixedCode = """
             public sealed record Sample();
@@ -332,7 +332,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = $$"""
-            public class [|Sample|]
+            public class {|MA0053:Sample|}
             {
                 {{visibility}} Sample() { }
             }
@@ -349,7 +349,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = $$"""
-            public class [|Sample|]
+            public class {|MA0053:Sample|}
             {
                 private Sample(int a) { }
                 {{visibility}} Sample() { }

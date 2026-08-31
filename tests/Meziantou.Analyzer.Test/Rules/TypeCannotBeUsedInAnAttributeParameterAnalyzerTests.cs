@@ -65,7 +65,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
         test.TestCode = $$"""
             public class SampleAttribute : System.Attribute
             {
-                public SampleAttribute({{type}} [|a|]) { }
+                public SampleAttribute({{type}} {|MA0170:a|}) { }
             }
             """;
 
@@ -107,7 +107,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
         test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|] { get; set; }
+                public System.Action {|MA0170:A|} { get; set; }
             }
             """;
 
@@ -163,7 +163,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
         test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|] { get; init; }
+                public System.Action {|MA0170:A|} { get; init; }
             }
             """;
 
@@ -205,7 +205,7 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
         test.TestCode = """
             public class SampleAttribute : System.Attribute
             {
-                public System.Action [|A|];
+                public System.Action {|MA0170:A|};
             }
             """;
 

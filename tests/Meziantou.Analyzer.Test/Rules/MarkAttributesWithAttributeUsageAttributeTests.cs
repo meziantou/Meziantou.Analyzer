@@ -12,7 +12,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeTests
     public Task ClassInheritsFromAttribute_MissingAttribute_ShouldReportError()
     {
         var test = CreateTest();
-        test.TestCode = "class [|TestAttribute|] : System.Attribute { }";
+        test.TestCode = "class {|MA0010:TestAttribute|} : System.Attribute { }";
         test.FixedCode = """
             [System.AttributeUsage(System.AttributeTargets.All)]
             class TestAttribute : System.Attribute { }

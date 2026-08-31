@@ -62,7 +62,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                     }
                     catch (System.Exception ex)
                     {
-                        throw [|new System.Exception("")|];
+                        throw {|MA0054:new System.Exception("")|};
                     }
                 }
             }
@@ -115,7 +115,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
                     }
                     catch (System.Exception ex)
                     {
-                        throw [|new System.Exception("")|];
+                        throw {|MA0054:new System.Exception("")|};
                     }
                 }
             }

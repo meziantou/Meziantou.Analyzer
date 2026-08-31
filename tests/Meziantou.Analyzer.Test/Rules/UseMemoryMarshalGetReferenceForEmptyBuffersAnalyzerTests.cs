@@ -22,7 +22,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 static void M(ref byte b) { }
                 void Test(Span<byte> span)
                 {
-                    M(ref [|span[0]|]);
+                    M(ref {|MA0212:span[0]|});
                 }
             }
             """;
@@ -52,7 +52,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 static void M(in byte b) { }
                 void Test(Span<byte> span)
                 {
-                    M(in [|span[0]|]);
+                    M(in {|MA0212:span[0]|});
                 }
             }
             """;
@@ -82,7 +82,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 static void M(in byte b) { }
                 void Test(ReadOnlySpan<byte> span)
                 {
-                    M(in [|span[0]|]);
+                    M(in {|MA0212:span[0]|});
                 }
             }
             """;
@@ -111,7 +111,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 static void M(ref byte b) { }
                 void Test(byte[] array)
                 {
-                    M(ref [|array[0]|]);
+                    M(ref {|MA0212:array[0]|});
                 }
             }
             """;
@@ -139,7 +139,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
             {
                 ref byte Test(Span<byte> span)
                 {
-                    return ref [|span[0]|];
+                    return ref {|MA0212:span[0]|};
                 }
             }
             """;
@@ -167,7 +167,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
             {
                 void Test(Span<byte> span)
                 {
-                    ref byte r = ref [|span[0]|];
+                    ref byte r = ref {|MA0212:span[0]|};
                 }
             }
             """;
@@ -197,7 +197,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 void Test(Span<byte> span)
                 {
                     const int zero = 0;
-                    M(ref [|span[zero]|]);
+                    M(ref {|MA0212:span[zero]|});
                 }
             }
             """;
@@ -325,7 +325,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
                 static void M(ref byte b) { }
                 void Test(byte[] array)
                 {
-                    M(ref [|array[0]|]);
+                    M(ref {|MA0212:array[0]|});
                 }
             }
             """;

@@ -19,7 +19,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzerTests
                 internal void Sample()
                 {
                     _ = EqualityComparer<int>.Default.Equals(0, 0);
-                    _ = [|EqualityComparer<string>.Default|].Equals(null, null);
+                    _ = {|MA0024:EqualityComparer<string>.Default|}.Equals(null, null);
                 }
             }
             """;

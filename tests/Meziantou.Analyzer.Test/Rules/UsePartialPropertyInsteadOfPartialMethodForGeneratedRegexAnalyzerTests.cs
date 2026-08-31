@@ -57,7 +57,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
 
@@ -74,7 +74,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex("pattern", RegexOptions.CultureInvariant)]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
 
@@ -91,7 +91,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
         test.FixedCode = """
@@ -118,7 +118,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex(@"sample.*", RegexOptions.CultureInvariant, matchTimeoutMilliseconds: Timeout.Infinite)]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
             }
             """;
         test.FixedCode = """
@@ -145,7 +145,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
 
                 void M()
                 {
@@ -181,7 +181,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
             partial class Sample
             {
                 [GeneratedRegex("pattern")]
-                private static partial Regex [|SampleRegex|]();
+                private static partial Regex {|MA0190:SampleRegex|}();
 
                 void M()
                 {

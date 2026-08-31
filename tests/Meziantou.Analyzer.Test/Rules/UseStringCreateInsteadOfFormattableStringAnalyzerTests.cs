@@ -84,7 +84,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
             {
                 public void Test()
                 {
-                    [|FormattableString.Invariant($"")|];
+                    {|MA0111:FormattableString.Invariant($"")|};
                 }
             }
             """;
@@ -117,7 +117,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
             {
                 public void Test()
                 {
-                    [|FormattableString.CurrentCulture($"")|];
+                    {|MA0111:FormattableString.CurrentCulture($"")|};
                 }
             }
             """;

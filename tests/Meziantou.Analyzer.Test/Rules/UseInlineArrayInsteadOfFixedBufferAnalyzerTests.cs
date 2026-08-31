@@ -18,7 +18,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte [|IpAddress|][16];
+                public fixed byte {|MA0189:IpAddress|}[16];
             }
             """;
         test.FixedCode = """
@@ -38,7 +38,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte [|IpAddress|][2];
+                public fixed byte {|MA0189:IpAddress|}[2];
             }
             """;
         test.FixedCode = """
@@ -58,7 +58,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte [|IpAddress|][16];
+                public fixed byte {|MA0189:IpAddress|}[16];
             }
             """;
 
@@ -72,7 +72,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.TestCode = """
             unsafe struct Buffer
             {
-                private fixed int [|Values|][8];
+                private fixed int {|MA0189:Values|}[8];
             }
             """;
 
@@ -86,13 +86,13 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
         test.TestCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte [|IpAddress|][17];
+                public fixed byte {|MA0189:IpAddress|}[17];
             }
             """;
         test.FixedCode = """
             unsafe struct IpAddressBuffer
             {
-                public fixed byte [|IpAddress|][17];
+                public fixed byte {|MA0189:IpAddress|}[17];
             }
             """;
 

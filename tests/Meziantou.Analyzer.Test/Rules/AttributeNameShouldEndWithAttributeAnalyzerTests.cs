@@ -26,7 +26,7 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomAttr|] : System.Attribute
+            class {|MA0057:CustomAttr|} : System.Attribute
             {
             }
             """;
@@ -39,7 +39,7 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|CustomAttr|] : System.Attribute
+            class {|MA0057:CustomAttr|} : System.Attribute
             {
             }
             """;

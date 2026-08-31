@@ -20,7 +20,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = [|value.HasValue|];
+            _ = {|MA0171:value.HasValue|};
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -36,7 +36,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = ![|value.HasValue|];
+            _ = !{|MA0171:value.HasValue|};
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -52,7 +52,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = [|value.HasValue|] == true;
+            _ = {|MA0171:value.HasValue|} == true;
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -68,7 +68,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = [|value.HasValue|] == false;
+            _ = {|MA0171:value.HasValue|} == false;
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -84,7 +84,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = false == [|value.HasValue|];
+            _ = false == {|MA0171:value.HasValue|};
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -100,7 +100,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = [|value.HasValue|] is true;
+            _ = {|MA0171:value.HasValue|} is true;
             """;
         test.FixedCode = """
             var value = default(int?);
@@ -116,7 +116,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
         var test = CreateTest();
         test.TestCode = """
             var value = default(int?);
-            _ = [|value.HasValue|] is false;
+            _ = {|MA0171:value.HasValue|} is false;
             """;
         test.FixedCode = """
             var value = default(int?);

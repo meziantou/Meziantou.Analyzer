@@ -21,7 +21,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
 
                 void A()
                 {
-                    var [|a|] = 10;
+                    var {|MA0084:a|} = 10;
                 }
             }
             """;
@@ -40,7 +40,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
 
                 void A()
                 {
-                    var [|Prop|] = 10;
+                    var {|MA0084:Prop|} = 10;
                 }
             }
             """;
@@ -62,7 +62,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
             {
                 void A()
                 {
-                    var [|a|] = 10;
+                    var {|MA0084:a|} = 10;
                 }
             }
             """;
@@ -80,7 +80,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
             {
                 void A()
                 {
-                    var [|a|] = 10;
+                    var {|MA0084:a|} = 10;
                 }
             }
             """;
@@ -176,7 +176,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
 
                     void LocalFunction()
                     {
-                        var [|a|] = 10;
+                        var {|MA0084:a|} = 10;
                     }
                 }
             }

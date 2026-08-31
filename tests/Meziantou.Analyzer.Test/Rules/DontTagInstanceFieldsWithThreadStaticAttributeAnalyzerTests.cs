@@ -31,7 +31,7 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzerTests
             class Test2
             {
                 [System.ThreadStatic]
-                int [|_a|];
+                int {|MA0033:_a|};
             }
             """;
 

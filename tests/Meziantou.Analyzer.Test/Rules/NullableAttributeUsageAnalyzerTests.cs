@@ -14,7 +14,7 @@ public sealed class NullableAttributeUsageAnalyzerTests
         test.TestCode = """
             class Test
             {
-                [return: [|System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("unknown")|]]
+                [return: {|MA0068:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute("unknown")|}]
                 public void A(string a) { }
             }
 
@@ -91,7 +91,7 @@ public sealed class NullableAttributeUsageAnalyzerTests
             {
                 extension(object? obj)
                 {
-                    [return: [|NotNullIfNotNull("unknown")|]]
+                    [return: {|MA0068:NotNullIfNotNull("unknown")|}]
                     public object? DoSomething() => obj;
                 }
             }

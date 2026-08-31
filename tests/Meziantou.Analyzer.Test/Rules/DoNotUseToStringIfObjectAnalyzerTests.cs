@@ -42,7 +42,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            [|o.ToString()|];
+            {|MA0150:o.ToString()|};
 
             public struct A{ }
             """;
@@ -70,7 +70,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            [|o.ToString()|];
+            {|MA0150:o.ToString()|};
 
             public sealed class A {}
             """;
@@ -98,7 +98,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             Sample a = new Sample();
-            [|a.ToString()|];
+            {|MA0150:a.ToString()|};
 
             struct Sample { }
             """;
@@ -141,7 +141,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var a = new Derived();
-            [|a.ToString()|];
+            {|MA0150:a.ToString()|};
 
             class Sample { }
             sealed class Derived : Sample {  }
@@ -156,7 +156,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             Sample a = new Derived();
-            [|a.ToString()|];
+            {|MA0150:a.ToString()|};
 
             class Sample { }
             sealed class Derived : Sample { }
@@ -172,7 +172,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         test.TestCode = """
             Sample a;
             a = new Derived();
-            [|a.ToString()|];
+            {|MA0150:a.ToString()|};
 
             class Sample { }
             sealed class Derived : Sample { }
@@ -211,7 +211,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
 
                 void M()
                 {
-                    [|_value.ToString()|];
+                    {|MA0150:_value.ToString()|};
                 }
             }
 
@@ -262,7 +262,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
 
                 void M()
                 {
-                    [|Value.ToString()|];
+                    {|MA0150:Value.ToString()|};
                 }
             }
 
@@ -335,7 +335,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreatePreviewTest();
         test.TestCode = """
             Shape a = new Circle();
-            [|((Shape)a).ToString()|];
+            {|MA0150:((Shape)a).ToString()|};
 
             closed class Shape;
             sealed class Circle : Shape;
@@ -367,7 +367,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreatePreviewTest();
         test.TestCode = """
             Shape a = new Circle();
-            [|((Shape)a).ToString()|];
+            {|MA0150:((Shape)a).ToString()|};
 
             closed class Shape;
             closed class Round : Shape;
@@ -467,7 +467,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreatePreviewTest();
         test.TestCode = """
             Shape a = new Circle();
-            _ = $"{[|(Shape)a|]}";
+            _ = $"{{|MA0150:(Shape)a|}}";
 
             closed class Shape;
             sealed class Circle : Shape;
@@ -497,7 +497,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreatePreviewTest();
         test.TestCode = """
             Shape a = new Circle();
-            _ = "" + [|(Shape)a|];
+            _ = "" + {|MA0150:(Shape)a|};
 
             closed class Shape;
             sealed class Circle : Shape;
@@ -513,7 +513,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            _ = $"{[|o|]}";
+            _ = $"{{|MA0150:o|}}";
 
             public sealed class A { }
             """;
@@ -556,7 +556,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            _ = $"{[|o|]}";
+            _ = $"{{|MA0150:o|}}";
 
             public struct A { }
             """;
@@ -597,7 +597,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             var o = new A();
-            System.Diagnostics.Debug.Assert(false, $"foo{[|o|]}bar");
+            System.Diagnostics.Debug.Assert(false, $"foo{{|MA0150:o|}}bar");
 
             public struct A { }
             """;
@@ -674,7 +674,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            _ = "" + [|o|];
+            _ = "" + {|MA0150:o|};
 
             public struct A{ }
             """;
@@ -702,7 +702,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             var o = new A();
-            _ = "" + [|o.ToString()|];
+            _ = "" + {|MA0150:o.ToString()|};
 
             public sealed class A {}
             """;

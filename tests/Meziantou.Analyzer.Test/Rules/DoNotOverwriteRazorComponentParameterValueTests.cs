@@ -28,7 +28,7 @@ public sealed class DoNotOverwriteRazorComponentParameterValueTests
 
                 void A()
                 {
-                    [|Param1 = ""|];
+                    {|MA0121:Param1 = ""|};
                 }
             }
             """;

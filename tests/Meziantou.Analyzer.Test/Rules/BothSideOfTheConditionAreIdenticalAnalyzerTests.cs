@@ -38,14 +38,14 @@ public sealed class BothSideOfTheConditionAreIdenticalAnalyzerTests
     }
 
     [Theory]
-    [InlineData("[|a == a|]")]
-    [InlineData("[|a != a|]")]
-    [InlineData("[|a & a|]")]
-    [InlineData("[|a && a|]")]
-    [InlineData("[|a | a|]")]
-    [InlineData("[|a || a|]")]
-    [InlineData("a is [|true or true|]")]
-    [InlineData("a is [|true and true|]")]
+    [InlineData("{|MA0172:a == a|}")]
+    [InlineData("{|MA0172:a != a|}")]
+    [InlineData("{|MA0172:a & a|}")]
+    [InlineData("{|MA0172:a && a|}")]
+    [InlineData("{|MA0172:a | a|}")]
+    [InlineData("{|MA0172:a || a|}")]
+    [InlineData("a is {|MA0172:true or true|}")]
+    [InlineData("a is {|MA0172:true and true|}")]
     public Task SameCode(string expression)
     {
         var test = CreateTest();

@@ -27,7 +27,7 @@ public sealed class UseGuidEmptyAnalyzerTests
             {
                 void Test()
                 {
-                    _ = [|{{code}}|];
+                    _ = {|MA0067:{{code}}|};
                 }
             }
             """;
@@ -54,7 +54,7 @@ public sealed class UseGuidEmptyAnalyzerTests
                 void Test()
                 {
                     var value = "00000000-0000-0000-0000-000000000000";
-                    _ = [|System.Guid.Parse(value)|];
+                    _ = {|MA0067:System.Guid.Parse(value)|};
                 }
             }
             """;

@@ -31,7 +31,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
 
                 internal static async Task CloseNotifyIconAsync()
                 {
-                    [|await InvokeDialogActionAsync(() => { }).ConfigureAwait(false)|];
+                    {|MA0215:await InvokeDialogActionAsync(() => { }).ConfigureAwait(false)|};
                 }
             }
             """;
@@ -63,7 +63,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 async Task<int> A()
                 {
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -91,7 +91,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
             class Test
             {
                 Task<int> Inner() => throw null;
-                async Task<int> A() => [|await Inner()|];
+                async Task<int> A() => {|MA0215:await Inner()|};
             }
             """;
         test.FixedCode = """
@@ -117,7 +117,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task Inner() => throw null;
                 async Task A()
                 {
-                    [|await Inner()|];
+                    {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -145,7 +145,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
             class Test
             {
                 Task Inner() => throw null;
-                async Task A() => [|await Inner()|];
+                async Task A() => {|MA0215:await Inner()|};
             }
             """;
         test.FixedCode = """
@@ -171,7 +171,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task Inner() => throw null;
                 async Task A()
                 {
-                    [|await Inner().ConfigureAwait(false)|];
+                    {|MA0215:await Inner().ConfigureAwait(false)|};
                 }
             }
             """;
@@ -199,7 +199,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
             class Test
             {
                 ValueTask<int> Inner() => throw null;
-                async ValueTask<int> A() => [|await Inner()|];
+                async ValueTask<int> A() => {|MA0215:await Inner()|};
             }
             """;
         test.FixedCode = """
@@ -225,7 +225,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 async Task<int> A()
                 {
-                    return [|await Inner().ConfigureAwait(true)|];
+                    return {|MA0215:await Inner().ConfigureAwait(true)|};
                 }
             }
             """;
@@ -255,7 +255,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 static Task<int> Inner() => throw null;
                 void A()
                 {
-                    static async Task<int> Local() => [|await Inner()|];
+                    static async Task<int> Local() => {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -286,7 +286,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner(int x) => throw null;
                 void A()
                 {
-                    Func<int, Task<int>> f = async x => [|await Inner(x)|];
+                    Func<int, Task<int>> f = async x => {|MA0215:await Inner(x)|};
                 }
             }
             """;
@@ -318,7 +318,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    Func<Task<int>> f = async delegate { return [|await Inner()|]; };
+                    Func<Task<int>> f = async delegate { return {|MA0215:await Inner()|}; };
                 }
             }
             """;
@@ -425,7 +425,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    async Task<int> Local() => [|await Inner()|];
+                    async Task<int> Local() => {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -456,7 +456,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    Func<Task<int>> f = async () => [|await Inner()|];
+                    Func<Task<int>> f = async () => {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -486,15 +486,15 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
             {
                 Task<int> Inner() => throw null;
                 Task Inner2() => throw null;
-                async Task<int> A() => [|await Inner()|];
-                async Task B() => [|await Inner2()|];
+                async Task<int> A() => {|MA0215:await Inner()|};
+                async Task B() => {|MA0215:await Inner2()|};
                 async Task<int> C()
                 {
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
                 async Task D()
                 {
-                    [|await Inner2()|];
+                    {|MA0215:await Inner2()|};
                 }
             }
             """;
@@ -532,7 +532,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 async Task<int> A()
                 {
                     System.Console.WriteLine();
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -564,9 +564,9 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 async Task<int> A(bool condition)
                 {
                     if (condition)
-                        return [|await Inner()|];
+                        return {|MA0215:await Inner()|};
 
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -605,7 +605,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                         return await Inner();
                     }
 
-                    return [|await Local()|];
+                    return {|MA0215:await Local()|};
                 }
             }
             """;
@@ -641,7 +641,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 Task<int> Inner() => throw null;
                 async Task<int> Parent()
                 {
-                    async Task<int> Local() => [|await Inner()|];
+                    async Task<int> Local() => {|MA0215:await Inner()|};
 
                     await Task.Yield();
                     return await Local();
@@ -680,7 +680,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                 {
                     Func<Task> f = async () => await Task.Yield();
                     _ = f();
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
             }
             """;
@@ -785,7 +785,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
                         d.ToString();
                     }
 
-                    return [|await Inner()|];
+                    return {|MA0215:await Inner()|};
                 }
             }
             """;

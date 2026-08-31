@@ -20,7 +20,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     int value = 42;
-                    double result = [|(double)value|];
+                    double result = {|MA0181:(double)value|};
                 }
             }
             """;
@@ -38,7 +38,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     object value = "test";
-                    string result = [|(string)value|];
+                    string result = {|MA0181:(string)value|};
                 }
             }
             """;
@@ -58,7 +58,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     MyEnum value = MyEnum.Value1;
-                    int result = [|(int)value|];
+                    int result = {|MA0181:(int)value|};
                 }
             }
             """;
@@ -78,7 +78,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     int value = 1;
-                    MyEnum result = [|(MyEnum)value|];
+                    MyEnum result = {|MA0181:(MyEnum)value|};
                 }
             }
             """;
@@ -96,7 +96,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     char value = 'A';
-                    int result = [|(int)value|];
+                    int result = {|MA0181:(int)value|};
                 }
             }
             """;
@@ -114,7 +114,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     int value = 65;
-                    char result = [|(char)value|];
+                    char result = {|MA0181:(char)value|};
                 }
             }
             """;
@@ -212,8 +212,8 @@ public sealed class DoNotUseCastAnalyzerTests
                 {
                     int a = 1;
                     int b = 2;
-                    double x = [|(double)a|];
-                    double y = [|(double)b|];
+                    double x = {|MA0181:(double)a|};
+                    double y = {|MA0181:(double)b|};
                 }
             }
             """;
@@ -231,7 +231,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     int value = 42;
-                    double result = [|(double)value|] + 1.5;
+                    double result = {|MA0181:(double)value|} + 1.5;
                 }
             }
             """;
@@ -251,7 +251,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     Exception ex = new ArgumentException();
-                    ArgumentException argEx = [|(ArgumentException)ex|];
+                    ArgumentException argEx = {|MA0181:(ArgumentException)ex|};
                 }
             }
             """;
@@ -269,7 +269,7 @@ public sealed class DoNotUseCastAnalyzerTests
                 void Test()
                 {
                     int? nullable = 42;
-                    int value = [|(int)nullable|];
+                    int value = {|MA0181:(int)nullable|};
                 }
             }
             """;

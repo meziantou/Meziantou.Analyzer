@@ -26,7 +26,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
             class MyComponent : IComponent
             {
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
                 public void Attach(RenderHandle renderHandle) { }
                 public System.Threading.Tasks.Task SetParametersAsync(ParameterView parameters) => System.Threading.Tasks.Task.CompletedTask;
@@ -56,7 +56,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
             class MyComponent : ComponentBase
             {
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
             }
             """;
         test.FixedCode = """
@@ -81,7 +81,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
             class MyComponent(ILogger<MyComponent> logger) : ComponentBase
             {
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
             }
             """;
         test.FixedCode = """
@@ -108,7 +108,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
                 public MyComponent() { }
 
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
             }
             """;
 
@@ -196,7 +196,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
             class MyComponent : ComponentBase
             {
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
                 private void HandleClick()
                 {
@@ -231,10 +231,10 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
             class MyComponent : ComponentBase
             {
                 [Inject]
-                protected NavigationManager [|Navigation|] { get; set; } = default!;
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
 
                 [Inject]
-                protected ILogger<MyComponent> [|Logger|] { get; set; } = default!;
+                protected ILogger<MyComponent> {|MA0187:Logger|} { get; set; } = default!;
 
                 private void HandleClick()
                 {

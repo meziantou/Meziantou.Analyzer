@@ -20,7 +20,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|MyEnum.A.ToString()|];
+                    _ = {|MA0052:MyEnum.A.ToString()|};
                 }
             }
 
@@ -85,7 +85,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 void A()
                 {
-                    _ = [|MyEnum.A.ToString(format: {{format}})|];
+                    _ = {|MA0052:MyEnum.A.ToString(format: {{format}})|};
                 }
             }
 
@@ -169,10 +169,10 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 void A()
                 {
-                    _ = $"[|{MyEnum.A}|]";
-                    _ = $"[|{MyEnum.A:g}|]";
-                    _ = $"[|{MyEnum.A:G}|]";
-                    _ = $"[|{MyEnum.A:f}|]";
+                    _ = $"{|MA0052:{MyEnum.A}|}";
+                    _ = $"{|MA0052:{MyEnum.A:g}|}";
+                    _ = $"{|MA0052:{MyEnum.A:G}|}";
+                    _ = $"{|MA0052:{MyEnum.A:f}|}";
                     _ = $"{MyEnum.A:D}";
                     _ = $"{MyEnum.A:x}";
                 }

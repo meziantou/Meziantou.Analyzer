@@ -16,9 +16,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>
+            /// {|MA0177:<summary>
             /// description
-            /// </summary>|]
+            /// </summary>|}
             class Sample { }
             """;
         test.FixedCode = """
@@ -63,9 +63,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<param name="value">
+                /// {|MA0177:<param name="value">
                 /// The value
-                /// </param>|]
+                /// </param>|}
                 public void Method(int value) { }
             }
             """;
@@ -87,9 +87,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<summary>
+                /// {|MA0177:<summary>
                 /// description
-                /// </summary>|]
+                /// </summary>|}
                 public int Value;
             }
             """;
@@ -111,9 +111,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<summary>
+                /// {|MA0177:<summary>
                 /// description
-                /// </summary>|]
+                /// </summary>|}
                 public int Value { get; set; }
             }
             """;
@@ -133,9 +133,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>
+            /// {|MA0177:<summary>
             /// description
-            /// </summary>|]
+            /// </summary>|}
             struct Sample { }
             """;
         test.FixedCode = """
@@ -151,9 +151,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>
+            /// {|MA0177:<summary>
             /// description
-            /// </summary>|]
+            /// </summary>|}
             record Sample;
             """;
         test.FixedCode = """
@@ -169,9 +169,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<remarks>
+            /// {|MA0177:<remarks>
             /// This is a remark
-            /// </remarks>|]
+            /// </remarks>|}
             class Sample { }
             """;
         test.FixedCode = """
@@ -189,9 +189,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<returns>
+                /// {|MA0177:<returns>
                 /// The result
-                /// </returns>|]
+                /// </returns>|}
                 public int Method() => 42;
             }
             """;
@@ -227,8 +227,8 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>
-            /// </summary>|]
+            /// {|MA0177:<summary>
+            /// </summary>|}
             class Sample { }
             """;
         test.FixedCode = """
@@ -244,9 +244,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<typeparam name="T">
+            /// {|MA0177:<typeparam name="T">
             /// The type parameter
-            /// </typeparam>|]
+            /// </typeparam>|}
             class Sample<T> { }
             """;
         test.FixedCode = """
@@ -264,9 +264,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<exception cref="System.ArgumentNullException">
+                /// {|MA0177:<exception cref="System.ArgumentNullException">
                 /// Thrown when argument is null
-                /// </exception>|]
+                /// </exception>|}
                 public void Method(string value) { }
             }
             """;
@@ -288,9 +288,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         test.TestCode = """
             class Sample
             {
-                /// [|<value>
+                /// {|MA0177:<value>
                 /// The property value
-                /// </value>|]
+                /// </value>|}
                 public int Property { get; set; }
             }
             """;
@@ -310,8 +310,8 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>line 1
-            /// </summary>|]
+            /// {|MA0177:<summary>line 1
+            /// </summary>|}
             class Sample { }
             """;
         test.FixedCode = """
@@ -381,9 +381,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
         var test = CreateTest();
         test.TestState.SetConfiguration("max_line_length", "100");
         test.TestCode = """
-            /// [|<summary>
+            /// {|MA0177:<summary>
             /// Short description
-            /// </summary>|]
+            /// </summary>|}
             class Sample { }
             """;
         test.FixedCode = """
@@ -399,9 +399,9 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            /// [|<summary>
+            /// {|MA0177:<summary>
             /// This is a very long description that could potentially exceed some line length limit
-            /// </summary>|]
+            /// </summary>|}
             class Sample { }
             """;
         test.FixedCode = """

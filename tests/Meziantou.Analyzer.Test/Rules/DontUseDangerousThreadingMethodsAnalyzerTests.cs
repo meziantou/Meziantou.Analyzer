@@ -20,7 +20,7 @@ public sealed class DontUseDangerousThreadingMethodsAnalyzerTests
             {
                 public void A()
                 {
-                    [|{{text}}|];
+                    {|MA0035:{{text}}|};
                 }
             }
             """;

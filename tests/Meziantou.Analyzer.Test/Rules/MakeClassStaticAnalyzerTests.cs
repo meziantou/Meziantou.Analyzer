@@ -83,7 +83,7 @@ public sealed class MakeClassStaticAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public class [|Test|]
+            public class {|MA0036:Test|}
             {
                 const int a = 10;
                 static void A() { }
@@ -180,7 +180,7 @@ public sealed class MakeClassStaticAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public sealed class [|Test|]
+            public sealed class {|MA0036:Test|}
             {
             }
             """;
@@ -264,7 +264,7 @@ public sealed class MakeClassStaticAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            public partial class [|Test|]
+            public partial class {|MA0036:Test|}
             {
             }
             """;

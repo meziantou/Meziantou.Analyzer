@@ -29,7 +29,7 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
         test.TestCode = """
             class Test
             {
-                [[|System.Obsolete()|]]
+                [{|MA0070:System.Obsolete()|}]
                 public void A() { }
             }
             """;

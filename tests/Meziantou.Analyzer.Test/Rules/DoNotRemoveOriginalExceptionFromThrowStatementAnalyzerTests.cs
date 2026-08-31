@@ -48,7 +48,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
                     }
                     catch (System.InvalidOperationException ex)
                     {
-                        [|throw ex;|]
+                        {|MA0027:throw ex;|}
                     }
                 }
             }
@@ -87,7 +87,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
                     catch (System.Exception ex)
                     {
                         _ = ex;
-                        [|throw ex;|]
+                        {|MA0027:throw ex;|}
                     }
                 }
             }

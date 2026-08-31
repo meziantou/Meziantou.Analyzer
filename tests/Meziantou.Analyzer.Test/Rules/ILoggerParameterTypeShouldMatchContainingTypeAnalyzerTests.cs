@@ -23,7 +23,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
         test.TestCode = """
             using Microsoft.Extensions.Logging;
 
-            class A([|ILogger<B>|] logger)
+            class A({|MA0180:ILogger<B>|} logger)
             {
             }
 
@@ -55,7 +55,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
 
             class A
             {
-                public A([|ILogger<B>|] logger)
+                public A({|MA0180:ILogger<B>|} logger)
                 {
                 }
             }
@@ -177,11 +177,11 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
 
             class A
             {
-                public A([|ILogger<B>|] logger)
+                public A({|MA0180:ILogger<B>|} logger)
                 {
                 }
 
-                public A(string name, [|ILogger<B>|] logger)
+                public A(string name, {|MA0180:ILogger<B>|} logger)
                 {
                 }
             }
@@ -203,7 +203,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
 
             class Outer
             {
-                class Inner([|ILogger<Outer>|] logger)
+                class Inner({|MA0180:ILogger<Outer>|} logger)
                 {
                 }
             }
@@ -229,7 +229,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
         test.TestCode = """
             using Microsoft.Extensions.Logging;
 
-            class A<T>([|ILogger<B>|] logger)
+            class A<T>({|MA0180:ILogger<B>|} logger)
             {
             }
 

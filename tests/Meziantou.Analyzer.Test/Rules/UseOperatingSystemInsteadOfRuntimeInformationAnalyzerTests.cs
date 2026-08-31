@@ -20,7 +20,7 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|];
+            {|MA0144:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)|};
             """;
         test.FixedCode = """
             System.OperatingSystem.IsWindows();
@@ -34,7 +34,7 @@ public class UseOperatingSystemInsteadOfRuntimeInformationAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            [|System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)|];
+            {|MA0144:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.OSX)|};
             """;
         test.FixedCode = """
             System.OperatingSystem.IsMacOS();

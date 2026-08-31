@@ -24,7 +24,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     }
                     finally
                     {
-                        [|throw new System.Exception("Unbecoming exception");|]
+                        {|MA0072:throw new System.Exception("Unbecoming exception");|}
                     }
                 }
             }
@@ -74,7 +74,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     {
                         {
                             Increment(ref value);
-                            [|throw new System.Exception($"Unbecoming exception No {value}");|]
+                            {|MA0072:throw new System.Exception($"Unbecoming exception No {value}");|}
                         }
                         void Increment(ref int val) => val++;
                     }
@@ -101,7 +101,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     {
                         try
                         {
-                            [|throw new System.Exception();|]
+                            {|MA0072:throw new System.Exception();|}
                         }
                         catch
                         {
@@ -130,7 +130,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     {
                         try
                         {
-                            [|throw new System.Exception();|]
+                            {|MA0072:throw new System.Exception();|}
                         }
                         catch (System.ArgumentException)
                         {
@@ -159,11 +159,11 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     {
                         if (true)
                         {
-                            [|throw new System.Exception();|]
+                            {|MA0072:throw new System.Exception();|}
                         }
                         else
                         {
-                            [|throw new System.Exception();|]
+                            {|MA0072:throw new System.Exception();|}
                         }
                     }
                 }

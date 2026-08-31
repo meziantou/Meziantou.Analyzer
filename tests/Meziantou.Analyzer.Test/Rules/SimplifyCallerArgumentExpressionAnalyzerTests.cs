@@ -48,7 +48,7 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
 
                 void A(string value)
                 {
-                    NotNull(value.Length, [|"value.Length"|]);
+                    NotNull(value.Length, {|MA0108:"value.Length"|});
                 }
             }
             """;
@@ -80,7 +80,7 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
 
                 void A(string value)
                 {
-                    NotNull(value, [|parameterName: "value"|], "extra");
+                    NotNull(value, {|MA0108:parameterName: "value"|}, "extra");
                 }
             }
             """;

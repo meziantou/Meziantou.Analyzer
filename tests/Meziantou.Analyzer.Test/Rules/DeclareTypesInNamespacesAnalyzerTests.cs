@@ -30,7 +30,7 @@ public sealed class DeclareTypesInNamespacesAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            class [|Sample|]
+            class {|MA0047:Sample|}
             {
                 class Nested { }
             }

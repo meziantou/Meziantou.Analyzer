@@ -27,7 +27,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             class Test
             {
                 Task<int> Inner() => throw null;
-                Task<int> A() => [|Inner()|];
+                Task<int> A() => {|MA0214:Inner()|};
             }
             """;
         test.FixedCode = """
@@ -53,7 +53,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner() => throw null;
                 Task<int> A()
                 {
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -81,7 +81,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             class Test
             {
                 Task Inner() => throw null;
-                Task A() => [|Inner()|];
+                Task A() => {|MA0214:Inner()|};
             }
             """;
         test.FixedCode = """
@@ -107,7 +107,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task Inner() => throw null;
                 Task A()
                 {
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -137,7 +137,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    Task<int> Local() => [|Inner()|];
+                    Task<int> Local() => {|MA0214:Inner()|};
                 }
             }
             """;
@@ -168,7 +168,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    Func<Task<int>> f = () => [|Inner()|];
+                    Func<Task<int>> f = () => {|MA0214:Inner()|};
                 }
             }
             """;
@@ -197,7 +197,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             class Test
             {
                 ValueTask<int> Inner() => throw null;
-                ValueTask<int> A() => [|Inner()|];
+                ValueTask<int> A() => {|MA0214:Inner()|};
             }
             """;
         test.FixedCode = """
@@ -221,7 +221,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             class Test
             {
                 ValueTask Inner() => throw null;
-                ValueTask A() => [|Inner()|];
+                ValueTask A() => {|MA0214:Inner()|};
             }
             """;
         test.FixedCode = """
@@ -245,7 +245,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             class Test
             {
                 Task<int> Inner() => throw null;
-                public Task<int> A() => [|Inner()|];
+                public Task<int> A() => {|MA0214:Inner()|};
             }
             """;
         test.FixedCode = """
@@ -271,7 +271,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 static Task<int> Inner() => throw null;
                 void A()
                 {
-                    static Task<int> Local() => [|Inner()|];
+                    static Task<int> Local() => {|MA0214:Inner()|};
                 }
             }
             """;
@@ -302,7 +302,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner(int x) => throw null;
                 void A()
                 {
-                    Func<int, Task<int>> f = x => [|Inner(x)|];
+                    Func<int, Task<int>> f = x => {|MA0214:Inner(x)|};
                 }
             }
             """;
@@ -334,7 +334,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner() => throw null;
                 void A()
                 {
-                    Func<Task<int>> f = delegate { return [|Inner()|]; };
+                    Func<Task<int>> f = delegate { return {|MA0214:Inner()|}; };
                 }
             }
             """;
@@ -399,15 +399,15 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             {
                 Task<int> Inner() => throw null;
                 Task Inner2() => throw null;
-                Task<int> A() => [|Inner()|];
-                Task B() => [|Inner2()|];
+                Task<int> A() => {|MA0214:Inner()|};
+                Task B() => {|MA0214:Inner2()|};
                 Task<int> C()
                 {
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
                 Task D()
                 {
-                    return [|Inner2()|];
+                    return {|MA0214:Inner2()|};
                 }
             }
             """;
@@ -467,7 +467,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> Inner() => throw null;
                 async Task<int> Parent()
                 {
-                    Task<int> Local() => [|Inner()|];
+                    Task<int> Local() => {|MA0214:Inner()|};
                     return await Local();
                 }
             }
@@ -501,7 +501,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 {
                     Task<int> Local() => null;
                     _ = Local();
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -536,7 +536,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 {
                     Func<Task<int>> f = () => null;
                     _ = f();
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -601,7 +601,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> A()
                 {
                     System.Console.WriteLine();
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -633,9 +633,9 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task<int> A(bool condition)
                 {
                     if (condition)
-                        return [|Inner()|];
+                        return {|MA0214:Inner()|};
 
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;
@@ -669,9 +669,9 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
                 Task A(bool condition)
                 {
                     if (condition)
-                        return [|Inner()|];
+                        return {|MA0214:Inner()|};
 
-                    return [|Inner()|];
+                    return {|MA0214:Inner()|};
                 }
             }
             """;

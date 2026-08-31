@@ -57,7 +57,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
 
                 protected override void OnInitialized()
                 {
-                    _ = [|JS.InvokeVoidAsync("")|];
+                    _ = {|MA0119:JS.InvokeVoidAsync("")|};
                 }
             }
             """;
@@ -79,7 +79,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
 
                 protected override async Task OnInitializedAsync()
                 {
-                    await [|JS.InvokeVoidAsync("")|];
+                    await {|MA0119:JS.InvokeVoidAsync("")|};
                     await base.OnInitializedAsync();
                 }
             }
@@ -102,7 +102,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
 
                 protected override async Task OnInitializedAsync()
                 {
-                    await [|JS.InvokeAsync<object>(identifier: "", args: new object[0])|];
+                    await {|MA0119:JS.InvokeAsync<object>(identifier: "", args: new object[0])|};
                     await base.OnInitializedAsync();
                 }
             }
@@ -126,7 +126,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
 
                 protected override async Task OnInitializedAsync()
                 {
-                    await [|Storage.GetAsync<string>("")|];
+                    await {|MA0119:Storage.GetAsync<string>("")|};
                 }
             }
             """;

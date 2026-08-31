@@ -50,7 +50,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
         test.TestCode = """
             class Test(int p)
             {
-                int A() => [|p|]++;
+                int A() => {|MA0143:p|}++;
             }
             """;
 
@@ -64,7 +64,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
         test.TestCode = """
             class Test(int p)
             {
-                int A() => [|p|]--;
+                int A() => {|MA0143:p|}--;
             }
             """;
 
@@ -78,7 +78,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
         test.TestCode = """
             class Test(int p)
             {
-                int A() => --[|p|];
+                int A() => --{|MA0143:p|};
             }
             """;
 
@@ -94,7 +94,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A()
                 {
-                    ([|p|], _) = (1, 0);
+                    ({|MA0143:p|}, _) = (1, 0);
                 }
             }
             """;
@@ -111,7 +111,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A()
                 {
-                    (var a, ([|p|], _)) = (0, (1, 2));
+                    (var a, ({|MA0143:p|}, _)) = (0, (1, 2));
                 }
             }
             """;
@@ -128,7 +128,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A()
                 {
-                    [|p|] ??= "";
+                    {|MA0143:p|} ??= "";
                 }
             }
             """;
@@ -145,7 +145,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A()
                 {
-                    [|p|] += "";
+                    {|MA0143:p|} += "";
                 }
             }
             """;
@@ -196,7 +196,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A()
                 {
-                    ref var a = ref [|p|];
+                    ref var a = ref {|MA0143:p|};
                 }
             }
             """;
@@ -213,7 +213,7 @@ public sealed class PrimaryConstructorParameterShouldBeReadOnlyAnalyzerTests
             {
                 void A(ref string a)
                 {
-                    A(ref [|p|]);
+                    A(ref {|MA0143:p|});
                 }
             }
             """;

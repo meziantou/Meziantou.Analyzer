@@ -21,7 +21,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("value without argument")|];
+                    var result = {|MA0183:string.Format("value without argument")|};
                 }
             }
             """;
@@ -40,7 +40,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("value with argument", 123)|];
+                    var result = {|MA0183:string.Format("value with argument", 123)|};
                 }
             }
             """;
@@ -59,7 +59,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("value with argument {{0}}", 123)|];
+                    var result = {|MA0183:string.Format("value with argument {{0}}", 123)|};
                 }
             }
             """;
@@ -118,7 +118,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 void Method()
                 {
                     var format = "value without placeholder";
-                    var result = [|string.Format(format, 123)|];
+                    var result = {|MA0183:string.Format(format, 123)|};
                 }
             }
             """;
@@ -139,7 +139,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 {
                     string format;
                     format = "value without placeholder";
-                    var result = [|string.Format(format, 123)|];
+                    var result = {|MA0183:string.Format(format, 123)|};
                 }
             }
             """;
@@ -181,7 +181,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
 
                 void Method()
                 {
-                    var result = [|string.Format(Format, 123)|];
+                    var result = {|MA0183:string.Format(Format, 123)|};
                 }
             }
             """;
@@ -228,7 +228,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
 
                 void Method()
                 {
-                    var result = [|string.Format(_format, 123)|];
+                    var result = {|MA0183:string.Format(_format, 123)|};
                 }
             }
             """;
@@ -273,7 +273,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123)|];
+                    var result = {|MA0183:string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123)|};
                 }
             }
             """;
@@ -311,7 +311,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters")|];
+                    var result = {|MA0183:string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters")|};
                 }
             }
             """;
@@ -406,7 +406,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("value {{escaped}}", 123)|];
+                    var result = {|MA0183:string.Format("value {{escaped}}", 123)|};
                 }
             }
             """;
@@ -425,7 +425,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("no placeholder", 123, 456, 789)|];
+                    var result = {|MA0183:string.Format("no placeholder", 123, 456, 789)|};
                 }
             }
             """;
@@ -444,7 +444,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("")|];
+                    var result = {|MA0183:string.Format("")|};
                 }
             }
             """;
@@ -463,7 +463,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("", 123)|];
+                    var result = {|MA0183:string.Format("", 123)|};
                 }
             }
             """;
@@ -482,7 +482,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method(string format)
                 {
-                    var result = [|string.Format(format)|];
+                    var result = {|MA0183:string.Format(format)|};
                 }
             }
             """;
@@ -503,7 +503,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("{{formatString}}", 123)|];
+                    var result = {|MA0183:string.Format("{{formatString}}", 123)|};
                 }
             }
             """;
@@ -529,7 +529,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format("{{formatString}}", 123)|];
+                    var result = {|MA0183:string.Format("{{formatString}}", 123)|};
                 }
             }
             """;
@@ -569,7 +569,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format(CultureInfo.InvariantCulture, "", CultureInfo.InvariantCulture)|];
+                    var result = {|MA0183:string.Format(CultureInfo.InvariantCulture, "", CultureInfo.InvariantCulture)|};
                 }
             }
             """;
@@ -589,7 +589,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 void Method()
                 {
                     // Using Arabic-Indic digit ٠ (U+0660) instead of ASCII 0
-                    var result = [|string.Format("{٠}", 123)|];
+                    var result = {|MA0183:string.Format("{٠}", 123)|};
                 }
             }
             """;
@@ -631,7 +631,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    var result = [|string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|];
+                    var result = {|MA0183:string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|};
                 }
             }
             """;
@@ -683,7 +683,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    [|Console.Write("NO PLACEHOLDERS", true)|];
+                    {|MA0183:Console.Write("NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -721,7 +721,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    [|Console.Write("NO PLACEHOLDERS", true, true)|];
+                    {|MA0183:Console.Write("NO PLACEHOLDERS", true, true)|};
                 }
             }
             """;
@@ -759,7 +759,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    [|Console.WriteLine("NO PLACEHOLDERS", true)|];
+                    {|MA0183:Console.WriteLine("NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -797,7 +797,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    [|Console.WriteLine("NO PLACEHOLDERS", true, true)|];
+                    {|MA0183:Console.WriteLine("NO PLACEHOLDERS", true, true)|};
                 }
             }
             """;
@@ -816,7 +816,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method()
                 {
-                    [|Console.WriteLine("NO PLACEHOLDERS", true, true, true)|];
+                    {|MA0183:Console.WriteLine("NO PLACEHOLDERS", true, true, true)|};
                 }
             }
             """;
@@ -836,7 +836,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 void Method()
                 {
                     var sb = new StringBuilder();
-                    [|sb.AppendFormat("NO PLACEHOLDERS")|];
+                    {|MA0183:sb.AppendFormat("NO PLACEHOLDERS")|};
                 }
             }
             """;
@@ -856,7 +856,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 void Method()
                 {
                     var sb = new StringBuilder();
-                    [|sb.AppendFormat("NO PLACEHOLDERS", true)|];
+                    {|MA0183:sb.AppendFormat("NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -898,7 +898,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
                 void Method()
                 {
                     var sb = new StringBuilder();
-                    [|sb.AppendFormat(CultureInfo.InvariantCulture, "NO PLACEHOLDERS", true)|];
+                    {|MA0183:sb.AppendFormat(CultureInfo.InvariantCulture, "NO PLACEHOLDERS", true)|};
                 }
             }
             """;
@@ -962,7 +962,7 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
             {
                 void Method(object obj)
                 {
-                    _ = [|string.Format(CultureInfo.InvariantCulture, "Format string without placeholder.", (obj is null ? string.Empty : "X"))|];
+                    _ = {|MA0183:string.Format(CultureInfo.InvariantCulture, "Format string without placeholder.", (obj is null ? string.Empty : "X"))|};
                 }
             }
             """;

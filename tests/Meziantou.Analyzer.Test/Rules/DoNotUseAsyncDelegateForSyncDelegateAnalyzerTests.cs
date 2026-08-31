@@ -30,7 +30,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            new System.Collections.Generic.List<int>().ForEach([|async item => {}|]);
+            new System.Collections.Generic.List<int>().ForEach({|MA0147:async item => {}|});
             """;
 
         return test.RunAsync();
@@ -55,7 +55,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            A([|async () => {}|]);
+            A({|MA0147:async () => {}|});
 
             void A(D a) => throw null;
             delegate void D();
@@ -82,7 +82,7 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            A([|async () => {}|]);
+            A({|MA0147:async () => {}|});
 
             void A(System.Action a) => throw null;
             """;
