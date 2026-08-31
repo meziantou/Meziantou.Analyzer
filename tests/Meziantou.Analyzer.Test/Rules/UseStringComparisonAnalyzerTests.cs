@@ -1,18 +1,27 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStringComparisonAnalyzer,
+    Meziantou.Analyzer.Rules.UseStringComparisonFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringComparisonAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseStringComparisonAnalyzer>("MA0074")
-            .WithCodeFixProvider<UseStringComparisonFixer>();
+        var test = new CodeFixTest();
+        test.DisabledDiagnostics.Add("MA0001");
+        return test;
     }
 
     [Fact]
-    public async Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
+    public Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -22,15 +31,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
+    public Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -39,24 +48,25 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IndexOf_String_ShouldReportDiagnostic()
+    public Task IndexOf_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    [|"a".IndexOf("v")|];
+                    {|#0:"a".IndexOf("v")|};
                 }
             }
             """;
-        const string CodeFix = """
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0074", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter"));
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -65,17 +75,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
+    public Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -84,24 +92,25 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StartsWith_String_ShouldReportDiagnostic()
+    public Task StartsWith_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    [|"a".StartsWith("v")|];
+                    {|#0:"a".StartsWith("v")|};
                 }
             }
             """;
-        const string CodeFix = """
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0074", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'StartsWith' that has a StringComparison parameter"));
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -110,26 +119,25 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'StartsWith' that has a StringComparison parameter")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Compare_ShouldReportDiagnostic()
+    public Task Compare_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    [|string.Compare("a", "v")|];
+                    {|#0:string.Compare("a", "v")|};
                 }
             }
             """;
-        const string CodeFix = """
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0074", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'Compare' that has a StringComparison parameter"));
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -138,17 +146,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'Compare' that has a StringComparison parameter")
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Compare_ShouldNotReportDiagnostic()
+    public Task Compare_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -157,15 +163,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IndexOf_ShouldNotReportDiagnostic()
+    public Task IndexOf_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -174,15 +180,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IndexOf_Char_ShouldNotReportDiagnostic()
+    public Task IndexOf_Char_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -191,15 +197,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IndexOf_Char_Int_ShouldNotReportDiagnostic()
+    public Task IndexOf_Char_Int_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -208,15 +214,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task LastIndexOf_Char_ShouldNotReportDiagnostic()
+    public Task LastIndexOf_Char_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -225,15 +231,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Contains_Char_ShouldNotReportDiagnostic()
+    public Task Contains_Char_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -242,15 +248,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Replace_ShouldNotReportDiagnostic()
+    public Task Replace_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -259,15 +265,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeWhenInAnExpressionContext()
+    public Task ExcludeWhenInAnExpressionContext()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq.Expressions;
             class TypeName
@@ -283,15 +289,15 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeWhenInAnExpressionContext2()
+    public Task ExcludeWhenInAnExpressionContext2()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq;
             using System.Linq.Expressions;
@@ -309,20 +315,20 @@ public sealed class UseStringComparisonAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Contains_WithTrailingMessageParameter_ShouldInsertStringComparisonBeforeMessage()
+    public Task Contains_WithTrailingMessageParameter_ShouldInsertStringComparisonBeforeMessage()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    [|MyAssert.Contains("a", "b", "message")|];
+                    {|MA0074:MyAssert.Contains("a", "b", "message")|};
                 }
             }
 
@@ -332,7 +338,7 @@ public sealed class UseStringComparisonAnalyzerTests
                 public static void Contains(string value, string substring, System.StringComparison comparison, string message) { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -347,9 +353,7 @@ public sealed class UseStringComparisonAnalyzerTests
                 public static void Contains(string value, string substring, System.StringComparison comparison, string message) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }

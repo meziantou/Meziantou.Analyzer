@@ -1,418 +1,514 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer,
+    Meziantou.Analyzer.Rules.MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-        => new ProjectBuilder()
-            .WithAnalyzer<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyzer>()
-            .WithCodeFixProvider<MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer>()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+    private static CodeFixTest CreateTest()
+    {
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
+    }
 
     [Fact]
     public Task AsyncMethodWithSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                    class TypeName
-                    {
-                        System.Threading.Tasks.Task TestAsync() => throw null;
-                    }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task AsyncMethodWithoutSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_TaskWrappedType_Diagnostic()
-        => CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result))]
-
-                class TypeName
-                {
-                    Task<Result> {|MA0137:Test|}() => throw null;
-                }
-
-                class Result { }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_Diagnostic()
-        => CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result<>))]
-
-                class TypeName
-                {
-                    Task<Result<int>> {|MA0137:Test|}() => throw null;
-                }
-
-                class Result<T> { }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task VoidMethodWithSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void {|MA0138:TestAsync|}() => throw null;
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task VoidMethodWithoutSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void Test() => throw null;
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task VoidLocalFunctionWithSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void Test()
-                    {
-                        void {|MA0138:FooAsync|}() => throw null;
-                    }
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public async Task VoidLocalFunctionWithoutSuffix()
-        => await CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void Test()
-                    {
-                        void Foo() => throw null;
-                    }
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task AwaitableLocalFunctionWithoutSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void Test()
-                    {
-                        _ = Foo();
-                        System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
-                    }
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task AwaitableLocalFunctionWithSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void Test()
-                    {
-                        System.Threading.Tasks.Task FooAsync() => throw null;
-                    }
-                }
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task TopLevelStatement()
-        => CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                await System.Threading.Tasks.Task.Yield();
-                """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task EntryPoint()
-        => CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithSourceCode("""
-                 static class Program
-                 {
-                     static async System.Threading.Tasks.Task Main()
-                     {
-                     }
-                 }
-                 """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task IAsyncEnumerableWithoutSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
-                 }
-                 """)
-              .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must use the 'Async' suffix")
-              .ValidateAsync();
-
-    [Fact]
-    public Task IAsyncEnumerableWithoutSuffix_CodeFix_AddsAsyncSuffix()
-        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
-        => CreateProjectBuilder()
-              .WithDefaultAnalyzerId("MA0156")
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
-                     void Caller() { _ = Foo(); }
-                 }
-                 """)
-              .ShouldFixCodeWith("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> FooAsync() => throw null;
-                     void Caller() { _ = FooAsync(); }
-                 }
-                 """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task IAsyncEnumerableWithSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
-                 }
-                 """)
-              .ShouldReportDiagnosticWithMessage("Method returning IAsyncEnumerable<T> must not use the 'Async' suffix")
-              .ValidateAsync();
-
-    [Fact]
-    public Task IAsyncEnumerableWithSuffix_CodeFix_RemovesAsyncSuffix()
-        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
-        => CreateProjectBuilder()
-              .WithDefaultAnalyzerId("MA0157")
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
-                     void Caller() { _ = FooAsync(); }
-                 }
-                 """)
-              .ShouldFixCodeWith("""
-                 class TypeName
-                 {
-                     System.Collections.Generic.IAsyncEnumerable<int> Foo() => throw null;
-                     void Caller() { _ = Foo(); }
-                 }
-                 """)
-              .ValidateAsync();
-
-    [Fact]
-    public Task IgnoreTestMethods()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     [Xunit.Fact]
-                     System.Threading.Tasks.Task Foo() => throw null;
-                 }
-                 """)
-              .AddXUnitApi()
-              .ValidateAsync();
-
-    [Fact]
-    public Task AsyncMethodWithoutSuffix_CodeFix_AddsAsyncSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
-                    void Caller() { _ = Test(); }
-                }
-                """)
-              .ShouldFixCodeWith("""
+    {
+        var test = CreateTest();
+        test.TestCode = """
                 class TypeName
                 {
                     System.Threading.Tasks.Task TestAsync() => throw null;
-                    void Caller() { _ = TestAsync(); }
                 }
-                """)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_TaskWrappedType_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result))]
+
+            class TypeName
+            {
+                Task<Result> {|MA0137:Test|}() => throw null;
+            }
+
+            class Result { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_NonAwaitableTypeAttribute_OpenGenericTaskWrappedType_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(Result<>))]
+
+            class TypeName
+            {
+                Task<Result<int>> {|MA0137:Test|}() => throw null;
+            }
+
+            class Result<T> { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VoidMethodWithSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void {|MA0138:TestAsync|}() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VoidMethodWithoutSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VoidLocalFunctionWithSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test()
+                {
+                    void {|MA0138:FooAsync|}() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VoidLocalFunctionWithoutSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test()
+                {
+                    void Foo() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitableLocalFunctionWithoutSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test()
+                {
+                    _ = Foo();
+                    System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitableLocalFunctionWithSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test()
+                {
+                    System.Threading.Tasks.Task FooAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TopLevelStatement()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            await System.Threading.Tasks.Task.Yield();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EntryPoint()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            static class Program
+            {
+                static async System.Threading.Tasks.Task Main()
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IAsyncEnumerableWithoutSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|#0:Foo|}() => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0156", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Method returning IAsyncEnumerable<T> must use the 'Async' suffix"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IAsyncEnumerableWithoutSuffix_CodeFix_AddsAsyncSuffix()
+    {
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
+        var test = CreateTest();
+        test.DisabledDiagnostics.Add("MA0137");
+        test.DisabledDiagnostics.Add("MA0157");
+        test.TestCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
+                void Caller() { _ = Foo(); }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> FooAsync() => throw null;
+                void Caller() { _ = FooAsync(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IAsyncEnumerableWithSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|#0:FooAsync|}() => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0157", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Method returning IAsyncEnumerable<T> must not use the 'Async' suffix"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IAsyncEnumerableWithSuffix_CodeFix_RemovesAsyncSuffix()
+    {
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
+        var test = CreateTest();
+        test.DisabledDiagnostics.Add("MA0137");
+        test.DisabledDiagnostics.Add("MA0156");
+        test.TestCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
+                void Caller() { _ = FooAsync(); }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                System.Collections.Generic.IAsyncEnumerable<int> Foo() => throw null;
+                void Caller() { _ = Foo(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IgnoreTestMethods()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.TestCode = """
+            class TypeName
+            {
+                [Xunit.Fact]
+                System.Threading.Tasks.Task Foo() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncMethodWithoutSuffix_CodeFix_AddsAsyncSuffix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                System.Threading.Tasks.Task {|MA0137:Test|}() => throw null;
+                void Caller() { _ = Test(); }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                System.Threading.Tasks.Task TestAsync() => throw null;
+                void Caller() { _ = TestAsync(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task MethodNotReturningAwaitableTypeWithSuffix_CodeFix_RemovesAsyncSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
-                {
-                    void {|MA0138:TestAsync|}() => throw null;
-                    void Caller() { TestAsync(); }
-                }
-                """)
-              .ShouldFixCodeWith("""
-                class TypeName
-                {
-                    void Test() => throw null;
-                    void Caller() { Test(); }
-                }
-                """)
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void {|MA0138:TestAsync|}() => throw null;
+                void Caller() { TestAsync(); }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                void Test() => throw null;
+                void Caller() { Test(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task VoidLocalFunctionWithSuffix_CodeFix_RemovesAsyncSuffix()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                class TypeName
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        void {|MA0138:FooAsync|}() => throw null;
-                        FooAsync();
-                    }
+                    void {|MA0138:FooAsync|}() => throw null;
+                    FooAsync();
                 }
-                """)
-              .ShouldFixCodeWith("""
-                class TypeName
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                void Test()
                 {
-                    void Test()
-                    {
-                        void Foo() => throw null;
-                        Foo();
-                    }
+                    void Foo() => throw null;
+                    Foo();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task IgnoreTestMethods_ExcludeTestMethodsTrue()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     [Xunit.Fact]
-                     System.Threading.Tasks.Task Foo() => throw null;
-                 }
-                 """)
-              .AddXUnitApi()
-              .AddAnalyzerConfiguration("MA0137.exclude_test_methods", "true")
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0137.exclude_test_methods", "true");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.TestCode = """
+            class TypeName
+            {
+                [Xunit.Fact]
+                System.Threading.Tasks.Task Foo() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task IgnoreTestMethods_ExcludeTestMethodsFalse()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                 class TypeName
-                 {
-                     [Xunit.Fact]
-                     System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
-                 }
-                 """)
-              .AddXUnitApi()
-              .AddAnalyzerConfiguration("MA0137.exclude_test_methods", "false")
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0137.exclude_test_methods", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.TestCode = """
+            class TypeName
+            {
+                [Xunit.Fact]
+                System.Threading.Tasks.Task {|MA0137:Foo|}() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task ConfigureAwait_IsIgnored()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Runtime.CompilerServices;
-                using System.Threading.Tasks;
-                class TypeName
-                {
-                    ConfiguredTaskAwaitable ConfigureAwait(bool continueOnCapturedContext) => Task.CompletedTask.ConfigureAwait(continueOnCapturedContext);
-                }
-                """)
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                ConfiguredTaskAwaitable ConfigureAwait(bool continueOnCapturedContext) => Task.CompletedTask.ConfigureAwait(continueOnCapturedContext);
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task GetAwaiter_IsIgnored()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Runtime.CompilerServices;
-                using System.Threading.Tasks;
-                class TypeName
-                {
-                    TaskAwaiter GetAwaiter() => Task.CompletedTask.GetAwaiter();
-                }
-                """)
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                TaskAwaiter GetAwaiter() => Task.CompletedTask.GetAwaiter();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task WithCancellation_IsIgnored()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                class TypeName
-                {
-                    IAsyncEnumerable<int> WithCancellation(CancellationToken cancellationToken) => throw null;
-                }
-                """)
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            class TypeName
+            {
+                IAsyncEnumerable<int> WithCancellation(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyReturningTask_IsIgnored()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class TypeName
-                {
-                    Task Task => Task.CompletedTask;
-                }
-                """)
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                Task Task => Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyReturningTask_ExcludePropertyAccessorsTrue()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class TypeName
-                {
-                    Task Task => Task.CompletedTask;
-                }
-                """)
-              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "true")
-              .ValidateAsync();
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0137.exclude_property_accessors", "true");
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                Task Task => Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 
     [Fact]
     public Task PropertyReturningTask_ExcludePropertyAccessorsFalse_Diagnostic()
-        => CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class TypeName
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0137.exclude_property_accessors", "false");
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class TypeName
+            {
+                Task Task
                 {
-                    Task Task
-                    {
-                        {|MA0137:get|} => System.Threading.Tasks.Task.CompletedTask;
-                    }
+                    {|MA0137:get|} => System.Threading.Tasks.Task.CompletedTask;
                 }
-                """)
-              .AddAnalyzerConfiguration("MA0137.exclude_property_accessors", "false")
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

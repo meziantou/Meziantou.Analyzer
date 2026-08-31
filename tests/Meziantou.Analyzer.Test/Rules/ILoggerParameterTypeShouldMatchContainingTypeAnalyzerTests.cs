@@ -1,20 +1,26 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ILoggerParameterTypeShouldMatchContainingTypeAnalyzer,
+    Meziantou.Analyzer.Rules.ILoggerParameterTypeShouldMatchContainingTypeFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<ILoggerParameterTypeShouldMatchContainingTypeAnalyzer>(id: "MA0180")
-            .WithCodeFixProvider<ILoggerParameterTypeShouldMatchContainingTypeFixer>()
-            .WithTargetFramework(TargetFramework.Net8_0)
-            .AddNuGetReference("Microsoft.Extensions.Logging.Abstractions", "8.0.0", "lib/net8.0");
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
+        return test;
     }
 
     [Fact]
-    public async Task PrimaryConstructor_Mismatch_ShouldReportDiagnostic()
+    public Task PrimaryConstructor_Mismatch_ShouldReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A([|ILogger<B>|] logger)
@@ -25,8 +31,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             {
             }
             """;
-
-        var fix = """
+        test.FixedCode = """
             using Microsoft.Extensions.Logging;
 
             class A(ILogger<A> logger)
@@ -38,16 +43,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegularConstructor_Mismatch_ShouldReportDiagnostic()
+    public Task RegularConstructor_Mismatch_ShouldReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A
@@ -61,8 +64,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             {
             }
             """;
-
-        var fix = """
+        test.FixedCode = """
             using Microsoft.Extensions.Logging;
 
             class A
@@ -77,16 +79,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task PrimaryConstructor_Match_ShouldNotReportDiagnostic()
+    public Task PrimaryConstructor_Match_ShouldNotReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A(ILogger<A> logger)
@@ -94,15 +94,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task RegularConstructor_Match_ShouldNotReportDiagnostic()
+    public Task RegularConstructor_Match_ShouldNotReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A
@@ -113,15 +112,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonGenericILogger_ShouldNotReportDiagnostic()
+    public Task NonGenericILogger_ShouldNotReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A(ILogger logger)
@@ -129,15 +127,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AbstractClass_ShouldNotReportDiagnostic()
+    public Task AbstractClass_ShouldNotReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             abstract class A(ILogger<B> logger)
@@ -149,15 +146,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_ShouldNotReportDiagnostic()
+    public Task Interface_ShouldNotReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             interface IA
@@ -169,15 +165,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MultipleConstructors_Mismatch_ShouldReportDiagnostic()
+    public Task MultipleConstructors_Mismatch_ShouldReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A
@@ -196,15 +191,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NestedClass_Mismatch_ShouldReportDiagnostic()
+    public Task NestedClass_Mismatch_ShouldReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class Outer
@@ -214,8 +208,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
                 }
             }
             """;
-
-        var fix = """
+        test.FixedCode = """
             using Microsoft.Extensions.Logging;
 
             class Outer
@@ -226,16 +219,14 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericClass_Mismatch_ShouldReportDiagnostic()
+    public Task GenericClass_Mismatch_ShouldReportDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using Microsoft.Extensions.Logging;
 
             class A<T>([|ILogger<B>|] logger)
@@ -246,8 +237,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             {
             }
             """;
-
-        var fix = """
+        test.FixedCode = """
             using Microsoft.Extensions.Logging;
 
             class A<T>(ILogger<A<T>> logger)
@@ -259,9 +249,6 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

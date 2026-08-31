@@ -1,40 +1,55 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseIFormatProviderAnalyzer,
+    Meziantou.Analyzer.Rules.UseIFormatProviderFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseIFormatProviderAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseIFormatProviderAnalyzer>()
-            .WithCodeFixProvider<UseIFormatProviderFixer>()
-            .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-            .WithTargetFramework(TargetFramework.NetLatest)
-            .AddMeziantouAttributes();
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestState.AddMeziantouAnnotations();
+        return test;
     }
 
     [Fact]
-    public async Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
+    public Task Int32ToStringWithCultureInfo_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("1.ToString(System.Globalization.CultureInfo.InvariantCulture);")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            1.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
+    public Task Int32ToStringWithoutCultureInfo_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("[|(-1).ToString()|];")
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            {|#0:(-1).ToString()|};
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0011", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'ToString' that has a 'System.IFormatProvider' parameter"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32_PositiveToStringWithoutCultureInfo_ShouldReportDiagnostic()
+    public Task Int32_PositiveToStringWithoutCultureInfo_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("1.ToString();")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            1.ToString();
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -83,78 +98,73 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData(""" System.Convert.ToChar("") """)]
     [InlineData(""" System.Convert.ToBoolean((object)null) """)]
     [InlineData(""" System.Convert.ToBoolean("") """)]
-    public async Task Tests(string expression)
+    public Task Tests(string expression)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode(expression + ";")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{expression}};
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SystemTimeSpanImplicitToStringWithoutCultureInfo_InterpolatedString_ShouldNotReportDiagnostic()
+    public Task SystemTimeSpanImplicitToStringWithoutCultureInfo_InterpolatedString_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             var timeSpan = System.TimeSpan.FromSeconds(1);
             var myString = $"This is a test: {timeSpan}";
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
+    public Task Int32ParseWithoutCultureInfo_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
-            [|int.Parse("")|];
-            [|int.Parse("", System.Globalization.NumberStyles.Any)|];
+        var test = CreateTest();
+        test.TestCode = """
+            {|#0:int.Parse("")|};
+            {|#1:int.Parse("", System.Globalization.NumberStyles.Any)|};
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter")
-              .ValidateAsync();
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0011", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter"));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0011", DiagnosticSeverity.Warning).WithLocation(1).WithMessage("Use an overload of 'Parse' that has a 'System.IFormatProvider' parameter"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32ParseWithoutCultureInfo_CodeFix()
+    public Task Int32ParseWithoutCultureInfo_CodeFix()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [|int.Parse("")|];
             """;
-
-        const string InvariantFix = """
+        test.FixedCode = """
             int.Parse("", System.Globalization.CultureInfo.InvariantCulture);
             """;
 
-        const string CurrentFix = """
-            int.Parse("", System.Globalization.CultureInfo.CurrentCulture);
-            """;
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(index: 0, InvariantFix)
-              .ShouldFixCodeWith(index: 1, CurrentFix)
-              .ShouldFixCodeWith(InvariantFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
+    public Task SingleTryParseWithoutCultureInfo_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
-            [|float.TryParse("", out _)|];
+        var test = CreateTest();
+        test.TestCode = """
+            {|#0:float.TryParse("", out _)|};
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldReportDiagnosticWithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter")
-              .ValidateAsync();
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0011", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Use an overload of 'TryParse' that has a 'System.IFormatProvider' parameter"));
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ListOfCultureInfo_FirstOrDefault_ShouldNotReportDiagnostic()
+    public Task ListOfCultureInfo_FirstOrDefault_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Globalization;
             using System.Linq;
@@ -162,15 +172,15 @@ public sealed class UseIFormatProviderAnalyzerTests
             List<CultureInfo> values = new();
             _ = values.FirstOrDefault();
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ListOfCultureInfo_LastOrDefault_ShouldNotReportDiagnostic()
+    public Task ListOfCultureInfo_LastOrDefault_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Globalization;
             using System.Linq;
@@ -178,27 +188,27 @@ public sealed class UseIFormatProviderAnalyzerTests
             List<CultureInfo> values = new();
             _ = values.LastOrDefault();
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumToString()
+    public Task EnumToString()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             System.Enum value = default;
             _ = value.ToString();
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ObjectEquals_ShouldNotReportDiagnostic()
+    public Task ObjectEquals_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             public static class Program { public static void Main() { } }
 
             public abstract class ValueObject
@@ -216,51 +226,50 @@ public sealed class UseIFormatProviderAnalyzerTests
                 public override int GetHashCode() => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilder_AppendLine_AllStringParams()
+    public Task StringBuilder_AppendLine_AllStringParams()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             var sb = new System.Text.StringBuilder();
             var str = "";
             sb.AppendLine($"foo{str}var{str}");
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilder_AppendLine_AllStringParams_Net7()
+    public Task StringBuilder_AppendLine_AllStringParams_Net7()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             using System;
             var sb = new System.Text.StringBuilder();
             var str = "";
             sb.AppendLine($"foo{str}var{str}{'a'}{Guid.NewGuid()}");
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilder_AppendLine_Int32Params_Net7()
+    public Task StringBuilder_AppendLine_Int32Params_Net7()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             var sb = new System.Text.StringBuilder();
             int value = 0;
             [|sb.AppendLine($"foo{value}")|];
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -270,103 +279,106 @@ public sealed class UseIFormatProviderAnalyzerTests
     [InlineData("R")]
     [InlineData("s")]
     [InlineData("u")]
-    public async Task StringBuilder_AppendLine_DateTime_InvariantFormat_Net7(string format)
+    public Task StringBuilder_AppendLine_DateTime_InvariantFormat_Net7(string format)
     {
-        var sourceCode = $$"""
-            var sb = new System.Text.StringBuilder();
-            System.DateTime value = default;
-            sb.AppendLine($"foo{value:{{format}}}");
-            """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = $$$""""
+            {{{$$"""
+                        var sb = new System.Text.StringBuilder();
+                        System.DateTime value = default;
+                        sb.AppendLine($"foo{value:{{format}}}");
+                        """}}}
+            """";
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilder_AppendLine_DateTime_Net7()
+    public Task StringBuilder_AppendLine_DateTime_Net7()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             var sb = new System.Text.StringBuilder();
             System.DateTime value = default;
             [|sb.AppendLine($"foo{value:yyyy}")|];
             """;
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullableInt32ToStringWithoutCultureInfo()
+    public Task NullableInt32ToStringWithoutCultureInfo()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             int? i = -1;
             [|i.ToString()|];
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NullableInt32ToStringWithoutCultureInfo_DisabledConfig()
+    public Task NullableInt32ToStringWithoutCultureInfo_DisabledConfig()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0011.consider_nullable_types", "false");
+        test.TestCode = """
             ((int?)1).ToString();
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .AddAnalyzerConfiguration("MA0011.consider_nullable_types", "false")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveTypeAttribute_Assembly()
+    public Task CultureInsensitiveTypeAttribute_Assembly()
     {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime))]
-_ = new System.DateTime().ToString();
-_ = new System.DateTime().ToString("whatever");
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime))]
+            _ = new System.DateTime().ToString();
+            _ = new System.DateTime().ToString("whatever");
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveTypeAttribute_Assembly_Format()
+    public Task CultureInsensitiveTypeAttribute_Assembly_Format()
     {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "custom")]
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "")]
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
-_ = new System.DateTime().ToString("custom");
-_ = new System.DateTime().ToString("");
-_ = [|new System.DateTime().ToString("dummy")|];
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "custom")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
+            _ = new System.DateTime().ToString("custom");
+            _ = new System.DateTime().ToString("");
+            _ = [|new System.DateTime().ToString("dummy")|];
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveTypeAttribute_Assembly_Format_null1()
+    public Task CultureInsensitiveTypeAttribute_Assembly_Format_null1()
     {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
-_ = [|new System.DateTime().ToString("dummy")|];
-_ = new System.DateTime().ToString(format: null);
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), null)]
+            _ = [|new System.DateTime().ToString("dummy")|];
+            _ = new System.DateTime().ToString(format: null);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Member()
+    public Task CultureInsensitiveAttribute_Member()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             _ = Sample.Value.ToString();
             _ = Sample.Field.ToString();
             _ = [|Sample.OtherValue.ToString()|];
@@ -382,654 +394,602 @@ _ = new System.DateTime().ToString(format: null);
                 public static double OtherValue => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ToString_IFormattable()
+    public Task ToString_IFormattable()
     {
-        var sourceCode = """
-_ = [|new Sample().ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            _ = [|new Sample().ToString()|];
 
-class Sample : System.IFormattable
-{
-    public override string ToString() => throw null;
-    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample : System.IFormattable
+            {
+                public override string ToString() => throw null;
+                public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ToString_ISpanFormattable()
+    public Task ToString_ISpanFormattable()
     {
-        var sourceCode = """
-_ = [|new Sample().ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            _ = [|new Sample().ToString()|];
 
-class Sample : System.ISpanFormattable
-{
-    public override string ToString() => throw null;
-    public string ToString(string? format, System.IFormatProvider? formatProvider) => throw null;
-    public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider formatProvider) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample : System.ISpanFormattable
+            {
+                public override string ToString() => throw null;
+                public string ToString(string? format, System.IFormatProvider? formatProvider) => throw null;
+                public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ToString_IFormattable_CodeFix()
+    public Task ToString_IFormattable_CodeFix()
     {
-        var sourceCode = """
-_ = [|new Sample().ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            _ = [|new Sample().ToString()|];
 
-class Sample : System.IFormattable
-{
-    public override string ToString() => throw null;
-    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
-}
-""";
+            class Sample : System.IFormattable
+            {
+                public override string ToString() => throw null;
+                public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            _ = new Sample().ToString(null, System.Globalization.CultureInfo.InvariantCulture);
 
-        var invariantFix = """
-_ = new Sample().ToString(null, System.Globalization.CultureInfo.InvariantCulture);
+            class Sample : System.IFormattable
+            {
+                public override string ToString() => throw null;
+                public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
 
-class Sample : System.IFormattable
-{
-    public override string ToString() => throw null;
-    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
-}
-""";
-
-        var currentFix = """
-_ = new Sample().ToString(null, System.Globalization.CultureInfo.CurrentCulture);
-
-class Sample : System.IFormattable
-{
-    public override string ToString() => throw null;
-    public string ToString(string format, System.IFormatProvider formatProvider) => throw null;
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(index: 0, invariantFix)
-              .ShouldFixCodeWith(index: 1, currentFix)
-              .ShouldFixCodeWith(invariantFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ToString_WithIFormatProviderOverload_WithoutIFormattable()
+    public Task ToString_WithIFormatProviderOverload_WithoutIFormattable()
     {
-        var sourceCode = """
-_ = [|new Location().ToString()|];
+        var test = CreateTest();
+        test.TestCode = """
+            _ = [|new Location().ToString()|];
 
-class Location
-{
-    public override string ToString() => throw null;
-    public string ToString(System.IFormatProvider formatProvider) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Location
+            {
+                public override string ToString() => throw null;
+                public string ToString(System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
+    public Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
 
-[|A.Print($"{DateTime.Now:D}")|];
+            [|A.Print($"{DateTime.Now:D}")|];
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_CultureInvariantFormat_ShouldNotReport()
+    public Task InterpolatedStringHandler_CultureInvariantFormat_ShouldNotReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
 
-A.Print($"{DateTime.Now:o}");
+            A.Print($"{DateTime.Now:o}");
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_NoFormattableTypes_ShouldNotReport()
+    public Task InterpolatedStringHandler_NoFormattableTypes_ShouldNotReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
 
-A.Print($"XXX");
+            A.Print($"XXX");
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_MixedFormats_ShouldReport()
+    public Task InterpolatedStringHandler_MixedFormats_ShouldReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
 
-[|A.Print($"{DateTime.Now:o} | {DateTime.Now:D}")|];
+            [|A.Print($"{DateTime.Now:o} | {DateTime.Now:D}")|];
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureInvariantFormat_ShouldNotReport()
+    public Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureInvariantFormat_ShouldNotReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
-using Meziantou.Analyzer.Annotations;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Meziantou.Analyzer.Annotations;
 
-A.Print($"{new Bar():o}");
+            A.Print($"{new Bar():o}");
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
 
-[CultureInsensitiveType(format: "o")]
-sealed class Bar : IFormattable
-{
-    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            [CultureInsensitiveType(format: "o")]
+            sealed class Bar : IFormattable
+            {
+                public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureSensitiveFormat_ShouldReport()
+    public Task InterpolatedStringHandler_CustomTypeWithAttribute_CultureSensitiveFormat_ShouldReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
-using Meziantou.Analyzer.Annotations;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
+            using Meziantou.Analyzer.Annotations;
 
-[|A.Print($"{new Bar():D}")|];
+            [|A.Print($"{new Bar():D}")|];
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-    public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+                public static void Print(IFormatProvider provider, ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
 
-[CultureInsensitiveType(format: "o")]
-sealed class Bar : IFormattable
-{
-    public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            [CultureInsensitiveType(format: "o")]
+            sealed class Bar : IFormattable
+            {
+                public string ToString(string? format, IFormatProvider? formatProvider) => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringHandler_NoOverload_ShouldNotReport()
+    public Task InterpolatedStringHandler_NoOverload_ShouldNotReport()
     {
-        var sourceCode = """
-using System;
-using System.Runtime.CompilerServices;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
 
-A.Print($"{DateTime.Now:D}");
+            A.Print($"{DateTime.Now:D}");
 
-class A
-{
-    public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Print(ref DefaultInterpolatedStringHandler interpolatedStringHandler) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_CultureSensitiveFormat_ShouldReport()
+    public Task FormattableString_CultureSensitiveFormat_ShouldReport()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-[|A.Sample($"{DateTime.Now:D}")|];
+            [|A.Sample($"{DateTime.Now:D}")|];
 
-class A
-{
-    public static void Sample(FormattableString value) => throw null;
-    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class A
+            {
+                public static void Sample(FormattableString value) => throw null;
+                public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_CultureInvariantFormat_ShouldNotReport()
+    public Task FormattableString_CultureInvariantFormat_ShouldNotReport()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-A.Sample($"{DateTime.Now:o}");
+            A.Sample($"{DateTime.Now:o}");
 
-class A
-{
-    public static void Sample(FormattableString value) => throw null;
-    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-               .WithSourceCode(sourceCode)
-               .ValidateAsync();
+            class A
+            {
+                public static void Sample(FormattableString value) => throw null;
+                public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_Object_NoDiagnostic()
+    public Task FormattableString_Object_NoDiagnostic()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-public static class Program
-{
-    public static void Main() { }
-}
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class Test
-{
-    void A(object value)
-    {
-        Formatter.Print($"Value: {value}");
-    }
-}
+            class Test
+            {
+                void A(object value)
+                {
+                    Formatter.Print($"Value: {value}");
+                }
+            }
 
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-    [Fact]
-    public async Task FormattableString_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_ShouldReport()
-    {
-        var sourceCode = """
-using System;
-
-public static class Program
-{
-    public static void Main() { }
-}
-
-class Test
-{
-    void A(object value)
-    {
-        [|Formatter.Print($"Value: {value}")|];
-    }
-}
-
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0011.treat_opaque_runtime_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_Interface_NoDiagnostic()
+    public Task FormattableString_Object_TreatOpaqueRuntimeTypesAsCultureSensitive_ShouldReport()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0011.treat_opaque_runtime_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            using System;
 
-public static class Program
-{
-    public static void Main() { }
-}
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class Test
-{
-    void A(IValue value)
-    {
-        Formatter.Print($"Value: {value}");
-    }
-}
+            class Test
+            {
+                void A(object value)
+                {
+                    [|Formatter.Print($"Value: {value}")|];
+                }
+            }
 
-interface IValue { }
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task FormattableString_IFormattable_ShouldReport()
-    {
-        var sourceCode = """
-using System;
-
-public static class Program
-{
-    public static void Main() { }
-}
-
-class Test
-{
-    void A(IFormattable value)
-    {
-        [|Formatter.Print($"Value: {value}")|];
-    }
-}
-
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_NonSealedType_NoDiagnostic()
+    public Task FormattableString_Interface_NoDiagnostic()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-public static class Program
-{
-    public static void Main() { }
-}
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class Test
-{
-    void A(Value value)
-    {
-        Formatter.Print($"Value: {value}");
-    }
-}
+            class Test
+            {
+                void A(IValue value)
+                {
+                    Formatter.Print($"Value: {value}");
+                }
+            }
 
-class Value { }
+            interface IValue { }
 
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-    [Fact]
-    public async Task FormattableString_NonSealedType_TreatUnsealedTypesAsCultureSensitive_ShouldReport()
-    {
-        var sourceCode = """
-using System;
-
-public static class Program
-{
-    public static void Main() { }
-}
-
-class Test
-{
-    void A(Value value)
-    {
-        [|Formatter.Print($"Value: {value}")|];
-    }
-}
-
-class Value { }
-
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0011.treat_unsealed_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_SealedNonFormattableType_NoDiagnostic()
+    public Task FormattableString_IFormattable_ShouldReport()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-public static class Program
-{
-    public static void Main() { }
-}
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class Test
-{
-    void A(Value value)
-    {
-        Formatter.Print($"Value: {value}");
-    }
-}
+            class Test
+            {
+                void A(IFormattable value)
+                {
+                    [|Formatter.Print($"Value: {value}")|];
+                }
+            }
 
-sealed class Value
-{
-    public override string ToString() => string.Empty;
-}
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_UnconstrainedTypeParameter_NoDiagnostic()
+    public Task FormattableString_NonSealedType_NoDiagnostic()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-public static class Program
-{
-    public static void Main() { }
-}
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class Test
-{
-    void A<T>(T value)
-    {
-        Formatter.Print($"Value: {value}");
-    }
-}
+            class Test
+            {
+                void A(Value value)
+                {
+                    Formatter.Print($"Value: {value}");
+                }
+            }
 
-static class Formatter
-{
-    public static void Print(FormattableString value) => throw null;
-    public static void Print(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            class Value { }
 
-    [Fact]
-    public async Task FormattableString_IFormatProviderNotLast_CodeFix()
-    {
-        var sourceCode = """
-using System;
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-[|A.Sample($"{DateTime.Now:D}")|];
-
-class A
-{
-    public static void Sample(FormattableString value) => throw null;
-    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-
-        var invariantFix = """
-using System;
-
-A.Sample(System.Globalization.CultureInfo.InvariantCulture, $"{DateTime.Now:D}");
-
-class A
-{
-    public static void Sample(FormattableString value) => throw null;
-    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-
-        var currentFix = """
-using System;
-
-A.Sample(System.Globalization.CultureInfo.CurrentCulture, $"{DateTime.Now:D}");
-
-class A
-{
-    public static void Sample(FormattableString value) => throw null;
-    public static void Sample(IFormatProvider format, FormattableString value) => throw null;
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(index: 0, invariantFix)
-              .ShouldFixCodeWith(index: 1, currentFix)
-              .ShouldFixCodeWith(invariantFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_OptionalParameterBeforeIFormatProvider_CodeFix()
+    public Task FormattableString_NonSealedType_TreatUnsealedTypesAsCultureSensitive_ShouldReport()
     {
-        var sourceCode = """
-using System;
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0011.treat_unsealed_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            using System;
 
-[|A.Sample("prefix", $"{DateTime.Now:D}")|];
+            public static class Program
+            {
+                public static void Main() { }
+            }
 
-class A
-{
-    public static void Sample(string arg1, FormattableString value) => throw null;
-    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
-}
-""";
+            class Test
+            {
+                void A(Value value)
+                {
+                    [|Formatter.Print($"Value: {value}")|];
+                }
+            }
 
-        var invariantFix = """
-using System;
+            class Value { }
 
-A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.InvariantCulture);
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
 
-class A
-{
-    public static void Sample(string arg1, FormattableString value) => throw null;
-    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
-}
-""";
-
-        var currentFix = """
-using System;
-
-A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.CurrentCulture);
-
-class A
-{
-    public static void Sample(string arg1, FormattableString value) => throw null;
-    public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ShouldFixCodeWith(index: 0, invariantFix)
-              .ShouldFixCodeWith(index: 1, currentFix)
-              .ShouldFixCodeWith(invariantFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
-
 
     [Fact]
-    public async Task Enum_ParseWithoutFormatProvider_ShouldNotReportDiagnostic()
+    public Task FormattableString_SealedNonFormattableType_NoDiagnostic()
     {
-       const string SourceCode = """
-           var color = System.Enum.Parse(typeof(Color), "Red");
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-           enum Color { Red, Green, Blue }
-           """;
-       await CreateProjectBuilder()
-             .WithSourceCode(SourceCode)
-             .ValidateAsync();
+            public static class Program
+            {
+                public static void Main() { }
+            }
+
+            class Test
+            {
+                void A(Value value)
+                {
+                    Formatter.Print($"Value: {value}");
+                }
+            }
+
+            sealed class Value
+            {
+                public override string ToString() => string.Empty;
+            }
+
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
+    [Fact]
+    public Task FormattableString_UnconstrainedTypeParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            public static class Program
+            {
+                public static void Main() { }
+            }
+
+            class Test
+            {
+                void A<T>(T value)
+                {
+                    Formatter.Print($"Value: {value}");
+                }
+            }
+
+            static class Formatter
+            {
+                public static void Print(FormattableString value) => throw null;
+                public static void Print(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FormattableString_IFormatProviderNotLast_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            [|A.Sample($"{DateTime.Now:D}")|];
+
+            class A
+            {
+                public static void Sample(FormattableString value) => throw null;
+                public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+
+            A.Sample(System.Globalization.CultureInfo.InvariantCulture, $"{DateTime.Now:D}");
+
+            class A
+            {
+                public static void Sample(FormattableString value) => throw null;
+                public static void Sample(IFormatProvider format, FormattableString value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FormattableString_OptionalParameterBeforeIFormatProvider_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            [|A.Sample("prefix", $"{DateTime.Now:D}")|];
+
+            class A
+            {
+                public static void Sample(string arg1, FormattableString value) => throw null;
+                public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+
+            A.Sample("prefix", $"{DateTime.Now:D}", format: System.Globalization.CultureInfo.InvariantCulture);
+
+            class A
+            {
+                public static void Sample(string arg1, FormattableString value) => throw null;
+                public static void Sample(string arg1, FormattableString value, int optionalParameter = 0, IFormatProvider format = null) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Enum_ParseWithoutFormatProvider_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var color = System.Enum.Parse(typeof(Color), "Red");
+
+            enum Color { Red, Green, Blue }
+            """;
+
+        return test.RunAsync();
+    }
 }

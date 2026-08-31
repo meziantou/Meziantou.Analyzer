@@ -1,3 +1,5 @@
+using System.Collections.Concurrent;
+using System.Reflection;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
@@ -6,12 +8,12 @@ namespace Meziantou.Analyzer.Test.Harness;
 
 /// <summary>
 /// The defaults shared by the tests based on <see href="https://github.com/dotnet/roslyn-sdk">Microsoft.CodeAnalysis.Testing</see>,
-/// so that they compile the same code as the tests based on <see cref="TestHelper.ProjectBuilder"/>.
+/// so that every test compiles the code the same way.
 /// </summary>
 internal static class AnalyzerTestDefaults
 {
     /// <summary>
-    /// <see cref="TestHelper.ProjectBuilder"/> parses the code with <see cref="LanguageVersion.Latest"/>,
+    /// The tests parse the code with <see cref="LanguageVersion.Latest"/>,
     /// whereas the default of the testing library is <see cref="LanguageVersion.Default"/>.
     /// </summary>
     public const LanguageVersion LanguageVersion = Microsoft.CodeAnalysis.CSharp.LanguageVersion.Latest;
@@ -23,8 +25,7 @@ internal static class AnalyzerTestDefaults
     public const string DotNetVersion = "11.0.0-preview.7.26381.103";
 
     /// <summary>
-    /// The equivalent of <see cref="TargetFramework.NetLatest"/>, which is the target framework
-    /// <see cref="TestHelper.ProjectBuilder"/> uses when a test does not configure one.
+    /// The target framework a test compiles against when it does not configure one.
     /// </summary>
     public static readonly ReferenceAssemblies ReferenceAssemblies = new(
         "net11.0",
@@ -32,7 +33,33 @@ internal static class AnalyzerTestDefaults
         Path.Combine("ref", "net11.0"));
 
     /// <summary>
-    /// <see cref="TestHelper.ProjectBuilder"/> compiles with <see cref="MetadataImportOptions.All"/>, which the rules
+    /// The source generators shipped with the .NET reference pack of a target framework, such as the one that
+    /// implements the partial members annotated with <c>[GeneratedRegex]</c>.
+    /// </summary>
+    public static IEnumerable<Type> GetFrameworkSourceGenerators(ReferenceAssemblies referenceAssemblies)
+    {
+        var package = referenceAssemblies.ReferenceAssemblyPackage
+            ?? referenceAssemblies.Packages.FirstOrDefault(package => package.Id is "Microsoft.NETCore.App.Ref")
+            ?? throw new InvalidOperationException($"'{referenceAssemblies.TargetFramework}' does not reference the .NET reference pack");
+
+        var version = package.Version;
+
+        return FrameworkSourceGenerators.GetOrAdd(version, static version =>
+        {
+            var loader = new GeneratorAssemblyLoader(version);
+            return
+            [
+                .. NuGetPackages.GetReferencesAsync("Microsoft.NETCore.App.Ref", version, ["analyzers/dotnet/cs/"]).Result
+                    .SelectMany(path => loader.Load(path).GetTypes())
+                    .Where(type => !type.IsAbstract && type.GetCustomAttribute<GeneratorAttribute>() is not null),
+            ];
+        });
+    }
+
+    private static readonly ConcurrentDictionary<string, Type[]> FrameworkSourceGenerators = new(StringComparer.Ordinal);
+
+    /// <summary>
+    /// The tests compile with <see cref="MetadataImportOptions.All"/>, which the rules
     /// that analyze the non-public members of the referenced assemblies rely on.
     /// </summary>
     public static Solution ConfigureCompilationOptions(Solution solution, ProjectId projectId)

@@ -1,15 +1,33 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotUseImplicitCultureSensitiveToStringAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotUseImplicitCultureSensitiveToStringInterpolationFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<DoNotUseImplicitCultureSensitiveToStringAnalyzer>()
-            .WithCodeFixProvider<DoNotUseImplicitCultureSensitiveToStringInterpolationFixer>()
-            .AddMeziantouAttributes()
-            .WithTargetFramework(TargetFramework.NetLatest);
+        var test = new CodeFixTest();
+        test.TestState.AddMeziantouAnnotations();
+        return test;
     }
+
+#if ROSLYN_5_9_OR_GREATER
+    private static CodeFixTest CreateUnionTest()
+    {
+        var test = new CodeFixTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
+    }
+#endif
+
+
 
     [Theory]
     [InlineData("\"abc\"", "0f")]
@@ -48,35 +66,35 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("\"abc\"", "default(System.Numerics.Vector<int>)")]
     public async Task ConcatDiagnostic(string left, string right)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class Test
             {
-                void A() { _ = {{left}} + [|{{right}}|]; }
+                void A() { _ = {{left}} + {|MA0075:{{right}}|}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
 
-        var invertedSourceCode = $$"""
+        await test.RunAsync();
+
+        var invertedTest = CreateTest();
+        invertedTest.TestCode = $$"""
             class Test
             {
-                void A() { _ = [|{{right}}|] + {{left}}; }
+                void A() { _ = {|MA0075:{{right}}|} + {{left}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(invertedSourceCode)
-              .ValidateAsync();
 
-        var multiConcat = $$"""
-        class Test
-        {
-            void A() { string value = ""; value += {{left}} + [|{{right}}|]; }
-        }
-        """;
-        await CreateProjectBuilder()
-              .WithSourceCode(multiConcat)
-              .ValidateAsync();
+        await invertedTest.RunAsync();
+
+        var multiConcatTest = CreateTest();
+        multiConcatTest.TestCode = $$"""
+            class Test
+            {
+                void A() { string value = ""; value += {{left}} + {|MA0075:{{right}}|}; }
+            }
+            """;
+
+        await multiConcatTest.RunAsync();
     }
 
     [Theory]
@@ -106,31 +124,32 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("\"abc\"", "default(System.Uri)")]
     public async Task ConcatNoDiagnostic(string left, string right)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class Test
             {
                 void A() { _ = {{left}} + {{right}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
 
-        var invertedSourceCode = $$"""
+        await test.RunAsync();
+
+        var invertedTest = CreateTest();
+        invertedTest.TestCode = $$"""
             class Test
             {
                 void A() { _ = {{right}} + {{left}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(invertedSourceCode)
-              .ValidateAsync();
+
+        await invertedTest.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_Char_String_NoDiagnostic()
+    public Task Concat_Char_String_NoDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(char[] c)
@@ -140,9 +159,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -163,80 +181,76 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData(@"test{|MA0076:{new int[0].Min()}|}")]
     [InlineData(@"test{|MA0076:{System.Int128.One}|}")]
     [InlineData(@"test{|MA0076:{new System.DateOnly(2023,1,1)}|}")]
-    public async Task InterpolatedStringDiagnostic(string content)
+    public Task InterpolatedStringDiagnostic(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $"{{content}}"; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringDiagnostic_CodeFix()
+    public Task InterpolatedStringDiagnostic_CodeFix()
     {
-        const string SourceCode = """
-class Test
-{
-    void A(int value)
-    {
-        _ = $"abc{|MA0076:{value}|}";
-    }
-}
-""";
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = $"abc{|MA0076:{value}|}";
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Globalization;
 
-        const string Fix = """
-using System.Globalization;
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = string.Create(CultureInfo.InvariantCulture, $"abc{value}");
+                }
+            }
+            """;
 
-class Test
-{
-    void A(int value)
-    {
-        _ = string.Create(CultureInfo.InvariantCulture, $"abc{value}");
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedStringDiagnostic_NoCodeFix_WhenStringCreateIsUnavailable()
+    public Task InterpolatedStringDiagnostic_NoCodeFix_WhenStringCreateIsUnavailable()
     {
-        const string SourceCode = """
-class Test
-{
-    void A(int value)
-    {
-        _ = $"abc{|MA0076:{value}|}";
-    }
-}
-""";
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = $"abc{|MA0076:{value}|}";
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = $"abc{|MA0076:{value}|}";
+                }
+            }
+            """;
 
-        const string Fix = """
-class Test
-{
-    void A(int value)
-    {
-        _ = $"abc{value}";
-    }
-}
-""";
-
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(Fix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -252,65 +266,70 @@ class Test
     [InlineData(@"test{new int[0].Count()}")]
     [InlineData(@"test{new System.Collections.Generic.List<int>().Count}")]
     [InlineData(@"test{new System.DateOnly(2023,1,1):o}")]
-    public async Task InterpolatedStringNoDiagnostic(string content)
+    public Task InterpolatedStringNoDiagnostic(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $"{{content}}"; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("abc{(nint)1}")]
-    public async Task InterpolatedStringNoDiagnostic_CSharp11(string content)
+    public Task InterpolatedStringNoDiagnostic_CSharp11(string content)
     {
-        var sourceCode = @"using System.Linq;
-class Test
-{
-    void A() { string str = $""" + content + @"""; }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp11)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void A() { string str = $"{{content}}"; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString()
+    public Task FormattableString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A() { System.FormattableString a = $"abc{-1}"; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_Invariant()
+    public Task FormattableString_Invariant()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A() { string a = System.FormattableString.Invariant($"abc{1}"); }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_Invariant_StringConcat()
+    public Task FormattableString_Invariant_StringConcat()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(string b)
@@ -322,89 +341,89 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FormattableString_CurrentCulture_StringConcat()
+    public Task FormattableString_CurrentCulture_StringConcat()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(string b)
                 {
-                    _ = [|System.FormattableString.CurrentCulture($"abc{1:N0}")|] + b;
+                    _ = {|MA0075:System.FormattableString.CurrentCulture($"abc{1:N0}")|} + b;
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringConcatFormattableString()
+    public Task StringConcatFormattableString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A() { var a = "abc" + $"{|MA0076:{-1}|}"; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringConcat_ToString_Int32ToString()
+    public Task StringConcat_ToString_Int32ToString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void ToString() { var a = "abc" + $"{-1}"; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringConcat_ToString_Int32ToString_ConfigNotExcludeToString()
+    public Task StringConcat_ToString_Int32ToString_ConfigNotExcludeToString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.exclude_tostring_methods", "false");
+        test.TestCode = """
             class Test
             {
                 void ToString() { var a = "abc" + $"{|MA0076:{-1}|}"; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .AddAnalyzerConfiguration("MA0076.exclude_tostring_methods", "false")
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ObjectToString()
+    public Task ObjectToString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 string A() => {|MA0107:new object().ToString()|};
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ObjectToString_InterpolatedString()
+    public Task ObjectToString_InterpolatedString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             sealed class Sample {}
 
             class Test
@@ -416,15 +435,16 @@ class Test
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ObjectToString_InterpolatedStringHandler_NoDiagnostic()
+    public Task ObjectToString_InterpolatedStringHandler_NoDiagnostic()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.TestCode = """
             using System.Runtime.CompilerServices;
 
             class Test
@@ -448,227 +468,226 @@ class Test
                 public void AppendFormatted<T>(T value) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Int32ToString()
+    public Task Int32ToString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 string A() => (-1).ToString();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SubClassToString()
+    public Task SubClassToString()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 string A() => new Test().ToString();
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/516")]
-    public async Task ConcatNoDiagnostic_Char()
+    public Task ConcatNoDiagnostic_Char()
     {
-        var sourceCode = """
-class Test
-{
-    void A()
-    {
-        var c = '!';
-        _ = "abc" + char.ToLower(c, System.Globalization.CultureInfo.InvariantCulture);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    var c = '!';
+                    _ = "abc" + char.ToLower(c, System.Globalization.CultureInfo.InvariantCulture);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConcatNoDiagnostic_Boolean()
+    public Task ConcatNoDiagnostic_Boolean()
     {
-        var sourceCode = """
-class Test
-{
-    void A()
-    {
-        bool? value = null;
-        _ = "=" + (value == true);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    bool? value = null;
+                    _ = "=" + (value == true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IgnoreTypeUsingAssemblyAttribute()
+    public Task IgnoreTypeUsingAssemblyAttribute()
     {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime))]
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime))]
 
-class Test
-{
-    void A()
-    {
-        _ = "abc" + new System.DateTime();
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            class Test
+            {
+                void A()
+                {
+                    _ = "abc" + new System.DateTime();
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task IgnoreTypeUsingAssemblyAttribute_MultipleAttributes()
-    {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "a")]
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "b")]
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "c")]
-
-class Test
-{
-    void A()
-    {
-        _ = $"abc{new System.DateTime():b}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat()
+    public Task IgnoreTypeUsingAssemblyAttribute_MultipleAttributes()
     {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "a")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "b")]
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "c")]
 
-class Test
-{
-    void A()
-    {
-        _ = $"abc{new System.DateTime():abc}";
+            class Test
+            {
+                void A()
+                {
+                    _ = $"abc{new System.DateTime():b}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+    [Fact]
+    public Task IgnoreTypeUsingAssemblyAttribute_WithFormat()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
+
+            class Test
+            {
+                void A()
+                {
+                    _ = $"abc{new System.DateTime():abc}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(""" $"abc{new System.DateTime()}" """)]
     [InlineData(""" $"abc{|MA0076:{new System.DateTime():a}|}" """)]
-    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatInvariant(string content)
+    public Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatInvariant(string content)
     {
-        var sourceCode = $$"""
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: true)]
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: true)]
 
-class Test
-{
-    void A()
-    {
-        _ = {{content}};
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Test
+            {
+                void A()
+                {
+                    _ = {{content}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(""" $"abc{|MA0076:{new System.DateTime()}|}" """)]
     [InlineData(""" $"abc{|MA0076:{new System.DateTime():a}|}" """)]
-    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatCultureSensitive(string content)
+    public Task IgnoreTypeUsingAssemblyAttribute_WithFormat_DefaultFormatCultureSensitive(string content)
     {
-        var sourceCode = $$"""
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: false)]
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), isDefaultFormatCultureInsensitive: false)]
 
-class Test
-{
-    void A()
-    {
-        _ = {{content}};
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            class Test
+            {
+                void A()
+                {
+                    _ = {{content}};
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task IgnoreTypeUsingAssemblyAttribute_WithFormatNotMatchingAttribute()
-    {
-        var sourceCode = """
-[assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
-
-class Test
-{
-    void A()
-    {
-        _ = $"abc{|MA0076:{new System.DateTime():other}|}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IgnoreTypeUsingAttribute()
+    public Task IgnoreTypeUsingAssemblyAttribute_WithFormatNotMatchingAttribute()
     {
-        var sourceCode = """
-class Test
-{
-    void A()
-    {
-        _ = "abc" + new Sample();
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute(typeof(System.DateTime), "abc")]
 
-[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
-class Sample : System.IFormattable
-{
-    public string ToString(string? format, System.IFormatProvider? formatProvider)
-    {
-        return "abc";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Test
+            {
+                void A()
+                {
+                    _ = $"abc{|MA0076:{new System.DateTime():other}|}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Property()
+    public Task IgnoreTypeUsingAttribute()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = "abc" + new Sample();
+                }
+            }
+
+            [Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+            class Sample : System.IFormattable
+            {
+                public string ToString(string? format, System.IFormatProvider? formatProvider)
+                {
+                    return "abc";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CultureInsensitiveAttribute_Property()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A()
@@ -686,15 +705,15 @@ class Sample : System.IFormattable
                 double OtherValue => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Field()
+    public Task CultureInsensitiveAttribute_Field()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 [Meziantou.Analyzer.Annotations.CultureInsensitive]
@@ -707,34 +726,34 @@ class Sample : System.IFormattable
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Parameter()
+    public Task CultureInsensitiveAttribute_Parameter()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A([Meziantou.Analyzer.Annotations.CultureInsensitive] double value, double other)
                 {
                     _ = "abc" + value;
                     _ = $"abc{value}";
-                    _ = "abc" + [|other|];
+                    _ = "abc" + {|MA0075:other|};
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Parameter_Argument()
+    public Task CultureInsensitiveAttribute_Parameter_Argument()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(double value)
@@ -749,15 +768,15 @@ class Sample : System.IFormattable
                 static void WriteOther(string value) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Parameter_InterpolatedStringHandlerArgument()
+    public Task CultureInsensitiveAttribute_Parameter_InterpolatedStringHandlerArgument()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Runtime.CompilerServices;
 
             class Test
@@ -765,7 +784,7 @@ class Sample : System.IFormattable
                 void A(double value)
                 {
                     Write($"abc{"x" + value}");
-                    WriteOther($"abc{"x" + [|value|]}");
+                    WriteOther($"abc{"x" + {|MA0075:value|}}");
                 }
 
                 static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] CustomHandler handler) { }
@@ -780,15 +799,15 @@ class Sample : System.IFormattable
                 public void AppendFormatted<T>(T value) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_Parameter_NestedArgument()
+    public Task CultureInsensitiveAttribute_Parameter_NestedArgument()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class Test
             {
                 void A(double value)
@@ -800,15 +819,15 @@ class Sample : System.IFormattable
                 static void Write([Meziantou.Analyzer.Annotations.CultureInsensitive] string value) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CultureInsensitiveAttribute_AssemblyAttribute()
+    public Task CultureInsensitiveAttribute_AssemblyAttribute()
     {
-        var sourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("P:Test.Value")]
             [assembly: Meziantou.Analyzer.Annotations.CultureInsensitive("F:Test.Field")]
 
@@ -818,7 +837,7 @@ class Sample : System.IFormattable
                 {
                     _ = "abc" + Value;
                     _ = "abc" + Field;
-                    _ = "abc" + [|OtherValue|];
+                    _ = "abc" + {|MA0075:OtherValue|};
                 }
 
                 static double Value => 0;
@@ -826,601 +845,600 @@ class Sample : System.IFormattable
                 static double OtherValue => 0;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CustomTypeImplementingIFormattable()
+    public Task CustomTypeImplementingIFormattable()
     {
-        var sourceCode = """
-class Test
-{
-    void A()
-    {
-        _ = "abc" + [|new Sample()|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = "abc" + {|MA0075:new Sample()|};
+                }
+            }
 
-class Sample : System.IFormattable
-{
-    public string ToString(string? format, System.IFormatProvider? formatProvider)
-    {
-        return "abc";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            class Sample : System.IFormattable
+            {
+                public string ToString(string? format, System.IFormatProvider? formatProvider)
+                {
+                    return "abc";
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task Concat_ConditionalExpression_CultureInsensitiveBranches_NoDiagnostic()
-    {
-        var sourceCode = """
-using System;
-using System.Globalization;
-class Test
-{
-    void A(DateTime? date)
-    {
-        _ = "test" + (date.HasValue ? date.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_ConditionalExpression_CultureSensitiveType()
+    public Task Concat_ConditionalExpression_CultureInsensitiveBranches_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(bool condition, double a, double b)
-    {
-        _ = "test" + ([|condition ? a : b|]);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+            class Test
+            {
+                void A(DateTime? date)
+                {
+                    _ = "test" + (date.HasValue ? date.Value.ToString(CultureInfo.InvariantCulture) : string.Empty);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_CoalesceExpression_NoDiagnostic()
+    public Task Concat_ConditionalExpression_CultureSensitiveType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(string value)
-    {
-        _ = "test" + (value ?? "");
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(bool condition, double a, double b)
+                {
+                    _ = "test" + ({|MA0075:condition ? a : b|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_CoalesceExpression_CultureSensitiveType()
+    public Task Concat_CoalesceExpression_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(double? value)
-    {
-        _ = "test" + ([|value ?? 1.5|]);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string value)
+                {
+                    _ = "test" + (value ?? "");
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_SwitchExpression_NoDiagnostic()
+    public Task Concat_CoalesceExpression_CultureSensitiveType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(int value)
-    {
-        _ = "test" + (value switch { 0 => "a", _ => "b" });
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(double? value)
+                {
+                    _ = "test" + ({|MA0075:value ?? 1.5|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_SwitchExpression_CultureSensitiveType()
+    public Task Concat_SwitchExpression_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(int value)
-    {
-        _ = "test" + ([|value switch { 0 => 1.5, _ => 2.5 }|]);
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = "test" + (value switch { 0 => "a", _ => "b" });
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_AwaitExpression_NoDiagnostic()
+    public Task Concat_SwitchExpression_CultureSensitiveType()
     {
-        var sourceCode = """
-using System.Threading.Tasks;
-class Test
-{
-    async Task A(Task<string> task)
-    {
-        _ = "test" + await task;
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(int value)
+                {
+                    _ = "test" + ({|MA0075:value switch { 0 => 1.5, _ => 2.5 }|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_AwaitExpression_CultureSensitiveType()
+    public Task Concat_AwaitExpression_NoDiagnostic()
     {
-        var sourceCode = """
-using System.Threading.Tasks;
-class Test
-{
-    async Task A(Task<double> task)
-    {
-        _ = "test" + [|await task|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A(Task<string> task)
+                {
+                    _ = "test" + await task;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Object_Concat_NoDiagnostic()
+    public Task Concat_AwaitExpression_CultureSensitiveType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(object value)
-    {
-        _ = "Value: " + value;
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A(Task<double> task)
+                {
+                    _ = "test" + {|MA0075:await task|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Object_InterpolatedString_NoDiagnostic()
+    public Task Object_Concat_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(object value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(object value)
+                {
+                    _ = "Value: " + value;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Object_Concat_TreatOpaqueRuntimeTypesAsCultureSensitive()
+    public Task Object_InterpolatedString_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(object value)
-    {
-        _ = "Value: " + [|value|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0075.treat_opaque_runtime_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(object value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Object_InterpolatedString_TreatOpaqueRuntimeTypesAsCultureSensitive()
+    public Task Object_Concat_TreatOpaqueRuntimeTypesAsCultureSensitive()
     {
-        var sourceCode = """
-class Test
-{
-    void A(object value)
-    {
-        _ = $"Value: {|MA0076:{value}|}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0076.treat_opaque_runtime_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.treat_opaque_runtime_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(object value)
+                {
+                    _ = "Value: " + {|MA0075:value|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Interface_Concat_NoDiagnostic()
+    public Task Object_InterpolatedString_TreatOpaqueRuntimeTypesAsCultureSensitive()
     {
-        var sourceCode = """
-class Test
-{
-    void A(IValue value)
-    {
-        _ = "Value: " + value;
-    }
-}
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.treat_opaque_runtime_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(object value)
+                {
+                    _ = $"Value: {|MA0076:{value}|}";
+                }
+            }
+            """;
 
-interface IValue { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task Interface_InterpolatedString_NoDiagnostic()
-    {
-        var sourceCode = """
-class Test
-{
-    void A(IValue value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-
-interface IValue { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IFormattable_Concat()
+    public Task Interface_Concat_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(System.IFormattable value)
-    {
-        _ = "Value: " + [|value|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(IValue value)
+                {
+                    _ = "Value: " + value;
+                }
+            }
+
+            interface IValue { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IFormattable_InterpolatedString()
+    public Task Interface_InterpolatedString_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(System.IFormattable value)
-    {
-        _ = $"Value: {|MA0076:{value}|}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(IValue value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+
+            interface IValue { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonSealedType_Concat_NoDiagnostic()
+    public Task IFormattable_Concat()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = "Value: " + value;
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(System.IFormattable value)
+                {
+                    _ = "Value: " + {|MA0075:value|};
+                }
+            }
+            """;
 
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonSealedType_Concat_TreatUnsealedTypesAsCultureSensitive()
+    public Task IFormattable_InterpolatedString()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = "Value: " + [|value|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(System.IFormattable value)
+                {
+                    _ = $"Value: {|MA0076:{value}|}";
+                }
+            }
+            """;
 
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0075.treat_unsealed_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonSealedType_InterpolatedString_NoDiagnostic()
+    public Task NonSealedType_Concat_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = $"Value: {value}";
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = "Value: " + value;
+                }
+            }
 
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            class Value { }
+            """;
 
-    [Fact]
-    public async Task NonSealedType_InterpolatedString_TreatUnsealedTypesAsCultureSensitive()
-    {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = $"Value: {|MA0076:{value}|}";
-    }
-}
-
-class Value { }
-""";
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0076.treat_unsealed_types_as_culture_sensitive", "true")
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedNonFormattableType_Concat_NoDiagnostic()
+    public Task NonSealedType_Concat_TreatUnsealedTypesAsCultureSensitive()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = "Value: " + value;
-    }
-}
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.treat_unsealed_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = "Value: " + {|MA0075:value|};
+                }
+            }
 
-sealed class Value
-{
-    public override string ToString() => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Value { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SealedNonFormattableType_InterpolatedString_NoDiagnostic()
+    public Task NonSealedType_InterpolatedString_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Value value)
-    {
-        _ = $"Value: {value}";
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
 
-sealed class Value
-{
-    public override string ToString() => string.Empty;
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Value { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnconstrainedTypeParameter_Concat_NoDiagnostic()
+    public Task NonSealedType_InterpolatedString_TreatUnsealedTypesAsCultureSensitive()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T value)
-    {
-        _ = "Value: " + value;
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.treat_unsealed_types_as_culture_sensitive", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = $"Value: {|MA0076:{value}|}";
+                }
+            }
+
+            class Value { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UnconstrainedTypeParameter_InterpolatedString_NoDiagnostic()
+    public Task SealedNonFormattableType_Concat_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T value)
-    {
-        _ = $"Value: {value}";
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = "Value: " + value;
+                }
+            }
+
+            sealed class Value
+            {
+                public override string ToString() => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToIFormattable()
+    public Task SealedNonFormattableType_InterpolatedString_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : System.IFormattable
-    {
-        _ = "abc" + [|item|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Value value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+
+            sealed class Value
+            {
+                public override string ToString() => string.Empty;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToISpanFormattable()
+    public Task UnconstrainedTypeParameter_Concat_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : System.ISpanFormattable
-    {
-        _ = "abc" + [|item|];
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T value)
+                {
+                    _ = "Value: " + value;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToTypeThatImplementsIFormattable()
+    public Task UnconstrainedTypeParameter_InterpolatedString_NoDiagnostic()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : Sample
-    {
-        _ = "abc" + [|item|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T value)
+                {
+                    _ = $"Value: {value}";
+                }
+            }
+            """;
 
-class Sample : System.IFormattable
-{
-    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToTypeThatImplementsISpanFormattable()
+    public Task GenericTypeParameterConstrainedToIFormattable()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : Sample
-    {
-        _ = "abc" + [|item|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : System.IFormattable
+                {
+                    _ = "abc" + {|MA0075:item|};
+                }
+            }
+            """;
 
-class Sample : System.ISpanFormattable
-{
-    public override string ToString() => "abc";
-    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
-    public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider)
-    {
-        charsWritten = 0;
-        return true;
-    }
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToTypeThatHasToStringWithIFormatProvider()
+    public Task GenericTypeParameterConstrainedToISpanFormattable()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : Sample
-    {
-        _ = "abc" + [|item|];
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : System.ISpanFormattable
+                {
+                    _ = "abc" + {|MA0075:item|};
+                }
+            }
+            """;
 
-class Sample
-{
-    public string ToString(System.IFormatProvider? formatProvider) => "abc";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericTypeParameterConstrainedToTypeWithCultureInsensitiveAttribute()
+    public Task GenericTypeParameterConstrainedToTypeThatImplementsIFormattable()
     {
-        var sourceCode = """
-class Test
-{
-    void A<T>(T item) where T : Sample
-    {
-        _ = "abc" + item;
-    }
-}
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : Sample
+                {
+                    _ = "abc" + {|MA0075:item|};
+                }
+            }
 
-[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
-class Sample : System.IFormattable
-{
-    public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
-}
-""";
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            class Sample : System.IFormattable
+            {
+                public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericTypeParameterConstrainedToTypeThatImplementsISpanFormattable()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : Sample
+                {
+                    _ = "abc" + {|MA0075:item|};
+                }
+            }
+
+            class Sample : System.ISpanFormattable
+            {
+                public override string ToString() => "abc";
+                public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+                public bool TryFormat(System.Span<char> destination, out int charsWritten, System.ReadOnlySpan<char> format, System.IFormatProvider? provider)
+                {
+                    charsWritten = 0;
+                    return true;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericTypeParameterConstrainedToTypeThatHasToStringWithIFormatProvider()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : Sample
+                {
+                    _ = "abc" + {|MA0075:item|};
+                }
+            }
+
+            class Sample
+            {
+                public string ToString(System.IFormatProvider? formatProvider) => "abc";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericTypeParameterConstrainedToTypeWithCultureInsensitiveAttribute()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A<T>(T item) where T : Sample
+                {
+                    _ = "abc" + item;
+                }
+            }
+
+            [Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+            class Sample : System.IFormattable
+            {
+                public string ToString(string? format, System.IFormatProvider? formatProvider) => "abc";
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -1436,18 +1454,18 @@ class Sample : System.IFormattable
     [InlineData("value.ToString(\"x\")")]
     [InlineData("value.ToString(default(string))")]
     [InlineData("value.ToString(format)")]
-    public async Task Concat_Enum_NoDiagnostic(string expression)
+    public Task Concat_Enum_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A(StringComparison value, string format) { _ = "abc" + {{expression}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -1455,43 +1473,44 @@ class Sample : System.IFormattable
     [InlineData("value.ToString()")]
     [InlineData("value?.ToString(\"G\")")]
     [InlineData("value.Value.ToString(\"G\")")]
-    public async Task Concat_NullableEnum_NoDiagnostic(string expression)
+    public Task Concat_NullableEnum_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A(StringComparison? value) { _ = "abc" + {{expression}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("value.ToString()")]
     [InlineData("value.ToString(\"G\")")]
-    public async Task Concat_SystemEnum_NoDiagnostic(string expression)
+    public Task Concat_SystemEnum_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A(Enum value) { _ = "abc" + {{expression}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("value.ToString(\"G\")")]
     [InlineData("value.ToString(\"F\")")]
-    public async Task Concat_UserDefinedEnum_NoDiagnostic(string expression)
+    public Task Concat_UserDefinedEnum_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             class Test
             {
                 void A(Sample value) { _ = "abc" + {{expression}}; }
@@ -1499,9 +1518,8 @@ class Sample : System.IFormattable
 
             enum Sample { A }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -1510,35 +1528,35 @@ class Sample : System.IFormattable
     [InlineData("{value:F}")]
     [InlineData("{value.ToString()}")]
     [InlineData("{value.ToString(\"G\")}")]
-    public async Task InterpolatedString_Enum_NoDiagnostic(string content)
+    public Task InterpolatedString_Enum_NoDiagnostic(string content)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A(StringComparison value) { _ = $"abc{{content}}"; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("value.ToString()")]
     [InlineData("value.ToString(\"G\")")]
-    public async Task Concat_EnumInGenericMethod_NoDiagnostic(string expression)
+    public Task Concat_EnumInGenericMethod_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A<T>(T value) where T : struct, Enum { _ = "abc" + {{expression}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -1547,18 +1565,18 @@ class Sample : System.IFormattable
     [InlineData("value?.ToString(format)")]
     [InlineData("value?.Date.ToString(\"F\")")]
     [InlineData("value?.Ticks.ToString()")]
-    public async Task Concat_ConditionalAccess_Diagnostic(string expression)
+    public Task Concat_ConditionalAccess_Diagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
-                void A(DateTime? value, string format) { _ = "abc" + [|{{expression}}|]; }
+                void A(DateTime? value, string format) { _ = "abc" + {|MA0075:{{expression}}|}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -1566,59 +1584,60 @@ class Sample : System.IFormattable
     [InlineData("value?.ToString(System.Globalization.CultureInfo.InvariantCulture)")]
     [InlineData("value?.Ticks.ToString(\"X\")")]
     [InlineData("value?.Kind.ToString(\"G\")")]
-    public async Task Concat_ConditionalAccess_NoDiagnostic(string expression)
+    public Task Concat_ConditionalAccess_NoDiagnostic(string expression)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
                 void A(DateTime? value) { _ = "abc" + {{expression}}; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_NestedConditionalAccess_Diagnostic()
+    public Task Concat_NestedConditionalAccess_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
-                void A(Test value) { _ = "abc" + [|value?.Child?.Value.ToString("F")|]; }
+                void A(Test value) { _ = "abc" + {|MA0075:value?.Child?.Value.ToString("F")|}; }
 
                 Test Child { get; }
                 DateTime Value { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Concat_ConditionalAccessToCultureSensitiveMember_Diagnostic()
+    public Task Concat_ConditionalAccessToCultureSensitiveMember_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
-                void A(Test value) { _ = "abc" + [|value?.Value|]; }
+                void A(Test value) { _ = "abc" + {|MA0075:value?.Value|}; }
 
                 DateTime Value { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task InterpolatedString_ConditionalAccess_Diagnostic()
+    public Task InterpolatedString_ConditionalAccess_Diagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             class Test
             {
@@ -1627,239 +1646,234 @@ class Sample : System.IFormattable
                 DateTime Value { get; }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
 #if ROSLYN_5_9_OR_GREATER
-    private static ProjectBuilder CreateUnionProjectBuilder()
+
+    [Fact]
+    public Task Union_AllCaseTypesAreCultureInsensitive()
     {
-        return CreateProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview);
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + value;
+                }
+            }
+
+            union Sample(bool, string);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_AllCaseTypesAreCultureInsensitive()
+    public Task Union_OneCaseTypeIsCultureSensitive()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + value;
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + {|MA0075:value|};
+                }
+            }
 
-union Sample(bool, string);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            union Sample(bool, double);
+            """;
 
-    [Fact]
-    public async Task Union_OneCaseTypeIsCultureSensitive()
-    {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + [|value|];
-    }
-}
-
-union Sample(bool, double);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_CaseTypeIsAUnionWithACultureSensitiveCaseType()
+    public Task Union_CaseTypeIsAUnionWithACultureSensitiveCaseType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + [|value|];
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + {|MA0075:value|};
+                }
+            }
 
-union Sample(bool, Inner);
-union Inner(string, double);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            union Sample(bool, Inner);
+            union Inner(string, double);
+            """;
 
-    [Fact]
-    public async Task Union_CaseTypesReferenceEachOther()
-    {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + value;
-    }
-}
-
-union Sample(bool, Inner);
-union Inner(string, Sample);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_NullableCaseType()
+    public Task Union_CaseTypesReferenceEachOther()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + [|value|];
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + value;
+                }
+            }
 
-union Sample(bool, double?);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
-    }
+            union Sample(bool, Inner);
+            union Inner(string, Sample);
+            """;
 
-    [Fact]
-    public async Task Union_CultureInsensitiveTypeAttribute()
-    {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + value;
-    }
-}
-
-[Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
-union Sample(bool, double);
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_CustomUnionType()
+    public Task Union_NullableCaseType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + [|value|];
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + {|MA0075:value|};
+                }
+            }
 
-[System.Runtime.CompilerServices.Union]
-struct Sample : System.Runtime.CompilerServices.IUnion
-{
-    private readonly object _value;
+            union Sample(bool, double?);
+            """;
 
-    public Sample(bool value) => _value = value;
-    public Sample(double value) => _value = value;
-
-    public object Value => _value;
-}
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_UnionMemberProvider()
+    public Task Union_CultureInsensitiveTypeAttribute()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = "abc" + [|value|];
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + value;
+                }
+            }
 
-[System.Runtime.CompilerServices.Union]
-struct Sample : Sample.IUnionMembers
-{
-    private readonly object _value;
+            [Meziantou.Analyzer.Annotations.CultureInsensitiveTypeAttribute]
+            union Sample(bool, double);
+            """;
 
-    private Sample(object value) => _value = value;
-
-    public interface IUnionMembers
-    {
-        static Sample Create(bool value) => new(value);
-        static Sample Create(double value) => new(value);
-        object Value { get; }
-    }
-
-    object IUnionMembers.Value => _value;
-}
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_InterpolatedStringWithCultureSensitiveCaseType()
+    public Task Union_CustomUnionType()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = $"{|MA0076:{value}|}";
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + {|MA0075:value|};
+                }
+            }
 
-union Sample(bool, System.DateTime)
-{
-    public override string ToString() => "";
-}
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            [System.Runtime.CompilerServices.Union]
+            struct Sample : System.Runtime.CompilerServices.IUnion
+            {
+                private readonly object _value;
+
+                public Sample(bool value) => _value = value;
+                public Sample(double value) => _value = value;
+
+                public object Value => _value;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Union_InterpolatedStringWithCultureInsensitiveFormat()
+    public Task Union_UnionMemberProvider()
     {
-        var sourceCode = """
-class Test
-{
-    void A(Sample value)
-    {
-        _ = $"{value:o}";
-    }
-}
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = "abc" + {|MA0075:value|};
+                }
+            }
 
-union Sample(bool, System.DateTime)
-{
-    public override string ToString() => "";
-}
-""";
-        await CreateUnionProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+            [System.Runtime.CompilerServices.Union]
+            struct Sample : Sample.IUnionMembers
+            {
+                private readonly object _value;
+
+                private Sample(object value) => _value = value;
+
+                public interface IUnionMembers
+                {
+                    static Sample Create(bool value) => new(value);
+                    static Sample Create(double value) => new(value);
+                    object Value { get; }
+                }
+
+                object IUnionMembers.Value => _value;
+            }
+            """;
+
+        return test.RunAsync();
     }
+
+    [Fact]
+    public Task Union_InterpolatedStringWithCultureSensitiveCaseType()
+    {
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = $"{|MA0076:{value}|}";
+                }
+            }
+
+            union Sample(bool, System.DateTime)
+            {
+                public override string ToString() => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Union_InterpolatedStringWithCultureInsensitiveFormat()
+    {
+        var test = CreateUnionTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample value)
+                {
+                    _ = $"{value:o}";
+                }
+            }
+
+            union Sample(bool, System.DateTime)
+            {
+                public override string ToString() => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
 #endif
 }

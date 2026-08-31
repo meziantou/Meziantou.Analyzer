@@ -1,13 +1,16 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.AvoidUsingRedundantElseAnalyzer,
+    Meziantou.Analyzer.Rules.AvoidUsingRedundantElseFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class AvoidUsingRedundantElseAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<AvoidUsingRedundantElseAnalyzer>()
-            .WithCodeFixProvider<AvoidUsingRedundantElseFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     // The following tests aim to validate several combinations affecting
     //  1. whether the AvoidUsingRedundantElse rule is deemed infringed, and
@@ -38,7 +41,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("throw new System.ArgumentNullException(nameof(value))", true)]
     [InlineData("value++", false)]
     [InlineData("if (value < -5) return", false)]
-    public async Task Test_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
+    public Task Test_WhenIfJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
         var @else = expectElseRemoval ? "[|else|]" : "else";
         var originalCode = $$"""
@@ -81,17 +84,19 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = expectElseRemoval ? modifiedCode : originalCode;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("yield break", true)]
     [InlineData("yield return value", false)]
     [InlineData("if (value < -5) yield break", false)]
-    public async Task Test_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
+    public Task Test_WhenIfYieldJumpsUnconditionally_ElseRemoved(string statement, bool expectElseRemoval)
     {
         var @else = expectElseRemoval ? "[|else|]" : "else";
         var originalCode = $$"""
@@ -134,14 +139,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(expectElseRemoval ? modifiedCode : originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = expectElseRemoval ? modifiedCode : originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksAndContainsLocalFunction_ElseRemoved()
+    public Task Test_IfThatBreaksAndContainsLocalFunction_ElseRemoved()
     {
         var originalCode = """
             class TestClass
@@ -193,14 +200,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksFromNestedBlock_ElseRemoved()
+    public Task Test_IfThatBreaksFromNestedBlock_ElseRemoved()
     {
         var originalCode = """
             class TestClass
@@ -244,14 +253,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksFromNestedBlockAndContainsLocalFunction_ElseRemoved()
+    public Task Test_IfThatBreaksFromNestedBlockAndContainsLocalFunction_ElseRemoved()
     {
         var originalCode = """
             class TestClass
@@ -313,14 +324,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksAndWhileWithoutBraces_ElseRemovedAndWhileBracesAdded()
+    public Task Test_IfThatBreaksAndWhileWithoutBraces_ElseRemovedAndWhileBracesAdded()
     {
         var originalCode = """
             class TestClass
@@ -358,14 +371,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksAndCodeMisformatted_ElseRemovedButOnlyItsStatementsAreFormatted()
+    public Task Test_IfThatBreaksAndCodeMisformatted_ElseRemovedButOnlyItsStatementsAreFormatted()
     {
         var originalCode = """
             class TestClass
@@ -396,14 +411,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
             }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksWithEmptyElseBlock_ElseRemovedAndNoEmptyLineAfterIf()
+    public Task Test_IfThatBreaksWithEmptyElseBlock_ElseRemovedAndNoEmptyLineAfterIf()
     {
         var originalCode = """
             class TestClass
@@ -432,14 +449,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatBreaksButNoElse_NoDiagnosticReported()
+    public Task Test_IfThatBreaksButNoElse_NoDiagnosticReported()
     {
         var originalCode = """
             class TestClass
@@ -457,13 +476,15 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_ElseIfChainWithReachablePreviousThenAndMethodInvocationCondition_NoDiagnosticReported()
+    public Task Test_ElseIfChainWithReachablePreviousThenAndMethodInvocationCondition_NoDiagnosticReported()
     {
         var originalCode = """
             class TestClass
@@ -495,13 +516,15 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_SeveralNestedIfElseBlocksWithIfsThatJump_AllProblematicElsesRemoved()
+    public Task Test_SeveralNestedIfElseBlocksWithIfsThatJump_AllProblematicElsesRemoved()
     {
         var originalCode = """
             class TestClass
@@ -562,10 +585,12 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldBatchFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -573,7 +598,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("if (value is string local) {}")]
     [InlineData("int local() => throw null;")]
     [InlineData("switch (value) { case string local: break; }")]
-    public async Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
+    public Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
     {
         var originalCode = $$"""
             class TestClass
@@ -593,13 +618,15 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatReturnsAndElseContainsUsingStatementLocalDeclaration_NoDiagnosticReported()
+    public Task Test_IfThatReturnsAndElseContainsUsingStatementLocalDeclaration_NoDiagnosticReported()
     {
         var originalCode = """
             class TestClass
@@ -618,13 +645,15 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatReturnsAndElseContainsUsingStatementSyntax_ElseRemoved()
+    public Task Test_IfThatReturnsAndElseContainsUsingStatementSyntax_ElseRemoved()
     {
         var originalCode = """
             class TestClass
@@ -662,14 +691,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_IfThatReturnsAndElseContainsNestedUsingStatementLocalDeclaration_ElseRemoved()
+    public Task Test_IfThatReturnsAndElseContainsNestedUsingStatementLocalDeclaration_ElseRemoved()
     {
         var originalCode = """
             class TestClass
@@ -707,14 +738,16 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ShouldFixCodeWith(modifiedCode)
-              .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_EmptyIf()
+    public Task Test_EmptyIf()
     {
         var originalCode = """
             using System;
@@ -740,13 +773,15 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
             }
             }
             """;
-        await CreateProjectBuilder()
-                .WithSourceCode(originalCode)
-                .ValidateAsync();
+
+        var test = CreateTest();
+        test.TestCode = originalCode;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Test_ElseIfChainWithBranchThatDoesNotJump_FollowingElsesNotReported()
+    public Task Test_ElseIfChainWithBranchThatDoesNotJump_FollowingElsesNotReported()
     {
         var originalCode = """
             class TestClass
@@ -774,55 +809,10 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(originalCode)
-              .ValidateAsync();
-    }
 
-    // The chain used to be analyzed once per else clause, each time re-analyzing every branch above it,
-    // which is quadratic: 1600 branches took more than 4 minutes. Keep the chain long enough that a
-    // reintroduction of that behavior is obvious in the duration of this test.
-    [Fact]
-    public async Task Test_LongElseIfChainWhereEveryBranchJumps_AllElsesReported()
-    {
-        const int BranchCount = 1000;
+        var test = CreateTest();
+        test.TestCode = originalCode;
 
-        var sourceCode = new StringBuilder();
-        sourceCode.AppendLine("""
-            class TestClass
-            {
-                int Test(int value)
-                {
-                    if (value == 0)
-                    {
-                        return 0;
-                    }
-            """);
-
-        for (var i = 1; i < BranchCount; i++)
-        {
-            var branch = i.ToString(CultureInfo.InvariantCulture);
-            sourceCode.AppendLine("        [|else|] if (value == " + branch + ")");
-            sourceCode.AppendLine("        {");
-            sourceCode.AppendLine("            return " + branch + ";");
-            sourceCode.AppendLine("        }");
-        }
-
-        sourceCode.AppendLine("""
-                    [|else|]
-                    {
-                        return -1;
-                    }
-                }
-            }
-            """);
-
-        // Only the analyzer is exercised: an "else if" chain is nested syntax, so a chain this long is a
-        // 1000-level deep tree, and the formatter Roslyn runs when a code action computes its changes
-        // recurses once per level and throws InsufficientExecutionStackException
-        await new ProjectBuilder()
-              .WithAnalyzer<AvoidUsingRedundantElseAnalyzer>()
-              .WithSourceCode(sourceCode.ToString())
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

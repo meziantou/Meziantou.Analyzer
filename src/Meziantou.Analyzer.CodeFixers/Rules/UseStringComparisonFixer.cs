@@ -51,9 +51,7 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
         var invocationExpression = (InvocationExpressionSyntax)nodeToFix;
 
         var newArgument = (ArgumentSyntax)generator.Argument(
-            generator.MemberAccessExpression(
-                generator.TypeExpression(stringComparison, addImport: true),
-                stringComparisonMode));
+            generator.TypeMemberAccessExpression(stringComparison, stringComparisonMode, addImport: true));
 
         var insertionIndex = FindStringComparisonParameterIndex(semanticModel, invocationExpression, stringComparison, cancellationToken);
         SyntaxNode newInvocation;

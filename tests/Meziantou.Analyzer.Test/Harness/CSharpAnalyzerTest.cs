@@ -8,8 +8,8 @@ namespace Meziantou.Analyzer.Test.Harness;
 /// <summary>
 /// A <see cref="Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerTest{TAnalyzer, TVerifier}"/> configured with the
 /// defaults of this repository. Set <c>TestCode</c>, then call <c>RunAsync</c>. The source code uses the same
-/// <c>[|code|]</c> and <c>{|ruleId:code|}</c> markup as <see cref="TestHelper.ProjectBuilder"/>, except that
-/// <c>[|code|]</c> requires the analyzer to support a single rule.
+/// <c>[|code|]</c> and <c>{|ruleId:code|}</c> markup, where <c>[|code|]</c> requires the analyzer to support
+/// a single rule.
 /// </summary>
 internal sealed class CSharpAnalyzerTest<TAnalyzer>
     : Microsoft.CodeAnalysis.CSharp.Testing.CSharpAnalyzerTest<TAnalyzer, DefaultVerifier>
@@ -33,8 +33,40 @@ internal sealed class CSharpAnalyzerTest<TAnalyzer>
     /// </summary>
     public IList<DiagnosticAnalyzer> AdditionalAnalyzers { get; } = [];
 
-    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers() =>
-        [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
+    /// <summary>
+    /// How the analyzers handle generated code.
+    /// </summary>
+    public GeneratedCodeAnalysisFlags? GeneratedCodeAnalysisFlags { get; set; }
+
+    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers()
+    {
+        IEnumerable<DiagnosticAnalyzer> analyzers = [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
+        return GeneratedCodeAnalysisFlags is { } flags
+            ? analyzers.Select(analyzer => new Helpers.GeneratedCodeAnalysisAnalyzer(analyzer, flags))
+            : analyzers;
+    }
+
+    /// <summary>
+    /// Runs the source generators shipped with the .NET reference pack the test compiles against, so that the
+    /// partial members the generators implement do not need a hand written implementation.
+    /// </summary>
+    public bool UseFrameworkSourceGenerators { get; set; }
+
+    protected override IEnumerable<Type> GetSourceGenerators() =>
+        UseFrameworkSourceGenerators
+            ? [.. base.GetSourceGenerators(), .. AnalyzerTestDefaults.GetFrameworkSourceGenerators(ReferenceAssemblies)]
+            : base.GetSourceGenerators();
+
+    protected override async Task RunImplAsync(CancellationToken cancellationToken)
+    {
+        // The tests use the generators to compile the code, not to assert what they produce
+        if (UseFrameworkSourceGenerators)
+        {
+            TestBehaviors |= TestBehaviors.SkipGeneratedSourcesCheck;
+        }
+
+        await base.RunImplAsync(cancellationToken).ConfigureAwait(false);
+    }
 
     /// <summary>
     /// The language version the code is parsed with.

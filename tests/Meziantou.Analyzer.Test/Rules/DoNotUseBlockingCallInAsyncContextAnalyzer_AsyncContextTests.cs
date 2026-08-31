@@ -1,3891 +1,4022 @@
-using System.Collections.Immutable;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextAnalyzer,
+    Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithTargetFramework(TargetFramework.NetStandard2_1)
-            .WithAnalyzer<DoNotUseBlockingCallInAsyncContextAnalyzer>(id: "MA0042")
-            .WithCodeFixProvider<DoNotUseBlockingCallInAsyncContextFixer>();
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard21;
+        test.DisabledDiagnostics.Add("MA0045");
+        return test;
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_FieldTimeoutFromOtherSyntaxTree()
+    public Task SemaphoreSlim_Wait_FieldTimeoutFromOtherSyntaxTree()
     {
-        var builder = CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                partial class Test
+            partial class Test
+            {
+                public async Task A(SemaphoreSlim semaphore)
                 {
-                    public async Task A(SemaphoreSlim semaphore)
-                    {
-                        semaphore.Wait(Timeout);
-                    }
+                    semaphore.Wait(Timeout);
                 }
-                """);
-        builder.ApiReferences.Add("""
+            }
+            """;
+        test.TestState.Sources.Add("""
             partial class Test
             {
                 private readonly int Timeout = 0;
             }
             """);
 
-        await builder.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_Wait_Diagnostic()
+    public Task Async_Wait_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Task.Delay(1).Wait()|];
-                    }
+                    {|MA0042:Task.Delay(1).Wait()|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        await Task.Delay(1);
-                    }
+                    await Task.Delay(1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixerShouldAddParentheses()
+    public Task FixerShouldAddParentheses()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = [|Write()|].Length;
-                    }
-
-                    public string Write() => throw null;
-                    public Task<string> WriteAsync() => throw null;
+                    _ = {|MA0042:Write()|}.Length;
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
+
+                public string Write() => throw null;
+                public Task<string> WriteAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = (await WriteAsync()).Length;
-                    }
-
-                    public string Write() => throw null;
-                    public Task<string> WriteAsync() => throw null;
+                    _ = (await WriteAsync()).Length;
                 }
-                """)
-              .ValidateAsync();
+
+                public string Write() => throw null;
+                public Task<string> WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FixerKeepsGenericArgument()
+    public Task FixerKeepsGenericArgument()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Buz
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Buz
+            {
+                private static async Task Do()
                 {
-                    private static async Task Do()
-                    {
-                        [|Bar.Foo<int>()|];
-                    }
+                    {|MA0042:Bar.Foo<int>()|};
                 }
+            }
 
-                class Bar
+            class Bar
+            {
+                public static T Foo<T>()
+                    => default;
+
+                public static Task<T> FooAsync<T>()
+                    => Task.FromResult(default(T));
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Buz
+            {
+                private static async Task Do()
                 {
-                    public static T Foo<T>()
-                        => default;
-
-                    public static Task<T> FooAsync<T>()
-                        => Task.FromResult(default(T));
+                    await Bar.FooAsync<int>();
                 }
-                """)
-            .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Buz
-                {
-                    private static async Task Do()
-                    {
-                        await Bar.FooAsync<int>();
-                    }
-                }
+            }
 
-                class Bar
-                {
-                    public static T Foo<T>()
-                        => default;
+            class Bar
+            {
+                public static T Foo<T>()
+                    => default;
 
-                    public static Task<T> FooAsync<T>()
-                        => Task.FromResult(default(T));
-                }
-                """)
-            .ValidateAsync();
-    }
+                public static Task<T> FooAsync<T>()
+                    => Task.FromResult(default(T));
+            }
+            """;
 
-
-    [Fact]
-    public async Task Async_Wait_Int32_Diagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    public async Task A()
-                    {
-                        [|Task.Delay(1).Wait(10)|];
-                    }
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_Wait_CancellationToken_Diagnostic()
+    public Task Async_Wait_Int32_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Task.Delay(1).Wait(CancellationToken.None)|];
-                    }
+                    {|MA0042:Task.Delay(1).Wait(10)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_Wait_TimeSpan_Diagnostic()
+    public Task Async_Wait_CancellationToken_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Task.Delay(1).Wait(TimeSpan.FromSeconds(1))|];
-                    }
+                    {|MA0042:Task.Delay(1).Wait(CancellationToken.None)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_Wait_Int32_CancellationToken_Diagnostic()
+    public Task Async_Wait_TimeSpan_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Task.Delay(1).Wait(10, CancellationToken.None)|];
-                    }
+                    {|MA0042:Task.Delay(1).Wait(TimeSpan.FromSeconds(1))|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_Result_Diagnostic()
+    public Task Async_Wait_Int32_CancellationToken_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = [|Task.FromResult(1).Result|];
-                    }
+                    {|MA0042:Task.Delay(1).Wait(10, CancellationToken.None)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    public async Task A()
-                    {
-                        _ = await Task.FromResult(1);
-                    }
-                }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_ValueTask_Result_Diagnostic()
+    public Task Async_Result_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = [|new ValueTask<int>(10).Result|];
-                    }
+                    _ = {|MA0042:Task.FromResult(1).Result|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
+                {
+                    _ = await Task.FromResult(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_ValueTask_GetAwaiter_Diagnostic()
+    public Task Async_ValueTask_Result_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = [|new ValueTask<int>(10).GetAwaiter().GetResult()|];
-                    }
+                    _ = {|MA0042:new ValueTask<int>(10).Result|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_ThreadSleep_Diagnostic()
+    public Task Async_ValueTask_GetAwaiter_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|System.Threading.Thread.Sleep(1)|];
-                    }
+                    _ = {|MA0042:new ValueTask<int>(10).GetAwaiter().GetResult()|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                class Test
-                {
-                    public async Task A()
-                    {
-                        await Task.Delay(1);
-                    }
-                }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_ThreadSleep_TimeSpan_Diagnostic()
+    public Task Async_ThreadSleep_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1))|];
-                    }
+                    {|MA0042:System.Threading.Thread.Sleep(1)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                class Test
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        await Task.Delay(TimeSpan.FromMinutes(1));
-                    }
+                    await Task.Delay(1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_SuggestOverload_Diagnostic()
+    public Task Async_ThreadSleep_TimeSpan_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Write()|];
-                    }
-
-                    public void Write() => throw null;
-                    public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
+                    {|MA0042:System.Threading.Thread.Sleep(TimeSpan.FromMinutes(1))|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
+                {
+                    await Task.Delay(TimeSpan.FromMinutes(1));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_AsyncSuffix_Diagnostic()
+    public Task Async_SuggestOverload_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Write()|];
-                    }
-
-                    public void Write() => throw null;
-                    public Task WriteAsync() => throw null;
+                    {|MA0042:Write()|};
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public Task Write(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Async_NoOverload_NoDiagnostic()
+    public Task Async_AsyncSuffix_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        Write();
-                    }
-
-                    public void Write() => throw null;
-                    public void WriteAsync() => throw null;
+                    {|MA0042:Write()|};
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsyncLambda_Overload_NoDiagnostic()
+    public Task Async_NoOverload_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        System.Func<Task> a = async () => [|Write()|];
-                    }
-
-                    public void Write() => throw null;
-                    public Task WriteAsync() => throw null;
+                    Write();
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public void WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsyncLocalFunction_Overload_NoDiagnostic()
+    public Task AsyncLambda_Overload_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public void A()
-                    {
-                        Local();
-
-                        async Task Local() => [|Write()|];
-                    }
-
-                    public void Write() => throw null;
-                    public Task WriteAsync() => throw null;
+                    System.Func<Task> a = async () => {|MA0042:Write()|};
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
+    public Task AsyncLocalFunction_Overload_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public void A()
                 {
-                    public void A()
-                    {
-                        Local();
+                    Local();
 
-                        async Task Local() => [|Write()|];
-                    }
-
-                    public void Write() => throw null;
-                    public ValueTask WriteAsync() => throw null;
+                    async Task Local() => {|MA0042:Write()|};
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public void A()
+                {
+                    Local();
+
+                    async Task Local() => {|MA0042:Write()|};
+                }
+
+                public void Write() => throw null;
+                public ValueTask WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/169")]
-    public async Task AsyncMethodWithAsyncOverload()
+    public Task AsyncMethodWithAsyncOverload()
     {
-        await CreateProjectBuilder()
-                .AddSystemTextJson()
-                .WithSourceCode("""
-                  using System;
-                  using System.IO;
-                  using System.Text.Json;
-                  using System.Threading;
-                  using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSystemTextJson();
+        test.TestCode = """
+            using System;
+            using System.IO;
+            using System.Text.Json;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                  class Program
-                  {
-                      static async Task Main()
-                      {
-                          var responseStream = new MemoryStream();
-                          var SerializerOptions = new JsonSerializerOptions();
-                          var ct = CancellationToken.None;
-                          await JsonSerializer.DeserializeAsync<Program>(responseStream, SerializerOptions, ct).ConfigureAwait(false);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+            class Program
+            {
+                static async Task Main()
+                {
+                    var responseStream = new MemoryStream();
+                    var SerializerOptions = new JsonSerializerOptions();
+                    var ct = CancellationToken.None;
+                    await JsonSerializer.DeserializeAsync<Program>(responseStream, SerializerOptions, ct).ConfigureAwait(false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_NoOverload_NoDiagnostic()
+    public Task Method_NoOverload_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        Write();
-                    }
-
-                    public void Write() => throw null;
-                    public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
+                    Write();
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public void Write(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_NoOverloadWithSameParameters_NoDiagnostic()
+    public Task Method_NoOverloadWithSameParameters_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        Write();
-                    }
-
-                    public void Write() => throw null;
-                    public Task Write(int a) => throw null;
+                    Write();
                 }
-                """)
-              .ValidateAsync();
+
+                public void Write() => throw null;
+                public Task Write(int a) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Method_NonGenericOverloadWithGenericAwaitableOverload_NoDiagnostic()
+    public Task Method_NonGenericOverloadWithGenericAwaitableOverload_NoDiagnostic()
     {
-        // The non-generic method has a same-named generic overload with an awaitable return type.
-        // The compiler always prefers the non-generic method, so adding await would still resolve
-        // to the non-generic (non-awaitable) method, making the suggestion invalid (false positive).
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Runtime.CompilerServices;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var x = "hello";
-                        Assert.That(x);
-                    }
+                    var x = "hello";
+                    Assert.That(x);
                 }
+            }
 
-                static class Assert
-                {
-                    public static ValueAssertion That(string? value) => throw null;
-                    public static ValueAssertion<T> That<T>(T value) => throw null;
-                }
+            static class Assert
+            {
+                public static ValueAssertion That(string? value) => throw null;
+                public static ValueAssertion<T> That<T>(T value) => throw null;
+            }
 
-                class ValueAssertion { }
+            class ValueAssertion { }
 
-                class ValueAssertion<T>
-                {
-                    public TaskAwaiter GetAwaiter() => throw null;
-                }
-                """)
-              .ValidateAsync();
+            class ValueAssertion<T>
+            {
+                public TaskAwaiter GetAwaiter() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Console_NoDiagnostic()
+    public Task Console_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        System.Console.Out.WriteLine();
-                        System.Console.Out.Write(' ');
-                        System.Console.Out.Flush();
+                    System.Console.Out.WriteLine();
+                    System.Console.Out.Write(' ');
+                    System.Console.Out.Flush();
 
-                        System.Console.Error.WriteLine();
-                        System.Console.Error.Write(' ');
-                        System.Console.Error.Flush();
-                    }
+                    System.Console.Error.WriteLine();
+                    System.Console.Error.Write(' ');
+                    System.Console.Error.Flush();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ProcessWaitForExit_NET5()
+    public Task ProcessWaitForExit_NET5()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net5_0)
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var process = new Process();
-                        process.WaitForExit();
-                    }
+                    var process = new Process();
+                    process.WaitForExit();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ProcessWaitForExit_NET6()
+    public Task ProcessWaitForExit_NET6()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var process = new Process();
-                        [|process.WaitForExit()|];
-                    }
+                    var process = new Process();
+                    {|MA0042:process.WaitForExit()|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var process = new Process();
-                        await process.WaitForExitAsync();
-                    }
+                    var process = new Process();
+                    await process.WaitForExitAsync();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_NoDiagnostic()
+    public Task Using_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var a = new Sample();
-                        using (var b = new Sample()) { }
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                    }
+                    using var a = new Sample();
+                    using (var b = new Sample()) { }
                 }
-                """)
-              .ValidateAsync();
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_Diagnostic1()
+    public Task Using_Diagnostic1()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var a = new Sample();|]
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    {|MA0042:using var a = new Sample();|}
                 }
-                """)
-              .ShouldBatchFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
 
-                class Test
+                private class Sample : IDisposable
                 {
-                    public async Task A()
-                    {
-                        await using var a = new Sample();
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
+
+            class Test
+            {
+                public async Task A()
+                {
+                    await using var a = new Sample();
+                }
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_Diagnostic1_WithComment()
+    public Task Using_Diagnostic1_WithComment()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        // MA0042 "Prefer using 'await using'"
-                        [|using var a = new Sample();|]
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    // MA0042 "Prefer using 'await using'"
+                    {|MA0042:using var a = new Sample();|}
                 }
-                """)
-              .ShouldBatchFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
 
-                class Test
+                private class Sample : IDisposable
                 {
-                    public async Task A()
-                    {
-                        // MA0042 "Prefer using 'await using'"
-                        await using var a = new Sample();
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A()
+                {
+                    // MA0042 "Prefer using 'await using'"
+                    await using var a = new Sample();
+                }
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_Diagnostic2()
+    public Task Using_Diagnostic2()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using (var b = new Sample()) { }|]
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    {|MA0042:using (var b = new Sample()) { }|}
                 }
-                """)
-              .ShouldBatchFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
 
-                class Test
+                private class Sample : IDisposable
                 {
-                    public async Task A()
-                    {
-                        await using (var b = new Sample()) { }
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
+
+            class Test
+            {
+                public async Task A()
+                {
+                    await using (var b = new Sample()) { }
+                }
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_Diagnostic3()
+    public Task Using_Diagnostic3()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var sample = new Sample();
-                        [|using (sample) { }|]
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    var sample = new Sample();
+                    {|MA0042:using (sample) { }|}
                 }
-                """)
-              .ShouldBatchFixCodeWith("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
 
-                class Test
+                private class Sample : IDisposable
                 {
-                    public async Task A()
-                    {
-                        var sample = new Sample();
-                        await using (sample) { }
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
+
+            class Test
+            {
+                public async Task A()
+                {
+                    var sample = new Sample();
+                    await using (sample) { }
+                }
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Using_Diagnostic4()
+    public Task Using_Diagnostic4()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        await using var c = new Sample();
+                    await using var c = new Sample();
 
-                        await using (var d = new Sample()) { }
-                    }
-
-                    private class Sample : IDisposable
-                    {
-                        public void Dispose() => throw null;
-                        public ValueTask DisposeAsync() => throw null;
-                    }
+                    await using (var d = new Sample()) { }
                 }
-                """)
-              .ValidateAsync();
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExtensionMethod()
+    public Task ExtensionMethod()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
-                {
-                    public void A() => throw null;
-                }
+            class Test
+            {
+                public void A() => throw null;
+            }
 
-                static class TestExtensions
-                {
-                    public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
+            }
 
-                class demo
+            class demo
+            {
+                public async Task a()
                 {
-                    public async Task a()
-                    {
-                        [|new Test().A()|];
-                    }
+                    {|MA0042:new Test().A()|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                using System.Diagnostics;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            using System.Diagnostics;
 
-                class Test
-                {
-                    public void A() => throw null;
-                }
+            class Test
+            {
+                public void A() => throw null;
+            }
 
-                static class TestExtensions
-                {
-                    public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static async Task AAsync(this Test test, CancellationToken token = default) => throw null;
+            }
 
-                class demo
+            class demo
+            {
+                public async Task a()
                 {
-                    public async Task a()
-                    {
-                        await new Test().AAsync();
-                    }
+                    await new Test().AAsync();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_MultipleIncompatibleGenericArguments_ShouldNotReport()
+    public Task GenericArgument_MultipleIncompatibleGenericArguments_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(List<int> a, List<string> b) => throw null;
-                    public Task AAsync<T>(List<T> a, List<T> b, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(List<int> a, List<string> b) => throw null;
+                public Task AAsync<T>(List<T> a, List<T> b, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(new List<int>(), new List<string>());
-                    }
+                    new Test().A(new List<int>(), new List<string>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExtensionMethod_GenericArgumentsIncompatible_ShouldNotReport()
+    public Task ExtensionMethod_GenericArgumentsIncompatible_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                }
+            class Test
+            {
+            }
 
-                static class TestExtensions
-                {
-                    public static void A(this Test test, List<int> a, List<string> b) => throw null;
-                    public static Task AAsync<T>(this Test test, List<T> a, List<T> b, CancellationToken token = default) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static void A(this Test test, List<int> a, List<string> b) => throw null;
+                public static Task AAsync<T>(this Test test, List<T> a, List<T> b, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(new List<int>(), new List<string>());
-                    }
+                    new Test().A(new List<int>(), new List<string>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_ListToIEnumerable_ShouldNotReport()
+    public Task GenericArgument_ListToIEnumerable_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(List<int> value) => throw null;
-                    public Task AAsync<T>(IEnumerable<T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(List<int> value) => throw null;
+                public Task AAsync<T>(IEnumerable<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(new List<int>());
-                    }
+                    new Test().A(new List<int>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
+    public Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
     {
-        // For simplicity, we skip checking compatibility of nested generics
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(List<List<int>> value) => throw null;
-                    public Task AAsync<T>(List<List<T>> value, CancellationToken token = default) => throw null;
-                    public Task AAsync(List<List<string>> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(List<List<int>> value) => throw null;
+                public Task AAsync<T>(List<List<T>> value, CancellationToken token = default) => throw null;
+                public Task AAsync(List<List<string>> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(new List<List<int>>());
-                    }
+                    new Test().A(new List<List<int>>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_SameOriginalDefinitionButDifferentTypeParameterMapping_ShouldNotReport()
+    public Task GenericArgument_SameOriginalDefinitionButDifferentTypeParameterMapping_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T1, T2>(Dictionary<T1, T2> value) => throw null;
-                    public Task AAsync<T>(Dictionary<T, T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A<T1, T2>(Dictionary<T1, T2> value) => throw null;
+                public Task AAsync<T>(Dictionary<T, T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A<int, string>(new Dictionary<int, string>());
-                    }
+                    new Test().A<int, string>(new Dictionary<int, string>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_SingleGenericArgument_ShouldReport()
+    public Task GenericArgument_SingleGenericArgument_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T>(List<T> value) => throw null;
-                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A<T>(List<T> value) => throw null;
+                public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A<int>(new List<int>())|];
-                    }
+                    {|MA0042:new Test().A<int>(new List<int>())|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T>(List<T> value) => throw null;
-                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A<T>(List<T> value) => throw null;
+                public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        await new Test().AAsync<int>(new List<int>());
-                    }
+                    await new Test().AAsync<int>(new List<int>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExtensionMethod_GenericArgument_ShouldReport()
+    public Task ExtensionMethod_GenericArgument_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                }
+            class Test
+            {
+            }
 
-                static class TestExtensions
-                {
-                    public static void A<T>(this Test test, List<T> value) => throw null;
-                    public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static void A<T>(this Test test, List<T> value) => throw null;
+                public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A<int>(new List<int>())|];
-                    }
+                    {|MA0042:new Test().A<int>(new List<int>())|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                }
+            class Test
+            {
+            }
 
-                static class TestExtensions
-                {
-                    public static void A<T>(this Test test, List<T> value) => throw null;
-                    public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static void A<T>(this Test test, List<T> value) => throw null;
+                public static Task AAsync<T>(this Test test, List<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        await new Test().AAsync<int>(new List<int>());
-                    }
+                    await new Test().AAsync<int>(new List<int>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_ArrayOfGenericArgument_ShouldReport()
+    public Task GenericArgument_ArrayOfGenericArgument_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T>(T[] value) => throw null;
-                    public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A<T>(T[] value) => throw null;
+                public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A<int>(new int[1])|];
-                    }
+                    {|MA0042:new Test().A<int>(new int[1])|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading;
-                using System.Threading.Tasks;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T>(T[] value) => throw null;
-                    public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A<T>(T[] value) => throw null;
+                public Task AAsync<T>(T[] value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        await new Test().AAsync<int>(new int[1]);
-                    }
+                    await new Test().AAsync<int>(new int[1]);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_AsyncConstraintIncompatible_ShouldNotReport()
+    public Task GenericArgument_AsyncConstraintIncompatible_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A<T>(List<T> value) => throw null;
-                    public Task AAsync<T>(List<T> value, CancellationToken token = default)
-                        where T : class => throw null;
-                }
+            class Test
+            {
+                public void A<T>(List<T> value) => throw null;
+                public Task AAsync<T>(List<T> value, CancellationToken token = default)
+                    where T : class => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A<int>(new List<int>());
-                    }
+                    new Test().A<int>(new List<int>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_InModifierDifference_ShouldReport()
+    public Task Argument_InModifierDifference_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(in int value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(in int value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        var value = 1;
-                        [|new Test().A(in value)|];
-                    }
+                    var value = 1;
+                    {|MA0042:new Test().A(in value)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_RefMismatch_ShouldNotReport()
+    public Task Argument_RefMismatch_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(ref int value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(ref int value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        var value = 1;
-                        new Test().A(ref value);
-                    }
+                    var value = 1;
+                    new Test().A(ref value);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_OutMismatch_ShouldNotReport()
+    public Task Argument_OutMismatch_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public void A(out int value)
                 {
-                    public void A(out int value)
-                    {
-                        value = 0;
-                    }
-
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
+                    value = 0;
                 }
 
-                class Demo
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
+
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(out var value);
-                    }
+                    new Test().A(out var value);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_NullLiteral_ShouldReport()
+    public Task Argument_NullLiteral_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(string value) => throw null;
-                    public Task AAsync(string value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(string value) => throw null;
+                public Task AAsync(string value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(null)|];
-                    }
+                    {|MA0042:new Test().A(null)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_DefaultLiteral_ShouldReport()
+    public Task Argument_DefaultLiteral_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(string value) => throw null;
-                    public Task AAsync(string value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(string value) => throw null;
+                public Task AAsync(string value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(default)|];
-                    }
+                    {|MA0042:new Test().A(default)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericConversion_ShouldReport()
+    public Task Argument_ImplicitNumericConversion_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(long value) => throw null;
-                    public Task AAsync(long value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(long value) => throw null;
+                public Task AAsync(long value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(42)|];
-                    }
+                    {|MA0042:new Test().A(42)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericWidening_ShouldReport()
+    public Task Argument_ImplicitNumericWidening_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(int value) => throw null;
-                    public Task AAsync(long value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(int value) => throw null;
+                public Task AAsync(long value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(1)|];
-                    }
+                    {|MA0042:new Test().A(1)|};
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading;
-                using System.Threading.Tasks;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(int value) => throw null;
-                    public Task AAsync(long value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(int value) => throw null;
+                public Task AAsync(long value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        await new Test().AAsync(1);
-                    }
+                    await new Test().AAsync(1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericNarrowing_ShouldNotReport()
+    public Task Argument_ImplicitNumericNarrowing_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(long value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(long value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(1L);
-                    }
+                    new Test().A(1L);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericToFloatingPoint_ShouldReport()
+    public Task Argument_ImplicitNumericToFloatingPoint_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(int value) => throw null;
-                    public Task AAsync(double value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(int value) => throw null;
+                public Task AAsync(double value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(1)|];
-                    }
+                    {|MA0042:new Test().A(1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericFloatingPointToInteger_ShouldNotReport()
+    public Task Argument_ImplicitNumericFloatingPointToInteger_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(double value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(double value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(1.0);
-                    }
+                    new Test().A(1.0);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericInt64ToFloatingPoint_ShouldNotReport()
+    public Task Argument_ImplicitNumericInt64ToFloatingPoint_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(long value) => throw null;
-                    public Task AAsync(double value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(long value) => throw null;
+                public Task AAsync(double value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(1L);
-                    }
+                    new Test().A(1L);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericInt32ToFloatingPoint_ShouldNotReport()
+    public Task Argument_ImplicitNumericInt32ToFloatingPoint_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(int value) => throw null;
-                    public Task AAsync(float value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(int value) => throw null;
+                public Task AAsync(float value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(1);
-                    }
+                    new Test().A(1);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericByteToInt32_ShouldReport()
+    public Task Argument_ImplicitNumericByteToInt32_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(byte value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(byte value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A((byte)1)|];
-                    }
+                    {|MA0042:new Test().A((byte)1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericInt16ToInt32_ShouldReport()
+    public Task Argument_ImplicitNumericInt16ToInt32_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(short value) => throw null;
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(short value) => throw null;
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A((short)1)|];
-                    }
+                    {|MA0042:new Test().A((short)1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericSingleToDouble_ShouldReport()
+    public Task Argument_ImplicitNumericSingleToDouble_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(float value) => throw null;
-                    public Task AAsync(double value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(float value) => throw null;
+                public Task AAsync(double value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(1f)|];
-                    }
+                    {|MA0042:new Test().A(1f)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
+    public Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(Half value) => throw null;
-                    public Task AAsync(float value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(Half value) => throw null;
+                public Task AAsync(float value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A((Half)1)|];
-                    }
+                    {|MA0042:new Test().A((Half)1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitNumericHalfToDouble_ShouldReport()
+    public Task Argument_ImplicitNumericHalfToDouble_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(Half value) => throw null;
-                    public Task AAsync(double value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(Half value) => throw null;
+                public Task AAsync(double value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A((Half)1)|];
-                    }
+                    {|MA0042:new Test().A((Half)1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_CompatibleGenericDefinitions_ShouldReport()
+    public Task GenericArgument_CompatibleGenericDefinitions_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(List<int> value) => throw null;
-                    public Task AAsync<T>(IReadOnlyCollection<T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(List<int> value) => throw null;
+                public Task AAsync<T>(IReadOnlyCollection<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(new List<int>())|];
-                    }
+                    {|MA0042:new Test().A(new List<int>())|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_DifferentArity_ShouldNotReport()
+    public Task GenericArgument_DifferentArity_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(Dictionary<int, string> value) => throw null;
-                    public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(Dictionary<int, string> value) => throw null;
+                public Task AAsync<T>(List<T> value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A(new Dictionary<int, string>());
-                    }
+                    new Test().A(new Dictionary<int, string>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_ConstraintNewIncompatible_ShouldNotReport()
+    public Task GenericArgument_ConstraintNewIncompatible_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class WithoutPublicParameterlessConstructor
+            class WithoutPublicParameterlessConstructor
+            {
+                public WithoutPublicParameterlessConstructor(int value)
                 {
-                    public WithoutPublicParameterlessConstructor(int value)
-                    {
-                    }
                 }
+            }
 
-                class Test
-                {
-                    public void A<T>(List<T> value) => throw null;
-                    public Task AAsync<T>(List<T> value, CancellationToken token = default)
-                        where T : new() => throw null;
-                }
+            class Test
+            {
+                public void A<T>(List<T> value) => throw null;
+                public Task AAsync<T>(List<T> value, CancellationToken token = default)
+                    where T : new() => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        new Test().A<WithoutPublicParameterlessConstructor>(new List<WithoutPublicParameterlessConstructor>());
-                    }
+                    new Test().A<WithoutPublicParameterlessConstructor>(new List<WithoutPublicParameterlessConstructor>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericArgument_DifferentTypeConstraintsOrder_ShouldNotReport()
+    public Task GenericArgument_DifferentTypeConstraintsOrder_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                interface IMark1 { }
-                interface IMark2 { }
+            interface IMark1 { }
+            interface IMark2 { }
 
-                class Mark : IMark1, IMark2 { }
+            class Mark : IMark1, IMark2 { }
 
-                class Test
+            class Test
+            {
+                public void A<T>(int i, List<T> test) where T : IMark1, IMark2 => throw null;
+                public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : IMark2, IMark1 => throw null;
+            }
+
+            class Demo
+            {
+                public async Task M()
                 {
-                    public void A<T>(int i, List<T> test) where T : IMark1, IMark2 => throw null;
-                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : IMark2, IMark1 => throw null;
+                    new Test().A<Mark>(1, new List<Mark>());
                 }
+            }
+            """;
 
-                class Demo
-                {
-                    public async Task M()
-                    {
-                        new Test().A<Mark>(1, new List<Mark>());
-                    }
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GenericMethod_SameConstraints_Diagnostic()
+    public Task GenericMethod_SameConstraints_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Collections.Generic;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                interface IMark1 { }
-                interface IMark2 { }
+            interface IMark1 { }
+            interface IMark2 { }
 
-                class Mark : IMark1, IMark2 { }
+            class Mark : IMark1, IMark2 { }
 
-                class Test
+            class Test
+            {
+                public void A<T>(int i, List<T> test) where T : class, IMark1, IMark2 => throw null;
+                public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : class, IMark1, IMark2 => throw null;
+            }
+
+            class Demo
+            {
+                public async Task M()
                 {
-                    public void A<T>(int i, List<T> test) where T : class, IMark1, IMark2 => throw null;
-                    public Task AAsync<T>(int i, List<T> test, CancellationToken token = default) where T : class, IMark1, IMark2 => throw null;
+                    {|MA0042:new Test().A<Mark>(1, new List<Mark>())|};
                 }
+            }
+            """;
 
-                class Demo
-                {
-                    public async Task M()
-                    {
-                        [|new Test().A<Mark>(1, new List<Mark>())|];
-                    }
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_ImplicitUserDefinedConversion_ShouldReport()
+    public Task Argument_ImplicitUserDefinedConversion_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Value
-                {
-                    public static implicit operator Value(string value) => new Value();
-                }
+            class Value
+            {
+                public static implicit operator Value(string value) => new Value();
+            }
 
-                class Test
-                {
-                    public void A(Value value) => throw null;
-                    public Task AAsync(Value value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(Value value) => throw null;
+                public Task AAsync(Value value, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A("value")|];
-                    }
+                    {|MA0042:new Test().A("value")|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExtensionMethodToInstanceMethod_ShouldReport()
+    public Task ExtensionMethodToInstanceMethod_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public Task AAsync(int value, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public Task AAsync(int value, CancellationToken token = default) => throw null;
+            }
 
-                static class TestExtensions
-                {
-                    public static void A(this Test test, int value) => throw null;
-                }
+            static class TestExtensions
+            {
+                public static void A(this Test test, int value) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(1)|];
-                    }
+                    {|MA0042:new Test().A(1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Argument_NamedArgumentsReordered_ShouldReport()
+    public Task Argument_NamedArgumentsReordered_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
-                {
-                    public void A(int left, int right) => throw null;
-                    public Task AAsync(int left, int right, CancellationToken token = default) => throw null;
-                }
+            class Test
+            {
+                public void A(int left, int right) => throw null;
+                public Task AAsync(int left, int right, CancellationToken token = default) => throw null;
+            }
 
-                class Demo
+            class Demo
+            {
+                public async Task M()
                 {
-                    public async Task M()
-                    {
-                        [|new Test().A(right: 2, left: 1)|];
-                    }
+                    {|MA0042:new Test().A(right: 2, left: 1)|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CreateAsyncScope()
+    public Task CreateAsyncScope()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.AspNetCore6_0)
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using Microsoft.Extensions.DependencyInjection;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddAspNetCore("6.0.10");
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.Extensions.DependencyInjection;
 
-                class demo
+            class demo
+            {
+                public async Task a()
                 {
-                    public async Task a()
-                    {
-                        IServiceProvider provider = null;
-                        await using var scope1 = provider.CreateAsyncScope();
-                        using var scope2 = [|provider.CreateScope()|];
-                    }
+                    IServiceProvider provider = null;
+                    await using var scope1 = provider.CreateAsyncScope();
+                    using var scope2 = {|MA0042:provider.CreateScope()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CreateAsyncScope_net5()
+    public Task CreateAsyncScope_net5()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.AspNetCore5_0)
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                using Microsoft.Extensions.DependencyInjection;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50.AddAspNetCore("5.0.0");
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            using Microsoft.Extensions.DependencyInjection;
 
-                class demo
+            class demo
+            {
+                public async Task a()
                 {
-                    public async Task a()
-                    {
-                        IServiceProvider provider = null;
-                        using var scope = provider.CreateScope();
-                    }
+                    IServiceProvider provider = null;
+                    using var scope = provider.CreateScope();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task DbContext_Add()
+    public Task DbContext_Add()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
-              .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.EntityFrameworkCore;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.EntityFrameworkCore;
 
-                class BloggingContext : DbContext
-                {
-                    public DbSet<object> Blogs { get; set; }
-                }
+            class BloggingContext : DbContext
+            {
+                public DbSet<object> Blogs { get; set; }
+            }
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        var context = new BloggingContext();
-                        context.Add(new());
-                        context.Blogs.Add(new());
-                        await context.Blogs.AddAsync(new());
-                    }
+                    var context = new BloggingContext();
+                    context.Add(new());
+                    context.Blogs.Add(new());
+                    await context.Blogs.AddAsync(new());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/891")]
-    public async Task IDbContextFactory_CreateDbContext_NoReport()
+    public Task IDbContextFactory_CreateDbContext_NoReport()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddNuGetReference("Microsoft.EntityFrameworkCore", "6.0.8", "lib/net6.0/")
-              .AddNuGetReference("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8", "lib/net6.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.EntityFrameworkCore;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.EntityFrameworkCore;
 
-                class BloggingContext : DbContext { }
+            class BloggingContext : DbContext { }
 
-                class Sample
+            class Sample
+            {
+                private IDbContextFactory<BloggingContext> _factory;
+
+                async Task A()
                 {
-                    private IDbContextFactory<BloggingContext> _factory;
-
-                    async Task A()
-                    {
-                        await using var context = _factory.CreateDbContext();
-                    }
+                    await using var context = _factory.CreateDbContext();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_CreateCommand_NoDiagnostic()
+    public Task SqliteConnection_CreateCommand_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteConnection connection)
                 {
-                    public async Task A(SqliteConnection connection)
-                    {
-                        using var command = connection.CreateCommand();
-                    }
+                    using var command = connection.CreateCommand();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_Close_NoDiagnostic()
+    public Task SqliteConnection_Close_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteConnection connection)
                 {
-                    public async Task A(SqliteConnection connection)
-                    {
-                        connection.Close();
-                    }
+                    connection.Close();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteCommand_Prepare_NoDiagnostic()
+    public Task SqliteCommand_Prepare_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteCommand command)
                 {
-                    public async Task A(SqliteCommand command)
-                    {
-                        command.Prepare();
-                    }
+                    command.Prepare();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_CreateCommand_OptionDisabled_Diagnostic()
+    public Task SqliteConnection_CreateCommand_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteConnection connection)
                 {
-                    public async Task A(SqliteConnection connection)
-                    {
-                        [|using var command = connection.CreateCommand();|]
-                    }
+                    {|MA0042:using var command = connection.CreateCommand();|}
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteConnection_Close_OptionDisabled_Diagnostic()
+    public Task SqliteConnection_Close_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteConnection connection)
                 {
-                    public async Task A(SqliteConnection connection)
-                    {
-                        [|connection.Close()|];
-                    }
+                    {|MA0042:connection.Close()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteCommand_Prepare_OptionDisabled_Diagnostic()
+    public Task SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteCommand command)
                 {
-                    public async Task A(SqliteCommand command)
-                    {
-                        [|command.Prepare()|];
-                    }
+                    {|MA0042:command.Prepare()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteDataReader_Read_NoDiagnostic()
+    public Task SqliteDataReader_Read_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteDataReader reader)
                 {
-                    public async Task A(SqliteDataReader reader)
-                    {
-                        reader.Read();
-                    }
+                    reader.Read();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
-    public async Task SqliteDataReader_Read_OptionDisabled_Diagnostic()
+    public Task SqliteDataReader_Read_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .AddAnalyzerConfiguration("MA0042.enable_sqlite_special_cases", "false")
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A(SqliteDataReader reader)
                 {
-                    public async Task A(SqliteDataReader reader)
-                    {
-                        [|reader.Read()|];
-                    }
+                    {|MA0042:reader.Read()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
-    public async Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
+    public Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Data.Common;
-                using System.Threading.Tasks;
-                using Microsoft.Data.Sqlite;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Data.Common;
+            using System.Threading.Tasks;
+            using Microsoft.Data.Sqlite;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        DbConnection connection = new SqliteConnection();
-                        connection.Close();
-                    }
+                    DbConnection connection = new SqliteConnection();
+                    connection.Close();
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
-    public async Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
+    public Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddNuGetReference("Microsoft.Data.Sqlite.Core", "8.0.0", "lib/net8.0/")
-              .WithSourceCode("""
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.TestCode = """
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A(DbConnection connection)
                 {
-                    public async Task A(DbConnection connection)
-                    {
-                        [|connection.Close()|];
-                    }
+                    {|MA0042:connection.Close()|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IAsyncEnumerable()
+    public Task IAsyncEnumerable()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-class demo
-{
-    public IAsyncEnumerable<int> A()
-    {
-        [|Thread.Sleep(1)|];
-        throw null;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class demo
+            {
+                public IAsyncEnumerable<int> A()
+                {
+                    {|MA0042:Thread.Sleep(1)|};
+                    throw null;
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task IAsyncEnumerator()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
-
-class demo
-{
-    public IAsyncEnumerator<int> A()
-    {
-        [|Thread.Sleep(1)|];
-        throw null;
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task AsyncMethodBuilder()
+    public Task IAsyncEnumerator()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-[System.Runtime.CompilerServices.AsyncMethodBuilderAttribute(typeof(int))]
-class Sample
-{
-    public Sample A()
-    {
-        [|Thread.Sleep(1)|];
-        throw null;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class demo
+            {
+                public IAsyncEnumerator<int> A()
+                {
+                    {|MA0042:Thread.Sleep(1)|};
+                    throw null;
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task TaskYieldResult()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-using System;
-using System.Threading;
-
-class Sample
-{
-    public System.Runtime.CompilerServices.YieldAwaitable A()
-    {
-        Thread.Sleep(1);
-        throw null;
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TopLevelStatement()
+    public Task AsyncMethodBuilder()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.WindowsApplication)
-              .WithSourceCode("""
-[|System.Threading.Thread.Sleep(1)|];
-""")
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            [System.Runtime.CompilerServices.AsyncMethodBuilderAttribute(typeof(int))]
+            class Sample
+            {
+                public Sample A()
+                {
+                    {|MA0042:Thread.Sleep(1)|};
+                    throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TaskRunDelegate()
+    public Task TaskYieldResult()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode("""
-using System;
-using System.Collections.Generic;
-using System.Threading;
-using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Threading;
 
-class Sample
-{
-    public void A()
-    {
-        _ = Task.Run(() => [|Thread.Sleep(1)|]);
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class Sample
+            {
+                public System.Runtime.CompilerServices.YieldAwaitable A()
+                {
+                    Thread.Sleep(1);
+                    throw null;
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task Moq_Raise()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddNuGetReference("Moq", "4.20.0", "lib/net6.0/")
-              .WithSourceCode("""
-using System;
-using Moq;
-
-class Sample
-{
-    public void A()
-    {
-        new Mock<ICloneable>().Raise(null);
-        _ = new Mock<ICloneable>().RaiseAsync(null);
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewMemoryStream()
+    public Task TopLevelStatement()
     {
-        await CreateProjectBuilder()
-              .WithOutputKind(Microsoft.CodeAnalysis.OutputKind.ConsoleApplication)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using var ms = new System.IO.MemoryStream();
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.OutputKind = OutputKind.WindowsApplication;
+        test.TestCode = """
+            {|MA0042:System.Threading.Thread.Sleep(1)|};
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_StreamSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public Task TaskRunDelegate()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.IO;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Sample
+            {
+                public void A()
                 {
-                    public async Task A()
-                    {
-                        [|using var s = CreateStream();|]
-                    }
-
-                    private MyStream CreateStream() => throw null;
+                    _ = Task.Run(() => {|MA0042:Thread.Sleep(1)|});
                 }
+            }
+            """;
 
-                class MyStream : Stream
-                {
-                    public override bool CanRead => throw null;
-                    public override bool CanSeek => throw null;
-                    public override bool CanWrite => throw null;
-                    public override long Length => throw null;
-                    public override long Position { get => throw null; set => throw null; }
-                    public override void Flush() => throw null;
-                    public override int Read(byte[] buffer, int offset, int count) => throw null;
-                    public override long Seek(long offset, SeekOrigin origin) => throw null;
-                    public override void SetLength(long value) => throw null;
-                    public override void Write(byte[] buffer, int offset, int count) => throw null;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewStreamSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task Moq_Raise()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.IO;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Moq", "4.20.0")]);
+        test.TestCode = """
+            using System;
+            using Moq;
 
-                class Test
+            class Sample
+            {
+                public void A()
                 {
-                    public async Task A()
-                    {
-                        [|using var s = new MyStream();|]
-                    }
+                    new Mock<ICloneable>().Raise(null);
+                    _ = new Mock<ICloneable>().RaiseAsync(null);
                 }
+            }
+            """;
 
-                class MyStream : Stream
-                {
-                    public override bool CanRead => throw null;
-                    public override bool CanSeek => throw null;
-                    public override bool CanWrite => throw null;
-                    public override long Length => throw null;
-                    public override long Position { get => throw null; set => throw null; }
-                    public override void Flush() => throw null;
-                    public override int Read(byte[] buffer, int offset, int count) => throw null;
-                    public override long Seek(long offset, SeekOrigin origin) => throw null;
-                    public override void SetLength(long value) => throw null;
-                    public override void Write(byte[] buffer, int offset, int count) => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
-                """)
-              .ValidateAsync();
-    }
-
-
-    [Fact]
-    public async Task SemaphoreSlim_Wait_NoDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        semaphore.Wait(0);
-                    }
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_FlowedZero_NoDiagnostic()
+    public Task UsingNewMemoryStream()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        var timeout = 0;
-                        semaphore.Wait(timeout);
-                    }
-                }
-                """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using var ms = new System.IO.MemoryStream();
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_TimeSpanZero_NoDiagnostic()
+    public Task UsingFactoryMethod_StreamSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System;
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.IO;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        semaphore.Wait(TimeSpan.Zero);
-                    }
+                    {|MA0042:using var s = CreateStream();|}
                 }
-                """)
-              .ValidateAsync();
+
+                private MyStream CreateStream() => throw null;
+            }
+
+            class MyStream : Stream
+            {
+                public override bool CanRead => throw null;
+                public override bool CanSeek => throw null;
+                public override bool CanWrite => throw null;
+                public override long Length => throw null;
+                public override long Position { get => throw null; set => throw null; }
+                public override void Flush() => throw null;
+                public override int Read(byte[] buffer, int offset, int count) => throw null;
+                public override long Seek(long offset, SeekOrigin origin) => throw null;
+                public override void SetLength(long value) => throw null;
+                public override void Write(byte[] buffer, int offset, int count) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_NonZero_Diagnostic()
+    public Task UsingNewStreamSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.IO;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        [|semaphore.Wait(100)|];
-                    }
+                    {|MA0042:using var s = new MyStream();|}
                 }
-                """)
-              .ValidateAsync();
+            }
+
+            class MyStream : Stream
+            {
+                public override bool CanRead => throw null;
+                public override bool CanSeek => throw null;
+                public override bool CanWrite => throw null;
+                public override long Length => throw null;
+                public override long Position { get => throw null; set => throw null; }
+                public override void Flush() => throw null;
+                public override int Read(byte[] buffer, int offset, int count) => throw null;
+                public override long Seek(long offset, SeekOrigin origin) => throw null;
+                public override void SetLength(long value) => throw null;
+                public override void Write(byte[] buffer, int offset, int count) => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_NoArgs_Diagnostic()
+    public Task SemaphoreSlim_Wait_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        [|semaphore.Wait()|];
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    semaphore.Wait(0);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SemaphoreSlim_Wait_ZeroWithCancellationToken_NoDiagnostic()
+    public Task SemaphoreSlim_Wait_FlowedZero_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                class Test
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        var semaphore = new SemaphoreSlim(1);
-                        semaphore.Wait(0, CancellationToken.None);
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    var timeout = 0;
+                    semaphore.Wait(timeout);
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
+    public Task SemaphoreSlim_Wait_TimeSpanZero_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .AddXUnitApi()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Meziantou.Framework;
-
-                namespace Meziantou.Framework
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public class TemporaryDirectory
-                    {
-                        public void CreateTextFile(string path, string content) { }
-                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    semaphore.Wait(TimeSpan.Zero);
                 }
+            }
+            """;
 
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var dir = new TemporaryDirectory();
-                        dir.CreateTextFile("test.txt", "content");
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
+    public Task SemaphoreSlim_Wait_NonZero_Diagnostic()
     {
-        await CreateProjectBuilder()
-            .AddNUnitApi()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Meziantou.Framework;
-
-                namespace Meziantou.Framework
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public class TemporaryDirectory
-                    {
-                        public void CreateTextFile(string path, string content) { }
-                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    {|MA0042:semaphore.Wait(100)|};
                 }
+            }
+            """;
 
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var dir = new TemporaryDirectory();
-                        dir.CreateTextFile("test.txt", "content");
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
+    public Task SemaphoreSlim_Wait_NoArgs_Diagnostic()
     {
-        await CreateProjectBuilder()
-            .AddMSTestApi()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Meziantou.Framework;
-
-                namespace Meziantou.Framework
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public class TemporaryDirectory
-                    {
-                        public void CreateTextFile(string path, string content) { }
-                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    {|MA0042:semaphore.Wait()|};
                 }
+            }
+            """;
 
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var dir = new TemporaryDirectory();
-                        dir.CreateTextFile("test.txt", "content");
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task TemporaryDirectory_InNonTestProject_Diagnostic()
+    public Task SemaphoreSlim_Wait_ZeroWithCancellationToken_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Meziantou.Framework;
-
-                namespace Meziantou.Framework
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
                 {
-                    public class TemporaryDirectory
-                    {
-                        public void CreateTextFile(string path, string content) { }
-                        public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
-                    }
+                    var semaphore = new SemaphoreSlim(1);
+                    semaphore.Wait(0, CancellationToken.None);
                 }
+            }
+            """;
 
-                class Test
-                {
-                    public async Task A()
-                    {
-                        var dir = new TemporaryDirectory();
-                        [|dir.CreateTextFile("test.txt", "content")|];
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Meziantou.Framework;
 
-                class Test
+            namespace Meziantou.Framework
+            {
+                public class TemporaryDirectory
                 {
-                    public async Task A()
-                    {
-                        using var conn = new MySqlConnection();
-                    }
+                    public void CreateTextFile(string path, string content) { }
+                    public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
                 }
+            }
 
-                class MySqlConnection : DbConnection
+            class Test
+            {
+                public async Task A()
                 {
-                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
-                    protected override DbCommand CreateDbCommand() => throw null;
-                    public override void ChangeDatabase(string databaseName) => throw null;
-                    public override void Close() => throw null;
-                    public override void Open() => throw null;
-                    public override string ConnectionString { get => throw null; set => throw null; }
-                    public override string Database => throw null;
-                    public override string DataSource => throw null;
-                    public override string ServerVersion => throw null;
-                    public override ConnectionState State => throw null;
+                    var dir = new TemporaryDirectory();
+                    dir.CreateTextFile("test.txt", "content");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnitApi();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Meziantou.Framework;
 
-                class Test
+            namespace Meziantou.Framework
+            {
+                public class TemporaryDirectory
                 {
-                    public async Task A()
-                    {
-                        using var conn = CreateConnection();
-                    }
-
-                    private MySqlConnection CreateConnection() => throw null;
+                    public void CreateTextFile(string path, string content) { }
+                    public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
                 }
+            }
 
-                class MySqlConnection : DbConnection
+            class Test
+            {
+                public async Task A()
                 {
-                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
-                    protected override DbCommand CreateDbCommand() => throw null;
-                    public override void ChangeDatabase(string databaseName) => throw null;
-                    public override void Close() => throw null;
-                    public override void Open() => throw null;
-                    public override string ConnectionString { get => throw null; set => throw null; }
-                    public override string Database => throw null;
-                    public override string DataSource => throw null;
-                    public override string ServerVersion => throw null;
-                    public override ConnectionState State => throw null;
+                    var dir = new TemporaryDirectory();
+                    dir.CreateTextFile("test.txt", "content");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Meziantou.Framework;
 
-                class Test
+            namespace Meziantou.Framework
+            {
+                public class TemporaryDirectory
                 {
-                    public async Task A()
-                    {
-                        [|using var conn = CreateConnection();|]
-                    }
-
-                    private MySqlConnection CreateConnection() => throw null;
+                    public void CreateTextFile(string path, string content) { }
+                    public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
                 }
+            }
 
-                class MySqlConnection : DbConnection
+            class Test
+            {
+                public async Task A()
                 {
-                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
-                    protected override DbCommand CreateDbCommand() => throw null;
-                    public override void ChangeDatabase(string databaseName) => throw null;
-                    public override void Close() => throw null;
-                    public override void Open() => throw null;
-                    public override string ConnectionString { get => throw null; set => throw null; }
-                    public override string Database => throw null;
-                    public override string DataSource => throw null;
-                    public override string ServerVersion => throw null;
-                    public override ConnectionState State => throw null;
+                    var dir = new TemporaryDirectory();
+                    dir.CreateTextFile("test.txt", "content");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbConnectionSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task TemporaryDirectory_InNonTestProject_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Meziantou.Framework;
 
-                class Test
+            namespace Meziantou.Framework
+            {
+                public class TemporaryDirectory
                 {
-                    public async Task A()
-                    {
-                        [|using var conn = new MySqlConnection();|]
-                    }
+                    public void CreateTextFile(string path, string content) { }
+                    public Task CreateTextFileAsync(string path, string content) => Task.CompletedTask;
                 }
+            }
 
-                class MySqlConnection : DbConnection
+            class Test
+            {
+                public async Task A()
                 {
-                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
-                    protected override DbCommand CreateDbCommand() => throw null;
-                    public override void ChangeDatabase(string databaseName) => throw null;
-                    public override void Close() => throw null;
-                    public override void Open() => throw null;
-                    public override string ConnectionString { get => throw null; set => throw null; }
-                    public override string Database => throw null;
-                    public override string DataSource => throw null;
-                    public override string ServerVersion => throw null;
-                    public override ConnectionState State => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
+                    var dir = new TemporaryDirectory();
+                    {|MA0042:dir.CreateTextFile("test.txt", "content")|};
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbConnectionSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
+    public Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var conn = new DerivedConnection();|]
-                    }
+                    using var conn = new MySqlConnection();
                 }
+            }
 
-                class BaseConnection : DbConnection
-                {
-                    protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
-                    protected override DbCommand CreateDbCommand() => throw null;
-                    public override void ChangeDatabase(string databaseName) => throw null;
-                    public override void Close() => throw null;
-                    public override void Open() => throw null;
-                    public override string ConnectionString { get => throw null; set => throw null; }
-                    public override string Database => throw null;
-                    public override string DataSource => throw null;
-                    public override string ServerVersion => throw null;
-                    public override ConnectionState State => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+            class MySqlConnection : DbConnection
+            {
+                protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                protected override DbCommand CreateDbCommand() => throw null;
+                public override void ChangeDatabase(string databaseName) => throw null;
+                public override void Close() => throw null;
+                public override void Open() => throw null;
+                public override string ConnectionString { get => throw null; set => throw null; }
+                public override string Database => throw null;
+                public override string DataSource => throw null;
+                public override string ServerVersion => throw null;
+                public override ConnectionState State => throw null;
+            }
+            """;
 
-                class DerivedConnection : BaseConnection { }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var command = new MyDbCommand();
-                    }
+                    using var conn = CreateConnection();
                 }
 
-                class MyDbCommand : DbCommand
-                {
-                    public override string CommandText { get => throw null; set => throw null; }
-                    public override int CommandTimeout { get => throw null; set => throw null; }
-                    public override CommandType CommandType { get => throw null; set => throw null; }
-                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
-                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbParameterCollection DbParameterCollection => throw null;
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override void Prepare() => throw null;
-                    protected override DbParameter CreateDbParameter() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MySqlConnection CreateConnection() => throw null;
+            }
+
+            class MySqlConnection : DbConnection
+            {
+                protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                protected override DbCommand CreateDbCommand() => throw null;
+                public override void ChangeDatabase(string databaseName) => throw null;
+                public override void Close() => throw null;
+                public override void Open() => throw null;
+                public override string ConnectionString { get => throw null; set => throw null; }
+                public override string Database => throw null;
+                public override string DataSource => throw null;
+                public override string ServerVersion => throw null;
+                public override ConnectionState State => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var command = CreateCommand();
-                    }
-
-                    private MyDbCommand CreateCommand() => throw null;
+                    {|MA0042:using var conn = CreateConnection();|}
                 }
 
-                class MyDbCommand : DbCommand
-                {
-                    public override string CommandText { get => throw null; set => throw null; }
-                    public override int CommandTimeout { get => throw null; set => throw null; }
-                    public override CommandType CommandType { get => throw null; set => throw null; }
-                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
-                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbParameterCollection DbParameterCollection => throw null;
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override void Prepare() => throw null;
-                    protected override DbParameter CreateDbParameter() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MySqlConnection CreateConnection() => throw null;
+            }
+
+            class MySqlConnection : DbConnection
+            {
+                protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                protected override DbCommand CreateDbCommand() => throw null;
+                public override void ChangeDatabase(string databaseName) => throw null;
+                public override void Close() => throw null;
+                public override void Open() => throw null;
+                public override string ConnectionString { get => throw null; set => throw null; }
+                public override string Database => throw null;
+                public override string DataSource => throw null;
+                public override string ServerVersion => throw null;
+                public override ConnectionState State => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task UsingNewDbConnectionSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var command = CreateCommand();|]
-                    }
-
-                    private MyDbCommand CreateCommand() => throw null;
+                    {|MA0042:using var conn = new MySqlConnection();|}
                 }
+            }
 
-                class MyDbCommand : DbCommand
-                {
-                    public override string CommandText { get => throw null; set => throw null; }
-                    public override int CommandTimeout { get => throw null; set => throw null; }
-                    public override CommandType CommandType { get => throw null; set => throw null; }
-                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
-                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbParameterCollection DbParameterCollection => throw null;
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override void Prepare() => throw null;
-                    protected override DbParameter CreateDbParameter() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                }
-                """)
-              .ValidateAsync();
+            class MySqlConnection : DbConnection
+            {
+                protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                protected override DbCommand CreateDbCommand() => throw null;
+                public override void ChangeDatabase(string databaseName) => throw null;
+                public override void Close() => throw null;
+                public override void Open() => throw null;
+                public override string ConnectionString { get => throw null; set => throw null; }
+                public override string Database => throw null;
+                public override string DataSource => throw null;
+                public override string ServerVersion => throw null;
+                public override ConnectionState State => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbCommandSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task UsingNewDbConnectionSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var command = new MyDbCommand();|]
-                    }
+                    {|MA0042:using var conn = new DerivedConnection();|}
                 }
+            }
 
-                class MyDbCommand : DbCommand
-                {
-                    public override string CommandText { get => throw null; set => throw null; }
-                    public override int CommandTimeout { get => throw null; set => throw null; }
-                    public override CommandType CommandType { get => throw null; set => throw null; }
-                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
-                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbParameterCollection DbParameterCollection => throw null;
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override void Prepare() => throw null;
-                    protected override DbParameter CreateDbParameter() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
-                """)
-              .ValidateAsync();
+            class BaseConnection : DbConnection
+            {
+                protected override DbTransaction BeginDbTransaction(IsolationLevel isolationLevel) => throw null;
+                protected override DbCommand CreateDbCommand() => throw null;
+                public override void ChangeDatabase(string databaseName) => throw null;
+                public override void Close() => throw null;
+                public override void Open() => throw null;
+                public override string ConnectionString { get => throw null; set => throw null; }
+                public override string Database => throw null;
+                public override string DataSource => throw null;
+                public override string ServerVersion => throw null;
+                public override ConnectionState State => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+
+            class DerivedConnection : BaseConnection { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbCommandSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
+    public Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var command = new DerivedDbCommand();|]
-                    }
+                    using var command = new MyDbCommand();
                 }
+            }
 
-                class BaseDbCommand : DbCommand
-                {
-                    public override string CommandText { get => throw null; set => throw null; }
-                    public override int CommandTimeout { get => throw null; set => throw null; }
-                    public override CommandType CommandType { get => throw null; set => throw null; }
-                    public override bool DesignTimeVisible { get => throw null; set => throw null; }
-                    public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbParameterCollection DbParameterCollection => throw null;
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override void Prepare() => throw null;
-                    protected override DbParameter CreateDbParameter() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+            class MyDbCommand : DbCommand
+            {
+                public override string CommandText { get => throw null; set => throw null; }
+                public override int CommandTimeout { get => throw null; set => throw null; }
+                public override CommandType CommandType { get => throw null; set => throw null; }
+                public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbParameterCollection DbParameterCollection => throw null;
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override void Prepare() => throw null;
+                protected override DbParameter CreateDbParameter() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+            }
+            """;
 
-                class DerivedDbCommand : BaseDbCommand { }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var reader = new DataTableReader(new DataTable());
-                    }
+                    using var command = CreateCommand();
                 }
-                """)
-              .ValidateAsync();
+
+                private MyDbCommand CreateCommand() => throw null;
+            }
+
+            class MyDbCommand : DbCommand
+            {
+                public override string CommandText { get => throw null; set => throw null; }
+                public override int CommandTimeout { get => throw null; set => throw null; }
+                public override CommandType CommandType { get => throw null; set => throw null; }
+                public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbParameterCollection DbParameterCollection => throw null;
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override void Prepare() => throw null;
+                protected override DbParameter CreateDbParameter() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var reader = CreateReader();
-                    }
-
-                    private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+                    {|MA0042:using var command = CreateCommand();|}
                 }
-                """)
-              .ValidateAsync();
+
+                private MyDbCommand CreateCommand() => throw null;
+            }
+
+            class MyDbCommand : DbCommand
+            {
+                public override string CommandText { get => throw null; set => throw null; }
+                public override int CommandTimeout { get => throw null; set => throw null; }
+                public override CommandType CommandType { get => throw null; set => throw null; }
+                public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbParameterCollection DbParameterCollection => throw null;
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override void Prepare() => throw null;
+                protected override DbParameter CreateDbParameter() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task UsingNewDbCommandSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var reader = CreateReader();|]
-                    }
-
-                    private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+                    {|MA0042:using var command = new MyDbCommand();|}
                 }
-                """)
-              .ValidateAsync();
+            }
+
+            class MyDbCommand : DbCommand
+            {
+                public override string CommandText { get => throw null; set => throw null; }
+                public override int CommandTimeout { get => throw null; set => throw null; }
+                public override CommandType CommandType { get => throw null; set => throw null; }
+                public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbParameterCollection DbParameterCollection => throw null;
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override void Prepare() => throw null;
+                protected override DbParameter CreateDbParameter() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbDataReaderSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task UsingNewDbCommandSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System;
-                using System.Collections;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var reader1 = new MyDbDataReader();|]
-                        [|using var reader2 = new DerivedDbDataReader();|]
-                    }
+                    {|MA0042:using var command = new DerivedDbCommand();|}
                 }
+            }
 
-                class MyDbDataReader : DbDataReader
-                {
-                    public override object this[int ordinal] => throw null;
-                    public override object this[string name] => throw null;
-                    public override int Depth => throw null;
-                    public override int FieldCount => throw null;
-                    public override bool HasRows => throw null;
-                    public override bool IsClosed => throw null;
-                    public override int RecordsAffected => throw null;
-                    public override bool GetBoolean(int ordinal) => throw null;
-                    public override byte GetByte(int ordinal) => throw null;
-                    public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length) => throw null;
-                    public override char GetChar(int ordinal) => throw null;
-                    public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length) => throw null;
-                    public override string GetDataTypeName(int ordinal) => throw null;
-                    public override DateTime GetDateTime(int ordinal) => throw null;
-                    public override decimal GetDecimal(int ordinal) => throw null;
-                    public override double GetDouble(int ordinal) => throw null;
-                    public override IEnumerator GetEnumerator() => throw null;
-                    public override Type GetFieldType(int ordinal) => throw null;
-                    public override float GetFloat(int ordinal) => throw null;
-                    public override Guid GetGuid(int ordinal) => throw null;
-                    public override short GetInt16(int ordinal) => throw null;
-                    public override int GetInt32(int ordinal) => throw null;
-                    public override long GetInt64(int ordinal) => throw null;
-                    public override string GetName(int ordinal) => throw null;
-                    public override int GetOrdinal(string name) => throw null;
-                    public override string GetString(int ordinal) => throw null;
-                    public override object GetValue(int ordinal) => throw null;
-                    public override int GetValues(object[] values) => throw null;
-                    public override bool IsDBNull(int ordinal) => throw null;
-                    public override bool NextResult() => throw null;
-                    public override bool Read() => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+            class BaseDbCommand : DbCommand
+            {
+                public override string CommandText { get => throw null; set => throw null; }
+                public override int CommandTimeout { get => throw null; set => throw null; }
+                public override CommandType CommandType { get => throw null; set => throw null; }
+                public override bool DesignTimeVisible { get => throw null; set => throw null; }
+                public override UpdateRowSource UpdatedRowSource { get => throw null; set => throw null; }
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbParameterCollection DbParameterCollection => throw null;
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override void Prepare() => throw null;
+                protected override DbParameter CreateDbParameter() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
 
-                class DerivedDbDataReader : MyDbDataReader { }
-                """)
-              .ValidateAsync();
+            class DerivedDbCommand : BaseDbCommand { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingNewDbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var transaction = new MyDbTransaction();
-                    }
+                    using var reader = new DataTableReader(new DataTable());
                 }
+            }
+            """;
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var transaction = CreateTransaction();
-                    }
-
-                    private MyDbTransaction CreateTransaction() => throw null;
+                    using var reader = CreateReader();
                 }
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var transaction = CreateTransaction();|]
-                    }
-
-                    private MyDbTransaction CreateTransaction() => throw null;
+                    {|MA0042:using var reader = CreateReader();|}
                 }
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private DataTableReader CreateReader() => new DataTableReader(new DataTable());
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbTransactionSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task UsingNewDbDataReaderSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System;
+            using System.Collections;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var transaction1 = new MyDbTransaction();|]
-                        [|using var transaction2 = new DerivedDbTransaction();|]
-                    }
+                    {|MA0042:using var reader1 = new MyDbDataReader();|}
+                    {|MA0042:using var reader2 = new DerivedDbDataReader();|}
                 }
+            }
 
-                class MyDbTransaction : DbTransaction
-                {
-                    protected override DbConnection DbConnection => throw null;
-                    public override IsolationLevel IsolationLevel => throw null;
-                    public override void Commit() => throw null;
-                    public override void Rollback() => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+            class MyDbDataReader : DbDataReader
+            {
+                public override object this[int ordinal] => throw null;
+                public override object this[string name] => throw null;
+                public override int Depth => throw null;
+                public override int FieldCount => throw null;
+                public override bool HasRows => throw null;
+                public override bool IsClosed => throw null;
+                public override int RecordsAffected => throw null;
+                public override bool GetBoolean(int ordinal) => throw null;
+                public override byte GetByte(int ordinal) => throw null;
+                public override long GetBytes(int ordinal, long dataOffset, byte[] buffer, int bufferOffset, int length) => throw null;
+                public override char GetChar(int ordinal) => throw null;
+                public override long GetChars(int ordinal, long dataOffset, char[] buffer, int bufferOffset, int length) => throw null;
+                public override string GetDataTypeName(int ordinal) => throw null;
+                public override DateTime GetDateTime(int ordinal) => throw null;
+                public override decimal GetDecimal(int ordinal) => throw null;
+                public override double GetDouble(int ordinal) => throw null;
+                public override IEnumerator GetEnumerator() => throw null;
+                public override Type GetFieldType(int ordinal) => throw null;
+                public override float GetFloat(int ordinal) => throw null;
+                public override Guid GetGuid(int ordinal) => throw null;
+                public override short GetInt16(int ordinal) => throw null;
+                public override int GetInt32(int ordinal) => throw null;
+                public override long GetInt64(int ordinal) => throw null;
+                public override string GetName(int ordinal) => throw null;
+                public override int GetOrdinal(string name) => throw null;
+                public override string GetString(int ordinal) => throw null;
+                public override object GetValue(int ordinal) => throw null;
+                public override int GetValues(object[] values) => throw null;
+                public override bool IsDBNull(int ordinal) => throw null;
+                public override bool NextResult() => throw null;
+                public override bool Read() => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
 
-                class DerivedDbTransaction : MyDbTransaction { }
-                """)
-              .ValidateAsync();
+            class DerivedDbDataReader : MyDbDataReader { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingNewDbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var batch = new MyDbBatch();
-                    }
+                    using var transaction = new MyDbTransaction();
                 }
+            }
 
-                class MyDbBatch : DbBatch
-                {
-                    public override int Timeout { get => throw null; set => throw null; }
-                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override void Prepare() => throw null;
-                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
-                }
-                """)
-              .ValidateAsync();
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var batch = CreateBatch();
-                    }
-
-                    private MyDbBatch CreateBatch() => throw null;
+                    using var transaction = CreateTransaction();
                 }
 
-                class MyDbBatch : DbBatch
-                {
-                    public override int Timeout { get => throw null; set => throw null; }
-                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override void Prepare() => throw null;
-                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    public Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .AddAnalyzerConfiguration("MA0042.enable_db_special_cases", "false")
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var batch = CreateBatch();|]
-                    }
-
-                    private MyDbBatch CreateBatch() => throw null;
+                    {|MA0042:using var transaction = CreateTransaction();|}
                 }
 
-                class MyDbBatch : DbBatch
-                {
-                    public override int Timeout { get => throw null; set => throw null; }
-                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override void Prepare() => throw null;
-                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
-                }
-                """)
-              .ValidateAsync();
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task UsingNewDbTransactionSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.Data;
-                using System.Data.Common;
-                using System.Threading;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var batch1 = new MyDbBatch();|]
-                        [|using var batch2 = new DerivedDbBatch();|]
-                    }
+                    {|MA0042:using var transaction1 = new MyDbTransaction();|}
+                    {|MA0042:using var transaction2 = new DerivedDbTransaction();|}
                 }
+            }
 
-                class MyDbBatch : DbBatch
-                {
-                    public override int Timeout { get => throw null; set => throw null; }
-                    protected override DbBatchCommandCollection DbBatchCommands => throw null;
-                    protected override DbConnection DbConnection { get => throw null; set => throw null; }
-                    protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
-                    public override void Cancel() => throw null;
-                    protected override DbBatchCommand CreateDbBatchCommand() => throw null;
-                    protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
-                    protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
-                    public override int ExecuteNonQuery() => throw null;
-                    public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override object ExecuteScalar() => throw null;
-                    public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override void Prepare() => throw null;
-                    public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
 
-                class DerivedDbBatch : MyDbBatch { }
-                """)
-              .ValidateAsync();
+            class DerivedDbTransaction : MyDbTransaction { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewTextWriterSubclass_NoDisposeAsyncOverride_NoDiagnostic()
+    public Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.IO;
-                using System.Text;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var writer = new MyTextWriter();
-                    }
+                    using var batch = new MyDbBatch();
                 }
+            }
 
-                class MyTextWriter : TextWriter
-                {
-                    public override Encoding Encoding => Encoding.UTF8;
-                }
-                """)
-              .ValidateAsync();
+            class MyDbBatch : DbBatch
+            {
+                public override int Timeout { get => throw null; set => throw null; }
+                protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                public override void Prepare() => throw null;
+                public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingFactoryMethod_TextWriterSubclass_NoDisposeAsyncOverride_Diagnostic()
+    public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.IO;
-                using System.Text;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var writer = CreateTextWriter();|]
-                    }
-
-                    private MyTextWriter CreateTextWriter() => new MyTextWriter();
+                    using var batch = CreateBatch();
                 }
 
-                class MyTextWriter : TextWriter
-                {
-                    public override Encoding Encoding => Encoding.UTF8;
-                }
-                """)
-              .ValidateAsync();
+                private MyDbBatch CreateBatch() => throw null;
+            }
+
+            class MyDbBatch : DbBatch
+            {
+                public override int Timeout { get => throw null; set => throw null; }
+                protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                public override void Prepare() => throw null;
+                public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task UsingNewTextWriterSubclass_WithDisposeAsyncOverride_Diagnostic()
+    public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode("""
-                using System.IO;
-                using System.Text;
-                using System.Threading.Tasks;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var writer1 = new MyTextWriter();|]
-                        [|using var writer2 = new DerivedTextWriter();|]
-                    }
+                    {|MA0042:using var batch = CreateBatch();|}
                 }
 
-                class MyTextWriter : TextWriter
-                {
-                    public override Encoding Encoding => Encoding.UTF8;
-                    public override ValueTask DisposeAsync() => throw null;
-                }
+                private MyDbBatch CreateBatch() => throw null;
+            }
 
-                class DerivedTextWriter : MyTextWriter { }
-                """)
-              .ValidateAsync();
+            class MyDbBatch : DbBatch
+            {
+                public override int Timeout { get => throw null; set => throw null; }
+                protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                public override void Prepare() => throw null;
+                public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
+    public Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+            using System.Threading;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        Task.Delay(1).Wait();
-                    }
+                    {|MA0042:using var batch1 = new MyDbBatch();|}
+                    {|MA0042:using var batch2 = new DerivedDbBatch();|}
                 }
-                """)
-              .ValidateAsync();
+            }
+
+            class MyDbBatch : DbBatch
+            {
+                public override int Timeout { get => throw null; set => throw null; }
+                protected override DbBatchCommandCollection DbBatchCommands => throw null;
+                protected override DbConnection DbConnection { get => throw null; set => throw null; }
+                protected override DbTransaction DbTransaction { get => throw null; set => throw null; }
+                public override void Cancel() => throw null;
+                protected override DbBatchCommand CreateDbBatchCommand() => throw null;
+                protected override DbDataReader ExecuteDbDataReader(CommandBehavior behavior) => throw null;
+                protected override Task<DbDataReader> ExecuteDbDataReaderAsync(CommandBehavior behavior, CancellationToken cancellationToken) => throw null;
+                public override int ExecuteNonQuery() => throw null;
+                public override Task<int> ExecuteNonQueryAsync(CancellationToken cancellationToken = default) => throw null;
+                public override object ExecuteScalar() => throw null;
+                public override Task<object> ExecuteScalarAsync(CancellationToken cancellationToken = default) => throw null;
+                public override void Prepare() => throw null;
+                public override Task PrepareAsync(CancellationToken cancellationToken = default) => throw null;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+
+            class DerivedDbBatch : MyDbBatch { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdProperty()
+    public Task UsingNewTextWriterSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("P:System.Threading.Tasks.Task`1.Result")]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.IO;
+            using System.Text;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        _ = Task.FromResult(1).Result;
-                    }
+                    using var writer = new MyTextWriter();
                 }
-                """)
-              .ValidateAsync();
+            }
+
+            class MyTextWriter : TextWriter
+            {
+                public override Encoding Encoding => Encoding.UTF8;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_DoesNotAffectAwaitUsing()
+    public Task UsingFactoryMethod_TextWriterSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.IO;
+            using System.Text;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var value = new AsyncDisposable();|]
-                    }
+                    {|MA0042:using var writer = CreateTextWriter();|}
                 }
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+                private MyTextWriter CreateTextWriter() => new MyTextWriter();
+            }
+
+            class MyTextWriter : TextWriter
+            {
+                public override Encoding Encoding => Encoding.UTF8;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
+    public Task UsingNewTextWriterSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.IO;
+            using System.Text;
+            using System.Threading.Tasks;
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var value = Create();|]
-                    }
-
-                    private AsyncDisposable Create() => throw null;
+                    {|MA0042:using var writer1 = new MyTextWriter();|}
+                    {|MA0042:using var writer2 = new DerivedTextWriter();|}
                 }
+            }
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+            class MyTextWriter : TextWriter
+            {
+                public override Encoding Encoding => Encoding.UTF8;
+                public override ValueTask DisposeAsync() => throw null;
+            }
+
+            class DerivedTextWriter : MyTextWriter { }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var value = new AsyncDisposable();|]
-                    }
+                    Task.Delay(1).Wait();
                 }
+            }
+            """;
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdProperty()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("P:System.Threading.Tasks.Task`1.Result")]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        using var value = new AsyncDisposable();
-                    }
+                    _ = Task.FromResult(1).Result;
                 }
+            }
+            """;
 
-                class AsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_DoesNotAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Create()|];
-                    }
-
-                    private AwaitResult Create() => throw null;
-                    private Task<AwaitResult> CreateAsync() => throw null;
+                    {|MA0042:using var value = new AsyncDisposable();|}
                 }
+            }
 
-                class AwaitResult { }
-                """)
-              .ValidateAsync();
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_OpenGenericType_DoesNotAffectTaskWrappedAwaitSuggestion()
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult<>))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Create()|];
-                    }
-
-                    private AwaitResult<int> Create() => throw null;
-                    private Task<AwaitResult<int>> CreateAsync() => throw null;
+                    {|MA0042:using var value = Create();|}
                 }
 
-                class AwaitResult<T> { }
-                """)
-              .ValidateAsync();
+                private AsyncDisposable Create() => throw null;
+            }
+
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectOtherTypes()
+    public Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(OtherResult))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Create()|];
-                    }
-
-                    private AwaitResult Create() => throw null;
-                    private Task<AwaitResult> CreateAsync() => throw null;
+                    {|MA0042:using var value = new AsyncDisposable();|}
                 }
+            }
 
-                class AwaitResult { }
-                class OtherResult { }
-                """)
-              .ValidateAsync();
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
+    public Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System;
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|using var value = new DerivedAsyncDisposable();|]
-                    }
+                    using var value = new AsyncDisposable();
                 }
+            }
 
-                class BaseAsyncDisposable : IDisposable, IAsyncDisposable
-                {
-                    public void Dispose() { }
-                    public ValueTask DisposeAsync() => default;
-                }
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
 
-                class DerivedAsyncDisposable : BaseAsyncDisposable { }
-                """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitSuggestion()
+    public Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
-        await CreateProjectBuilder()
-              .AddMeziantouAttributes()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseResult))]
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
 
-                class Test
+            class Test
+            {
+                public async Task A()
                 {
-                    public async Task A()
-                    {
-                        [|Create()|];
-                    }
-
-                    private BaseResult Create() => throw null;
-                    private Task<DerivedResult> CreateAsync() => throw null;
+                    {|MA0042:Create()|};
                 }
 
-                class BaseResult { }
-                class DerivedResult : BaseResult { }
-                """)
-              .ValidateAsync();
+                private AwaitResult Create() => throw null;
+                private Task<AwaitResult> CreateAsync() => throw null;
+            }
+
+            class AwaitResult { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_OpenGenericType_DoesNotAffectTaskWrappedAwaitSuggestion()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult<>))]
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:Create()|};
+                }
+
+                private AwaitResult<int> Create() => throw null;
+                private Task<AwaitResult<int>> CreateAsync() => throw null;
+            }
+
+            class AwaitResult<T> { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectOtherTypes()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(OtherResult))]
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:Create()|};
+                }
+
+                private AwaitResult Create() => throw null;
+                private Task<AwaitResult> CreateAsync() => throw null;
+            }
+
+            class AwaitResult { }
+            class OtherResult { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:using var value = new DerivedAsyncDisposable();|}
+                }
+            }
+
+            class BaseAsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+
+            class DerivedAsyncDisposable : BaseAsyncDisposable { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitSuggestion()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseResult))]
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:Create()|};
+                }
+
+                private BaseResult Create() => throw null;
+                private Task<DerivedResult> CreateAsync() => throw null;
+            }
+
+            class BaseResult { }
+            class DerivedResult : BaseResult { }
+            """;
+
+        return test.RunAsync();
     }
 }

@@ -15,7 +15,6 @@
     <Using Include="Meziantou.Analyzer.Rules" />
     <Using Include="Meziantou.Analyzer.Test.Harness" />
     <Using Include="Meziantou.Analyzer.Test.Helpers" />
-    <Using Include="TestHelper" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,7 +12,6 @@ internal static class AnalyzerTestExtensions
 {
     /// <summary>
     /// Runs the analyzers of the <c>Microsoft.CodeAnalysis.NetAnalyzers</c> package reporting the given rules,
-    /// the way <see cref="TestHelper.ProjectBuilder.WithMicrosoftCodeAnalysisNetAnalyzers"/> does.
     /// </summary>
     public static void AddMicrosoftCodeAnalysisNetAnalyzers<TAnalyzer>(this CSharpAnalyzerTest<TAnalyzer> test, params string[] ruleIds)
         where TAnalyzer : DiagnosticAnalyzer, new()
@@ -26,13 +25,12 @@ internal static class AnalyzerTestExtensions
 
     /// <summary>
     /// Runs the analyzers of the <c>Microsoft.CodeAnalysis.CSharp.CodeStyle</c> package reporting the given rules,
-    /// the way <see cref="TestHelper.ProjectBuilder.WithMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers"/> does.
     /// </summary>
     public static void AddMicrosoftCodeAnalysisCSharpCodeStyleAnalyzers<TAnalyzer>(this CSharpAnalyzerTest<TAnalyzer> test, params string[] ruleIds)
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         // The IDE analyzers use the async interfaces, which the target framework of the test code does not provide.
-        foreach (var reference in TestHelper.ProjectBuilder.GetNuGetReferences("Microsoft.Bcl.AsyncInterfaces", "9.0.7", ["lib/netstandard2.1/"]).Result)
+        foreach (var reference in NuGetPackages.GetReferencesAsync("Microsoft.Bcl.AsyncInterfaces", "9.0.7", ["lib/netstandard2.1/"]).Result)
         {
             test.TestState.AdditionalReferences.Add(MetadataReference.CreateFromFile(reference));
         }
@@ -52,7 +50,7 @@ internal static class AnalyzerTestExtensions
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
         var ruleFound = false;
-        foreach (var reference in TestHelper.ProjectBuilder.GetNuGetReferences(packageName, version, paths).Result)
+        foreach (var reference in NuGetPackages.GetReferencesAsync(packageName, version, paths).Result)
         {
             foreach (var type in Assembly.LoadFrom(reference).GetTypes())
             {

@@ -1,117 +1,141 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.RegexMethodUsageAnalyzer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseRegexTimeoutAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    // The Regex source generator does not run, so the partial members the tests declare are given a dummy
+    // implementation part, which the generator would otherwise provide.
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithFrameworkSourceGenerators()
-            .WithAnalyzer<RegexMethodUsageAnalyzer>()
-            .WithAnalyzer<GeneratedRegexAttributeUsageAnalyzer>();
+        var test = new AnalyzerTest();
+        test.AdditionalAnalyzers.Add(new Meziantou.Analyzer.Rules.GeneratedRegexAttributeUsageAnalyzer());
+
+        // Both analyzers derive from RegexUsageAnalyzerBase, so they report the same descriptors
+        test.MarkupOptions = MarkupOptions.UseFirstDescriptor;
+        return test;
     }
 
     [Fact]
-    public async Task IsMatch_MissingTimeout_ShouldReportError()
+    public Task IsMatch_MissingTimeout_ShouldReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        [|Regex.IsMatch(""test"", ""[a-z]+"")|];
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    {|MA0009:Regex.IsMatch("test", "[a-z]+")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsMatch_WithTimeout_ShouldNotReportError()
+    public Task IsMatch_WithTimeout_ShouldNotReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    Regex.IsMatch("test", "[a-z]+", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
+    public Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        Regex.IsMatch(""test"", ""[a-z]+"", RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    Regex.IsMatch("test", "[a-z]+", RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor_MissingTimeout_ShouldReportError()
+    public Task Ctor_MissingTimeout_ShouldReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        [|new Regex(""[a-z]+"")|];
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    {|MA0009:new Regex("[a-z]+")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor_WithTimeout_ShouldNotReportError()
+    public Task Ctor_WithTimeout_ShouldNotReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        new Regex(""[a-z]+"", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    new Regex("[a-z]+", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Ctor_WithoutTimeout_NonBacktracking_ShouldNotReportError()
+    public Task Ctor_WithoutTimeout_NonBacktracking_ShouldNotReportError()
     {
-        const string SourceCode = @"using System.Text.RegularExpressions;
-class TestClass
-{
-    void Test()
-    {
-        new Regex(""[a-z]+"", RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    new Regex("[a-z]+", RegexOptions.ExplicitCapture | RegexOptions.NonBacktracking);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task NonRegexCtor_ShouldNotReportError()
+    public Task NonRegexCtor_ShouldNotReportError()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TestClass
             {
                 void Test()
@@ -120,35 +144,37 @@ class TestClass
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GeneratedRegex_WithoutTimeout()
+    public Task GeneratedRegex_WithoutTimeout()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
             {
-                [[|GeneratedRegex("pattern", RegexOptions.None)|]]
+                [{|MA0009:GeneratedRegex("pattern", RegexOptions.None)|}]
                 private static partial Regex Test();
             }
             """;
 
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode);
-
-        await project.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GeneratedRegex_WithTimeout()
+    public Task GeneratedRegex_WithTimeout()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
             {
@@ -157,18 +183,17 @@ class TestClass
             }
             """;
 
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode);
-
-        await project.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GeneratedRegex_WithoutTimeout_NonBacktracking()
+    public Task GeneratedRegex_WithoutTimeout_NonBacktracking()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
             {
@@ -177,67 +202,74 @@ class TestClass
             }
             """;
 
-        var project = CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode);
+        // The generator cannot produce a complete implementation for a NonBacktracking regex
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("SYSLIB1044", DiagnosticSeverity.Info).WithSpan(4, 5, 5, 41));
 
-        await project.ValidateAsync();
+        return test.RunAsync();
     }
 
 #if CSHARP13_OR_GREATER
     [Fact]
-    public async Task GeneratedRegexProperty_WithoutTimeout()
+    public Task GeneratedRegexProperty_WithoutTimeout()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode("""
-                  using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-                  partial class TestClass
-                  {
-                      [[|GeneratedRegex("pattern", RegexOptions.None)|]]
-                      private static partial Regex Test { get; }
-                  }
-                  """)
-              .ValidateAsync();
+            partial class TestClass
+            {
+                [{|MA0009:GeneratedRegex("pattern", RegexOptions.None)|}]
+                private static partial Regex Test { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GeneratedRegexProperty_WithTimeout()
+    public Task GeneratedRegexProperty_WithTimeout()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode("""
-                  using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-                  partial class TestClass
-                  {
-                      [GeneratedRegex("pattern", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
-                      private static partial Regex Test { get; }
-                  }
-                  """)
-              .ValidateAsync();
+            partial class TestClass
+            {
+                [GeneratedRegex("pattern", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex Test { get; }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GeneratedRegexProperty_WithoutTimeout_NonBacktracking()
+    public Task GeneratedRegexProperty_WithoutTimeout_NonBacktracking()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode("""
-                  using System.Text.RegularExpressions;
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.LanguageVersion = LanguageVersion.Preview;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
 
-                  partial class TestClass
-                  {
-                      [GeneratedRegex("pattern", RegexOptions.NonBacktracking)]
-                      private static partial Regex Test { get; }
-                  }
-                  """)
-              .ValidateAsync();
+            partial class TestClass
+            {
+                [GeneratedRegex("pattern", RegexOptions.NonBacktracking)]
+                private static partial Regex Test { get; }
+            }
+            """;
+
+        // The generator cannot produce a complete implementation for a NonBacktracking regex
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("SYSLIB1044", DiagnosticSeverity.Info).WithSpan(5, 5, 6, 47));
+
+        return test.RunAsync();
     }
 #endif
 }

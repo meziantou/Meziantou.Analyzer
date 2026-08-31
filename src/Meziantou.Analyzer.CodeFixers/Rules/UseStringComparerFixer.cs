@@ -163,9 +163,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var comparerExpression = generator.MemberAccessExpression(
-            generator.TypeExpression(stringComparer, addImport: true),
-            comparerName);
+        var comparerExpression = generator.TypeMemberAccessExpression(stringComparer, comparerName, addImport: true);
 
         switch (nodeToFix)
         {

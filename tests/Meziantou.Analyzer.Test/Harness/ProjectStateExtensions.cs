@@ -10,7 +10,6 @@ internal static class ProjectStateExtensions
 
     /// <summary>
     /// Configures the analyzers with an <c>.editorconfig</c> file applying to all the C# files of the project,
-    /// the way <see cref="TestHelper.ProjectBuilder.AddAnalyzerConfiguration(string, string)"/> does.
     /// Replaces the configuration set by a previous call.
     /// </summary>
     public static void SetConfiguration(this ProjectState state, string key, string value) =>
@@ -30,8 +29,7 @@ internal static class ProjectStateExtensions
     }
 
     /// <summary>
-    /// References the <c>Meziantou.Analyzer.Annotations</c> assembly, the way
-    /// <see cref="TestHelper.ProjectBuilder.AddMeziantouAttributes"/> does.
+    /// References the <c>Meziantou.Analyzer.Annotations</c> assembly.
     /// </summary>
     public static void AddMeziantouAnnotations(this ProjectState state) =>
         state.AdditionalReferences.Add(MetadataReference.CreateFromFile(typeof(RequireNamedArgumentAttribute).Assembly.Location));

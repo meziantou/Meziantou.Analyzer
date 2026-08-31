@@ -1,55 +1,58 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseStringComparerAnalyzer,
+    Meziantou.Analyzer.Rules.UseStringComparerFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringComparerAnalyzerTests
 {
+    private static CodeFixTest CreateTest()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp9;
+        return test;
+    }
+
+    private static CodeFixTest CreatePreviewTest()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.Preview;
+        return test;
+    }
+
+    private static CodeFixTest CreateMSTestTest()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp10;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("MSTest.TestFramework", "4.3.3")]);
+        return test;
+    }
+
 #if ROSLYN_5_6_OR_GREATER
     private const string ReportCollectionExpressionsConfigurationName = "MA0002.report_collection_expressions";
 #endif
     private const string ReportOnlyNonOrdinalConfigurationName = "MA0002.report_only_non_ordinal";
 
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp9)
-            .WithAnalyzer<UseStringComparerAnalyzer>()
-            .WithCodeFixProvider<UseStringComparerFixer>();
-    }
-
-#if CSHARP15_OR_GREATER
-    private static ProjectBuilder CreatePreviewProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.Preview)
-            .WithAnalyzer<UseStringComparerAnalyzer>()
-            .WithCodeFixProvider<UseStringComparerFixer>();
-    }
-#endif
-
     // MSTest 4 declares the comparer before the message and after the interpolated string handler,
     // so the code fix must use the real overloads to compute where the comparer must be inserted.
-    private static ProjectBuilder CreateMSTestProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp10)
-            .WithAnalyzer<UseStringComparerAnalyzer>()
-            .WithCodeFixProvider<UseStringComparerFixer>()
-            .AddNuGetReference("MSTest.TestFramework", "4.3.3", "lib/netstandard2.0/");
-    }
 
     [Fact]
-    public async Task MethodOnSetStoredInPrivateReadonlyFieldInOtherSyntaxTree_ShouldNotReportDiagnostic()
+    public Task MethodOnSetStoredInPrivateReadonlyFieldInOtherSyntaxTree_ShouldNotReportDiagnostic()
     {
-        var builder = CreateProjectBuilder()
-              .WithSourceCode("""
-                partial class TypeName
+        var test = CreateTest();
+        test.TestCode = """
+            partial class TypeName
+            {
+                public void Test()
                 {
-                    public void Test()
-                    {
-                        _ = Values.Contains("a");
-                    }
+                    _ = Values.Contains("a");
                 }
-                """);
-        builder.ApiReferences.Add("""
+            }
+            """;
+        test.TestState.Sources.Add("""
             interface IContainer
             {
                 bool Contains(string value);
@@ -65,13 +68,14 @@ public sealed class UseStringComparerAnalyzerTests
             }
             """);
 
-        await builder.ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_Int32_ShouldNotReportDiagnostic()
+    public Task HashSet_Int32_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -80,15 +84,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SortedList_string_ShouldNotReportDiagnostic()
+    public Task SortedList_string_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -97,8 +101,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -107,16 +110,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_ShouldReportDiagnostic()
+    public Task HashSet_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -125,7 +127,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -134,16 +136,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task SortedDictionary_String_ShouldReportDiagnostic()
+    public Task SortedDictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -152,7 +153,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -161,16 +162,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String__ShortNew_ShouldReportDiagnostic()
+    public Task HashSet_String__ShortNew_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -179,7 +179,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -188,16 +188,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
+    public Task HashSet_String_StringEqualityComparer_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -206,15 +205,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_String_ShouldReportDiagnostic()
+    public Task Dictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -223,7 +222,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -232,16 +231,15 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_String_WithoutArgumentListAndWithInitializer_ShouldReportDiagnostic()
+    public Task Dictionary_String_WithoutArgumentListAndWithInitializer_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -253,7 +251,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -265,215 +263,55 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
 #if  ROSLYN_5_6_OR_GREATER
+
     [Fact]
-    public async Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    public Task Dictionary_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.Dictionary<string, int> a = [];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    public Task Dictionary_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.Dictionary<string, int> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task HashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task HashSet_String_CollectionExpression_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task HashSet_String_CollectionExpression_WithElements_CSharp12_OptionEnabled_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task HashSet_String_CollectionExpression_WithElements_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = ["a", "b"];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task FrozenSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Frozen.FrozenSet<string> a = [];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task FrozenSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Frozen.FrozenSet<string> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ImmutableHashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableHashSet<string> a = [];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ImmutableHashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithLanguageVersion(Microsoft.CodeAnalysis.CSharp.LanguageVersion.CSharp12)
-              .AddAnalyzerConfiguration(ReportCollectionExpressionsConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-#endif
-
-#if CSHARP15_OR_GREATER
-    [Fact]
-    public async Task Dictionary_String_CollectionExpression_Preview_ShouldReportDiagnostic()
-    {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -482,25 +320,17 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
-            class TypeName
-            {
-                public void Test()
-                {
-                    System.Collections.Generic.Dictionary<string, int> a = [with(global::System.StringComparer.Ordinal)];
-                }
-            }
-            """;
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -509,7 +339,185 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HashSet_String_CollectionExpression_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration((ReportCollectionExpressionsConfigurationName, "true"), (ReportOnlyNonOrdinalConfigurationName, "true"));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HashSet_String_CollectionExpression_WithElements_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HashSet_String_CollectionExpression_WithElements_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration((ReportCollectionExpressionsConfigurationName, "true"), (ReportOnlyNonOrdinalConfigurationName, "true"));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = ["a", "b"];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FrozenSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Frozen.FrozenSet<string> a = [];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FrozenSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImmutableHashSet_String_CollectionExpression_DefaultOnCSharp12_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableHashSet<string> a = [];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImmutableHashSet_String_CollectionExpression_CSharp12_OptionEnabled_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestState.SetConfiguration(ReportCollectionExpressionsConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#endif
+
+#if CSHARP15_OR_GREATER
+
+    [Fact]
+    public Task Dictionary_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [|[]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [with(global::System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    {
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [|[]|];
+                }
+            }
+            """;
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -518,242 +526,253 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    public Task Dictionary_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.Dictionary<string, int> a = [with(System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [with(System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Dictionary_String_CollectionExpression_WithCapacityNoComparer_ShouldReportDiagnostic()
+    public Task Dictionary_String_CollectionExpression_WithCapacityNoComparer_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.Dictionary<string, int> a = [|[with(10)]|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.Dictionary<string, int> a = [|[with(10)]|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_WithElements_ShouldReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_WithElements_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), "a", "b"];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [|["a", "b"]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), "a", "b"];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_WithSpread_ShouldReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_WithSpread_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          var other = new string[] { "a", "b" };
-                          System.Collections.Generic.HashSet<string> a = [|[.. other]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          var other = new string[] { "a", "b" };
-                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var other = new string[] { "a", "b" };
+                    System.Collections.Generic.HashSet<string> a = [|[.. other]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var other = new string[] { "a", "b" };
+                    System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_WithComparerAndElements_ShouldNotReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_WithComparerAndElements_ShouldNotReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal), "a", "b"];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> a = [with(System.StringComparer.Ordinal), "a", "b"];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_String_CollectionExpression_WithElements_Spread_ShouldReportDiagnostic()
+    public Task HashSet_String_CollectionExpression_WithElements_Spread_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          var other = new string[] { "a", "b" };
-                          System.Collections.Generic.HashSet<string> a = [|[.. other, "c"]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          var other = new string[] { "a", "b" };
-                          System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other, "c"];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var other = new string[] { "a", "b" };
+                    System.Collections.Generic.HashSet<string> a = [|[.. other, "c"]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var other = new string[] { "a", "b" };
+                    System.Collections.Generic.HashSet<string> a = [with(global::System.StringComparer.Ordinal), .. other, "c"];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FrozenSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    public Task FrozenSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Frozen.FrozenSet<string> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Frozen.FrozenSet<string> a = [with(global::System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Frozen.FrozenSet<string> a = [|[]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Frozen.FrozenSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FrozenSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    public Task FrozenSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Frozen.FrozenSet<string> a = [with(System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Frozen.FrozenSet<string> a = [with(System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableHashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
+    public Task ImmutableHashSet_String_CollectionExpression_Preview_ShouldReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableHashSet<string> a = [with(global::System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableHashSet<string> a = [|[]|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableHashSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableHashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
+    public Task ImmutableHashSet_String_CollectionExpression_WithStringComparer_ShouldNotReportDiagnostic()
     {
-        await CreatePreviewProjectBuilder()
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableHashSet<string> a = [with(System.StringComparer.Ordinal)];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreatePreviewTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableHashSet<string> a = [with(System.StringComparer.Ordinal)];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
+
 #endif
 
     [Fact]
-    public async Task ConcurrentDictionary_String_ShouldReportDiagnostic()
+    public Task ConcurrentDictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -762,7 +781,7 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -771,16 +790,16 @@ public sealed class UseStringComparerAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableDictionary_CreateBuilder_String_ShouldReportDiagnostic()
+    public Task ImmutableDictionary_CreateBuilder_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -790,16 +809,15 @@ public sealed class UseStringComparerAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableDictionary_CreateBuilder_String_WithComparer_ShouldNotReportDiagnostic()
+    public Task ImmutableDictionary_CreateBuilder_String_WithComparer_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -809,16 +827,15 @@ public sealed class UseStringComparerAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ImmutableDictionary_Create_String_ShouldReportDiagnostic()
+    public Task ImmutableDictionary_Create_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -828,312 +845,327 @@ public sealed class UseStringComparerAnalyzerTests
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MeziantouFrameworkAssertions_Assert_ShouldReportDiagnostic()
+    public Task MeziantouFrameworkAssertions_Assert_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                  namespace Meziantou.Framework.Assertions
-                  {
-                      static class Assert
-                      {
-                          public static void AreEqual(string expected, string actual) { }
-                          public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
-                      }
-                  }
+        var test = CreateTest();
+        test.TestCode = """
+            namespace Meziantou.Framework.Assertions
+            {
+                static class Assert
+                {
+                    public static void AreEqual(string expected, string actual) { }
+                    public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
+                }
+            }
 
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          Meziantou.Framework.Assertions.Assert.[|AreEqual("a", "b")|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+            class TypeName
+            {
+                public void Test()
+                {
+                    Meziantou.Framework.Assertions.Assert.[|AreEqual("a", "b")|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task MeziantouFrameworkAssertions_Assert_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
+    public Task MeziantouFrameworkAssertions_Assert_ReportOnlyNonOrdinal_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  namespace Meziantou.Framework.Assertions
-                  {
-                      static class Assert
-                      {
-                          public static void AreEqual(string expected, string actual) { }
-                          public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
-                      }
-                  }
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            namespace Meziantou.Framework.Assertions
+            {
+                static class Assert
+                {
+                    public static void AreEqual(string expected, string actual) { }
+                    public static void AreEqual(string expected, string actual, System.Collections.Generic.IEqualityComparer<string> comparer) { }
+                }
+            }
 
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          Meziantou.Framework.Assertions.Assert.AreEqual("a", "b");
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
+            class TypeName
+            {
+                public void Test()
+                {
+                    Meziantou.Framework.Assertions.Assert.AreEqual("a", "b");
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task MeziantouFrameworkAssertions_Assert_WithoutComparerOverload_ShouldNotReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net10_0)
-              .AddNuGetReference("Meziantou.Framework.Assertions", "2.0.1", "lib/net10.0/")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.ICollection<string> values = new[] { "abc" };
-                          Meziantou.Framework.Assertions.Assert.Contains("abc", values);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_HashSet_ShouldNotReportDiagnostic()
+    public Task MeziantouFrameworkAssertions_Assert_WithoutComparerOverload_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          new System.Collections.Generic.HashSet<string>();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework.Assertions", "2.0.1")]);
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.ICollection<string> values = new[] { "abc" };
+                    Meziantou.Framework.Assertions.Assert.Contains("abc", values);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_Dictionary_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_HashSet_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          new System.Collections.Generic.Dictionary<string, int>();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.HashSet<string>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_ConcurrentDictionary_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_Dictionary_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Generic.Dictionary<string, int>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_EnumerableDistinct_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_ConcurrentDictionary_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  using System.Linq;
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.IEnumerable<string> obj = null;
-                          obj.Distinct();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    new System.Collections.Concurrent.ConcurrentDictionary<string, int>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_EnumerableToDictionary_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_EnumerableDistinct_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  using System.Linq;
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.IEnumerable<string> obj = null;
-                          obj.ToDictionary(p => p);
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.Distinct();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_ImmutableDictionaryCreateBuilder_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_EnumerableToDictionary_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableDictionary.CreateBuilder<string, string>();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.ToDictionary(p => p);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_ImmutableDictionaryCreate_ShouldNotReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_ImmutableDictionaryCreateBuilder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableDictionary.Create<string, string>();
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.CreateBuilder<string, string>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_ImmutableSortedDictionaryCreate_ShouldReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_ImmutableDictionaryCreate_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net4_8)
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Immutable.ImmutableSortedDictionary.[|Create<string, string>()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableDictionary.Create<string, string>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_SortedDictionary_ShouldReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_ImmutableSortedDictionaryCreate_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          [|new System.Collections.Generic.SortedDictionary<string, int>()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Immutable.ImmutableSortedDictionary.[|Create<string, string>()|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_OrderBy_ShouldReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_SortedDictionary_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  using System.Linq;
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.IEnumerable<string> obj = null;
-                          obj.[|OrderBy(p => p)|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    [|new System.Collections.Generic.SortedDictionary<string, int>()|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportOnlyNonOrdinal_Order_ShouldReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_OrderBy_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .AddAnalyzerConfiguration(ReportOnlyNonOrdinalConfigurationName, "true")
-              .WithSourceCode("""
-                  using System.Linq;
-                  class TypeName
-                  {
-                      public void Test()
-                      {
-                          System.Collections.Generic.IEnumerable<string> obj = null;
-                          obj.[|Order()|];
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|OrderBy(p => p)|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumerableContains_String_ShouldReportDiagnostic()
+    public Task ReportOnlyNonOrdinal_Order_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.[|Contains("""")|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.Contains("""", System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|Order()|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumerableDistinct_String_ShouldReportDiagnostic()
+    public Task EnumerableContains_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|Contains("")|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.Contains("", System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumerableDistinct_String_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1144,7 +1176,7 @@ class TypeName
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System.Linq;
             class TypeName
             {
@@ -1155,16 +1187,15 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task QueryableDistinct_String_ShouldNotReportDiagnostic()
+    public Task QueryableDistinct_String_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1175,15 +1206,15 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task QueryableContains_String_ShouldNotReportDiagnostic()
+    public Task QueryableContains_String_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1194,15 +1225,15 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task QueryableOrderBy_String_ShouldNotReportDiagnostic()
+    public Task QueryableOrderBy_String_ShouldNotReportDiagnostic()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1213,178 +1244,196 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task EnumerableToDictionary_String_ShouldReportDiagnostic()
+    public Task EnumerableToDictionary_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.[|ToDictionary(p => p)|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.ToDictionary(p => p, System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|ToDictionary(p => p)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.ToDictionary(p => p, System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Order_String_ShouldReportDiagnostic()
+    public Task Order_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.[|Order()|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.Order(System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net7_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|Order()|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.Order(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OrderBy_String_ShouldReportDiagnostic()
+    public Task OrderBy_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.[|OrderBy(p => p)|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderBy(p => p, System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|OrderBy(p => p)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task OrderByDescending_String_ShouldReportDiagnostic()
+    public Task OrderByDescending_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.[|OrderByDescending(p => p)|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderByDescending(p => p, System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.[|OrderByDescending(p => p)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderByDescending(p => p, System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThenBy_String_ShouldReportDiagnostic()
+    public Task ThenBy_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenBy(p => p)|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenBy(p => p, System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenBy(p => p)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenBy(p => p, System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ThenByDescending_String_ShouldReportDiagnostic()
+    public Task ThenByDescending_String_ShouldReportDiagnostic()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenByDescending(p => p)|];
-    }
-}";
-        const string CodeFix = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.IEnumerable<string> obj = null;
-        obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenByDescending(p => p, System.StringComparer.Ordinal);
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).[|ThenByDescending(p => p)|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> obj = null;
+                    obj.OrderBy(p => p, System.StringComparer.Ordinal).ThenByDescending(p => p, System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task FindExtensionMethods()
+    public Task FindExtensionMethods()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             class TypeName
             {
                 public void Test()
@@ -1408,7 +1457,7 @@ class TypeName
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             class TypeName
             {
                 public void Test()
@@ -1432,53 +1481,55 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task HashSet_Contain()
+    public Task HashSet_Contain()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.HashSet<string> obj = null;
-        obj.Contains("""");
-    }
-}";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.HashSet<string> obj = null;
+                    obj.Contains("");
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ISet_Contain()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        System.Collections.Generic.ISet<string> obj = null;
-        obj.Contains("""");
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IReadOnlySet_Contain()
+    public Task ISet_Contain()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.ISet<string> obj = null;
+                    obj.Contains("");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IReadOnlySet_Contain()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1490,16 +1541,15 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IImmutableSet_Contain()
+    public Task IImmutableSet_Contain()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.TestCode = """
             using System.Linq;
             class TypeName
             {
@@ -1511,229 +1561,237 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net9_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArray_QuerySyntax_GroupBy_NoConfiguration()
+    public Task StringArray_QuerySyntax_GroupBy_NoConfiguration()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            [|group item by item|] into g
-            select g;
-    }
-}";
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        [|group item by item|] into g
+                        select g;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringArray_QuerySyntax_GroupBy()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            group item by item into g
-            select g;
-    }
-}";
-
-        await CreateProjectBuilder()
-              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArray_QuerySyntax_OrderBy_NoConfiguration()
+    public Task StringArray_QuerySyntax_GroupBy()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            orderby [|item|]
-            select item;
-    }
-}";
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        group item by item into g
+                        select g;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringArray_QuerySyntax_OrderBy()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            orderby item
-            select item;
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArray_QuerySyntax_OrderByDescending_NoConfiguration()
+    public Task StringArray_QuerySyntax_OrderBy_NoConfiguration()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            orderby [|item descending|]
-            select item;
-    }
-}";
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        orderby [|item|]
+                        select item;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringArray_QuerySyntax_OrderByDescending()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item in collection
-            orderby item descending
-            select item;
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArray_QuerySyntax_Join_NoConfiguration()
+    public Task StringArray_QuerySyntax_OrderBy()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item1 in collection
-            [|join item2 in collection on item1 equals item2|]
-            select (item1, item2);
-    }
-}";
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        orderby item
+                        select item;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringArray_QuerySyntax_Join()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item1 in collection
-            join item2 in collection on item1 equals item2
-            select (item1, item2);
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringArray_QuerySyntax_JoinInto_NoConfiguration()
+    public Task StringArray_QuerySyntax_OrderByDescending_NoConfiguration()
     {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item1 in collection
-            [|join item2 in collection on item1 equals item2 into joinGroup|]
-            select (item1, joinGroup);
-    }
-}";
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        orderby [|item descending|]
+                        select item;
+                }
+            }
+            """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StringArray_QuerySyntax_JoinInto()
-    {
-        const string SourceCode = @"using System.Linq;
-class TypeName
-{
-    public void Test()
-    {
-        var collection = new string[0];
-        _ = from item1 in collection
-            join item2 in collection on item1 equals item2 into joinGroup
-            select (item1, joinGroup);
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .AddAnalyzerConfiguration("MA0002.exclude_query_operator_syntaxes", "true")
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ExcludeWhenInAnExpressionContext()
+    public Task StringArray_QuerySyntax_OrderByDescending()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item in collection
+                        orderby item descending
+                        select item;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringArray_QuerySyntax_Join_NoConfiguration()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item1 in collection
+                        [|join item2 in collection on item1 equals item2|]
+                        select (item1, item2);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringArray_QuerySyntax_Join()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item1 in collection
+                        join item2 in collection on item1 equals item2
+                        select (item1, item2);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringArray_QuerySyntax_JoinInto_NoConfiguration()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item1 in collection
+                        [|join item2 in collection on item1 equals item2 into joinGroup|]
+                        select (item1, joinGroup);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringArray_QuerySyntax_JoinInto()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestState.SetConfiguration("MA0002.exclude_query_operator_syntaxes", "true");
+        test.TestCode = """
+            using System.Linq;
+            class TypeName
+            {
+                public void Test()
+                {
+                    var collection = new string[0];
+                    _ = from item1 in collection
+                        join item2 in collection on item1 equals item2 into joinGroup
+                        select (item1, joinGroup);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludeWhenInAnExpressionContext()
+    {
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Linq;
             using System.Linq.Expressions;
@@ -1751,15 +1809,15 @@ class TypeName
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_InsertComparerBeforeMessage_Issue1249()
+    public Task CodeFix_InsertComparerBeforeMessage_Issue1249()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             class Sample
             {
@@ -1772,7 +1830,7 @@ class TypeName
                 static void AreEqual(string expected, string actual, IComparer<string> comparer, string message) { }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System.Collections.Generic;
             class Sample
             {
@@ -1785,16 +1843,15 @@ class TypeName
                 static void AreEqual(string expected, string actual, IComparer<string> comparer, string message) { }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_InsertComparerBeforeCancellationToken_Issue1250()
+    public Task CodeFix_InsertComparerBeforeCancellationToken_Issue1250()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
             class Sample
@@ -1811,7 +1868,7 @@ class TypeName
                 public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken ct) => throw null;
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using System.Collections.Generic;
             using System.Threading;
             class Sample
@@ -1828,16 +1885,15 @@ class TypeName
                 public static Dictionary<TKey, T> ToDictionaryCustom<T, TKey>(this IEnumerable<T> source, System.Func<T, TKey> keySelector, IEqualityComparer<TKey> comparer, CancellationToken ct) => throw null;
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_MSTestAreEqualWithMessage_Issue1249()
+    public Task CodeFix_MSTestAreEqualWithMessage_Issue1249()
     {
-        const string SourceCode = """
+        var test = CreateMSTestTest();
+        test.TestCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1847,7 +1903,7 @@ class TypeName
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1857,16 +1913,15 @@ class TypeName
                 }
             }
             """;
-        await CreateMSTestProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_MSTestAreEqualWithInterpolatedMessage_Issue1249()
+    public Task CodeFix_MSTestAreEqualWithInterpolatedMessage_Issue1249()
     {
-        const string SourceCode = """
+        var test = CreateMSTestTest();
+        test.TestCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1876,7 +1931,7 @@ class TypeName
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1886,16 +1941,15 @@ class TypeName
                 }
             }
             """;
-        await CreateMSTestProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CodeFix_UseNamedArgumentWhenArgumentsAreNamed()
+    public Task CodeFix_UseNamedArgumentWhenArgumentsAreNamed()
     {
-        const string SourceCode = """
+        var test = CreateMSTestTest();
+        test.TestCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1905,7 +1959,7 @@ class TypeName
                 }
             }
             """;
-        const string CodeFix = """
+        test.FixedCode = """
             using Microsoft.VisualStudio.TestTools.UnitTesting;
             class Sample
             {
@@ -1915,9 +1969,7 @@ class TypeName
                 }
             }
             """;
-        await CreateMSTestProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 }
