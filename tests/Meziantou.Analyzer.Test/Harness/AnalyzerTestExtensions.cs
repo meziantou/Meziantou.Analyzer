@@ -1,3 +1,4 @@
+#if ROSLYN_4_10_OR_GREATER
 using System.Reflection;
 using Microsoft.CodeAnalysis.Diagnostics;
 using MetadataReference = Microsoft.CodeAnalysis.MetadataReference;
@@ -70,3 +71,4 @@ internal static class AnalyzerTestExtensions
             throw new InvalidOperationException($"No analyzer of '{packageName}' reports {string.Join(", ", ruleIds)}");
     }
 }
+#endif
