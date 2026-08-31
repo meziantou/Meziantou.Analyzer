@@ -46,7 +46,7 @@ public sealed partial class ProjectBuilder
     public string? DefaultAnalyzerId { get; set; }
     public string? DefaultAnalyzerMessage { get; set; }
 
-    private static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
+    internal static async Task<string[]> GetNuGetReferences(string packageName, string version, string[] includedPaths)
     {
         var bytes = Encoding.UTF8.GetBytes("v2:" + packageName + '@' + version + ':' + string.Join(',', includedPaths));
         var hash = SHA256.HashData(bytes);

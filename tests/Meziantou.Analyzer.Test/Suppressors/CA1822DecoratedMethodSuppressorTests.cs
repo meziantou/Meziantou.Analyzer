@@ -1,65 +1,84 @@
 #if ROSLYN_4_10_OR_GREATER
-using Meziantou.Analyzer.Suppressors;
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
+using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Suppressors.CA1822DecoratedMethodSuppressor>;
 
 namespace Meziantou.Analyzer.Test.Suppressors;
+
 public sealed class CA1822DecoratedMethodSuppressorTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    /// <summary>
+    /// The diagnostic CA1822 reports on the member marked with <c>{|#N:code|}</c>,
+    /// which the suppressor is expected to suppress or not.
+    /// </summary>
+    private static DiagnosticResult CA1822(int location, bool suppressed) =>
+        new DiagnosticResult("CA1822", DiagnosticSeverity.Info).WithLocation(location).WithIsSuppressed(suppressed);
+
+    private static AnalyzerTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithMicrosoftCodeAnalysisNetAnalyzers("CA1822")
-            .WithAnalyzer<CA1822DecoratedMethodSuppressor>();
+        var test = new AnalyzerTest();
+        test.AddMicrosoftCodeAnalysisNetAnalyzers("CA1822");
+        return test;
     }
 
     [Fact]
-    public async Task CA1822IsReported()
+    public Task CA1822IsReported()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-internal class A
-{
-    internal void [|Sample|]()
-    {
-    }
+        var test = CreateTest();
+        test.TestCode = """
+            internal class A
+            {
+                internal void {|#0:Sample|}()
+                {
+                }
 
-    internal string [|Dummy|] => "";
-}
-""")
-            .ValidateAsync();
-    }
+                internal string {|#1:Dummy|} => "";
+            }
+            """;
+        test.ExpectedDiagnostics.Add(CA1822(0, suppressed: false));
+        test.ExpectedDiagnostics.Add(CA1822(1, suppressed: false));
 
-    [Fact]
-    public async Task CA1822IsSuppressOnBenchmarkAttributeMethods()
-    {
-        await CreateProjectBuilder()
-            .AddNuGetReference("BenchmarkDotNet.Annotations", "0.13.5", "lib/netstandard2.0/")
-            .WithSourceCode("""
-internal class A
-{
-    [BenchmarkDotNet.Attributes.BenchmarkAttribute]
-    internal void Benchmark()
-    {
-    }
-}
-""")
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task CA1822IsSuppressOnJsonPropertyNameAttribute()
+    public Task CA1822IsSuppressOnBenchmarkAttributeMethods()
     {
-        await CreateProjectBuilder()
-            .WithTargetFramework(TargetFramework.Net7_0)
-            .WithSourceCode("""
-internal sealed class Sample
-{
-    [System.Text.Json.Serialization.JsonPropertyName("@type")]
-    public string? Type => "ImageObject"; // CA1822 Member 'Type' does not access instance data and can be marked as static
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("BenchmarkDotNet.Annotations", "0.13.5")]);
+        test.TestCode = """
+            internal class A
+            {
+                [BenchmarkDotNet.Attributes.BenchmarkAttribute]
+                internal void {|#0:Benchmark|}()
+                {
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(CA1822(0, suppressed: true));
 
-    public string? Id { get; set; }
-}
-""")
-            .ValidateAsync();
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CA1822IsSuppressOnJsonPropertyNameAttribute()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            internal sealed class Sample
+            {
+                [System.Text.Json.Serialization.JsonPropertyName("@type")]
+                public string? {|#0:Type|} => "ImageObject"; // CA1822 Member 'Type' does not access instance data and can be marked as static
+
+                public string? Id { get; set; }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(CA1822(0, suppressed: true));
+
+        return test.RunAsync();
     }
 }
 #endif

@@ -28,6 +28,15 @@ internal sealed class CSharpAnalyzerTest<TAnalyzer>
     public Task RunAsync() => RunAsync(TestContext.Current.CancellationToken);
 
     /// <summary>
+    /// The analyzers to run in addition to <typeparamref name="TAnalyzer"/>, such as the external analyzers
+    /// producing the diagnostics a <see cref="Microsoft.CodeAnalysis.Diagnostics.DiagnosticSuppressor"/> suppresses.
+    /// </summary>
+    public IList<DiagnosticAnalyzer> AdditionalAnalyzers { get; } = [];
+
+    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers() =>
+        [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
+
+    /// <summary>
     /// The language version the code is parsed with.
     /// </summary>
     public LanguageVersion LanguageVersion { get; set; } = AnalyzerTestDefaults.LanguageVersion;
