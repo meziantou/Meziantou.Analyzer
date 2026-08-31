@@ -21,12 +21,12 @@ internal static class ReferenceAssembliesExtensions
         referenceAssemblies.AddPackages([new PackageIdentity("MSTest.TestFramework", "2.1.1")]);
 
     /// <summary>
-    /// Adds the xUnit API.
+    /// Adds the xUnit v3 API.
     /// </summary>
     public static ReferenceAssemblies AddXUnitApi(this ReferenceAssemblies referenceAssemblies) =>
         referenceAssemblies.AddPackages([
-            new PackageIdentity("xunit.extensibility.core", "2.4.1"),
-            new PackageIdentity("xunit.assert", "2.4.1"),
+            new PackageIdentity("xunit.v3.extensibility.core", "4.0.0"),
+            new PackageIdentity("xunit.v3.assert", "4.0.0"),
         ]);
 
     /// <summary>
