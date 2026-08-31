@@ -227,7 +227,7 @@ public sealed class ClassMustBeSealedAnalyzerTests
     public Task BenchmarkDotNetAttributes()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("BenchmarkDotNet.Annotations", "0.13.2")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("BenchmarkDotNet.Annotations", "0.15.8")]);
         test.TestCode = """
             using BenchmarkDotNet.Attributes;
             internal class Test
