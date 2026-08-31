@@ -6,6 +6,7 @@ on:
       - 'main'
     paths-ignore:
       - "docs/**"
+      - "tests/**"
       - "renovate.json"
       - "GenerateDocumentation.cmd"
       - ".markdownlint.json"
