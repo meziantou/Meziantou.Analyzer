@@ -1,226 +1,245 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ValidateArgumentsCorrectlyAnalyzer,
+    Meziantou.Analyzer.Rules.ValidateArgumentsCorrectlyFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ValidateArgumentsCorrectlyAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
-    {
-        return new ProjectBuilder()
-            .WithAnalyzer<ValidateArgumentsCorrectlyAnalyzer>()
-            .WithCodeFixProvider<ValidateArgumentsCorrectlyFixer>();
-    }
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
-    public async Task ReturnVoid()
+    public Task ReturnVoid()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    void A()
-    {
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ReturnString()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    string A()
-    {
-        throw null;
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task OutParameter()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(out int a)
-    {
-        throw null;
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task NoValidation()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        yield return 0;
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task SameBlock()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-        {
-            throw new System.ArgumentNullException(nameof(a));
-            yield return 0;
-        }
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task StatementInMiddleOfArgumentValidation()
-    {
-        const string SourceCode = @"using System.Collections;
-class TypeName
-{
-    IEnumerable A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        yield break;
-
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-    }
-}";
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ReportDiagnostic()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> [|A|](string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        yield return 0;
-        if (a == null)
-        {
-            yield return 1;
-        }
-    }
-}";
-
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        return A(a);
-        IEnumerable<int> A(string a)
-        {
-            yield return 0;
-            if (a == null)
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                void A()
+                {
+                }
             }
-        }
-    }
-}";
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidValidation()
+    public Task ReturnString()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
-
-        return A();
-
-        IEnumerable<int> A()
-        {
-            yield return 0;
-            if (a == null)
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                string A()
+                {
+                    throw null;
+                }
             }
-        }
-    }
-}";
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidValidation_ThrowIfNull()
+    public Task OutParameter()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    IEnumerable<int> A(string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
-
-        return A();
-
-        IEnumerable<int> A()
-        {
-            yield return 0;
-            if (a == null)
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
             {
-                yield return 1;
+                IEnumerable<int> A(out int a)
+                {
+                    throw null;
+                }
             }
-        }
-    }
-}";
+            """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ValidValidation_ArgumentExceptionThrowIfNullOrEmpty()
+    public Task NoValidation()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    yield return 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SameBlock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                    {
+                        throw new System.ArgumentNullException(nameof(a));
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StatementInMiddleOfArgumentValidation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections;
+            class TypeName
+            {
+                IEnumerable A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    yield break;
+
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> [|A|](string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    yield return 0;
+                    if (a == null)
+                    {
+                        yield return 1;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    return A(a);
+                    IEnumerable<int> A(string a)
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidValidation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    return A();
+
+                    IEnumerable<int> A()
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidValidation_ThrowIfNull()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+
+                    return A();
+
+                    IEnumerable<int> A()
+                    {
+                        yield return 0;
+                        if (a == null)
+                        {
+                            yield return 1;
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidValidation_ArgumentExceptionThrowIfNullOrEmpty()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
             using System.Collections.Generic;
             class TypeName
             {
@@ -242,16 +261,15 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_ArgumentExceptionThrowIfNullOrEmpty()
+    public Task ReportDiagnostic_ArgumentExceptionThrowIfNullOrEmpty()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
             using System.Collections.Generic;
             class TypeName
             {
@@ -263,16 +281,14 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_CustomArgumentExceptionThrowIf()
+    public Task ReportDiagnostic_CustomArgumentExceptionThrowIf()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             class CustomArgumentException : System.ArgumentException
             {
@@ -297,15 +313,14 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_CustomArgumentExceptionThrow()
+    public Task ReportDiagnostic_CustomArgumentExceptionThrow()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System.Collections.Generic;
             class CustomArgumentException : System.ArgumentException
             {
@@ -330,96 +345,98 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_IAsyncEnumerable()
+    public Task ReportDiagnostic_IAsyncEnumerable()
     {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    async IAsyncEnumerable<int> [|A|](string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> [|A|](string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
 
-        await System.Threading.Tasks.Task.Delay(1);
-        yield return 0;
+                    await System.Threading.Tasks.Task.Delay(1);
+                    yield return 0;
 
-    }
-}";
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a)
+                {
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
 
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IAsyncEnumerable<int> A(string a)
-    {
-        if (a == null)
-            throw new System.ArgumentNullException(nameof(a));
+                    return A(a);
 
-        return A(a);
+                    async IAsyncEnumerable<int> A(string a)
+                    {
+                        await System.Threading.Tasks.Task.Delay(1);
+                        yield return 0;
+                    }
+                }
+            }
+            """;
 
-        async IAsyncEnumerable<int> A(string a)
-        {
-            await System.Threading.Tasks.Task.Delay(1);
-            yield return 0;
-        }
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
-    }
-
-    [Fact]
-    public async Task ReportDiagnostic_IAsyncEnumerable_ThrowIfNull()
-    {
-        const string SourceCode = @"using System.Collections.Generic;
-class TypeName
-{
-    async IAsyncEnumerable<int> [|A|](string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
-
-        await System.Threading.Tasks.Task.Delay(1);
-        yield return 0;
-
-    }
-}";
-
-        const string CodeFix = @"using System.Collections.Generic;
-class TypeName
-{
-    IAsyncEnumerable<int> A(string a)
-    {
-        System.ArgumentNullException.ThrowIfNull(a);
-
-        return A(a);
-
-        async IAsyncEnumerable<int> A(string a)
-        {
-            await System.Threading.Tasks.Task.Delay(1);
-            yield return 0;
-        }
-    }
-}";
-
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_FixerPreserveEnumerableCancellationAttribute()
+    public Task ReportDiagnostic_IAsyncEnumerable_ThrowIfNull()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> [|A|](string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+
+                    await System.Threading.Tasks.Task.Delay(1);
+                    yield return 0;
+
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a)
+                {
+                    System.ArgumentNullException.ThrowIfNull(a);
+
+                    return A(a);
+
+                    async IAsyncEnumerable<int> A(string a)
+                    {
+                        await System.Threading.Tasks.Task.Delay(1);
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_FixerPreserveEnumerableCancellationAttribute()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
             using System.Runtime.CompilerServices;
             using System.Collections.Generic;
             using System.Threading;
@@ -436,8 +453,7 @@ class TypeName
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             using System.Runtime.CompilerServices;
             using System.Collections.Generic;
             using System.Threading;
@@ -459,17 +475,14 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithTargetFramework(TargetFramework.Net8_0)
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ReportDiagnostic_ExtensionMethod()
+    public Task ReportDiagnostic_ExtensionMethod()
     {
-        const string SourceCode = """
+        var test = CreateTest();
+        test.TestCode = """
             using System;
             using System.Collections.Generic;
             static class TypeName
@@ -483,8 +496,7 @@ class TypeName
                 }
             }
             """;
-
-        const string CodeFix = """
+        test.FixedCode = """
             using System;
             using System.Collections.Generic;
             static class TypeName
@@ -503,9 +515,6 @@ class TypeName
             }
             """;
 
-        await CreateProjectBuilder()
-              .WithSourceCode(SourceCode)
-              .ShouldFixCodeWith(CodeFix)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 }

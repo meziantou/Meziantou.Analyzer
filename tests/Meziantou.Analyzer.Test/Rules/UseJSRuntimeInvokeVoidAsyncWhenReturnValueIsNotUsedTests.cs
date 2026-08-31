@@ -1,318 +1,337 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer,
+    Meziantou.Analyzer.Rules.UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
+
 public class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer>()
-            .WithCodeFixProvider<UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedFixer>()
-            .WithTargetFramework(TargetFramework.AspNetCore6_0);
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
+        return test;
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeAsync_ReturnNotUsed()
+    public Task IJSRuntime_InvokeAsync_ReturnNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await [|js.InvokeAsync<string>("dummy")|];
-                    }
+                    IJSRuntime js = null;
+                    await [|js.InvokeAsync<string>("dummy")|];
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await js.InvokeVoidAsync("dummy");
-                    }
+                    IJSRuntime js = null;
+                    await js.InvokeVoidAsync("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeAsyncExplicit_ReturnNotUsed()
+    public Task IJSRuntime_InvokeAsyncExplicit_ReturnNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await [|JSRuntimeExtensions.InvokeAsync<string>(js, "", System.Array.Empty<object>())|];
-                    }
+                    IJSRuntime js = null;
+                    await [|JSRuntimeExtensions.InvokeAsync<string>(js, "", System.Array.Empty<object>())|];
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await JSRuntimeExtensions.InvokeVoidAsync(js, "", System.Array.Empty<object>());
-                    }
+                    IJSRuntime js = null;
+                    await JSRuntimeExtensions.InvokeVoidAsync(js, "", System.Array.Empty<object>());
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeAsyncExplicitWithCancellationToken_ReturnNotUsed()
+    public Task IJSRuntime_InvokeAsyncExplicitWithCancellationToken_ReturnNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await [|js.InvokeAsync<string>("dummy", CancellationToken.None, new object?[1] { null })|];
-                    }
+                    IJSRuntime js = null;
+                    await [|js.InvokeAsync<string>("dummy", CancellationToken.None, new object?[1] { null })|];
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading;
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await js.InvokeVoidAsync("dummy", CancellationToken.None, new object?[1] { null });
-                    }
+                    IJSRuntime js = null;
+                    await js.InvokeVoidAsync("dummy", CancellationToken.None, new object?[1] { null });
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeAsync_ReturnAssigned()
+    public Task IJSRuntime_InvokeAsync_ReturnAssigned()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        var a = await js.InvokeAsync<string>("dummy");
-                    }
+                    IJSRuntime js = null;
+                    var a = await js.InvokeAsync<string>("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeAsync_ReturnAsArgument()
+    public Task IJSRuntime_InvokeAsync_ReturnAsArgument()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        System.Console.WriteLine(await js.InvokeAsync<string>("dummy"));
-                    }
+                    IJSRuntime js = null;
+                    System.Console.WriteLine(await js.InvokeAsync<string>("dummy"));
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSRuntime_InvokeVoidAsync()
+    public Task IJSRuntime_InvokeVoidAsync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSRuntime js = null;
-                        await js.InvokeVoidAsync("dummy");
-                    }
+                    IJSRuntime js = null;
+                    await js.InvokeVoidAsync("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_InvokeVoidAsync()
+    public Task IJSInProcessRuntime_InvokeVoidAsync()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        await js.InvokeVoidAsync("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    await js.InvokeVoidAsync("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_InvokeVoid()
+    public Task IJSInProcessRuntime_InvokeVoid()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        js.InvokeVoid("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    js.InvokeVoid("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_InvokeAsync_ReturnNotUsed()
+    public Task IJSInProcessRuntime_InvokeAsync_ReturnNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        await [|js.InvokeAsync<string>("dummy")|];
-                    }
+                    IJSInProcessRuntime js = null;
+                    await [|js.InvokeAsync<string>("dummy")|];
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        await js.InvokeVoidAsync("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    await js.InvokeVoidAsync("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_Invoke_ReturnNotUsed()
+    public Task IJSInProcessRuntime_Invoke_ReturnNotUsed()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        [|js.Invoke<string>("dummy")|];
-                    }
+                    IJSInProcessRuntime js = null;
+                    [|js.Invoke<string>("dummy")|];
                 }
-                """)
-              .ShouldFixCodeWith("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        js.InvokeVoid("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    js.InvokeVoid("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_InvokeAsync_ReturnAssigned()
+    public Task IJSInProcessRuntime_InvokeAsync_ReturnAssigned()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                async Task A()
                 {
-                    async Task A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        var a = await js.InvokeAsync<string>("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    var a = await js.InvokeAsync<string>("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task IJSInProcessRuntime_Invoke_ReturnAssigned()
+    public Task IJSInProcessRuntime_Invoke_ReturnAssigned()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-                using System.Threading.Tasks;
-                using Microsoft.JSInterop;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            using Microsoft.JSInterop;
 
-                class Sample
+            class Sample
+            {
+                void A()
                 {
-                    void A()
-                    {
-                        IJSInProcessRuntime js = null;
-                        var a = js.Invoke<string>("dummy");
-                    }
+                    IJSInProcessRuntime js = null;
+                    var a = js.Invoke<string>("dummy");
                 }
-                """)
-              .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

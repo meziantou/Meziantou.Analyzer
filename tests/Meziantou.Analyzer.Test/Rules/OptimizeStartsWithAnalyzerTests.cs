@@ -1,13 +1,72 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.OptimizeStartsWithAnalyzer,
+    Meziantou.Analyzer.Rules.OptimizeStartsWithFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class OptimizeStartsWithAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net70 };
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData(@"""""")]
+    [InlineData(@"str")]
+    [InlineData(@"""abc""")]
+    [InlineData(@"""abc"", ignoreCase: true, null")]
+    [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""a"", StringComparison.CurrentCultureIgnoreCase")]
+    [InlineData(@"""a"", StringComparison.InvariantCultureIgnoreCase")]
+    [InlineData(@"""a""")]
+    [InlineData(@"""a"", StringComparison.CurrentCulture")]
+    [InlineData(@"""a"", StringComparison.InvariantCulture")]
+    public Task StartsWith_NoReport(string method)
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<OptimizeStartsWithAnalyzer>()
-            .WithCodeFixProvider<OptimizeStartsWithFixer>()
-            .WithTargetFramework(TargetFramework.Net7_0);
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.StartsWith({{method}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
+    public Task StartsWith_Report(string method, string fix)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.StartsWith({{method}});
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.StartsWith({{fix}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -22,104 +81,50 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a""")]
     [InlineData(@"""a"", StringComparison.CurrentCulture")]
     [InlineData(@"""a"", StringComparison.InvariantCulture")]
-    public async Task StartsWith_NoReport(string method)
+    public Task EndsWith_NoReport(string method)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.StartsWith({{method}});
-                        }
-                    }
-                    """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.EndsWith({{method}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
-    public async Task StartsWith_Report(string method, string fix)
+    public Task EndsWith_Report(string method, string fix)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.StartsWith({{method}});
-                        }
-                    }
-                    """)
-              .ShouldFixCodeWith($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.StartsWith({{fix}});
-                        }
-                    }
-                    """)
-              .ValidateAsync();
-    }
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.EndsWith({{method}});
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.EndsWith({{fix}});
+                }
+            }
+            """;
 
-    [Theory]
-    [InlineData("null")]
-    [InlineData(@"""""")]
-    [InlineData(@"str")]
-    [InlineData(@"""abc""")]
-    [InlineData(@"""abc"", ignoreCase: true, null")]
-    [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
-    [InlineData(@"""a"", StringComparison.CurrentCultureIgnoreCase")]
-    [InlineData(@"""a"", StringComparison.InvariantCultureIgnoreCase")]
-    [InlineData(@"""a""")]
-    [InlineData(@"""a"", StringComparison.CurrentCulture")]
-    [InlineData(@"""a"", StringComparison.InvariantCulture")]
-    public async Task EndsWith_NoReport(string method)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.EndsWith({{method}});
-                        }
-                    }
-                    """)
-              .ValidateAsync();
-    }
-
-    [Theory]
-    [InlineData("""[|"a"|], StringComparison.Ordinal""", """'a'""")]
-    public async Task EndsWith_Report(string method, string fix)
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.EndsWith({{method}});
-                        }
-                    }
-                    """)
-              .ShouldFixCodeWith($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.EndsWith({{fix}});
-                        }
-                    }
-                    """)
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
@@ -127,30 +132,31 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"[|""a""|], StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
     [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
     [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
-    public async Task IndexOf_Report(string method, string fix)
+    public Task IndexOf_Report(string method, string fix)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                  using System;
-                  class Test
-                  {
-                      void A(string str)
-                      {
-                          _ = str.IndexOf({{method}});
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith($$"""
-                  using System;
-                  class Test
-                  {
-                      void A(string str)
-                      {
-                          _ = str.IndexOf({{fix}});
-                      }
-                  }
-                  """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf({{method}});
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf({{fix}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -163,9 +169,10 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", 1, 2")]
     [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
     [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
-    public async Task IndexOf_NoReport(string method)
+    public Task IndexOf_NoReport(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
@@ -175,16 +182,17 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
-    public async Task IndexOf_NoReport_Netstandard2_0(string method)
+    public Task IndexOf_NoReport_Netstandard2_0(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
             using System;
             class Test
             {
@@ -194,56 +202,18 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"[|""a""|], StringComparison.Ordinal", @"'a'")]
     [InlineData(@"[|""a""|], 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
     [InlineData(@"[|""a""|], 1, StringComparison.Ordinal", @"'a', 1")]
-    public async Task LastIndexOf_Report(string method, string fix)
+    public Task LastIndexOf_Report(string method, string fix)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                  using System;
-                  class Test
-                  {
-                      void A(string str)
-                      {
-                          _ = str.LastIndexOf({{method}});
-                      }
-                  }
-                  """)
-              .ShouldFixCodeWith($$"""
-                  using System;
-                  class Test
-                  {
-                      void A(string str)
-                      {
-                          _ = str.LastIndexOf({{fix}});
-                      }
-                  }
-                  """)
-              .ValidateAsync();
-    }
-
-    [Theory]
-    [InlineData("null")]
-    [InlineData(@"""""")]
-    [InlineData(@"str")]
-    [InlineData(@"""abc""")]
-    [InlineData(@"""a""")]
-    [InlineData(@"""a"", 1")]
-    [InlineData(@"""a"", 1, 2")]
-    [InlineData(@"""a"", StringComparison.CurrentCulture")]
-    [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
-    [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
-    public async Task LastIndexOf_NoReport(string method)
-    {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
@@ -253,30 +223,67 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.LastIndexOf({{fix}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("null")]
+    [InlineData(@"""""")]
+    [InlineData(@"str")]
+    [InlineData(@"""abc""")]
+    [InlineData(@"""a""")]
+    [InlineData(@"""a"", 1")]
+    [InlineData(@"""a"", 1, 2")]
+    [InlineData(@"""a"", StringComparison.CurrentCulture")]
+    [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
+    public Task LastIndexOf_NoReport(string method)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.LastIndexOf({{method}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
-    public async Task LastIndexOf_NoReport_Netstandard2_0(string method)
+    public Task LastIndexOf_NoReport_Netstandard2_0(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
 
-        using System;
-        class Test
-        {
-            void A(string str)
+            using System;
+            class Test
             {
-                _ = str.LastIndexOf({{method}});
+                void A(string str)
+                {
+                    _ = str.LastIndexOf({{method}});
+                }
             }
-        }
-        """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -286,9 +293,10 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", ""b"", StringComparison.OrdinalIgnoreCase")]
     [InlineData(@"""a"", ""b"", StringComparison.CurrentCulture")]
     [InlineData(@"""a"", ""b"", false, null")]
-    public async Task Replace_NoReport(string method)
+    public Task Replace_NoReport(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.TestCode = $$"""
             using System;
             class Test
             {
@@ -298,38 +306,38 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData(@"""a"", ""b""", @"'a', 'b'")]
     [InlineData(@"""a"", ""b"", StringComparison.Ordinal", @"'a', 'b'")]
-    public async Task Replace_Report(string method, string fix)
+    public Task Replace_Report(string method, string fix)
     {
-        await CreateProjectBuilder()
-              .WithSourceCode($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.[|Replace|]({{method}});
-                        }
-                    }
-                    """)
-              .ShouldFixCodeWith($$"""
-                    using System;
-                    class Test
-                    {
-                        void A(string str)
-                        {
-                            _ = str.Replace({{fix}});
-                        }
-                    }
-                    """)
-              .ValidateAsync();
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.[|Replace|]({{method}});
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.Replace({{fix}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -339,9 +347,11 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"[|"",""|], new string[0], 0, 1")]
     [InlineData(@"[|"",""|], Enumerable.Empty<object>()")]
     [InlineData(@"[|"",""|], Enumerable.Empty<string>()")]
-    public async Task Join_Report(string method)
+    public Task Join_Report(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = $$"""
             using System;
             using System.Collections.Generic;
             using System.Linq;
@@ -354,10 +364,8 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -366,9 +374,11 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@""","", new string[0], 0, 1")]
     [InlineData(@""","", Enumerable.Empty<object>()")]
     [InlineData(@""","", Enumerable.Empty<string>()")]
-    public async Task Join_NoReport_netstandard2_0(string method)
+    public Task Join_NoReport_netstandard2_0(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
             using System;
             using System.Collections.Generic;
             using System.Linq;
@@ -381,10 +391,8 @@ public sealed class OptimizeStartsWithAnalyzerTests
                 }
             }
             """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.NetStandard2_0)
-              .ValidateAsync();
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -399,25 +407,25 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"',', new string[0], 0, 1")]
     [InlineData(@"',', Enumerable.Empty<object>()")]
     [InlineData(@"',', Enumerable.Empty<string>()")]
-    public async Task Join_NoReport(string method)
+    public Task Join_NoReport(string method)
     {
-        var sourceCode = $$"""
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
+        test.TestCode = $$"""
 
-        using System;
-        using System.Collections.Generic;
-        using System.Linq;
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
 
-        class Test
-        {
-            void A()
+            class Test
             {
-                _ = string.Join({{method}});
+                void A()
+                {
+                    _ = string.Join({{method}});
+                }
             }
-        }
-        """;
-        await CreateProjectBuilder()
-              .WithSourceCode(sourceCode)
-              .WithTargetFramework(TargetFramework.Net6_0)
-              .ValidateAsync();
+            """;
+
+        return test.RunAsync();
     }
 }

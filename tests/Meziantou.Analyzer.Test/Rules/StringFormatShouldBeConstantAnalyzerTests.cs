@@ -1,489 +1,514 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.StringFormatShouldBeConstantAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class StringFormatShouldBeConstantAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static AnalyzerTest CreateTest() => new();
+
+    [Fact]
+    public Task StringFormat_NoParameters_ShouldReportDiagnostic()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<StringFormatShouldBeConstantAnalyzer>();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class Test
+            {
+                void Method()
+                {
+                    var result = [|string.Format("value without argument")|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_NoParameters_ShouldReportDiagnostic()
+    public Task StringFormat_WithParameterButNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("value without argument")|];
-                    }
+                    var result = [|string.Format("value with argument", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithParameterButNoPlaceholder_ShouldReportDiagnostic()
+    public Task StringFormat_WithParameterButEscapedBraces_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("value with argument", 123)|];
-                    }
+                    var result = [|string.Format("value with argument {{0}}", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithParameterButEscapedBraces_ShouldReportDiagnostic()
+    public Task StringFormat_WithValidPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("value with argument {{0}}", 123)|];
-                    }
+                    var result = string.Format("value with argument {0}", 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithValidPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithNonConstantFormatString_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format("value with argument {0}", 123);
-                    }
+                    var format = "test {0}";
+                    var result = string.Format(format, 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithNonConstantFormatString_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithConstantFormatStringFromLocal_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var format = "test {0}";
-                        var result = string.Format(format, 123);
-                    }
+                    var format = "value without placeholder";
+                    var result = [|string.Format(format, 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithConstantFormatStringFromLocal_ShouldReportDiagnostic()
+    public Task StringFormat_WithConstantFormatStringFromLocalAssignment_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var format = "value without placeholder";
-                        var result = [|string.Format(format, 123)|];
-                    }
+                    string format;
+                    format = "value without placeholder";
+                    var result = [|string.Format(format, 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithConstantFormatStringFromLocalAssignment_ShouldReportDiagnostic()
+    public Task StringFormat_WithReassignedFormatString_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method(string other)
                 {
-                    void Method()
-                    {
-                        string format;
-                        format = "value without placeholder";
-                        var result = [|string.Format(format, 123)|];
-                    }
+                    var format = "value without placeholder";
+                    format = other;
+                    var result = string.Format(format, 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithReassignedFormatString_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithPrivateGetOnlyPropertyFormatString_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                private string Format { get; } = "value without placeholder";
+
+                void Method()
                 {
-                    void Method(string other)
-                    {
-                        var format = "value without placeholder";
-                        format = other;
-                        var result = string.Format(format, 123);
-                    }
+                    var result = [|string.Format(Format, 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithPrivateGetOnlyPropertyFormatString_ShouldReportDiagnostic()
+    public Task StringFormat_WithPrivateGetOnlyPropertyFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                private string Format { get; } = "value without placeholder";
+
+                public Test(string format)
                 {
-                    private string Format { get; } = "value without placeholder";
-
-                    void Method()
-                    {
-                        var result = [|string.Format(Format, 123)|];
-                    }
+                    Format = format;
                 }
-                """)
-            .ValidateAsync();
+
+                void Method()
+                {
+                    var result = string.Format(Format, 123);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithPrivateGetOnlyPropertyFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithPrivateReadonlyFieldFormatString_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                private readonly string _format = "value without placeholder";
+
+                void Method()
                 {
-                    private string Format { get; } = "value without placeholder";
-
-                    public Test(string format)
-                    {
-                        Format = format;
-                    }
-
-                    void Method()
-                    {
-                        var result = string.Format(Format, 123);
-                    }
+                    var result = [|string.Format(_format, 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithPrivateReadonlyFieldFormatString_ShouldReportDiagnostic()
+    public Task StringFormat_WithPrivateReadonlyFieldFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                private readonly string _format = "value without placeholder";
+
+                public Test(string format)
                 {
-                    private readonly string _format = "value without placeholder";
-
-                    void Method()
-                    {
-                        var result = [|string.Format(_format, 123)|];
-                    }
+                    _format = format;
                 }
-                """)
-            .ValidateAsync();
+
+                void Method()
+                {
+                    var result = string.Format(_format, 123);
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithPrivateReadonlyFieldFormatString_AssignedInConstructor_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithIFormatProvider_NoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    private readonly string _format = "value without placeholder";
-
-                    public Test(string format)
-                    {
-                        _format = format;
-                    }
-
-                    void Method()
-                    {
-                        var result = string.Format(_format, 123);
-                    }
+                    var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProvider_NoPlaceholder_ShouldReportDiagnostic()
+    public Task StringFormat_WithIFormatProvider_WithPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no placeholder", 123)|];
-                    }
+                    var result = string.Format(System.Globalization.CultureInfo.InvariantCulture, "with placeholder {0}", 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProvider_WithPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithIFormatProvider_NoParameters_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format(System.Globalization.CultureInfo.InvariantCulture, "with placeholder {0}", 123);
-                    }
+                    var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters")|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProvider_NoParameters_ShouldReportDiagnostic()
+    public Task StringFormat_MultiplePlaceholders_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format(System.Globalization.CultureInfo.InvariantCulture, "no parameters")|];
-                    }
+                    var result = string.Format("value {0} and {1}", 123, 456);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_MultiplePlaceholders_ShouldNotReportDiagnostic()
+    public Task StringFormat_PlaceholderWithAlignment_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format("value {0} and {1}", 123, 456);
-                    }
+                    var result = string.Format("value {0,10}", 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_PlaceholderWithAlignment_ShouldNotReportDiagnostic()
+    public Task StringFormat_PlaceholderWithFormatSpecifier_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format("value {0,10}", 123);
-                    }
+                    var result = string.Format("value {0:X}", 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_PlaceholderWithFormatSpecifier_ShouldNotReportDiagnostic()
+    public Task StringFormat_MixedEscapedAndValidBraces_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format("value {0:X}", 123);
-                    }
+                    var result = string.Format("value {{escaped}} {0}", 123);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_MixedEscapedAndValidBraces_ShouldNotReportDiagnostic()
+    public Task StringFormat_OnlyEscapedBraces_NoParameters_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format("value {{escaped}} {0}", 123);
-                    }
+                    var result = [|string.Format("value {{escaped}}", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_OnlyEscapedBraces_NoParameters_ShouldReportDiagnostic()
+    public Task StringFormat_MultipleParameters_NoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("value {{escaped}}", 123)|];
-                    }
+                    var result = [|string.Format("no placeholder", 123, 456, 789)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_MultipleParameters_NoPlaceholder_ShouldReportDiagnostic()
+    public Task StringFormat_EmptyString_NoParameters_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("no placeholder", 123, 456, 789)|];
-                    }
+                    var result = [|string.Format("")|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_EmptyString_NoParameters_ShouldReportDiagnostic()
+    public Task StringFormat_EmptyString_WithParameters_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("")|];
-                    }
+                    var result = [|string.Format("", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_EmptyString_WithParameters_ShouldReportDiagnostic()
+    public Task StringFormat_NonConstantFormat_NoArguments_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method(string format)
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("", 123)|];
-                    }
+                    var result = [|string.Format(format)|];
                 }
-                """)
-            .ValidateAsync();
-    }
+            }
+            """;
 
-    [Fact]
-    public async Task StringFormat_NonConstantFormat_NoArguments_ShouldReportDiagnostic()
-    {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-
-                class Test
-                {
-                    void Method(string format)
-                    {
-                        var result = [|string.Format(format)|];
-                    }
-                }
-                """)
-            .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Theory]
     [InlineData("abc{{")]  // Valid: escaped opening brace
     [InlineData("abc}}")]  // Valid: escaped closing brace
-    public async Task StringFormat_ValidEscapedBraces_ShouldReportDiagnostic(string formatString)
+    public Task StringFormat_ValidEscapedBraces_ShouldReportDiagnostic(string formatString)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                using System;
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("{{formatString}}", 123)|];
-                    }
+                    var result = [|string.Format("{{formatString}}", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Theory]
@@ -494,431 +519,454 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
     [InlineData("abc{a{")]  // Invalid: non-numeric with nested opening brace
     [InlineData("abc{0{")]  // Invalid: numeric with nested opening brace
     [InlineData("abc{0:")]  // Invalid: incomplete format specifier
-    public async Task StringFormat_MalformedFormatString_ShouldNotCrash(string formatString)
+    public Task StringFormat_MalformedFormatString_ShouldNotCrash(string formatString)
     {
-        await CreateProjectBuilder()
-            .WithSourceCode($$"""
-                using System;
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format("{{formatString}}", 123)|];
-                    }
+                    var result = [|string.Format("{{formatString}}", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProviderAndValidPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithIFormatProviderAndValidPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = string.Format(CultureInfo.InvariantCulture, "{0}", CultureInfo.InvariantCulture);
-                    }
+                    var result = string.Format(CultureInfo.InvariantCulture, "{0}", CultureInfo.InvariantCulture);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
+    public Task StringFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format(CultureInfo.InvariantCulture, "", CultureInfo.InvariantCulture)|];
-                    }
+                    var result = [|string.Format(CultureInfo.InvariantCulture, "", CultureInfo.InvariantCulture)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithUnicodeDigit_ShouldReportDiagnostic()
+    public Task StringFormat_WithUnicodeDigit_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        // Using Arabic-Indic digit ٠ (U+0660) instead of ASCII 0
-                        var result = [|string.Format("{٠}", 123)|];
-                    }
+                    // Using Arabic-Indic digit ٠ (U+0660) instead of ASCII 0
+                    var result = [|string.Format("{٠}", 123)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithIFormatProviderAndMultiplePlaceholders_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithIFormatProviderAndMultiplePlaceholders_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Program
+            class Program
+            {
+                private static string DebuggerDisplay => string.Format(CultureInfo.InvariantCulture, "Column: {0}, Value: {1}, Invalid: {2}, Blank: {3}", "Column", "Value", true, false);
+
+                static void Main(string[] args)
                 {
-                    private static string DebuggerDisplay => string.Format(CultureInfo.InvariantCulture, "Column: {0}, Value: {1}, Invalid: {2}, Blank: {3}", "Column", "Value", true, false);
-
-                    static void Main(string[] args)
-                    {
-                        Console.WriteLine(DebuggerDisplay);
-                    }
+                    Console.WriteLine(DebuggerDisplay);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithExplicitEmptyParamsArray_ShouldReportDiagnostic()
+    public Task StringFormat_WithExplicitEmptyParamsArray_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var result = [|string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|];
-                    }
+                    var result = [|string.Format(CultureInfo.InvariantCulture, "no placeholders", new object[0])|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithMultiplePlaceholdersAndArguments_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithMultiplePlaceholdersAndArguments_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                string.Format("Zero: {0}, One: {1}, Two: {2}, Four: {3}", "Answer is", 42, true, false);
-                string.Format("{0} x {1} [{2} x {3}{4}{5}]", 0, 1, 2, 3, 4, args.Length);
-                """)
-            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
-            .WithOutputKind(OutputKind.ConsoleApplication)
-            .ValidateAsync();
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            string.Format("Zero: {0}, One: {1}, Two: {2}, Four: {3}", "Answer is", 42, true, false);
+            string.Format("{0} x {1} [{2} x {3}{4}{5}]", 0, 1, 2, 3, 4, args.Length);
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWrite_NoArgs_ShouldNotReportDiagnostic()
+    public Task ConsoleWrite_NoArgs_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        Console.Write("NO PLACEHOLDERS");
-                    }
+                    Console.Write("NO PLACEHOLDERS");
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWrite_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    public Task ConsoleWrite_WithArgButNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        [|Console.Write("NO PLACEHOLDERS", true)|];
-                    }
+                    [|Console.Write("NO PLACEHOLDERS", true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWrite_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    public Task ConsoleWrite_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        Console.Write("Value: {0}", true);
-                    }
+                    Console.Write("Value: {0}", true);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWrite_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
+    public Task ConsoleWrite_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        [|Console.Write("NO PLACEHOLDERS", true, true)|];
-                    }
+                    [|Console.Write("NO PLACEHOLDERS", true, true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWriteLine_NoArgs_ShouldNotReportDiagnostic()
+    public Task ConsoleWriteLine_NoArgs_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        Console.WriteLine("NO PLACEHOLDERS");
-                    }
+                    Console.WriteLine("NO PLACEHOLDERS");
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWriteLine_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    public Task ConsoleWriteLine_WithArgButNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        [|Console.WriteLine("NO PLACEHOLDERS", true)|];
-                    }
+                    [|Console.WriteLine("NO PLACEHOLDERS", true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWriteLine_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    public Task ConsoleWriteLine_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        Console.WriteLine("Value: {0}", true);
-                    }
+                    Console.WriteLine("Value: {0}", true);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWriteLine_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
+    public Task ConsoleWriteLine_MultipleArgsNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        [|Console.WriteLine("NO PLACEHOLDERS", true, true)|];
-                    }
+                    [|Console.WriteLine("NO PLACEHOLDERS", true, true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task ConsoleWriteLine_ThreeArgsNoPlaceholder_ShouldReportDiagnostic()
+    public Task ConsoleWriteLine_ThreeArgsNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        [|Console.WriteLine("NO PLACEHOLDERS", true, true, true)|];
-                    }
+                    [|Console.WriteLine("NO PLACEHOLDERS", true, true, true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilderAppendFormat_NoFormattingArgs_ShouldReportDiagnostic()
+    public Task StringBuilderAppendFormat_NoFormattingArgs_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Text;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var sb = new StringBuilder();
-                        [|sb.AppendFormat("NO PLACEHOLDERS")|];
-                    }
+                    var sb = new StringBuilder();
+                    [|sb.AppendFormat("NO PLACEHOLDERS")|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilderAppendFormat_WithArgButNoPlaceholder_ShouldReportDiagnostic()
+    public Task StringBuilderAppendFormat_WithArgButNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Text;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var sb = new StringBuilder();
-                        [|sb.AppendFormat("NO PLACEHOLDERS", true)|];
-                    }
+                    var sb = new StringBuilder();
+                    [|sb.AppendFormat("NO PLACEHOLDERS", true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilderAppendFormat_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringBuilderAppendFormat_WithArgAndPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System.Text;
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var sb = new StringBuilder();
-                        sb.AppendFormat("Value: {0}", true);
-                    }
+                    var sb = new StringBuilder();
+                    sb.AppendFormat("Value: {0}", true);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilderAppendFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
+    public Task StringBuilderAppendFormat_WithIFormatProviderAndNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
-                using System.Text;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+            using System.Text;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var sb = new StringBuilder();
-                        [|sb.AppendFormat(CultureInfo.InvariantCulture, "NO PLACEHOLDERS", true)|];
-                    }
+                    var sb = new StringBuilder();
+                    [|sb.AppendFormat(CultureInfo.InvariantCulture, "NO PLACEHOLDERS", true)|];
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringBuilderAppendFormat_WithIFormatProviderAndPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringBuilderAppendFormat_WithIFormatProviderAndPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
-                using System.Text;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+            using System.Text;
 
-                class Test
+            class Test
+            {
+                void Method()
                 {
-                    void Method()
-                    {
-                        var sb = new StringBuilder();
-                        sb.AppendFormat(CultureInfo.InvariantCulture, "Value: {0}", true);
-                    }
+                    var sb = new StringBuilder();
+                    sb.AppendFormat(CultureInfo.InvariantCulture, "Value: {0}", true);
                 }
-                """)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithParenthesizedArgAndPlaceholder_ShouldNotReportDiagnostic()
+    public Task StringFormat_WithParenthesizedArgAndPlaceholder_ShouldNotReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Test
+            class Test
+            {
+                void Method(object obj)
                 {
-                    void Method(object obj)
-                    {
-                        _ = string.Format(CultureInfo.InvariantCulture, "Format string with placeholder: '{0}'.", (obj is null ? string.Empty : "X"));
-                    }
+                    _ = string.Format(CultureInfo.InvariantCulture, "Format string with placeholder: '{0}'.", (obj is null ? string.Empty : "X"));
                 }
-                """)
-            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task StringFormat_WithParenthesizedArgAndNoPlaceholder_ShouldReportDiagnostic()
+    public Task StringFormat_WithParenthesizedArgAndNoPlaceholder_ShouldReportDiagnostic()
     {
-        await CreateProjectBuilder()
-            .WithSourceCode("""
-                using System;
-                using System.Globalization;
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
+        test.TestCode = """
+            using System;
+            using System.Globalization;
 
-                class Test
+            class Test
+            {
+                void Method(object obj)
                 {
-                    void Method(object obj)
-                    {
-                        _ = [|string.Format(CultureInfo.InvariantCulture, "Format string without placeholder.", (obj is null ? string.Empty : "X"))|];
-                    }
+                    _ = [|string.Format(CultureInfo.InvariantCulture, "Format string without placeholder.", (obj is null ? string.Empty : "X"))|];
                 }
-                """)
-            .WithTargetFramework(Helpers.TargetFramework.Net10_0)
-            .ValidateAsync();
+            }
+            """;
+
+        return test.RunAsync();
     }
 }

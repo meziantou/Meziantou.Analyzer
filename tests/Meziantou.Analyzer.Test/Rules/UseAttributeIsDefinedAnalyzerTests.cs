@@ -1,699 +1,725 @@
+using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.UseAttributeIsDefinedAnalyzer,
+    Meziantou.Analyzer.Rules.UseAttributeIsDefinedFixer>;
+
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseAttributeIsDefinedAnalyzerTests
 {
-    private static ProjectBuilder CreateProjectBuilder()
+    private static CodeFixTest CreateTest() => new();
+
+    [Fact]
+    public Task GetCustomAttribute_NotEqualNull_MemberInfo()
     {
-        return new ProjectBuilder()
-            .WithAnalyzer<UseAttributeIsDefinedAnalyzer>()
-            .WithCodeFixProvider<UseAttributeIsDefinedFixer>();
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_NotEqualNull_MemberInfo()
+    public Task GetCustomAttribute_EqualNull_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() == null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttribute_EqualNull_MemberInfo()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() == null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_IsNull_MemberInfo()
+    public Task GetCustomAttribute_IsNull_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttribute_IsNotNull_MemberInfo()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is not null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Any_MemberInfo()
+    public Task GetCustomAttribute_IsNotNull_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Any()|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Linq;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>() is not null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttribute_NotEqualNull_Type()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(Type type)
-    {
-        _ = [|type.GetCustomAttribute<ObsoleteAttribute>() != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(Type type)
-    {
-        _ = Attribute.IsDefined(type, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_NotEqualNull_Assembly()
+    public Task GetCustomAttributes_Any_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(Assembly assembly)
-    {
-        _ = [|assembly.GetCustomAttribute<ObsoleteAttribute>() != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Any()|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(Assembly assembly)
-    {
-        _ = Attribute.IsDefined(assembly, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttribute_NotEqualNull_Module()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(Module module)
-    {
-        _ = [|module.GetCustomAttribute<ObsoleteAttribute>() != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(Module module)
-    {
-        _ = Attribute.IsDefined(module, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_WithInherit_NotEqualNull_MemberInfo()
+    public Task GetCustomAttribute_NotEqualNull_Type()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(Type type)
+                {
+                    _ = [|type.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(Type type)
+                {
+                    _ = Attribute.IsDefined(type, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttributes_WithInherit_Any_MemberInfo()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any()|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Linq;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_UsedDirectly_ShouldNotReport()
+    public Task GetCustomAttribute_NotEqualNull_Assembly()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        var attr = member.GetCustomAttribute<ObsoleteAttribute>();
-        _ = attr.Message;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(Assembly assembly)
+                {
+                    _ = [|assembly.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-    [Fact]
-    public async Task GetCustomAttribute_IsNotDeclarationPattern_ShouldNotReport()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(Assembly assembly)
+                {
+                    _ = Attribute.IsDefined(assembly, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-class TestClass
-{
-    string Test(Type type)
-    {
-        if (type.GetCustomAttribute<ObsoleteAttribute>() is not ObsoleteAttribute attribute)
-            throw new ArgumentException(nameof(type));
-
-        return attribute.Message;
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttribute_IsDeclarationPattern_ShouldNotReport()
+    public Task GetCustomAttribute_NotEqualNull_Module()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    string Test(Type type)
-    {
-        if (type.GetCustomAttribute<ObsoleteAttribute>() is ObsoleteAttribute attribute)
-            return attribute.Message;
+            class TestClass
+            {
+                void Test(Module module)
+                {
+                    _ = [|module.GetCustomAttribute<ObsoleteAttribute>() != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-        return string.Empty;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(Module module)
+                {
+                    _ = Attribute.IsDefined(module, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
 
-    [Fact]
-    public async Task GetCustomAttributes_WithPredicate_ShouldNotReport()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = member.GetCustomAttributes<ObsoleteAttribute>().Any(a => a.Message != null);
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Any_WithTruePredicate_ShouldNotReport()
+    public Task GetCustomAttribute_WithInherit_NotEqualNull_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = member.GetCustomAttributes<ObsoleteAttribute>().Any(attr => true);
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttribute<ObsoleteAttribute>(inherit: true) != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
 
-    [Fact]
-    public async Task GetCustomAttributes_Count_ShouldReport()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
+                }
+            }
+            """;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Linq;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Count_WithPredicate_ShouldNotReport()
+    public Task GetCustomAttributes_WithInherit_Any_MemberInfo()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Linq;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = member.GetCustomAttributes<ObsoleteAttribute>().Count(a => a.Message != null) > 0;
-    }
-}
-""")
-              .ValidateAsync();
-    }
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>(inherit: true).Any()|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-    [Fact]
-    public async Task GetCustomAttribute_NullComparison_ReversedOrder()
-    {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
+                }
+            }
+            """;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|null != member.GetCustomAttribute<ObsoleteAttribute>()|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
-
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Length_GreaterThanZero()
+    public Task GetCustomAttribute_UsedDirectly_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length > 0|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    var attr = member.GetCustomAttribute<ObsoleteAttribute>();
+                    _ = attr.Message;
+                }
+            }
+            """;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Length_NotEqualZero()
+    public Task GetCustomAttribute_IsNotDeclarationPattern_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length != 0|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                string Test(Type type)
+                {
+                    if (type.GetCustomAttribute<ObsoleteAttribute>() is not ObsoleteAttribute attribute)
+                        throw new ArgumentException(nameof(type));
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
-    }
-}
-""")
-              .ValidateAsync();
+                    return attribute.Message;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Length_EqualZero()
+    public Task GetCustomAttribute_IsDeclarationPattern_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 0|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                string Test(Type type)
+                {
+                    if (type.GetCustomAttribute<ObsoleteAttribute>() is ObsoleteAttribute attribute)
+                        return attribute.Message;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
-    }
-}
-""")
-              .ValidateAsync();
+                    return string.Empty;
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task GetCustomAttributes_Length_GreaterThanOrEqualOne()
+    public Task GetCustomAttributes_WithPredicate_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length >= 1|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttributes<ObsoleteAttribute>().Any(a => a.Message != null);
+                }
+            }
+            """;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_GetCustomAttributes_Length_GreaterThanZero()
+    public Task GetCustomAttributes_Any_WithTruePredicate_ShouldNotReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Length > 0|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttributes<ObsoleteAttribute>().Any(attr => true);
+                }
+            }
+            """;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
-    }
-}
-""")
-              .ValidateAsync();
+        return test.RunAsync();
     }
 
     [Fact]
-    public async Task Attribute_GetCustomAttribute_NotEqualNull()
+    public Task GetCustomAttributes_Count_ShouldReport()
     {
-        await CreateProjectBuilder()
-              .WithSourceCode("""
-using System;
-using System.Reflection;
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = [|Attribute.GetCustomAttribute(member, typeof(ObsoleteAttribute)) != null|];
-    }
-}
-""")
-              .ShouldFixCodeWith("""
-using System;
-using System.Reflection;
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes<ObsoleteAttribute>().Count() > 0|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
 
-class TestClass
-{
-    void Test(MemberInfo member)
-    {
-        _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
-}
-""")
-              .ValidateAsync();
+
+    [Fact]
+    public Task GetCustomAttributes_Count_WithPredicate_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttributes<ObsoleteAttribute>().Count(a => a.Message != null) > 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetCustomAttribute_NullComparison_ReversedOrder()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|null != member.GetCustomAttribute<ObsoleteAttribute>()|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetCustomAttributes_Length_GreaterThanZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length > 0|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetCustomAttributes_Length_NotEqualZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length != 0|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetCustomAttributes_Length_EqualZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length == 0|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = !Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetCustomAttributes_Length_GreaterThanOrEqualOne()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length >= 1|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_GetCustomAttributes_Length_GreaterThanZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Length > 0|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_GetCustomAttribute_NotEqualNull()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = [|Attribute.GetCustomAttribute(member, typeof(ObsoleteAttribute)) != null|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 }
