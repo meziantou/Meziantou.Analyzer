@@ -12,7 +12,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
         return test;
     }
 

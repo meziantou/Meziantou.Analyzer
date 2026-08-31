@@ -34,7 +34,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task FormattableString_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             class TypeName
@@ -55,7 +54,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task Charp9_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.LanguageVersion = LanguageVersion.CSharp9;
         test.TestCode = """
             using System;
@@ -75,7 +73,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task FormattableStringInvariant()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             using System;
@@ -108,7 +105,6 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
     public Task FormattableStringCurrentCulture()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             using System;

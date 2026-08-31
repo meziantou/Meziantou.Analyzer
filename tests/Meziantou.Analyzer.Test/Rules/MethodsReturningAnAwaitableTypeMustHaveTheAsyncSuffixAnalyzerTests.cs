@@ -13,7 +13,6 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.LanguageVersion = LanguageVersion.Preview;
         return test;
     }

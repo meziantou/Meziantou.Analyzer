@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.DoNotUseAsyncVoidAnalyzer>;
 
@@ -6,7 +5,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseAsyncVoidAnalyzerTests
 {
-    private static AnalyzerTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
+    private static AnalyzerTest CreateTest() => new();
 
     [Fact]
     public Task Method_Void()

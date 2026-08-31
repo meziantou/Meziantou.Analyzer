@@ -714,7 +714,6 @@ public sealed class NamedParameterAnalyzerTests
     public Task ValueTask_FromResult_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class TypeName
             {

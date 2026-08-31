@@ -11,7 +11,8 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 {
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net90.AddAspNetCore("9.0.0") };
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         test.LanguageVersion = LanguageVersion.CSharp12;
         return test;
     }
@@ -153,7 +154,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp11;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         test.TestCode = """
             using Microsoft.AspNetCore.Components;
 

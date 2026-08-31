@@ -93,7 +93,6 @@ public sealed class UseStringComparisonAnalyzerNonCultureSensitiveTests
     public Task String_GetHashCode_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class TypeName
             {
@@ -332,7 +331,6 @@ public sealed class UseStringComparisonAnalyzerNonCultureSensitiveTests
     public Task MeziantouFrameworkAssertions_Assert_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net100;
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework.Assertions", "2.0.1")]);
         test.TestCode = """
             class TypeName

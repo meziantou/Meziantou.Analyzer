@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer,
     Meziantou.Analyzer.Rules.UseMemoryMarshalGetReferenceForEmptyBuffersFixer>;
@@ -318,7 +317,6 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
     public Task ArrayOnNet5_DiagnosticFiresButNoCodeFix()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             class C
             {

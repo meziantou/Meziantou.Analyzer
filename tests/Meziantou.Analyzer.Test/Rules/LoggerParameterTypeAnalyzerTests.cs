@@ -13,7 +13,7 @@ public sealed class LoggerParameterTypeAnalyzerTests
     {
         var test = new AnalyzerTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
         return test;
     }
 

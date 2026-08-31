@@ -127,7 +127,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp11;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Dummy
             {
@@ -146,7 +145,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp11;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Dummy
             {
@@ -166,7 +164,6 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp11;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """"
             class Dummy
             {

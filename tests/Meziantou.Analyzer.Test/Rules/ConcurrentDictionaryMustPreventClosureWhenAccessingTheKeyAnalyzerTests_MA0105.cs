@@ -12,7 +12,7 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
     // This class covers MA0105 only, the way the original test filtered the diagnostics to that rule
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net60 };
+        var test = new CodeFixTest();
         test.DisabledDiagnostics.Add(RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg);
         return test;
     }

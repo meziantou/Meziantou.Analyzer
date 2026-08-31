@@ -301,7 +301,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UnusedInternalRecord_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record {|MA0182:UnusedRecord|}
             {
@@ -316,7 +315,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UnusedPrivateNestedRecord_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             public class OuterClass
             {
@@ -331,7 +329,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UsedPrivateNestedRecord_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             public class OuterClass
             {
@@ -351,7 +348,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UnusedInternalRecordStruct_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record struct {|MA0182:UnusedRecordStruct|}
             {
@@ -366,7 +362,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UnusedPrivateNestedRecordStruct_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             public class OuterClass
             {
@@ -381,7 +376,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task UsedPrivateNestedRecordStruct_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             public class OuterClass
             {
@@ -445,7 +439,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordUsedInObjectCreation_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record UsedRecord(string Name);
 
@@ -465,7 +458,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordStructUsedInObjectCreation_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record struct UsedRecordStruct(string Name);
 
@@ -523,7 +515,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordUsedAsPropertyType_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record Settings(string Key, string Value);
 
@@ -540,7 +531,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordStructUsedAsParameterType_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record struct Point(int X, int Y);
 
@@ -583,7 +573,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordUsedInTypeOf_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
 
@@ -605,7 +594,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordStructUsedInArrayCreation_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
 
@@ -627,7 +615,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalCollectionUsedInCollectionExpression_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
             using System.Collections;
@@ -665,7 +652,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task MultipleInternalTypes_SomeUsedSomeNot()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal class {|MA0182:UnusedClass|}
             {
@@ -1568,7 +1554,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordUsedInVariableDeclaration_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record Config(string Key);
 
@@ -1589,7 +1574,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordStructUsedInVariableDeclaration_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record struct Vector(double X, double Y);
 
@@ -1739,7 +1723,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordUsedInPatternMatching_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record Message(string Text);
 
@@ -1762,7 +1745,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalRecordStructUsedInPatternMatching_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record struct Coordinate(int X, int Y);
 
@@ -1843,7 +1825,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
@@ -1861,7 +1842,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task PrivateClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
@@ -1882,7 +1862,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalStructWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System.Diagnostics.CodeAnalysis;
 
@@ -2162,7 +2141,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task ClassWithModuleInitializerMethod_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Runtime.CompilerServices;
 
@@ -2182,7 +2160,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task ClassWithModuleInitializerMethodAndOtherMembers_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Runtime.CompilerServices;
 
@@ -2207,7 +2184,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Class()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal class {|MA0182:UnusedClass|}
             {
@@ -2229,7 +2205,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Struct()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal struct {|MA0182:UnusedStruct|}
             {
@@ -2251,7 +2226,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task CodeFix_AddDynamicallyAccessedMembersAttribute_Record()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             internal record {|MA0182:UnusedRecord|}(string Name);
             """;
@@ -2375,7 +2349,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task CodeFix_AddDynamicallyAccessedMembersAttribute_WithExistingAttributes()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
         test.TestCode = """
             using System;
 

@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseAwaitInsteadOfReturningTaskAnalyzer,
     Meziantou.Analyzer.Rules.UseAwaitInsteadOfReturningTaskFixer>;
@@ -9,7 +8,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
 {
-    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net80 };
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
     public void Rule_IsDisabledByDefault()

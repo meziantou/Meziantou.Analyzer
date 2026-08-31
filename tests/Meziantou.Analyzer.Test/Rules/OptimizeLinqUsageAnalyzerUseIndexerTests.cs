@@ -208,7 +208,6 @@ public sealed class OptimizeLinqUsageAnalyzerUseIndexerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp8;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Linq;
             class Test

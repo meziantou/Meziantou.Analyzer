@@ -61,7 +61,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     public Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
             class TestClass
@@ -116,7 +115,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
     public Task Ctor_WithoutTimeout_NonBacktracking_ShouldNotReportError()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Text.RegularExpressions;
             class TestClass
@@ -153,8 +151,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -172,8 +170,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -191,8 +189,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
             partial class TestClass
@@ -214,8 +212,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 
@@ -234,8 +232,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 
@@ -254,8 +252,8 @@ public sealed class UseRegexTimeoutAnalyzerTests
     {
         var test = CreateTest();
         test.UseFrameworkSourceGenerators = true;
-        test.LanguageVersion = LanguageVersion.Preview;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.LanguageVersion = LanguageVersion.Preview;
         test.TestCode = """
             using System.Text.RegularExpressions;
 

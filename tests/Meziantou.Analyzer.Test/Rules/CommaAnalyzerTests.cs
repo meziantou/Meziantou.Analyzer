@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.CommaAnalyzer,
     Meziantou.Analyzer.Rules.CommaFixer>;
@@ -458,7 +457,6 @@ public sealed class CommaAnalyzerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.Latest;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);
@@ -489,7 +487,6 @@ public sealed class CommaAnalyzerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.Latest;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);
@@ -510,7 +507,6 @@ public sealed class CommaAnalyzerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.Latest;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             var a = new Sample(1, 2);

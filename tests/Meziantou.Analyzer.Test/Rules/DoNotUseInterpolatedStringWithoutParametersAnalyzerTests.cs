@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersAnalyzer,
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersFixer>;
@@ -109,7 +108,6 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     public Task InterpolatedStringWithoutParameters_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class TypeName
             {
@@ -143,7 +141,6 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     public Task EmptyInterpolatedString_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class TypeName
             {

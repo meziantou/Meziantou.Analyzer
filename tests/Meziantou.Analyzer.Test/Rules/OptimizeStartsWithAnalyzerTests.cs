@@ -350,7 +350,6 @@ public sealed class OptimizeStartsWithAnalyzerTests
     public Task Join_Report(string method)
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = $$"""
             using System;
             using System.Collections.Generic;
@@ -410,7 +409,6 @@ public sealed class OptimizeStartsWithAnalyzerTests
     public Task Join_NoReport(string method)
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = $$"""
 
             using System;

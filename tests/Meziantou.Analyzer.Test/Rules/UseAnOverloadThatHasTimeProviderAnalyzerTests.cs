@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderAnalyzer,
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderFixer>;
@@ -9,7 +8,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 {
-    private static CodeFixTest CreateTest() => new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net90 };
+    private static CodeFixTest CreateTest() => new();
 
     [Fact]
     public Task NoReport_ConsoleWriteLine()

@@ -591,7 +591,6 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
     public Task CannotBeReadonly_AccessNonReadOnlyMember()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System;
             internal ref struct PathReader
@@ -620,7 +619,6 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
     public Task RefFixedMember()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System;
             using System.Runtime.InteropServices;

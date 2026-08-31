@@ -200,7 +200,6 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Test
             {
@@ -229,8 +228,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     public Task InterpolatedStringDiagnostic_NoCodeFix_WhenStringCreateIsUnavailable()
     {
         var test = CreateTest();
-        test.LanguageVersion = LanguageVersion.CSharp10;
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
+        test.LanguageVersion = LanguageVersion.CSharp10;
         test.TestCode = """
             class Test
             {

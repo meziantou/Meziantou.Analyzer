@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseIsPatternInsteadOfSequenceEqualAnalyzer,
     Meziantou.Analyzer.Rules.UseIsPatternInsteadOfSequenceEqualFixer>;
@@ -11,7 +10,7 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
 {
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net70 };
+        var test = new CodeFixTest();
         test.LanguageVersion = LanguageVersion.CSharp11;
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         return test;

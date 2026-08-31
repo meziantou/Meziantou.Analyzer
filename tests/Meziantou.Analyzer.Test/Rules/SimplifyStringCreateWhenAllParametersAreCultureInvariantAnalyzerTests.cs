@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.SimplifyStringCreateWhenAllParametersAreCultureInvariantAnalyzer,
     Meziantou.Analyzer.Rules.SimplifyStringCreateWhenAllParametersAreCultureInvariantFixer>;
@@ -11,7 +10,7 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
 {
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net60 };
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         return test;
     }
@@ -21,7 +20,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -55,7 +53,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -91,7 +88,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -127,7 +123,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -163,7 +158,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -186,7 +180,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -208,7 +201,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -230,7 +222,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -264,7 +255,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -287,7 +277,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -310,7 +299,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -333,7 +321,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -367,7 +354,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0185.treat_opaque_runtime_types_as_culture_sensitive", "true");
         test.TestCode = """
             using System;
@@ -390,7 +376,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -428,7 +413,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -450,7 +434,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -488,7 +471,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestState.SetConfiguration("MA0185.treat_unsealed_types_as_culture_sensitive", "true");
         test.TestCode = """
             using System;
@@ -513,7 +495,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -547,7 +528,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -591,7 +571,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -637,7 +616,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -677,7 +655,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;
@@ -711,7 +688,6 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
     {
         var test = CreateTest();
         test.LanguageVersion = LanguageVersion.CSharp10;
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Globalization;

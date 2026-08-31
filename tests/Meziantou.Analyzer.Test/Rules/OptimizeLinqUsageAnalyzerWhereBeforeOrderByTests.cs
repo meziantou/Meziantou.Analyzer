@@ -12,7 +12,7 @@ public sealed class OptimizeLinqUsageAnalyzerWhereBeforeOrderByTests
     // This class covers MA0063 only, the way the original test filtered the diagnostics to that rule
     private static CodeFixTest CreateTest()
     {
-        var test = new CodeFixTest { ReferenceAssemblies = ReferenceAssemblies.Net.Net90 };
+        var test = new CodeFixTest();
         test.DisabledDiagnostics.Add(RuleIdentifiers.OptimizeEnumerable_UseOrder);
         return test;
     }

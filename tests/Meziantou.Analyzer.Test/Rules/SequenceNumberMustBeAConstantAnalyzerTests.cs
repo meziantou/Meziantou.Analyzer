@@ -6,8 +6,12 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class SequenceNumberMustBeAConstantAnalyzerTests
 {
-    private static AnalyzerTest CreateTest() =>
-        new() { ReferenceAssemblies = ReferenceAssemblies.Net.Net70.AddAspNetCore("7.0.0") };
+    private static AnalyzerTest CreateTest()
+    {
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
+        return test;
+    }
 
     [Theory]
     [InlineData("builder.AddAttribute(0, frame: default)")]

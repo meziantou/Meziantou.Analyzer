@@ -200,7 +200,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task CallingMethodWithRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Test
             {
@@ -228,7 +227,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task CallingMethodWithRecordCtorThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Test
             {
@@ -253,7 +251,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task CallingMethodWithStructRecordCtorThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Test
             {
@@ -278,7 +275,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task CallingMethodWithStructRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             class Test
             {
@@ -552,7 +548,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task RecordCtor_ShouldReportDiagnosticWithProperty()
     {
         var test = CreateArgumentFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             record Test(System.Threading.CancellationToken CancellationToken)
             {
@@ -626,7 +621,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task InterfaceImplicit_ShouldReportDiagnosticWithProperty()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             interface ITest
             {
@@ -1035,7 +1029,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task AwaitForeach_FixerRemovesWithCancellationToken()
     {
         var test = CreateArgumentFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1082,7 +1075,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task AwaitForeach_FixerDoesNotRemoveWithCancellationToken()
     {
         var test = CreateArgumentFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1131,7 +1123,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     public Task AwaitForeach_FixerDoesNotRemoveWithCancellationTokenWhenAttributeIsNotPresent()
     {
         var test = CreateArgumentFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;

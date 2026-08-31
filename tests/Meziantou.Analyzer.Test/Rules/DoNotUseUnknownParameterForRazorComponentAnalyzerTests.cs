@@ -12,7 +12,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzerTests
     private static AnalyzerTest CreateTest()
     {
         var test = new AnalyzerTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80.AddAspNetCore("8.0.0");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         return test;
     }
 
