@@ -320,12 +320,33 @@ public class UseRegexSourceGeneratorAnalyzerTests
     }
 
     [Theory]
+    [InlineData("TimeSpan.Zero")]
+    [InlineData("TimeSpan.FromMilliseconds(-2)")]
+    public Task Timeout_NotSupportedByTheGenerator_NoDiagnostic(string timeout)
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp11;
+
+        // GeneratedRegex only accepts an infinite or strictly positive match timeout
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                Regex a = new Regex("testpattern", RegexOptions.None, {{timeout}});
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("TimeSpan.FromMilliseconds(10)", "10")]
     [InlineData("TimeSpan.FromSeconds(10.5)", "10500")]
     [InlineData("TimeSpan.FromMinutes(1)", "60000")]
     [InlineData("TimeSpan.FromHours(1)", "3600000")]
     [InlineData("TimeSpan.FromDays(1)", "86400000")]
-    [InlineData("TimeSpan.Zero", "0")]
     [InlineData("new TimeSpan(10000)", "1")]
     [InlineData("new TimeSpan(1, 2, 3)", "3723000")]
     [InlineData("new TimeSpan(1, 2, 3, 4)", "93784000")]
@@ -356,12 +377,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
             }
             """;
 
-        if (milliseconds is "0")
-        {
-            // The code fix turns TimeSpan.Zero into a match timeout the Regex generator rejects
-            test.FixedState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("SYSLIB1042").WithSpan(8, 5, 9, 44).WithArguments("matchTimeout"));
-            test.FixedState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("CS8795").WithSpan(9, 34, 9, 41).WithArguments("Test.MyRegex()"));
-        }
 
         return test.RunAsync();
     }
@@ -891,17 +906,14 @@ public class UseRegexSourceGeneratorAnalyzerTests
             {
                 void A()
                 {
-                    Regex EmailRegex = {|#0:EmailRegex|}();
+                    Regex EmailRegex = EmailRegex_();
                     _ = EmailRegex.IsMatch("value");
                 }
 
                 [GeneratedRegex("pattern")]
-                private static partial Regex EmailRegex();
+                private static partial Regex EmailRegex_();
             }
             """;
-
-        test.FixedState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("CS0149").WithLocation(0));
-        test.FixedState.ExpectedDiagnostics.Add(DiagnosticResult.CompilerError("CS0165").WithLocation(0).WithArguments("EmailRegex"));
         return test.RunAsync();
     }
 
