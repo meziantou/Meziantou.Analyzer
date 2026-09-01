@@ -15,12 +15,12 @@ dotnet package add Meziantou.Analyzer
 
 ### Central Package Management
 
-If you're using [Central Package Management](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management), you can use Meziantou.Analyzer as a [`GlobalPackageReference`](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management#global-package-references) in your `Directory.Packages.props` to apply it to the entire repo.
+If you're using [Central Package Management](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management?WT.mc_id=DT-MVP-5003978), add `Meziantou.Analyzer` as a [`GlobalPackageReference`](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management?WT.mc_id=DT-MVP-5003978#global-package-references) in your `Directory.Packages.props` file. This applies the analyzer to all projects in the repository.
 
 ```xml
-  <ItemGroup>
-    <GlobalPackageReference Include="Meziantou.Analyzer" Version="{LatestVersion}" />
-  </ItemGroup>
+<ItemGroup>
+  <GlobalPackageReference Include="Meziantou.Analyzer" Version="..." />
+</ItemGroup>
 ```
 
 ## Rules
