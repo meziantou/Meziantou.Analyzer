@@ -75,8 +75,6 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     public Task EmptyLanguageAttribute(string comment)
     {
         var test = CreateTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.UseLangwordInXmlComment);
-        test.DisabledDiagnostics.Add(RuleIdentifiers.MissingLanguageAttributeInXmlComment);
         test.TestCode = $$"""
             /// <summary>{{comment}}</summary>
             class Sample { }
@@ -88,12 +86,10 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     [Theory]
     [InlineData("""<c lang="csharp">test</c>""")]
     [InlineData("""<c language="json">test</c>""")]
-    [InlineData("<c>test</c>")]
+    [InlineData("{|MA0219:<c>test</c>|}")]
     public Task EmptyLanguageAttribute_Valid(string comment)
     {
         var test = CreateTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.UseLangwordInXmlComment);
-        test.DisabledDiagnostics.Add(RuleIdentifiers.MissingLanguageAttributeInXmlComment);
         test.TestCode = $$"""
             /// <summary>{{comment}}</summary>
             class Sample { }
@@ -109,8 +105,6 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     public Task MissingLanguageAttribute(string comment)
     {
         var test = CreateTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.UseLangwordInXmlComment);
-        test.DisabledDiagnostics.Add(RuleIdentifiers.EmptyLanguageAttributeInXmlComment);
         test.TestCode = $$"""
             /// <summary>{{comment}}</summary>
             class Sample { }
@@ -121,16 +115,14 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
 
     [Theory]
     [InlineData("""<c lang="csharp">test</c>""")]
-    [InlineData("""<c language="">test</c>""")]
+    [InlineData("""<c {|MA0218:language=""|}>test</c>""")]
     [InlineData("""<code language="json">test</code>""")]
     [InlineData("""<c langword="null"></c>""")]
-    [InlineData("<c>void</c>")]
+    [InlineData("{|MA0154:<c>void</c>|}")]
     [InlineData("<see langword=\"null\"/>")]
     public Task MissingLanguageAttribute_Valid(string comment)
     {
         var test = CreateTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.UseLangwordInXmlComment);
-        test.DisabledDiagnostics.Add(RuleIdentifiers.EmptyLanguageAttributeInXmlComment);
         test.TestCode = $$"""
             /// <summary>{{comment}}</summary>
             class Sample { }
@@ -143,14 +135,12 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     public Task MissingLanguageAttribute_Fix()
     {
         var test = CreateAddLanguageAttributeFixTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.UseLangwordInXmlComment);
-        test.DisabledDiagnostics.Add(RuleIdentifiers.EmptyLanguageAttributeInXmlComment);
         test.TestCode = """
             /// <summary>{|MA0219:<c>test</c>|}</summary>
             class Sample { }
             """;
         test.FixedCode = """
-            /// <summary><c language="">test</c></summary>
+            /// <summary><c {|MA0218:language=""|}>test</c></summary>
             class Sample { }
             """;
 
