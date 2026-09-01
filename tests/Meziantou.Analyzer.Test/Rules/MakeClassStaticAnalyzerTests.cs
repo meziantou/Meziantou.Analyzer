@@ -164,7 +164,7 @@ public sealed class MakeClassStaticAnalyzerTests
     public Task MsTestClass_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             [Microsoft.VisualStudio.TestTools.UnitTesting.TestClass]
             class Test

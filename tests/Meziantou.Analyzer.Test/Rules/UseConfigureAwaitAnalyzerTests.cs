@@ -575,7 +575,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
     public Task XUnitAttribute_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading.Tasks;
             class ClassTest

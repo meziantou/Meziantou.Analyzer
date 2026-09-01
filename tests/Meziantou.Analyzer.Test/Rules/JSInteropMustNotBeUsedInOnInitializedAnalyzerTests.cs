@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.JSInteropMustNotBeUsedInOnInitializedAnalyzer>;
 
@@ -17,7 +16,7 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzerTests
     public Task WebAssembly_NoReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.JSInterop.WebAssembly", AnalyzerTestDefaults.DotNetVersion)]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddJSInterop();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.AspNetCore.Components;

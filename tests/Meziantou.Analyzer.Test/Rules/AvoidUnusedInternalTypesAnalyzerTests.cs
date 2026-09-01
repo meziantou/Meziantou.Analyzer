@@ -1055,7 +1055,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalClassUsedByNewtonsoftJsonSerializer_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNewtonsoftJson();
         test.TestCode = """
             using Newtonsoft.Json;
 
@@ -1083,7 +1083,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("YamlDotNet", "16.3.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddYamlDotNet();
         test.TestCode = """
             using YamlDotNet.Serialization;
 

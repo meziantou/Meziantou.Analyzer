@@ -384,7 +384,7 @@ public sealed class MakeMethodStaticAnalyzerTests_Methods
     public Task MSTest_TestMethod()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             class TestClass
             {
@@ -402,7 +402,7 @@ public sealed class MakeMethodStaticAnalyzerTests_Methods
     public Task MSTest_DataTestMethod()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             class TestClass
             {
@@ -420,7 +420,7 @@ public sealed class MakeMethodStaticAnalyzerTests_Methods
     public Task XUnit_TestMethod()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TestClass
             {
@@ -438,7 +438,7 @@ public sealed class MakeMethodStaticAnalyzerTests_Methods
     public Task XUnit_TestMethodCustomAttribute()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TestClass
             {

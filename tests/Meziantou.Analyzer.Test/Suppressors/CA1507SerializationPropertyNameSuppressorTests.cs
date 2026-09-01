@@ -60,7 +60,7 @@ public sealed class CA1507SerializationPropertyNameSuppressorTests
     public Task CA1507_NewtonsoftJson_JsonPropertyName()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNewtonsoftJson();
         test.TestCode = """
             internal class Test
             {
@@ -77,7 +77,7 @@ public sealed class CA1507SerializationPropertyNameSuppressorTests
     public Task CA1507_NewtonsoftJson_JsonPropertyName_NamedParameter()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNewtonsoftJson();
         test.TestCode = """
             internal class Test
             {
@@ -94,7 +94,7 @@ public sealed class CA1507SerializationPropertyNameSuppressorTests
     public Task CA1507_NewtonsoftJson_JsonPropertyName_AfterAnUnrelatedDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNewtonsoftJson();
         test.TestCode = """
             internal class Test
             {

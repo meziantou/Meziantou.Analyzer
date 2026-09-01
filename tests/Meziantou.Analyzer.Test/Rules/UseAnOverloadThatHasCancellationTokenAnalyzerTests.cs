@@ -1252,7 +1252,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("xunit.abstractions", "2.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV2();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1274,7 +1274,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("xunit.v3.extensibility.core", "1.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;

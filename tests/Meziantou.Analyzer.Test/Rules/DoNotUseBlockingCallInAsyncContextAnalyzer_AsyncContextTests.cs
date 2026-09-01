@@ -2032,7 +2032,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbContext_Add()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.EntityFrameworkCore;
@@ -2062,7 +2062,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task IDbContextFactory_CreateDbContext_NoReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.EntityFrameworkCore;
@@ -2088,7 +2088,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteConnection_CreateCommand_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2110,7 +2110,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteConnection_Close_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2132,7 +2132,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteCommand_Prepare_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2155,7 +2155,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2178,7 +2178,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2201,7 +2201,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2223,7 +2223,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteDataReader_Read_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2246,7 +2246,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2268,7 +2268,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
             using System.Threading.Tasks;
@@ -2292,7 +2292,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
             using System.Threading.Tasks;
@@ -2438,7 +2438,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task Moq_Raise()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Moq", "4.20.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMoq();
         test.TestCode = """
             using System;
             using Moq;
@@ -2665,7 +2665,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -2696,7 +2696,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnit();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -2727,7 +2727,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
