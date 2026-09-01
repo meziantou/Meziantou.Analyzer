@@ -13,6 +13,16 @@ Install the NuGet package [Meziantou.Analyzer](https://www.nuget.org/packages/Me
 dotnet package add Meziantou.Analyzer
 ```
 
+### Central Package Management
+
+If you're using [Central Package Management](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management?WT.mc_id=DT-MVP-5003978), add `Meziantou.Analyzer` as a [`GlobalPackageReference`](https://learn.microsoft.com/en-us/nuget/consume-packages/Central-Package-Management?WT.mc_id=DT-MVP-5003978#global-package-references) in your `Directory.Packages.props` file. This applies the analyzer to all projects in the repository.
+
+```xml
+<ItemGroup>
+  <GlobalPackageReference Include="Meziantou.Analyzer" Version="..." />
+</ItemGroup>
+```
+
 ## Rules
 
 If you are already using other analyzers, you can check [which rules are duplicated with well-known analyzers](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/comparison-with-other-analyzers.md)
