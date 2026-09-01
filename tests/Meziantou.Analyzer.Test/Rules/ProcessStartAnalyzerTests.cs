@@ -10,24 +10,10 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ProcessStartAnalyzerTests
 {
-    private static CodeFixTest CreateTest(string id)
-    {
-        var test = new CodeFixTest();
-        foreach (var other in new[] { "MA0161", "MA0162", "MA0163" })
-        {
-            if (other != id)
-            {
-                test.DisabledDiagnostics.Add(other);
-            }
-        }
-
-        return test;
-    }
-
     [Fact]
     public Task Process_start_should_not_report_when_use_shell_execute_is_set_to_false()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -46,7 +32,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_not_report_when_use_shell_execute_is_set_to_true()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -65,7 +51,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -86,7 +72,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_fix_when_use_shell_execute_is_not_set()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -118,7 +104,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
     {
-        var test = CreateTest("MA0163");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -144,7 +130,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_output_redirected()
     {
-        var test = CreateTest("MA0163");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -168,7 +154,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_error_redirected()
     {
-        var test = CreateTest("MA0163");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -192,7 +178,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_and_input_redirected()
     {
-        var test = CreateTest("MA0163");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -217,7 +203,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_false_positives()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -239,7 +225,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_2()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -263,7 +249,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_fix_when_use_shell_execute_is_not_set_and_initializer_exists()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -302,7 +288,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_3()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -323,7 +309,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_4()
     {
-        var test = CreateTest("MA0161");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -344,7 +330,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_using_overload_with_no_process_start_info()
     {
-        var test = CreateTest("MA0162");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 
@@ -364,7 +350,7 @@ public sealed class ProcessStartAnalyzerTests
     [Fact]
     public Task Process_start_should_report_when_using_overload_with_no_process_start_info_2()
     {
-        var test = CreateTest("MA0162");
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Diagnostics;
 

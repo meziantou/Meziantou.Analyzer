@@ -1,6 +1,4 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseStringComparisonAnalyzer,
@@ -10,17 +8,10 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseStringComparisonAnalyzerTests
 {
-    private static CodeFixTest CreateTest()
-    {
-        var test = new CodeFixTest();
-        test.DisabledDiagnostics.Add("MA0001");
-        return test;
-    }
-
     [Fact]
     public Task Equals_String_string_StringComparison_ShouldNotReportDiagnosticWhenStringComparisonIsSpecifiedAsync()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -38,7 +29,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task IndexOf_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -55,7 +46,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task IndexOf_String_ShouldReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -82,7 +73,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task StartsWith_String_StringComparison_ShouldNotReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -99,7 +90,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task StartsWith_String_ShouldReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -126,7 +117,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task Compare_ShouldReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -153,7 +144,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task Compare_ShouldNotReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -170,7 +161,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task IndexOf_ShouldNotReportDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -185,15 +176,24 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task IndexOf_Char_ShouldNotReportDiagnostic()
+    public Task IndexOf_Char_ShouldNotReportCultureSensitiveDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    _ = "abc".IndexOf('a');
+                    _ = {|MA0001:"abc".IndexOf('a')|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf('a', System.StringComparison.Ordinal);
                 }
             }
             """;
@@ -202,15 +202,24 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task IndexOf_Char_Int_ShouldNotReportDiagnostic()
+    public Task IndexOf_Char_Int_ShouldNotReportCultureSensitiveDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    _ = "abc".IndexOf('a', 0);
+                    _ = {|MA0001:"abc".IndexOf('a', 0)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf('a', 0, System.StringComparison.Ordinal);
                 }
             }
             """;
@@ -219,15 +228,24 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task LastIndexOf_Char_ShouldNotReportDiagnostic()
+    public Task LastIndexOf_Char_ShouldNotReportCultureSensitiveDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    _ = "abc".LastIndexOf('a');
+                    _ = {|MA0001:"abc".LastIndexOf('a')|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".LastIndexOf('a', System.StringComparison.Ordinal);
                 }
             }
             """;
@@ -236,15 +254,24 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task Contains_Char_ShouldNotReportDiagnostic()
+    public Task Contains_Char_ShouldNotReportCultureSensitiveDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    _ = "abc".Contains('a');
+                    _ = {|MA0001:"abc".Contains('a')|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".Contains('a', System.StringComparison.Ordinal);
                 }
             }
             """;
@@ -253,15 +280,24 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task Replace_ShouldNotReportDiagnostic()
+    public Task Replace_ShouldNotReportCultureSensitiveDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
                 public void Test()
                 {
-                    "".Replace("", "");
+                    {|MA0001:"".Replace("", "")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "".Replace("", "", System.StringComparison.Ordinal);
                 }
             }
             """;
@@ -272,7 +308,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task ExcludeWhenInAnExpressionContext()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Linq.Expressions;
@@ -296,7 +332,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task ExcludeWhenInAnExpressionContext2()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Linq;
@@ -322,7 +358,7 @@ public sealed class UseStringComparisonAnalyzerTests
     [Fact]
     public Task Contains_WithTrailingMessageParameter_ShouldInsertStringComparisonBeforeMessage()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             class TypeName
             {
@@ -351,6 +387,248 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public static void Contains(string value, string substring, string message) { }
                 public static void Contains(string value, string substring, System.StringComparison comparison, string message) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_String_string_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:System.String.Equals("a", "v")|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'Equals' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.String.Equals("a", "v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_String_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"a".Equals("v")|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'Equals' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".Equals("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task String_GetHashCode_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"a".GetHashCode()|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'GetHashCode' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".GetHashCode(System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IndexOf_Char_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"a".IndexOf('v')|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "a".IndexOf('v', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IndexOf_Char_Int_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"abc".IndexOf('v', 0)|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "abc".IndexOf('v', 0, System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Contains_Char_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"abc".Contains('a')|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'Contains' that has a StringComparison parameter"));
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    "abc".Contains('a', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Contains_Char_StringComparison_ShouldNotReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".Contains('a', System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LastIndexOf_Char_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|#0:"abc".LastIndexOf('a')|};
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'LastIndexOf' that has a StringComparison parameter"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task JObject_Property_ShouldReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    var obj = new Newtonsoft.Json.Linq.JObject();
+                    {|MA0001:obj.Property("")|};
+                }
+            }
+
+            namespace Newtonsoft.Json.Linq
+            {
+                public class JObject
+                {
+                    public void Property(string name) => throw null;
+                    public void Property(string name, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MeziantouFrameworkAssertions_Assert_ShouldNotReportDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMeziantouFrameworkAssertions();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    Meziantou.Framework.Assertions.Assert.Contains("abc", "abcdef");
+                }
             }
             """;
 

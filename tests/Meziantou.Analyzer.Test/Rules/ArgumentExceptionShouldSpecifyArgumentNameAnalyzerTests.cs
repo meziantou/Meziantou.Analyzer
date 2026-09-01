@@ -1,25 +1,19 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameAnalyzer>;
+using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
+    Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameAnalyzer,
+    Meziantou.Analyzer.Rules.ArgumentExceptionShouldSpecifyArgumentNameFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
 {
-    private static AnalyzerTest CreateTest()
-    {
-        var test = new AnalyzerTest();
-        test.DisabledDiagnostics.Add("MA0043");
-        return test;
-    }
-
     [Fact]
     public Task ArgumentNameIsSpecified_Record_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             internal sealed record ManuscriptId(int Id)
@@ -34,7 +28,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_LocalFunction_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -54,7 +48,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_LocalFunction_Static_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -74,7 +68,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_LocalFunction_ArgumentFromParentMethod_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -94,7 +88,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_Operator_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -112,7 +106,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_Method_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -131,7 +125,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_Indexer_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -149,7 +143,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameIsSpecified_Setter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class Sample
             {
@@ -167,7 +161,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameDoesNotMatchAParameter_Properties_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -186,7 +180,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNameDoesNotMatchAParameter_Methods_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -204,7 +198,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task OverloadWithoutParameterName_Properties_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -222,7 +216,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task OverloadWithoutParameterName_Methods_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -239,7 +233,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ValidParameterName_Lambda()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -260,7 +254,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task InvalidParameterName_Lambda()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -281,7 +275,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task InvalidParameterName_StaticLambda()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -302,7 +296,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ValidParameterName_LambdaWithoutParentheses()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -322,7 +316,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ValidParameterName_StaticLambdaWithoutParameter()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -342,7 +336,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task InvalidParameterName_Delegate()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -363,7 +357,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ValidParameterName_Delegate()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -384,7 +378,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task InvalidParameterName_StaticDelegate()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             class TestAttribute
             {
@@ -404,7 +398,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task NoCtorWithParameterName()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using System;
@@ -444,7 +438,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task PrimaryConstructor()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
 
@@ -460,7 +454,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -478,7 +472,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -498,7 +492,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -516,7 +510,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -536,7 +530,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -554,7 +548,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -574,7 +568,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrEmpty_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -592,7 +586,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrEmpty_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -612,7 +606,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrWhiteSpace_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -630,7 +624,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrWhiteSpace_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -650,7 +644,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithValidParamNameArgument_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -668,7 +662,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithInvalidParamNameArgument_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -687,7 +681,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrEmpty_WithValidParamNameArgument_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -705,7 +699,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentException_ThrowIfNullOrEmpty_WithInvalidParamNameArgument_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -724,7 +718,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentOutOfRangeException_ThrowIfNegative_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -742,7 +736,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentOutOfRangeException_ThrowIfNegative_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -762,7 +756,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentOutOfRangeException_ThrowIfNegativeOrZero_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -780,7 +774,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentOutOfRangeException_ThrowIfGreaterThan_ValidParameter_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -798,7 +792,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentOutOfRangeException_ThrowIfGreaterThanOrEqual_InvalidParameter_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -818,7 +812,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithNullExpression_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -836,7 +830,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithNullExpressionAndValidParamName_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -854,7 +848,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithNullExpressionAndInvalidParamName_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -872,7 +866,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithBooleanExpression_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -891,7 +885,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithBooleanExpressionAndValidParamName_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -909,7 +903,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_WithBooleanExpressionAndInvalidParamName_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -928,7 +922,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_MemberAccess_OptionDisabled_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -947,7 +941,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_MemberAccess_OptionEnabled_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
         test.TestCode = """
             using System;
@@ -967,7 +961,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_DeepMemberAccess_OptionEnabled_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
         test.TestCode = """
             using System;
@@ -988,7 +982,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_MemberAccess_NonParameterRoot_OptionEnabled_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
         test.TestCode = """
             using System;
@@ -1009,7 +1003,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_ExplicitDottedParamName_OptionEnabled_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
         test.TestCode = """
             using System;
@@ -1029,7 +1023,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ThrowIfNull_ExplicitDottedParamName_OptionDisabled_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -1048,7 +1042,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNullException_Constructor_DottedParamName_OptionEnabled_ShouldNotReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestState.SetConfiguration("MA0015.consider_member_access_as_parameter", "true");
         test.TestCode = """
             using System;
@@ -1069,7 +1063,7 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     [Fact]
     public Task ArgumentNullException_Constructor_DottedParamName_OptionDisabled_ShouldReportError()
     {
-        var test = CreateTest();
+        var test = new AnalyzerTest();
         test.TestCode = """
             using System;
             class Sample
@@ -1081,6 +1075,86 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
                 }
             }
             class Request { public string? Definition { get; set; } }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseNameof_Property()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Sample
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException({|MA0043:"value"|}); }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                string Prop
+                {
+                    get { throw null; }
+                    set { throw new System.ArgumentNullException(nameof(value)); }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseNameof_Method()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Sample
+            {
+                string M(string arg0)
+                {
+                    throw new System.ArgumentNullException({|MA0043:"arg0"|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                string M(string arg0)
+                {
+                    throw new System.ArgumentNullException(nameof(arg0));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseNameof_Operator()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Sample
+            {
+                public static Sample operator +(Sample first, Sample second)
+                {
+                    throw new System.ArgumentNullException({|MA0043:"first"|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                public static Sample operator +(Sample first, Sample second)
+                {
+                    throw new System.ArgumentNullException(nameof(first));
+                }
+            }
             """;
 
         return test.RunAsync();

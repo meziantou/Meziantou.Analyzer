@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.MakeMethodStaticAnalyzer,
@@ -7,15 +5,13 @@ using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class MakeMethodStaticAnalyzerTests_Methods
+public sealed class MakeMethodStaticAnalyzerTests
 {
-    // This class covers MA0038 only, the way the original test filtered the diagnostics to that rule
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.MakePropertyStatic);
 
-        // MA0038 is reported by a compilation action, so the diagnostic is not local to the syntax tree,
+        // MA0038 and MA0041 are reported by a compilation action, so the diagnostics are not local to the syntax tree,
         // which the testing library rejects for a code fix by default
         test.CodeFixTestBehaviors = CodeFixTestBehaviors.SkipLocalDiagnosticCheck;
         return test;
@@ -631,6 +627,174 @@ public sealed class MakeMethodStaticAnalyzerTests_Methods
             partial class Test
             {
                 void Handler(object sender, System.EventArgs e) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_ExpressionBody()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int {|MA0041:A|} => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                static int A => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AccessInstanceProperty_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int A => TestProperty;
+
+                public int TestProperty { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AutoProperty_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int A { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AccessStaticProperty()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                public int {|MA0041:A|} => TestProperty;
+
+                public static int TestProperty => 0;
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                public static int A => TestProperty;
+
+                public static int TestProperty => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AccessStaticMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int {|MA0041:A|} => TestMethod();
+
+                public static int TestMethod() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AccessStaticField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int {|MA0041:A|} => _a;
+
+                static int _a;
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                static int A => _a;
+
+                static int _a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_AccessInstanceField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int A => _a;
+
+                public int _a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_ImplementAnInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass : ITest
+            {
+                public int A { get; }
+            }
+
+            interface ITest
+            {
+                int A { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_ExplicitlyImplementAnInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass : ITest
+            {
+                int ITest.A { get; }
+            }
+
+            interface ITest
+            {
+                int A { get; }
             }
             """;
 

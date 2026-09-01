@@ -1,25 +1,19 @@
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
+using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
+    Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextAnalyzer>;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextAnalyzer,
     Meziantou.Analyzer.Rules.DoNotUseBlockingCallInAsyncContextFixer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
+public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
 {
-    private static CodeFixTest CreateTest()
-    {
-        var test = new CodeFixTest();
-        test.DisabledDiagnostics.Add("MA0045");
-        return test;
-    }
-
     [Fact]
     public Task SemaphoreSlim_Wait_FieldTimeoutFromOtherSyntaxTree()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -45,7 +39,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Wait_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -73,7 +67,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task FixerShouldAddParentheses()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -107,7 +101,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task FixerKeepsGenericArgument()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Buz
@@ -153,7 +147,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Wait_Int32_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -171,7 +165,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Wait_CancellationToken_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -191,7 +185,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Wait_TimeSpan_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -211,7 +205,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Wait_Int32_CancellationToken_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -231,7 +225,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_Result_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -259,7 +253,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_ValueTask_Result_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -277,7 +271,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_ValueTask_GetAwaiter_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -295,7 +289,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_ThreadSleep_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -323,7 +317,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_ThreadSleep_TimeSpan_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -353,7 +347,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_SuggestOverload_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -374,7 +368,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_AsyncSuffix_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -395,7 +389,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Async_NoOverload_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -416,7 +410,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task AsyncLambda_Overload_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -437,7 +431,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task AsyncLocalFunction_Overload_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -460,7 +454,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task AsyncLocalFunction_Overload_ValueTask_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -484,7 +478,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/169")]
     public Task AsyncMethodWithAsyncOverload()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.IO;
@@ -510,7 +504,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Method_NoOverload_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -531,7 +525,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Method_NoOverloadWithSameParameters_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -552,7 +546,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Method_NonGenericOverloadWithGenericAwaitableOverload_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Runtime.CompilerServices;
             using System.Threading.Tasks;
@@ -585,7 +579,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Console_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             class Test
@@ -609,7 +603,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ProcessWaitForExit_NET5()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Threading.Tasks;
@@ -631,7 +625,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ProcessWaitForExit_NET6()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             using System.Diagnostics;
@@ -665,7 +659,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -692,7 +686,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_Diagnostic1()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -738,7 +732,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_Diagnostic1_WithComment()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -784,7 +778,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_Diagnostic2()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -830,7 +824,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_Diagnostic3()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -878,7 +872,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Using_Diagnostic4()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -907,7 +901,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExtensionMethod()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -963,7 +957,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_MultipleIncompatibleGenericArguments_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -990,7 +984,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExtensionMethod_GenericArgumentsIncompatible_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1021,7 +1015,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_ListToIEnumerable_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1048,7 +1042,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_NestedGenericIncompatibility_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1076,7 +1070,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_SameOriginalDefinitionButDifferentTypeParameterMapping_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1103,7 +1097,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_SingleGenericArgument_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1149,7 +1143,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExtensionMethod_GenericArgument_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1203,7 +1197,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_ArrayOfGenericArgument_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1247,7 +1241,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_AsyncConstraintIncompatible_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1275,7 +1269,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_InModifierDifference_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1302,7 +1296,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_RefMismatch_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1329,7 +1323,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_OutMismatch_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1359,7 +1353,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_NullLiteral_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1385,7 +1379,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_DefaultLiteral_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1411,7 +1405,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericConversion_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1437,7 +1431,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericWidening_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1481,7 +1475,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericNarrowing_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1507,7 +1501,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericToFloatingPoint_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1533,7 +1527,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericFloatingPointToInteger_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1559,7 +1553,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericInt64ToFloatingPoint_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1585,7 +1579,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericInt32ToFloatingPoint_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1611,7 +1605,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericByteToInt32_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1637,7 +1631,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericInt16ToInt32_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1663,7 +1657,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericSingleToDouble_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1689,7 +1683,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -1716,7 +1710,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitNumericHalfToDouble_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
@@ -1744,7 +1738,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_CompatibleGenericDefinitions_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1771,7 +1765,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_DifferentArity_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1798,7 +1792,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_ConstraintNewIncompatible_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1833,7 +1827,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericArgument_DifferentTypeConstraintsOrder_ShouldNotReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1865,7 +1859,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task GenericMethod_SameConstraints_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Collections.Generic;
             using System.Threading;
@@ -1897,7 +1891,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_ImplicitUserDefinedConversion_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1928,7 +1922,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExtensionMethodToInstanceMethod_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1958,7 +1952,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Argument_NamedArgumentsReordered_ShouldReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1984,7 +1978,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task CreateAsyncScope()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         test.TestCode = """
             using System;
@@ -2008,7 +2002,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task CreateAsyncScope_net5()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50.AddAspNetCore("5.0.0");
         test.TestCode = """
             using System;
@@ -2031,7 +2025,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task DbContext_Add()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2061,7 +2055,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/891")]
     public Task IDbContextFactory_CreateDbContext_NoReport()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2087,7 +2081,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteConnection_CreateCommand_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2109,7 +2103,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteConnection_Close_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2131,7 +2125,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteCommand_Prepare_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2153,7 +2147,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteConnection_CreateCommand_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
@@ -2176,7 +2170,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteConnection_Close_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
@@ -2199,7 +2193,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
@@ -2222,7 +2216,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteDataReader_Read_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2244,7 +2238,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task SqliteDataReader_Read_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
@@ -2267,7 +2261,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
     public Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
@@ -2291,7 +2285,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1333")]
     public Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
@@ -2312,7 +2306,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task IAsyncEnumerable()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Collections.Generic;
@@ -2335,7 +2329,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task IAsyncEnumerator()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Collections.Generic;
@@ -2358,7 +2352,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task AsyncMethodBuilder()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Collections.Generic;
@@ -2382,7 +2376,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TaskYieldResult()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -2391,7 +2385,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
             {
                 public System.Runtime.CompilerServices.YieldAwaitable A()
                 {
-                    Thread.Sleep(1);
+                    {|MA0045:Thread.Sleep(1)|};
                     throw null;
                 }
             }
@@ -2403,7 +2397,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TopLevelStatement()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.OutputKind = OutputKind.WindowsApplication;
         test.TestCode = """
             {|MA0042:System.Threading.Thread.Sleep(1)|};
@@ -2415,7 +2409,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TaskRunDelegate()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Collections.Generic;
@@ -2437,7 +2431,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task Moq_Raise()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddMoq();
         test.TestCode = """
             using System;
@@ -2459,7 +2453,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewMemoryStream()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """
             using var ms = new System.IO.MemoryStream();
@@ -2471,7 +2465,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_StreamSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.IO;
             using System.Threading.Tasks;
@@ -2507,7 +2501,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewStreamSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.IO;
             using System.Threading.Tasks;
@@ -2542,7 +2536,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -2562,7 +2556,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_FlowedZero_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -2583,7 +2577,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_TimeSpanZero_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Threading;
@@ -2604,7 +2598,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_NonZero_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -2624,7 +2618,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_NoArgs_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -2644,7 +2638,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task SemaphoreSlim_Wait_ZeroWithCancellationToken_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -2664,7 +2658,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2695,7 +2689,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnit();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2726,7 +2720,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -2757,7 +2751,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task TemporaryDirectory_InNonTestProject_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -2787,7 +2781,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -2822,7 +2816,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -2859,7 +2853,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbConnectionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -2897,7 +2891,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbConnectionSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -2933,7 +2927,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbConnectionSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -2971,7 +2965,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3010,7 +3004,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3051,7 +3045,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbCommandSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3093,7 +3087,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbCommandSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3133,7 +3127,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbCommandSubclass_DisposeAsyncOverriddenInIntermediateBase_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3175,7 +3169,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Threading.Tasks;
@@ -3195,7 +3189,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Threading.Tasks;
@@ -3217,7 +3211,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbDataReaderSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3240,7 +3234,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbDataReaderSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System;
             using System.Collections;
@@ -3301,7 +3295,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3330,7 +3324,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3361,7 +3355,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbTransactionSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3393,7 +3387,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbTransactionSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3426,7 +3420,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3466,7 +3460,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3508,7 +3502,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3551,7 +3545,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3595,7 +3589,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewTextWriterSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.IO;
             using System.Text;
@@ -3621,7 +3615,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingFactoryMethod_TextWriterSubclass_NoDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.IO;
             using System.Text;
@@ -3649,7 +3643,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task UsingNewTextWriterSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestCode = """
             using System.IO;
             using System.Text;
@@ -3679,7 +3673,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3700,7 +3694,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdProperty()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3721,7 +3715,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExcludeFromBlockingCallAnalysisAttribute_DoesNotAffectAwaitUsing()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System;
@@ -3749,7 +3743,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System;
@@ -3779,7 +3773,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System;
@@ -3807,7 +3801,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System;
@@ -3835,7 +3829,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3861,7 +3855,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_OpenGenericType_DoesNotAffectTaskWrappedAwaitSuggestion()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3887,7 +3881,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_DoesNotAffectOtherTypes()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3914,7 +3908,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System;
@@ -3944,7 +3938,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     [Fact]
     public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitSuggestion()
     {
-        var test = CreateTest();
+        var test = new CodeFixTest();
         test.TestState.AddMeziantouAnnotations();
         test.TestCode = """
             using System.Threading.Tasks;
@@ -3963,6 +3957,546 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
 
             class BaseResult { }
             class DerivedResult : BaseResult { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PublicNonAsync_Wait_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                public void A()
+                {
+                    Task.Delay(1).Wait();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PublicNonAsync_AsyncSuffix_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                public void A()
+                {
+                    Write();
+                }
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_Wait_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    {|MA0045:Task.Delay(1).Wait()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_AsyncSuffix()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    {|MA0045:Write()|};
+                }
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_AsyncSuffix_InLock()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    lock (this)
+                    {
+                        Write();
+                    }
+                }
+
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LambdaInLock()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    lock (this)
+                    {
+                        _ = Task.FromResult(0).ContinueWith(t => t.Result);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteConnection_CreateCommand_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteConnection connection)
+                {
+                    using var command = connection.CreateCommand();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteCommand_Prepare_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteCommand command)
+                {
+                    command.Prepare();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteConnection_Close_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteConnection connection)
+                {
+                    connection.Close();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteConnection_Close_OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteConnection connection)
+                {
+                    {|MA0045:connection.Close()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteCommand_Prepare_OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteCommand command)
+                {
+                    {|MA0045:command.Prepare()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteDataReader_Read_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteDataReader reader)
+                {
+                    reader.Read();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteDataReader_Read_OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteDataReader reader)
+                {
+                    {|MA0045:reader.Read()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+
+            class Test
+            {
+                private void A()
+                {
+                    using var transaction = CreateTransaction();
+                }
+
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:using var transaction = CreateTransaction();|}
+                }
+
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludeFromBlockingCallAnalysisAttribute_DocumentationIdMethod_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute("M:System.Threading.Tasks.Task.Wait")]
+
+            class Test
+            {
+                private void A()
+                {
+                    Task.Delay(1).Wait();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+
+            class Test
+            {
+                private void A()
+                {
+                    System.Threading.Thread.Sleep(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_OnlyMatchingOverload()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(System.Threading.Thread), "Sleep", typeof(int))]
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:System.Threading.Thread.Sleep(TimeSpan.FromSeconds(1))|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludeFromBlockingCallAnalysisAttribute_MethodSignature_DoesNotAffectAwaitUsing_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.ExcludeFromBlockingCallAnalysisAttribute(typeof(Test), "Create")]
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:using var value = Create();|}
+                }
+
+                private AsyncDisposable Create() => throw null;
+            }
+
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectAwaitUsing_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AsyncDisposable))]
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:using var value = new AsyncDisposable();|}
+                }
+            }
+
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAsyncDisposableTypeAttribute_DoesAffectAwaitUsing_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAsyncDisposableTypeAttribute(typeof(AsyncDisposable))]
+
+            class Test
+            {
+                private void A()
+                {
+                    using var value = new AsyncDisposable();
+                }
+            }
+
+            class AsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectTaskWrappedAwaitSuggestion_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(AwaitResult))]
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:Create()|};
+                }
+
+                private AwaitResult Create() => throw null;
+                private Task<AwaitResult> CreateAsync() => throw null;
+            }
+
+            class AwaitResult { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonAwaitableTypeAttribute_DoesNotAffectDerivedType_AwaitUsing_NonAsyncContext()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            [assembly: Meziantou.Analyzer.Annotations.NonAwaitableTypeAttribute(typeof(BaseAsyncDisposable))]
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:using var value = new DerivedAsyncDisposable();|}
+                }
+            }
+
+            class BaseAsyncDisposable : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() { }
+                public ValueTask DisposeAsync() => default;
+            }
+
+            class DerivedAsyncDisposable : BaseAsyncDisposable { }
             """;
 
         return test.RunAsync();
