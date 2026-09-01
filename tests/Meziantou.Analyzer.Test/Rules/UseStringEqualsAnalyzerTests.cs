@@ -186,7 +186,7 @@ public sealed class UseStringEqualsAnalyzerTests
     public Task Replace_Meziantou_Framework_EqualsOrdinal()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework", "3.0.23")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMeziantouFramework();
         test.TestCode = """
             class TypeName
             {
@@ -197,7 +197,6 @@ public sealed class UseStringEqualsAnalyzerTests
             }
             """;
         test.CodeActionIndex = 2;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             using Meziantou.Framework;
 
@@ -217,7 +216,7 @@ public sealed class UseStringEqualsAnalyzerTests
     public Task Replace_Meziantou_Framework_EqualsIgnoreCase()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework", "3.0.23")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMeziantouFramework();
         test.TestCode = """
             class TypeName
             {
@@ -228,7 +227,6 @@ public sealed class UseStringEqualsAnalyzerTests
             }
             """;
         test.CodeActionIndex = 3;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             using Meziantou.Framework;
 

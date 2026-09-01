@@ -617,8 +617,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         var test = CreateTest();
         // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             using System.Text;
             class Test
@@ -648,8 +648,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         var test = CreateTest();
         // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             using System.Text;
             class Test
@@ -735,7 +735,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         var test = CreateTest();
         // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.TestCode = """
             using System.Text;
             class Test
@@ -1020,8 +1019,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     {
         var test = CreateTest();
         // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             using System.Text;
             class Test

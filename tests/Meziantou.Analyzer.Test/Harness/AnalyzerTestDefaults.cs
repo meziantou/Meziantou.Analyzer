@@ -20,7 +20,7 @@ internal static class AnalyzerTestDefaults
 
     /// <summary>
     /// The version of the .NET packages the tests reference by default, shared by the runtime reference assemblies
-    /// and the packages shipped with them, such as the one of <see cref="ReferenceAssembliesExtensions.AddAspNetCore(ReferenceAssemblies)"/>.
+    /// and the packages shipped with them, such as the one of <see cref="ReferenceAssembliesExtensions.AddAspNetCore(ReferenceAssemblies, string)"/>.
     /// </summary>
     public const string DotNetVersion = "11.0.0-preview.7.26381.103";
 

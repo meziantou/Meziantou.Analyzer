@@ -327,7 +327,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
             }
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted"));
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             class Test : ControllerBase
             {
@@ -386,7 +385,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: MyCancellationToken, Context.RequestAborted"));
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             class Test : ControllerBase
             {
@@ -1254,7 +1252,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("xunit.abstractions", "2.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV2();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
@@ -1276,7 +1274,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("xunit.v3.extensibility.core", "1.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;

@@ -12,7 +12,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard21;
         test.DisabledDiagnostics.Add("MA0045");
         return test;
     }
@@ -486,7 +485,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task AsyncMethodWithAsyncOverload()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSystemTextJson();
         test.TestCode = """
             using System;
             using System.IO;
@@ -612,6 +610,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task ProcessWaitForExit_NET5()
     {
         var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net50;
         test.TestCode = """
             using System.Threading.Tasks;
             using System.Diagnostics;
@@ -633,7 +632,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task ProcessWaitForExit_NET6()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System.Threading.Tasks;
             using System.Diagnostics;
@@ -1692,7 +1690,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
         test.TestCode = """
             using System;
             using System.Threading;
@@ -1988,7 +1985,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task CreateAsyncScope()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60.AddAspNetCore("6.0.10");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddAspNetCore();
         test.TestCode = """
             using System;
             using System.Threading.Tasks;
@@ -2035,8 +2032,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbContext_Add()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.EntityFrameworkCore;
@@ -2066,8 +2062,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task IDbContextFactory_CreateDbContext_NoReport()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.EntityFrameworkCore", "6.0.8"), new PackageIdentity("Microsoft.EntityFrameworkCore.Abstractions", "6.0.8")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddEntityFrameworkCore();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.EntityFrameworkCore;
@@ -2093,7 +2088,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteConnection_CreateCommand_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2115,7 +2110,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteConnection_Close_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2137,7 +2132,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteCommand_Prepare_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2160,7 +2155,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2183,7 +2178,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2206,7 +2201,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2228,7 +2223,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task SqliteDataReader_Read_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2251,7 +2246,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0042.enable_sqlite_special_cases", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Threading.Tasks;
             using Microsoft.Data.Sqlite;
@@ -2273,7 +2268,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbConnectionAssignedFromSqliteConnection_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
             using System.Threading.Tasks;
@@ -2297,7 +2292,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task DbConnectionNotAssignedFromSqliteConnection_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Data.Sqlite.Core", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
         test.TestCode = """
             using System.Data.Common;
             using System.Threading.Tasks;
@@ -2443,7 +2438,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task Moq_Raise()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Moq", "4.20.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMoq();
         test.TestCode = """
             using System;
             using Moq;
@@ -2670,7 +2665,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithXunit_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -2701,7 +2696,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithNUnit_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnit();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -2732,7 +2727,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task TemporaryDirectory_InTestProject_WithMSTest_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             using System.Threading.Tasks;
             using Meziantou.Framework;
@@ -3432,7 +3427,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingNewDbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3473,7 +3467,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;
@@ -3516,7 +3509,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingFactoryMethod_DbBatchSubclass_NoDisposeAsyncOverride_OptionDisabled_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestState.SetConfiguration("MA0042.enable_db_special_cases", "false");
         test.TestCode = """
             using System.Data;
@@ -3560,7 +3552,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer_AsyncContextTests
     public Task UsingNewDbBatchSubclass_WithDisposeAsyncOverride_Diagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
         test.TestCode = """
             using System.Data;
             using System.Data.Common;

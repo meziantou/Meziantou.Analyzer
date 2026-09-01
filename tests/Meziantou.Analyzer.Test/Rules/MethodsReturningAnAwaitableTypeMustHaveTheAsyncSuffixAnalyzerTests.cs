@@ -294,7 +294,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     public Task IgnoreTestMethods()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TypeName
             {
@@ -383,7 +383,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0137.exclude_test_methods", "true");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TypeName
             {
@@ -400,7 +400,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0137.exclude_test_methods", "false");
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TypeName
             {

@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.ILoggerParameterTypeShouldMatchContainingTypeAnalyzer,
     Meziantou.Analyzer.Rules.ILoggerParameterTypeShouldMatchContainingTypeFixer>;
@@ -12,7 +11,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzerTests
     private static CodeFixTest CreateTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Microsoft.Extensions.Logging.Abstractions", "8.0.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddLoggingAbstractions();
         return test;
     }
 

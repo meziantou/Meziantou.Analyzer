@@ -25,7 +25,7 @@ public sealed class UseStringComparerAnalyzerTests
     private static CodeFixTest CreateMSTestTest()
     {
         var test = new CodeFixTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("MSTest.TestFramework", "4.3.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         return test;
     }
 
@@ -785,7 +785,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ImmutableDictionary_CreateBuilder_String_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestCode = """
             class TypeName
             {
@@ -803,7 +802,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ImmutableDictionary_CreateBuilder_String_WithComparer_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestCode = """
             class TypeName
             {
@@ -821,7 +819,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ImmutableDictionary_Create_String_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestCode = """
             class TypeName
             {
@@ -892,7 +889,7 @@ public sealed class UseStringComparerAnalyzerTests
     public Task MeziantouFrameworkAssertions_Assert_WithoutComparerOverload_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework.Assertions", "2.0.1")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMeziantouFrameworkAssertions();
         test.TestCode = """
             class TypeName
             {
@@ -1005,7 +1002,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ReportOnlyNonOrdinal_ImmutableDictionaryCreateBuilder_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -1024,7 +1020,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ReportOnlyNonOrdinal_ImmutableDictionaryCreate_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
         test.TestCode = """
             class TypeName
@@ -1043,7 +1038,6 @@ public sealed class UseStringComparerAnalyzerTests
     public Task ReportOnlyNonOrdinal_ImmutableSortedDictionaryCreate_ShouldReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf.AddPackages([new PackageIdentity("System.Collections.Immutable", "8.0.0")]);
         test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
         test.TestCode = """
             class TypeName

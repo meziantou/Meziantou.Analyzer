@@ -331,7 +331,7 @@ public sealed class UseStringComparisonAnalyzerNonCultureSensitiveTests
     public Task MeziantouFrameworkAssertions_Assert_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Meziantou.Framework.Assertions", "2.0.1")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMeziantouFrameworkAssertions();
         test.TestCode = """
             class TypeName
             {

@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
     Meziantou.Analyzer.Rules.LoggerParameterTypeAnalyzer>;
 
@@ -11,7 +10,7 @@ public sealed class LoggerParameterTypeAnalyzer_SerilogTests
     private static AnalyzerTest CreateTest()
     {
         var test = new AnalyzerTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Serilog", "3.1.1")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSerilog();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         return test;
     }

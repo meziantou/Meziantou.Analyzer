@@ -1055,7 +1055,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     public Task InternalClassUsedByNewtonsoftJsonSerializer_NoDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("Newtonsoft.Json", "13.0.3")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNewtonsoftJson();
         test.TestCode = """
             using Newtonsoft.Json;
 
@@ -1083,7 +1083,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     {
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("YamlDotNet", "16.3.0")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddYamlDotNet();
         test.TestCode = """
             using YamlDotNet.Serialization;
 
@@ -2248,8 +2248,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
 
         return test.RunAsync();
     }
@@ -2270,7 +2270,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
 
             public class UsedClass
@@ -2296,7 +2295,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             public class OuterClass
             {
@@ -2320,8 +2318,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
 
         return test.RunAsync();
     }
@@ -2334,8 +2332,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             internal record struct {|MA0182:UnusedRecordStruct|}(int Value);
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
 
         return test.RunAsync();
     }
@@ -2381,8 +2379,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
 
         return test.RunAsync();
     }
@@ -2403,8 +2401,8 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
 
         return test.RunAsync();
     }
@@ -2422,7 +2420,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
             }
             """;
         test.CodeActionIndex = 1;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne | CodeFixTestBehaviors.SkipFixAllCheck;
         test.FixedCode = """
             [assembly: System.Reflection.AssemblyVersion("1.0.0.0")]
 

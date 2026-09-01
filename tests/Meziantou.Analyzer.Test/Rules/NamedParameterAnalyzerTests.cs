@@ -1,6 +1,5 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.NamedParameterAnalyzer,
     Meziantou.Analyzer.Rules.NamedParameterFixer>;
@@ -502,11 +501,11 @@ public sealed class NamedParameterAnalyzerTests
     public Task MSTestAssert_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTestApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddMSTest();
         test.TestCode = """
             class TypeName
             {
-                public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, true);
+                public void Test() => Microsoft.VisualStudio.TestTools.UnitTesting.Assert.AreEqual(null, "dummy");
             }
             """;
 
@@ -517,11 +516,11 @@ public sealed class NamedParameterAnalyzerTests
     public Task NunitAssert_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddNUnit();
         test.TestCode = """
             class TypeName
             {
-                public void Test() => NUnit.Framework.Assert.AreEqual(null, true);
+                public void Test() => NUnit.Framework.Assert.That(true, NUnit.Framework.Is.True);
             }
             """;
 
@@ -532,7 +531,7 @@ public sealed class NamedParameterAnalyzerTests
     public Task XunitAssert_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXUnitApi();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
         test.TestCode = """
             class TypeName
             {

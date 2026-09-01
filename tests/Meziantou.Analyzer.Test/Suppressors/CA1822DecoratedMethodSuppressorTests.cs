@@ -47,7 +47,7 @@ public sealed class CA1822DecoratedMethodSuppressorTests
     public Task CA1822IsSuppressOnBenchmarkAttributeMethods()
     {
         var test = CreateTest();
-        test.ReferenceAssemblies = test.ReferenceAssemblies.AddPackages([new PackageIdentity("BenchmarkDotNet.Annotations", "0.13.5")]);
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddBenchmarkDotNet();
         test.TestCode = """
             internal class A
             {
