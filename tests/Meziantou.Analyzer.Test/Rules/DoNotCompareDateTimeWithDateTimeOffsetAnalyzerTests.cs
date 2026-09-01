@@ -4,12 +4,11 @@ using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests_MA0133
+public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests
 {
     private static AnalyzerTest CreateTest()
     {
         var test = new AnalyzerTest();
-        test.DisabledDiagnostics.Add(RuleIdentifiers.DoNotImplicitlyConvertDateTimeToDateTimeOffset);
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         return test;
     }
@@ -22,6 +21,32 @@ public class DoNotCompareDateTimeWithDateTimeOffsetAnalyzerTests_MA0133
             using System;
 
             _ = {|MA0133:DateTime.UtcNow|} - DateTimeOffset.UtcNow;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitConversion_BinaryOperation_Subtract()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            _ = {|MA0132:default(DateTime)|} - DateTimeOffset.UtcNow;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitConversion_BinaryOperation_Subtract()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            _ = (DateTimeOffset)default(DateTime) - DateTimeOffset.UtcNow;
             """;
 
         return test.RunAsync();
