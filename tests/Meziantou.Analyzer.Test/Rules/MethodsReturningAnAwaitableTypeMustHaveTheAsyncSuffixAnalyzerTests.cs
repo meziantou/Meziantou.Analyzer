@@ -228,10 +228,11 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     [Fact]
     public Task IAsyncEnumerableWithoutSuffix_CodeFix_AddsAsyncSuffix()
     {
-        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
         var test = CreateTest();
-        test.DisabledDiagnostics.Add("MA0137");
-        test.DisabledDiagnostics.Add("MA0157");
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both,
+        // so applying this fix reveals the other rule and the test asserts a single application
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             class TypeName
             {
@@ -242,7 +243,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         test.FixedCode = """
             class TypeName
             {
-                System.Collections.Generic.IAsyncEnumerable<int> FooAsync() => throw null;
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0157:FooAsync|}() => throw null;
                 void Caller() { _ = FooAsync(); }
             }
             """;
@@ -268,10 +269,11 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     [Fact]
     public Task IAsyncEnumerableWithSuffix_CodeFix_RemovesAsyncSuffix()
     {
-        // MA0156 and MA0157 contradict each other, a project enables one of them, not both
         var test = CreateTest();
-        test.DisabledDiagnostics.Add("MA0137");
-        test.DisabledDiagnostics.Add("MA0156");
+        // MA0156 and MA0157 contradict each other, a project enables one of them, not both,
+        // so applying this fix reveals the other rule and the test asserts a single application
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             class TypeName
             {
@@ -282,7 +284,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         test.FixedCode = """
             class TypeName
             {
-                System.Collections.Generic.IAsyncEnumerable<int> Foo() => throw null;
+                System.Collections.Generic.IAsyncEnumerable<int> {|MA0156:Foo|}() => throw null;
                 void Caller() { _ = Foo(); }
             }
             """;
