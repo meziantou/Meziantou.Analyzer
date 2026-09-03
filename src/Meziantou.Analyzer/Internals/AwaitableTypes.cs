@@ -206,6 +206,40 @@ internal sealed class AwaitableTypes
         return false;
     }
 
+    /// <summary>
+    /// Determines whether the operation always produces an already-completed task, such as
+    /// <c>Task.CompletedTask</c>, <c>Task.FromResult(value)</c> or <c>new ValueTask&lt;T&gt;(value)</c>.
+    /// Awaiting such a task does not introduce any asynchrony.
+    /// </summary>
+    public bool IsCompletedTask(IOperation operation)
+    {
+        while (operation is IConversionOperation conversion)
+        {
+            operation = conversion.Operand;
+        }
+
+        // Task.CompletedTask, ValueTask.CompletedTask
+        if (operation is IPropertyReferenceOperation propertyReference)
+            return propertyReference.Property.Name is nameof(Task.CompletedTask) && propertyReference.Property.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol);
+
+        // Task.FromResult, Task.FromCanceled, Task.FromException and their ValueTask counterparts
+        if (operation is IInvocationOperation invocation)
+            return invocation.TargetMethod.Name is nameof(Task.FromResult) or nameof(Task.FromCanceled) or nameof(Task.FromException) && invocation.TargetMethod.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol);
+
+        if (operation is IObjectCreationOperation objectCreation && objectCreation.Type is INamedTypeSymbol type)
+        {
+            // new ValueTask()
+            if (type.OriginalDefinition.IsEqualTo(ValueTaskSymbol) && objectCreation.Arguments.Length == 0)
+                return true;
+
+            // new ValueTask<T>(T value)
+            if (type.OriginalDefinition.IsEqualTo(ValueTaskOfTSymbol) && objectCreation.Arguments is [{ Parameter: { } parameter }] && parameter.Type.IsEqualTo(type.TypeArguments[0]))
+                return true;
+        }
+
+        return false;
+    }
+
     public bool IsAsyncBuildableAndNotVoid(ITypeSymbol? symbol)
     {
         if (symbol is null)

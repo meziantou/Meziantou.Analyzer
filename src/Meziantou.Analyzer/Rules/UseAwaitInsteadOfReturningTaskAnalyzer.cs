@@ -72,7 +72,7 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
         var returns = new List<IReturnOperation>();
         CollectReturns(functionOperation, returns);
 
-        var hasValueToAwait = false;
+        var hasTaskWorthAwaiting = false;
         foreach (var returnOperation in returns)
         {
             if (returnOperation.ReturnedValue is null)
@@ -100,10 +100,16 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
             if (IsInProtectedContext(returnOperation.Syntax, functionOperation.Syntax))
                 return;
 
-            hasValueToAwait = true;
+            // Awaiting an already-completed task (Task.CompletedTask, Task.FromResult(value), ...) does not
+            // bring any benefit. Functions whose returns are all synchronous, such as the ones implementing an
+            // asynchronous interface synchronously, are not reported.
+            if (!awaitableTypes.IsCompletedTask(unwrappedValue))
+            {
+                hasTaskWorthAwaiting = true;
+            }
         }
 
-        if (!hasValueToAwait)
+        if (!hasTaskWorthAwaiting)
             return;
 
         foreach (var returnOperation in returns)

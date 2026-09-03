@@ -767,4 +767,165 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task CompletedTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A() => Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskFromResult_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<bool> A() => Task.FromResult(false);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskFromException_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A() => Task.FromException(new Exception());
+                Task<int> B() => Task.FromCanceled<int>(default);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValueTaskCompletedTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                ValueTask A() => ValueTask.CompletedTask;
+                ValueTask<int> B() => ValueTask.FromResult(0);
+                ValueTask C() => new ValueTask();
+                ValueTask<int> D() => new ValueTask<int>(0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CompletedTaskConvertedToTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A() => Task.FromResult(0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultipleReturns_AllCompletedTasks_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> A(bool condition)
+                {
+                    if (condition)
+                        return Task.FromResult(0);
+
+                    return Task.FromResult(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultipleReturns_MixedCompletedTaskAndTask()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> A(bool condition)
+                {
+                    if (condition)
+                        return {|MA0214:Inner()|};
+
+                    return {|MA0214:Task.FromResult(0)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> A(bool condition)
+                {
+                    if (condition)
+                        return await Inner();
+
+                    return await Task.FromResult(0);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CompletedTaskFromAnotherType_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task CompletedTask => throw null;
+                Task A() => {|MA0214:CompletedTask|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task CompletedTask => throw null;
+                async Task A() => await CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
