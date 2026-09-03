@@ -31,10 +31,6 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
     {
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
 
-        public INamedTypeSymbol? TaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        public INamedTypeSymbol? TaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        public INamedTypeSymbol? ValueTaskSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-        public INamedTypeSymbol? ValueTaskOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
         public INamedTypeSymbol? AsyncFlowControlSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.AsyncFlowControl");
 
         public void AnalyzeReturn(OperationAnalysisContext context)
@@ -145,46 +141,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (operation.ConstantValue.HasValue && operation.ConstantValue.Value is null)
                 return false;
 
-            // Task.CompletedTask
-            if (operation.Kind == OperationKind.PropertyReference)
-            {
-                var prop = (IPropertyReferenceOperation)operation;
-                if (prop.Property.Name == nameof(Task.CompletedTask) && prop.Property.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol))
-                    return false;
-            }
-
-            // Task.FromResult, Task.FromCanceled, FromException
-            if (operation.Kind == OperationKind.Invocation)
-            {
-                var invocation = (IInvocationOperation)operation;
-                if (invocation.TargetMethod.Name is nameof(Task.FromResult) or nameof(Task.FromCanceled) or nameof(Task.FromException) &&
-                    invocation.TargetMethod.ContainingType.IsEqualToAny(TaskSymbol, ValueTaskSymbol))
-                {
-                    return false;
-                }
-            }
-
-            if (operation.Kind == OperationKind.ObjectCreation)
-            {
-                var create = (IObjectCreationOperation)operation;
-                if (create.Type is not null)
-                {
-                    // new ValueTask()
-                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskSymbol) && create.Arguments.Length == 0)
-                        return false;
-
-                    // new ValueTask<T>(T value)
-                    if (create.Type.OriginalDefinition.IsEqualTo(ValueTaskOfTSymbol) &&
-                        create.Arguments.Length == 1 &&
-                        create.Arguments[0].Parameter is { } firstParameter &&
-                        firstParameter.Type.IsEqualTo(((INamedTypeSymbol?)create.Type)?.TypeArguments[0]))
-                    {
-                        return false;
-                    }
-                }
-            }
-
-            return true;
+            return !_awaitableTypes.IsCompletedTask(operation);
         }
     }
 }
