@@ -187,7 +187,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
             combinedPattern = candidates.Count > 1 ? UnaryPattern(ParenthesizedPattern(combinedPattern)) : UnaryPattern(combinedPattern);
         }
 
-        return IsPatternExpression(candidates[0].Expression.Parentheses(), combinedPattern);
+        return IsPatternExpression(candidates[0].Expression.Parenthesize(), combinedPattern);
     }
 
     private static bool TryCreateDiscreteComparisonCandidate(ExpressionSyntax expression, BinaryOperatorKind expectedComparisonOperatorKind, SemanticModel semanticModel, CancellationToken cancellationToken, out DiscreteComparisonCandidate candidate)
@@ -258,7 +258,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
             constantPattern = UnaryPattern(constantPattern);
         }
 
-        updatedExpression = IsPatternExpression(valueExpression.Parentheses(), constantPattern);
+        updatedExpression = IsPatternExpression(valueExpression.Parenthesize(), constantPattern);
         return true;
     }
 
@@ -274,7 +274,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
             constantPattern = UnaryPattern(constantPattern);
         }
 
-        updatedExpression = IsPatternExpression(expression.Parentheses(), constantPattern);
+        updatedExpression = IsPatternExpression(expression.Parenthesize(), constantPattern);
         return true;
     }
 

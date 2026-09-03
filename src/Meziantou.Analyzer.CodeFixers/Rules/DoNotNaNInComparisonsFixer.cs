@@ -106,7 +106,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             otherOperand.Syntax);
 
         replacement = binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals
-            ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, isNaNInvocation.Parentheses())
+            ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, isNaNInvocation.Parenthesize())
             : isNaNInvocation;
 
         return true;

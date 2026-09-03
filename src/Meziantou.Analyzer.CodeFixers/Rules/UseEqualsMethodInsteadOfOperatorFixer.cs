@@ -60,7 +60,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorFixer : CodeFixProvider
 
         if (operation.OperatorKind is BinaryOperatorKind.NotEquals)
         {
-            newExpression = PrefixUnaryExpression(Microsoft.CodeAnalysis.CSharp.SyntaxKind.LogicalNotExpression, (ExpressionSyntax)newExpression.Parentheses());
+            newExpression = PrefixUnaryExpression(Microsoft.CodeAnalysis.CSharp.SyntaxKind.LogicalNotExpression, newExpression.Parenthesize());
         }
 
         editor.ReplaceNode(binaryExpression, newExpression.WithTriviaFrom(binaryExpression).WithAdditionalAnnotations(Formatter.Annotation));

@@ -271,7 +271,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         AddMissingOperator("op_GreaterThan", ">", BinaryExpression(SyntaxKind.GreaterThanExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
         AddMissingOperator("op_GreaterThanOrEqual", ">=", BinaryExpression(SyntaxKind.GreaterThanOrEqualExpression, CreateComparerComparisonExpression(), LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(0))));
         AddMissingOperator("op_Equality", "==", CreateEqualityComparerExpression());
-        AddMissingOperator("op_Inequality", "!=", PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CreateEqualityComparerExpression().Parentheses()));
+        AddMissingOperator("op_Inequality", "!=", PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, CreateEqualityComparerExpression().Parenthesize()));
 
         return editor.GetChangedDocument();
 
