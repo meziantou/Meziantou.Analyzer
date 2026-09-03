@@ -49,9 +49,9 @@ public sealed class SimplifyNegatedBooleanExpressionFixer : CodeFixProvider
 
         var newExpression = BinaryExpression(
             GetExpressionSyntaxKind(SimplifyNegatedBooleanExpressionCommon.GetOppositeConditionalOperatorKind(binaryOperation.OperatorKind)),
-            left.Parentheses(),
+            left.Parenthesize(),
             Token(GetOperatorTokenSyntaxKind(SimplifyNegatedBooleanExpressionCommon.GetOppositeConditionalOperatorKind(binaryOperation.OperatorKind))),
-            right.Parentheses());
+            right.Parenthesize());
 
         var replacement = ParenthesizedExpression(newExpression)
             .WithTriviaFrom(operation.Syntax)
@@ -109,7 +109,7 @@ public sealed class SimplifyNegatedBooleanExpressionFixer : CodeFixProvider
         if (operation.Syntax is not ExpressionSyntax expression)
             return null;
 
-        return PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, expression.WithoutTrivia().Parentheses());
+        return PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, expression.WithoutTrivia().Parenthesize());
     }
 
     private static bool TryGetOperationToFix(SemanticModel semanticModel, SyntaxNode node, SimplifyNegatedBooleanExpressionCommon common, CancellationToken cancellationToken, out IUnaryOperation operation)

@@ -188,7 +188,7 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
                 ParenthesizePatternIfNeeded(mergeCandidates[i].Pattern, binaryPatternKind));
         }
 
-        return IsPatternExpression(mergeCandidates[0].Expression.Parentheses(), mergedPattern);
+        return IsPatternExpression(mergeCandidates[0].Expression.Parenthesize(), mergedPattern);
     }
 
     private static PatternSyntax ParenthesizePatternIfNeeded(PatternSyntax pattern, SyntaxKind parentPatternKind)

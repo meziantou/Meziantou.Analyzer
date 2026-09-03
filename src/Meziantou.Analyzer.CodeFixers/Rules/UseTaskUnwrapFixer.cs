@@ -48,7 +48,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             var unwrappedExpression = InvocationExpression(
                 MemberAccessExpression(
                     Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    (ExpressionSyntax)((ExpressionSyntax)innerAwait.Operation.Syntax.WithoutTrivia()).Parentheses(),
+                    (ExpressionSyntax)innerAwait.Operation.Syntax.WithoutTrivia().Parenthesize(),
                     IdentifierName("Unwrap")));
 
             var newNode = awaitExpression.WithExpression(unwrappedExpression.WithTriviaFrom(awaitExpression.Expression));
@@ -63,7 +63,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             var unwrappedExpression = InvocationExpression(
                 MemberAccessExpression(
                     Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    (ExpressionSyntax)((ExpressionSyntax)innerAwaitOperation.Operation.Syntax.WithoutTrivia()).Parentheses(),
+                    (ExpressionSyntax)innerAwaitOperation.Operation.Syntax.WithoutTrivia().Parenthesize(),
                     IdentifierName("Unwrap")));
 
             var newExpression = invocation.WithExpression(memberAccess.WithExpression(unwrappedExpression.WithTriviaFrom(memberAccess.Expression)));

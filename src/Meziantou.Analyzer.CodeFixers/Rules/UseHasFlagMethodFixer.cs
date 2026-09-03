@@ -47,7 +47,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
             return document;
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var target = AddParenthesesIfNeeded(pattern.EnumValueExpression.WithoutTrivia());
+        var target = pattern.EnumValueExpression.WithoutTrivia().Parenthesize();
 
         var replacementNode = InvocationExpression(
             MemberAccessExpression(SyntaxKind.SimpleMemberAccessExpression, target, IdentifierName(nameof(Enum.HasFlag))),
@@ -61,22 +61,6 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
         editor.ReplaceNode(pattern.OperationExpression, updatedNode.WithTriviaFrom(pattern.OperationExpression).WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
-    }
-
-    private static ExpressionSyntax AddParenthesesIfNeeded(ExpressionSyntax expression)
-    {
-        return expression switch
-        {
-            IdentifierNameSyntax => expression,
-            GenericNameSyntax => expression,
-            ThisExpressionSyntax => expression,
-            BaseExpressionSyntax => expression,
-            MemberAccessExpressionSyntax => expression,
-            InvocationExpressionSyntax => expression,
-            ElementAccessExpressionSyntax => expression,
-            ParenthesizedExpressionSyntax => expression,
-            _ => expression.Parentheses(),
-        };
     }
 
     private static bool TryGetHasFlagPattern(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken, [NotNullWhen(true)] out HasFlagPattern? pattern)

@@ -50,7 +50,7 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
         {
             // The operand may bind less tightly than '!' (e.g. "o is string" or "a < b"), so it must be parenthesized.
             // The Simplifier annotation removes the parentheses when they are redundant.
-            var operand = nodeToKeep is ParenthesizedExpressionSyntax parenthesizedExpression ? parenthesizedExpression : ((ExpressionSyntax)nodeToKeep).Parentheses();
+            var operand = nodeToKeep is ParenthesizedExpressionSyntax parenthesizedExpression ? parenthesizedExpression : ((ExpressionSyntax)nodeToKeep).Parenthesize();
             nodeToKeep = PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, operand);
         }
 

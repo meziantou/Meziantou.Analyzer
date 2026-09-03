@@ -81,7 +81,7 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
 
     private static AwaitExpressionSyntax MakeAwait(ExpressionSyntax expression)
     {
-        var operand = ((ExpressionSyntax)expression.WithoutTrivia()).Parentheses();
+        var operand = expression.WithoutTrivia().Parenthesize();
         return AwaitExpression(Token(SyntaxKind.AwaitKeyword).WithTrailingTrivia(Space), operand).WithTriviaFrom(expression);
     }
 

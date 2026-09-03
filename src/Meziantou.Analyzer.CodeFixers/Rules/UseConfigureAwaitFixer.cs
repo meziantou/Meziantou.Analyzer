@@ -47,9 +47,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
                 var collection = foreachSyntax.Expression;
                 var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                       generator.MemberAccessExpression(collection.Parentheses(), nameof(Task.ConfigureAwait)),
+                       generator.MemberAccessExpression(collection.Parenthesize(), nameof(Task.ConfigureAwait)),
                        generator.LiteralExpression(value))
-                       .Parentheses();
+                       .Parenthesize();
 
                 var newForeachSyntax = foreachSyntax.WithExpression(newExpression);
 
@@ -66,9 +66,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 if (expression is not null)
                 {
                     var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                           generator.MemberAccessExpression(expression.Parentheses(), nameof(Task.ConfigureAwait)),
+                           generator.MemberAccessExpression(expression.Parenthesize(), nameof(Task.ConfigureAwait)),
                            generator.LiteralExpression(value))
-                           .Parentheses();
+                           .Parenthesize();
 
                     var newSyntax = usingSyntax.WithExpression(newExpression);
                     editor.ReplaceNode(usingSyntax, newSyntax);
@@ -83,9 +83,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             if (awaitSyntax.Expression is not null)
             {
                 var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                    generator.MemberAccessExpression(awaitSyntax.Expression.Parentheses(), nameof(Task.ConfigureAwait)),
+                    generator.MemberAccessExpression(awaitSyntax.Expression.Parenthesize(), nameof(Task.ConfigureAwait)),
                     generator.LiteralExpression(value))
-                    .Parentheses();
+                    .Parenthesize();
 
                 var newInvokeExpression = awaitSyntax.WithExpression(newExpression);
 
@@ -232,7 +232,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             return (ExpressionSyntax)generator.InvocationExpression(
                 generator.MemberAccessExpression(expressionSyntax, nameof(Task.ConfigureAwait)),
-                generator.LiteralExpression(value)).Parentheses();
+                generator.LiteralExpression(value)).Parenthesize();
         }
     }
 }

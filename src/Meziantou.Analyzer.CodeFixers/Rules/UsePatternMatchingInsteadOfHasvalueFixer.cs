@@ -91,6 +91,6 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
             constantExpression = UnaryPattern(constantExpression);
         }
 
-        return IsPatternExpression(instance.Parentheses(), constantExpression);
+        return IsPatternExpression(instance.Parenthesize(), constantExpression);
     }
 }

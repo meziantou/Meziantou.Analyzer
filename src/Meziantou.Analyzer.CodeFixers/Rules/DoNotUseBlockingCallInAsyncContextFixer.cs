@@ -138,7 +138,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             _ => generator.IdentifierName(methodName),
         };
         var newNode = nodeToFix.ReplaceNode(nodeToReplace, newMethodName);
-        var newExpression = generator.AwaitExpression(newNode).Parentheses();
+        var newExpression = generator.AwaitExpression(newNode).Parenthesize();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -150,7 +150,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var expr = ((MemberAccessExpressionSyntax)nodeToFix).Expression;
-        var newExpression = generator.AwaitExpression(expr).Parentheses();
+        var newExpression = generator.AwaitExpression(expr).Parenthesize();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -163,7 +163,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var expr = (invocation.Expression as MemberAccessExpressionSyntax)!.Expression;
-        var newExpression = generator.AwaitExpression(expr).Parentheses();
+        var newExpression = generator.AwaitExpression(expr).Parenthesize();
         editor.ReplaceNode(nodeToFix, newExpression);
 
         return editor.GetChangedDocument();
@@ -177,7 +177,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         var invocation = (InvocationExpressionSyntax)nodeToFix;
         var delay = invocation.ArgumentList.Arguments[0].Expression;
 
-        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.MemberAccessExpression(generator.TypeExpression(taskSymbol), "Delay"), delay)).Parentheses();
+        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.MemberAccessExpression(generator.TypeExpression(taskSymbol), "Delay"), delay)).Parenthesize();
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }
