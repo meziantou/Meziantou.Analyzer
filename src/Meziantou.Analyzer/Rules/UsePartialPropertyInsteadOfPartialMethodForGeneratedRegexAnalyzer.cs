@@ -11,14 +11,15 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UsePartialPropertyInsteadOfPartialMethodForGeneratedRegex));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UsePartialPropertyInsteadOfPartialMethodForGeneratedRegex),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {

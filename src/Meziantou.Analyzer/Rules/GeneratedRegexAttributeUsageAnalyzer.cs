@@ -6,7 +6,7 @@ public sealed class GeneratedRegexAttributeUsageAnalyzer : RegexUsageAnalyzerBas
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(context =>
         {
             var analyzerContext = new AnalyzerContext(context.Compilation);

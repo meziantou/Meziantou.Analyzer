@@ -33,18 +33,7 @@ internal sealed class CSharpAnalyzerTest<TAnalyzer>
     /// </summary>
     public IList<DiagnosticAnalyzer> AdditionalAnalyzers { get; } = [];
 
-    /// <summary>
-    /// How the analyzers handle generated code.
-    /// </summary>
-    public GeneratedCodeAnalysisFlags? GeneratedCodeAnalysisFlags { get; set; }
-
-    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers()
-    {
-        IEnumerable<DiagnosticAnalyzer> analyzers = [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
-        return GeneratedCodeAnalysisFlags is { } flags
-            ? analyzers.Select(analyzer => new Helpers.GeneratedCodeAnalysisAnalyzer(analyzer, flags))
-            : analyzers;
-    }
+    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers() => [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
 
     /// <summary>
     /// Runs the source generators shipped with the .NET reference pack the test compiles against, so that the

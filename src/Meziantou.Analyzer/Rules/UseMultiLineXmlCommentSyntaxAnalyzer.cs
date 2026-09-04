@@ -20,7 +20,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Event, SymbolKind.Property);
     }
@@ -66,7 +66,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
                         continue;
 
                     if (!string.IsNullOrWhiteSpace(string.Concat(elementSyntax.Content.Select(static content => content.ToFullString()))))
-                        context.ReportDiagnostic(Diagnostic.Create(Rule, elementSyntax.GetLocation()));
+                        context.ReportDiagnostic(Rule, elementSyntax.GetLocation());
                 }
             }
         }

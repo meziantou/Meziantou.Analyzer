@@ -32,7 +32,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         s_typesPreview ??= LoadTypes(preview: true);
 
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType);
     }

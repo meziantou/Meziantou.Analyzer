@@ -6,6 +6,7 @@ using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
 using Meziantou.Analyzer.Configurations;
+using Meziantou.Analyzer.Internals;
 using Meziantou.Framework;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CodeFixes;
@@ -68,6 +69,14 @@ Console.WriteLine(sb.ToString());
     newContent = Regex.Replace(newContent, "(?<=<!-- suppressions -->\\r?\\n).*(?=<!-- suppressions -->)", "\n" + GenerateSuppressorsTable(diagnosticSuppressors) + "\n", RegexOptions.Singleline);
     newContent = Regex.Replace(newContent, "(?<=<!-- refactorings -->\\r?\\n).*(?=<!-- refactorings -->)", "\n" + GenerateRefactoringsTable(codeRefactoringProviders) + "\n", RegexOptions.Singleline);
     WriteFileIfChanged(readmePath, newContent);
+}
+
+// Update the list of the rules reporting in generated code
+{
+    var path = outputFolder / "docs" / "generated-code.md";
+    var content = await File.ReadAllTextAsync(path);
+    var newContent = Regex.Replace(content, "(?<=<!-- rules -->\\r?\\n).*(?=<!-- rules -->)", "\n" + GenerateGeneratedCodeRulesTable(diagnosticAnalyzers) + "\n", RegexOptions.Singleline);
+    WriteFileIfChanged(path, newContent);
 }
 
 // Update doc readme
@@ -451,6 +460,29 @@ static string EscapeMarkdown(string text)
         .Replace("]", "\\]", StringComparison.Ordinal)
         .Replace("<", "\\<", StringComparison.Ordinal)
         .Replace(">", "\\>", StringComparison.Ordinal);
+}
+
+static string GenerateGeneratedCodeRulesTable(List<DiagnosticAnalyzer> diagnosticAnalyzers)
+{
+    var sb = new StringBuilder();
+    sb.Append("|Id|Description|\n");
+    sb.Append("|--|-----------|\n");
+
+    foreach (var diagnostic in diagnosticAnalyzers.SelectMany(diagnosticAnalyzer => diagnosticAnalyzer.SupportedDiagnostics).DistinctBy(diag => diag.Id, StringComparer.Ordinal).OrderBy(diag => diag.Id, StringComparer.Ordinal))
+    {
+        if (!diagnostic.CustomTags.Contains(GeneratedCodeReporting.ReportInGeneratedCodeTag, StringComparer.Ordinal))
+            continue;
+
+        sb.Append("|[")
+          .Append(diagnostic.Id)
+          .Append("](")
+          .Append(diagnostic.HelpLinkUri)
+          .Append(")|")
+          .Append(EscapeMarkdown(diagnostic.Title.ToString(CultureInfo.InvariantCulture)))
+          .Append("|\n");
+    }
+
+    return sb.ToString();
 }
 
 static string GetBoolean(bool value)

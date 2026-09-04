@@ -52,6 +52,10 @@ When you change any file under `src/Meziantou.Analyzer.Annotations`, you MUST:
 
 The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fallback to `SyntaxNode` when the other ways are not supported.
 
+### Generated code
+
+The analyzers analyze generated code, so they must call `context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics)` in `Initialize`, and the diagnostics located in generated code are filtered when they are reported. The rules must report their diagnostics with the `ReportDiagnostic` extension methods of `src/Meziantou.Analyzer/DiagnosticReportingExtensions.cs`, which apply the `report_generated_code` configuration; `BannedSymbols.txt` makes any other way a compilation error. Add `customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]` to the descriptor of the rules that must report in generated code by default, such as the rules whose subject is the generated file itself, and run `dotnet run --project src/DocumentationGenerator` to update the list in [`docs/generated-code.md`](/docs/generated-code.md).
+
 Code snippets in tests must use raw string literals (`"""`) and must be minimized to only include the necessary code to reproduce the issue. Avoid including unnecessary code that does not contribute to the test case.
 When reporting a diagnostic, the snippet must use the `[|code|]` syntax or `{|id:code|}` syntax. Do not explicitly indicates lines or columns.
 

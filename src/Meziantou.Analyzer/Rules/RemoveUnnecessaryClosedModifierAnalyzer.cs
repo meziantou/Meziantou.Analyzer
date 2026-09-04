@@ -22,7 +22,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSymbolAction(AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
     }
@@ -52,7 +52,7 @@ public sealed class RemoveUnnecessaryClosedModifierAnalyzer : DiagnosticAnalyzer
             if (closedToken == default)
                 continue;
 
-            context.ReportDiagnostic(Diagnostic.Create(Rule, closedToken.GetLocation()));
+            context.ReportDiagnostic(Rule, closedToken.GetLocation());
         }
     }
 }

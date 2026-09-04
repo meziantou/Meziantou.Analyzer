@@ -21,7 +21,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(context =>
         {
@@ -55,7 +55,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (InheritsFromExcludedType(symbol, excludedBaseTypes))
             return;
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, partialToken.GetLocation()));
+        context.ReportDiagnostic(Rule, partialToken.GetLocation());
     }
 
     private static bool InheritsFromExcludedType(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)

@@ -297,18 +297,20 @@ Supported values are:
 
 ## Analyzing generated code
 
-By default, most rules do not report diagnostics in generated code. Set the `MEZIANTOU_ANALYZER_GENERATED_CODE`
-environment variable to `true` (or `1`) to make all the rules analyze and report on generated code:
+The rules analyze generated code, but most of them do not report the diagnostics located in generated code. Set
+`report_generated_code` in the `.editorconfig` file to change it, for a single rule or for all of them at once:
 
-```bash
-MEZIANTOU_ANALYZER_GENERATED_CODE=true
+```ini
+[*.cs]
+# All the rules report the diagnostics located in generated code
+MA.report_generated_code = true
+
+# MA0051 does not, as a rule specific value wins over the value of all the rules
+MA0051.report_generated_code = false
 ```
 
-The variable can only add analysis, never remove it: the rules that already analyze generated code, such as the
-Blazor rules, are unaffected and cannot be disabled with it.
-
-Note that the analyzers run in a long-lived process. After changing the variable, run `dotnet build-server shutdown`
-and rebuild, or restart your IDE.
+A few rules report in generated code by default, such as the Blazor rules that work on the code generated from the
+`.razor` files.
 
 See [Analyzing generated code](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/generated-code.md)
-for the details and for the `.editorconfig` alternative.
+for the list of those rules and for the detection of the generated files.

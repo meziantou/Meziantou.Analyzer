@@ -11,7 +11,8 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresParameterAttributeForRazorComponent),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor SupplyParameterFromQueryRoutableRule = new(
         RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent,
@@ -21,7 +22,8 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SupplyParameterFromQueryRequiresRoutableComponent),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor EditorRequiredRule = new(
         RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent,
@@ -31,14 +33,15 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SupplyParameterFromQueryRule, EditorRequiredRule, SupplyParameterFromQueryRoutableRule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {

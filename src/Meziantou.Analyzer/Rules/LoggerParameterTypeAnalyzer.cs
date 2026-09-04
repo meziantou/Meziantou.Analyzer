@@ -16,7 +16,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor RuleSerilog = new(
         RuleIdentifiers.LoggerParameterType_Serilog,
@@ -26,7 +27,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_Serilog));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_Serilog),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor RuleInvalid = new(
         RuleIdentifiers.LoggerParameterType_InvalidType,
@@ -36,7 +38,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_InvalidType));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_InvalidType),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor RuleDuplicate = new(
         RuleIdentifiers.LoggerParameterType_DuplicateRule,
@@ -46,7 +49,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_DuplicateRule));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_DuplicateRule),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly DiagnosticDescriptor RuleMissingConfiguration = new(
         RuleIdentifiers.LoggerParameterType_MissingConfiguration,
@@ -56,7 +60,8 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: false,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_MissingConfiguration));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.LoggerParameterType_MissingConfiguration),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatConfiguration = new(Rule.Id + ".allow_non_constant_formats", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatSerilogConfiguration = new(RuleSerilog.Id + ".allow_non_constant_formats", defaultValue: true);
@@ -66,7 +71,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(context =>
         {
             var ctx = new AnalyzerContext(context);
@@ -114,7 +119,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 {
                     foreach (var error in errors)
                     {
-                        context.ReportDiagnostic(error);
+                        context.Report(error);
                     }
                 });
             }
