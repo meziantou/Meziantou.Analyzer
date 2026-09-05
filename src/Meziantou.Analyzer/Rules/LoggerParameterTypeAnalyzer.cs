@@ -117,9 +117,10 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             {
                 context.RegisterCompilationEndAction(context =>
                 {
+                    DiagnosticReporter reporter = context;
                     foreach (var error in errors)
                     {
-                        context.Report(error);
+                        reporter.ReportDiagnostic(error);
                     }
                 });
             }

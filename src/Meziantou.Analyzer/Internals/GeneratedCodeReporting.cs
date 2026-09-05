@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Configurations;
 
 namespace Meziantou.Analyzer.Internals;
@@ -5,8 +6,7 @@ namespace Meziantou.Analyzer.Internals;
 /// <summary>
 /// Decides whether a rule reports the diagnostics located in generated code. The analyzers configure Roslyn to
 /// analyze generated code and to report the diagnostics located in it, as <c>ConfigureGeneratedCodeAnalysis</c>
-/// cannot read the <c>.editorconfig</c> options, so the decision is taken by
-/// <see cref="DiagnosticReportingExtensions"/> when a diagnostic is reported.
+/// cannot read the <c>.editorconfig</c> options, so the decision is taken when a diagnostic is reported.
 /// </summary>
 internal static class GeneratedCodeReporting
 {
@@ -23,6 +23,24 @@ internal static class GeneratedCodeReporting
     public const string GlobalConfigurationKey = "MA" + ConfigurationKeySuffix;
 
     private const string ConfigurationKeySuffix = ".report_generated_code";
+
+    /// <summary>
+    /// Filters the diagnostics reported through <see cref="DiagnosticReporter"/>, which is how the rules report
+    /// them. A module initializer runs before any type of this assembly is used, so before an analyzer can report
+    /// a diagnostic, and the filter is embedded with the rest of the package, so it applies to this assembly only.
+    /// </summary>
+    // CA2255 wants the module initializers to be used by applications and source generators only, but this is the
+    // only way to set the filter once for an assembly whose entry points are the analyzers instantiated by Roslyn
+#pragma warning disable CA2255 // The 'ModuleInitializer' attribute should not be used in libraries
+    [ModuleInitializer]
+    internal static void Initialize()
+#pragma warning restore CA2255
+    {
+        DiagnosticReporter.CanReportDiagnostic = CanReportDiagnostic;
+    }
+
+    public static bool CanReportDiagnostic(Diagnostic diagnostic, AnalyzerOptions options, CancellationToken cancellationToken)
+        => CanReportDiagnostic(options, diagnostic.Descriptor, diagnostic.Location.SourceTree, cancellationToken);
 
     public static bool CanReportDiagnostic(AnalyzerOptions options, DiagnosticDescriptor descriptor, SyntaxTree? syntaxTree, CancellationToken cancellationToken)
     {

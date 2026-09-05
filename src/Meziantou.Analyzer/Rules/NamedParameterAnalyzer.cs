@@ -73,7 +73,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 if (IsCallerMustUseNamedArgumentAttribute(argumentOperation))
                 {
-                    syntaxContext.Report(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                    DiagnosticReporter reporter = syntaxContext;
+                    reporter.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
                     return;
                 }
 
