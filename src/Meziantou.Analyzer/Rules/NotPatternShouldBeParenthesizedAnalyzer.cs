@@ -21,7 +21,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSyntaxNodeAction(AnalyzeNotPatternSyntax, SyntaxKind.NotPattern);
     }
@@ -36,7 +36,7 @@ public sealed class NotPatternShouldBeParenthesizedAnalyzer : DiagnosticAnalyzer
         {
             if (binaryPattern.Left == node)
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, node.GetLocation()));
+                context.ReportDiagnostic(Rule, node.GetLocation());
             }
         }
     }

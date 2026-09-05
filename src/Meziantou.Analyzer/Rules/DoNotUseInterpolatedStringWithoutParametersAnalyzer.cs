@@ -18,7 +18,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {
@@ -88,8 +88,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
         }
 
         // Report diagnostic as a suggestion (Hidden severity with unnecessary tag)
-        var diagnostic = Diagnostic.Create(Rule, operation.Syntax.GetLocation());
-        context.ReportDiagnostic(diagnostic);
+        context.ReportDiagnostic(Rule, operation);
     }
 
     private static bool IsInterpolatedStringHandler(ITypeSymbol? typeSymbol, INamedTypeSymbol? interpolatedStringHandlerAttributeSymbol)

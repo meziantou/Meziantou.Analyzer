@@ -11,14 +11,15 @@ public sealed class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer 
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsed));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsed),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);

@@ -11,14 +11,15 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         isEnabledByDefault: false, // enable it by default when the rule is stable
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotOverwriteRazorComponentParameterValue));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotOverwriteRazorComponentParameterValue),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {

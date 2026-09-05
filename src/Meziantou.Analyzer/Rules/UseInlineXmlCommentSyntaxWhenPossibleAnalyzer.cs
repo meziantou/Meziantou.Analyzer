@@ -23,7 +23,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Event, SymbolKind.Property);
     }
@@ -105,7 +105,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
                             // Check if the single-line version would fit within max_line_length
                             if (WouldFitInMaxLineLength(context, elementSyntax))
                             {
-                                context.ReportDiagnostic(Diagnostic.Create(Rule, elementSyntax.GetLocation()));
+                                context.ReportDiagnostic(Rule, elementSyntax.GetLocation());
                             }
                         }
                     }

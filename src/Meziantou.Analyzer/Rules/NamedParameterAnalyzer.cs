@@ -33,7 +33,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(context =>
         {
@@ -73,7 +73,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
 
                 if (IsCallerMustUseNamedArgumentAttribute(argumentOperation))
                 {
-                    syntaxContext.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                    DiagnosticReporter reporter = syntaxContext;
+                    reporter.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
                     return;
                 }
 

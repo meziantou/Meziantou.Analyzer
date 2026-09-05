@@ -20,7 +20,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterOperationAction(AnalyzeBinaryOperation, OperationKind.Binary);
     }
@@ -74,8 +74,7 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
             .Add("LogicalNotOperatorNeeded", logicalNotOperatorNeeded.ToString());
 
         var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
-        var diagnostic = Diagnostic.Create(Rule, operatorTokenLocation, properties);
-        context.ReportDiagnostic(diagnostic);
+        context.ReportDiagnostic(Rule, properties, operatorTokenLocation);
     }
 
     private static bool IsConstantBool(IOperation operation)

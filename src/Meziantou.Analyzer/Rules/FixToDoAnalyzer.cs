@@ -23,7 +23,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSyntaxTreeAction(AnalyzeTree);
     }
@@ -70,8 +70,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                 if (text.Length == 4)
                 {
                     var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
-                    var diagnostic = Diagnostic.Create(Rule, location, "");
-                    context.ReportDiagnostic(diagnostic);
+                    context.ReportDiagnostic(Rule, location, "");
                 }
                 else
                 {
@@ -79,8 +78,7 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                     if (nextChar is ' ' or '\t' or ':' or '!' or '?')
                     {
                         var location = context.Tree.GetLocation(new TextSpan(startIndex, text.Length));
-                        var diagnostic = Diagnostic.Create(Rule, location, text[5..].Trim().ToString());
-                        context.ReportDiagnostic(diagnostic);
+                        context.ReportDiagnostic(Rule, location, text[5..].Trim().ToString());
                     }
                 }
             }

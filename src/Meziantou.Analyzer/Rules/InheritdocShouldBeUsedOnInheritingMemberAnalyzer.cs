@@ -20,7 +20,7 @@ public sealed class InheritdocShouldBeUsedOnInheritingMemberAnalyzer : Diagnosti
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Method, SymbolKind.Property, SymbolKind.Event);
     }

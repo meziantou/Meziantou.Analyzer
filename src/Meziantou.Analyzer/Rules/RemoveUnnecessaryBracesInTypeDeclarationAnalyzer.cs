@@ -21,7 +21,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSyntaxNodeAction(AnalyzeTypeDeclaration, SyntaxKind.RecordDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeTypeDeclaration, SyntaxKind.ClassDeclaration);
@@ -34,7 +34,7 @@ public sealed class RemoveUnnecessaryBracesInTypeDeclarationAnalyzer : Diagnosti
         if (!CanRemoveBraces(typeDeclaration, context.Compilation.GetCSharpLanguageVersion()))
             return;
 
-        context.ReportDiagnostic(Diagnostic.Create(Rule, typeDeclaration.OpenBraceToken.GetLocation()));
+        context.ReportDiagnostic(Rule, typeDeclaration.OpenBraceToken.GetLocation());
     }
 
     private static bool CanRemoveBraces(TypeDeclarationSyntax typeDeclaration, LanguageVersion languageVersion)

@@ -20,7 +20,7 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzer : Diagnos
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterSyntaxTreeAction(AnalyzeSyntaxTree);
     }
@@ -49,7 +49,7 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzer : Diagnos
         {
             if (previousBranchBySignature.ContainsKey(branch.Signature))
             {
-                context.ReportDiagnostic(Diagnostic.Create(Rule, branch.StartDirective.GetLocation()));
+                context.ReportDiagnostic(Rule, branch.StartDirective.GetLocation());
             }
             else
             {
