@@ -629,4 +629,183 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExcludedFileNameParts_DottedSuffix()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", ".");
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class SampleTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_RazorSegment()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", "razor,.");
+        test.TestState.Sources.Add(("/0/Widget.razor.Tests.cs", """
+            class WidgetTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_IsCaseInsensitive()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", "razor,.");
+        test.TestState.Sources.Add(("/0/Widget.Razor.Tests.cs", """
+            class WidgetTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_NotConfigured()
+    {
+        var test = CreateTest();
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class {|MA0048:SampleTests|} {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_UnrelatedTypeName()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", ".");
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class {|MA0048:Unrelated|} {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_StillMatchNameBeforeDot()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", "razor,.");
+        test.TestState.Sources.Add(("/0/Sample.xaml.cs", """
+            class Sample {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_Generic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts", ".");
+        test.TestState.Sources.Add(("/0/Sample.TestsOfT.cs", """
+            class SampleTests<T> {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNameParts_PrefixMode()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0048.mode", "Prefix"), ("MA0048.excluded_file_name_parts", "."));
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class SampleTestsExtra {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_DottedSuffix()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", @"\.");
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class SampleTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_RazorSegment()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", @"\.(razor\.)?");
+        test.TestState.Sources.Add(("/0/Widget.razor.Tests.cs", """
+            class WidgetTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_IsCaseInsensitive()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", @"razor|\.");
+        test.TestState.Sources.Add(("/0/Widget.Razor.Tests.cs", """
+            class WidgetTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_CombinedWithExcludedFileNameParts()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0048.excluded_file_name_parts_regex", @"^\d+_"), ("MA0048.excluded_file_name_parts", "."));
+        test.TestState.Sources.Add(("/0/01_Sample.Tests.cs", """
+            class SampleTests {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_UnrelatedTypeName()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", @"\.");
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class {|MA0048:Unrelated|} {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_InvalidPatternRemovesNothing()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", "(");
+        test.TestState.Sources.Add(("/0/Sample.Tests.cs", """
+            class {|MA0048:SampleTests|} {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExcludedFileNamePartsRegex_StillMatchNameBeforeDot()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.excluded_file_name_parts_regex", @"\.");
+        test.TestState.Sources.Add(("/0/Sample.xaml.cs", """
+            class Sample {}
+            """));
+
+        return test.RunAsync();
+    }
 }

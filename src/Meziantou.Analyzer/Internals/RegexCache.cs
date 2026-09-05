@@ -58,6 +58,25 @@ internal static class RegexCache
         }
     }
 
+    /// <summary>
+    /// Replaces all the matches of the pattern in the input. Returns <paramref name="defaultValue"/> when the pattern
+    /// is invalid or when the evaluation times out.
+    /// </summary>
+    public static string Replace(string pattern, RegexOptions options, string input, string replacement, string defaultValue)
+    {
+        if (!TryGetOrCreate(pattern, options, out var regex))
+            return defaultValue;
+
+        try
+        {
+            return regex.Replace(input, replacement);
+        }
+        catch (RegexMatchTimeoutException)
+        {
+            return defaultValue;
+        }
+    }
+
     private static (Regex? Regex, string? ErrorMessage) GetOrCreate(string pattern, RegexOptions options)
     {
         return Cache.GetOrAdd((pattern, options), static key =>
