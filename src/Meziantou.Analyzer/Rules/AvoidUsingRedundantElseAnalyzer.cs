@@ -21,7 +21,7 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         // Analyze the whole "if / else if / else" chain from the 'if' that starts it. Registering on the
         // else clause instead means every clause re-analyzes the branches above it, which is quadratic in

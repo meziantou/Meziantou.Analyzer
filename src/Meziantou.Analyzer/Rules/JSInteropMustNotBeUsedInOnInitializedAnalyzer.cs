@@ -11,14 +11,15 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.JSRuntimeMustNotBeUsedInOnInitialized));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.JSRuntimeMustNotBeUsedInOnInitialized),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);

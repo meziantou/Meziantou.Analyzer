@@ -33,7 +33,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(context =>
         {
@@ -131,7 +131,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             {
                 if (ctor.Parameters.Any(p => p.Name is "paramName" or "argumentName" && p.Type.IsString()))
                 {
-                    context.ReportDiagnostic(Diagnostic.Create(Rule, op.Syntax.GetLocation(), $"Use an overload of '{type.ToDisplayString()}' with the parameter name"));
+                    context.ReportDiagnostic(Rule, op, $"Use an overload of '{type.ToDisplayString()}' with the parameter name");
                     return;
                 }
             }

@@ -13,7 +13,8 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotLogClassifiedData));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotLogClassifiedData),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly ConfigurationDefinition<bool> ReportTypesWithDataClassificationAttributesConfiguration = new(RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
 
@@ -22,7 +23,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.RegisterCompilationStartAction(context =>
         {
             var ctx = new AnalyzerContext(context.Compilation);

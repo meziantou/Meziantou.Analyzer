@@ -17,11 +17,6 @@
     <Description>A Roslyn analyzer to enforce some good practices in C#</Description>
     <PackageTags>Meziantou.Analyzer, analyzers</PackageTags>
     <NoPackageAnalysis>true</NoPackageAnalysis>
-
-    <!-- RS1025 wants a direct call to ConfigureGeneratedCodeAnalysis in Initialize, but the analyzers call it
-         through AnalysisContextExtensions.ConfigureAnalysisOfGeneratedCode, and BannedSymbols.txt makes sure
-         they cannot call it directly -->
-    <NoWarn>$(NoWarn);RS1025</NoWarn>
   </PropertyGroup>
 
   <!-- Global using directives shared by all the files of this project -->
@@ -41,7 +36,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.10" PrivateAssets="all" />
+    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.0.11" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
   </ItemGroup>
 </Project>

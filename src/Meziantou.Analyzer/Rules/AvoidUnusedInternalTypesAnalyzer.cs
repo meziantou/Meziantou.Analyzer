@@ -19,7 +19,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
 
         context.RegisterCompilationStartAction(ctx =>
         {
@@ -305,7 +305,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                     continue;
 
                 var properties = ImmutableDictionary<string, string?>.Empty;
-                context.ReportDiagnostic(Diagnostic.Create(Rule, type.Locations.FirstOrDefault(), properties, type.Name));
+                context.ReportDiagnostic(Rule, properties, type.Locations, type.Name);
             }
         }
 

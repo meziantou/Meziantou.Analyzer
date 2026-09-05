@@ -14,7 +14,8 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseUnknownParameterForRazorComponent),
+        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
     private static readonly ConfigurationDefinition<bool> ReportPascalCaseUnmatchedParameterConfiguration = new("MA0115.ReportPascalCaseUnmatchedParameter", defaultValue: true);
 
@@ -22,7 +23,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
 
     public override void Initialize(AnalysisContext context)
     {
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
         context.EnableConcurrentExecution();
         context.RegisterCompilationStartAction(ctx =>
         {
