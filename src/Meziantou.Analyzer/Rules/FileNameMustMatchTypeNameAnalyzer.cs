@@ -32,6 +32,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<string> ModeConfiguration = new(Rule.Id + ".mode", defaultValue: string.Empty);
     private static readonly ConfigurationDefinition<bool> AllowTypeNamePrefixConfiguration = new(Rule.Id + ".allow_type_name_prefix", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> UseLongestTypeNamePrefixConfiguration = new(Rule.Id + ".use_longest_type_name_prefix", defaultValue: false);
+    private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsConfiguration = new(Rule.Id + ".excluded_file_name_parts", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsRegexConfiguration = new(Rule.Id + ".excluded_file_name_parts_regex", defaultValue: string.Empty);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -110,51 +112,107 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
             }
 
             var filePath = location.SourceTree.FilePath;
-            var fileName = filePath is not null ? GetFileName(filePath.AsSpan()) : null;
-
-            if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            if (IsMatchingFileName(context, symbol, location.SourceTree, GetFileName(filePath.AsSpan()), typeNameMatchMode))
                 continue;
 
-            if (!fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
-                (typeNameMatchMode is TypeNameMatchMode.Prefix ||
-                (typeNameMatchMode is TypeNameMatchMode.LongestCommonPrefix && IsLongestTypeNamePrefix(context, location.SourceTree, fileName))))
+            // MA0048.excluded_file_name_parts
+            var fileNameWithoutExcludedParts = GetFileNameWithoutExcludedParts(context, location.SourceTree, filePath.AsSpan());
+            if (fileNameWithoutExcludedParts is not null && IsMatchingFileName(context, symbol, location.SourceTree, fileNameWithoutExcludedParts.AsSpan(), typeNameMatchMode))
                 continue;
-
-            if (symbol.Arity > 0)
-            {
-                // Type`1
-                if (fileName.Equals((symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture)).AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                // Type{T}
-                if (fileName.Equals((symbolName + '{' + string.Join(',', symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    continue;
-            }
-
-            if (symbol.Arity == 1 || (symbol.Arity > 1 && context.Options.GetConfigurationValue(location.SourceTree, AllowOfTForAllGenericTypesConfiguration)))
-            {
-                // TypeOfT
-                if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    continue;
-            }
 
             context.ReportDiagnostic(Rule, location, GetTypeKindDisplayString(symbol), symbolName, GetExpectedFileName(context, symbol, location.SourceTree, typeNameMatchMode));
         }
     }
 
-    private static ReadOnlySpan<char> GetFileName(ReadOnlySpan<char> filePath)
+    private static bool IsMatchingFileName(SymbolAnalysisContext context, INamedTypeSymbol symbol, SyntaxTree sourceTree, ReadOnlySpan<char> fileName, TypeNameMatchMode typeNameMatchMode)
+    {
+        var symbolName = symbol.Name;
+
+        if (fileName.Equals(symbolName.AsSpan(), StringComparison.OrdinalIgnoreCase))
+            return true;
+
+        if (!fileName.IsEmpty && symbolName.AsSpan().StartsWith(fileName, StringComparison.OrdinalIgnoreCase) &&
+            (typeNameMatchMode is TypeNameMatchMode.Prefix ||
+            (typeNameMatchMode is TypeNameMatchMode.LongestCommonPrefix && IsLongestTypeNamePrefix(context, sourceTree, fileName))))
+            return true;
+
+        if (symbol.Arity > 0)
+        {
+            // Type`1
+            if (fileName.Equals((symbolName + "`" + symbol.Arity.ToString(CultureInfo.InvariantCulture)).AsSpan(), StringComparison.OrdinalIgnoreCase))
+                return true;
+
+            // Type{T}
+            if (fileName.Equals((symbolName + '{' + string.Join(',', symbol.TypeParameters.Select(t => t.Name)) + '}').AsSpan(), StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        if (symbol.Arity == 1 || (symbol.Arity > 1 && context.Options.GetConfigurationValue(sourceTree, AllowOfTForAllGenericTypesConfiguration)))
+        {
+            // TypeOfT
+            if (fileName.Equals((symbolName + "OfT").AsSpan(), StringComparison.OrdinalIgnoreCase))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static ReadOnlySpan<char> RemoveDirectory(ReadOnlySpan<char> filePath)
     {
         var fileNameIndex = filePath.LastIndexOfAny('/', '\\');
         if (fileNameIndex > 0)
+            return filePath[(fileNameIndex + 1)..];
+
+        return filePath;
+    }
+
+    private static ReadOnlySpan<char> GetFileName(ReadOnlySpan<char> filePath)
+    {
+        var fileName = RemoveDirectory(filePath);
+
+        var index = fileName.IndexOf('.');
+        if (index < 0)
+            return fileName;
+
+        return fileName[..index];
+    }
+
+    private static ReadOnlySpan<char> GetFileNameWithoutExtension(ReadOnlySpan<char> filePath)
+    {
+        var fileName = RemoveDirectory(filePath);
+
+        var index = fileName.LastIndexOf('.');
+        if (index < 0)
+            return fileName;
+
+        return fileName[..index];
+    }
+
+    private static string? GetFileNameWithoutExcludedParts(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> filePath)
+    {
+        var excludedParts = context.Options.GetConfigurationValue(sourceTree, ExcludedFileNamePartsConfiguration);
+        var excludedPartsRegex = context.Options.GetConfigurationValue(sourceTree, ExcludedFileNamePartsRegexConfiguration);
+        if (string.IsNullOrEmpty(excludedParts) && string.IsNullOrEmpty(excludedPartsRegex))
+            return null;
+
+        var fileName = GetFileNameWithoutExtension(filePath).ToString();
+
+        // The regex is applied first, so it can match the dots that MA0048.excluded_file_name_parts may remove
+        if (!string.IsNullOrEmpty(excludedPartsRegex))
         {
-            filePath = filePath[(fileNameIndex + 1)..];
+            fileName = RegexCache.Replace(excludedPartsRegex, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, fileName, replacement: "", defaultValue: fileName);
         }
 
-        var index = filePath.IndexOf('.');
-        if (index < 0)
-            return filePath;
+        foreach (var part in excludedParts.Split([',', '|'], StringSplitOptions.RemoveEmptyEntries))
+        {
+            var excludedPart = part.Trim();
+            if (excludedPart.Length is 0)
+                continue;
 
-        return filePath[..index];
+            fileName = fileName.Replace(excludedPart, "", StringComparison.OrdinalIgnoreCase);
+        }
+
+        return fileName.Length is 0 ? null : fileName;
     }
 
     private static TypeNameMatchMode GetTypeNameMatchMode(SymbolAnalysisContext context, SyntaxTree sourceTree)
