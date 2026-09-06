@@ -1074,6 +1074,65 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     }
 
     [Fact]
+    public Task AppendLine_AppendSubStringWithoutLength_Parameters()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string text, int start)
+                {
+                    {|MA0028:new StringBuilder().AppendLine(text.Substring(start))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string text, int start)
+                {
+                    new StringBuilder().Append(text, start, text.Length - start).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("GetText().Substring(GetStart())")]
+    [InlineData("Text.Substring(0)")]
+    [InlineData(@"""abc"".Substring(Start)")]
+    public Task AppendLine_AppendSubStringWithoutLength_SideEffects_NoFix(string expression)
+    {
+        // The fix would evaluate the string and the start index twice
+        var code = $$"""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendLine({{expression}})|};
+                }
+
+                string Text => "abc";
+                int Start => 2;
+                string GetText() => "abc";
+                int GetStart() => 2;
+            }
+            """;
+
+        var test = CreateTest();
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AppendLine_CustomStructToString()
     {
         var test = CreateTest();
