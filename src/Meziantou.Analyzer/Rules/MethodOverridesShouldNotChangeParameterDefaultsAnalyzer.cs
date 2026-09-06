@@ -78,8 +78,8 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
             }
 
             return ImmutableDictionary<string, string?>.Empty
-                .Add("HasDefaultValue", parameter.HasExplicitDefaultValue ? "true" : "false")
-                .Add("DefaultValue", value: parameter.HasExplicitDefaultValue ? (defaultExpressionSyntax?.ToString() ?? parameter.ExplicitDefaultValue?.ToString() ?? null) : null);
+                .Add(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.HasDefaultValueKey, parameter.HasExplicitDefaultValue ? "true" : "false")
+                .Add(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.DefaultValueKey, value: parameter.HasExplicitDefaultValue ? (defaultExpressionSyntax?.ToString() ?? parameter.ExplicitDefaultValue?.ToString() ?? null) : null);
         }
     }
 
