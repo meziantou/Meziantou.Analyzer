@@ -302,15 +302,21 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)
         {
             var sb = ObjectPool.SharedStringBuilderPool.Get();
-            if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetConstStringValue(operation, sb))
+            try
             {
-                value = sb.ToString();
-                ObjectPool.SharedStringBuilderPool.Return(sb);
-                return true;
-            }
+                if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetConstStringValue(operation, sb))
+                {
+                    value = sb.ToString();
+                    return true;
+                }
 
-            value = default;
-            return false;
+                value = default;
+                return false;
+            }
+            finally
+            {
+                ObjectPool.SharedStringBuilderPool.Return(sb);
+            }
         }
     }
 }
