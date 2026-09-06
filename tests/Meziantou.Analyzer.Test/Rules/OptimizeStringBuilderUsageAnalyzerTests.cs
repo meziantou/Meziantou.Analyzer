@@ -259,6 +259,9 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     // StringBuilder.Insert has no counterpart for some of the Append overloads, so the ToString call is kept
     [InlineData(@"10.ToString()")]
     [InlineData(@"new StringBuilder().ToString()")]
+    // StringBuilder.Insert(int, string, int) repeats the value instead of slicing it, so the Substring call is kept
+    [InlineData(@"""abc"".Substring(2)")]
+    [InlineData(@"""abc"".Substring(0, 1)")]
     public Task Insert_NoDiagnostic(string text)
     {
         var test = CreateTest();
