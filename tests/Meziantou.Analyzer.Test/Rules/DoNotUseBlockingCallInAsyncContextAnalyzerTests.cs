@@ -4172,6 +4172,52 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
 
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteConnection_Close_MA0045OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0045.enable_sqlite_special_cases", "false");
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteConnection connection)
+                {
+                    {|MA0045:connection.Close()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
+    public Task PrivateNonAsync_SqliteConnection_Close_MA0045OptionEnabledOverridesMA0042Option_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration(
+            ("MA0042.enable_sqlite_special_cases", "false"),
+            ("MA0045.enable_sqlite_special_cases", "true"));
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddSqlite();
+        test.TestCode = """
+            using Microsoft.Data.Sqlite;
+
+            class Test
+            {
+                private void A(SqliteConnection connection)
+                {
+                    connection.Close();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1121")]
     public Task PrivateNonAsync_SqliteCommand_Prepare_OptionDisabled_Diagnostic()
     {
         var test = new AnalyzerTest();
@@ -4281,6 +4327,72 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
                 private void A()
                 {
                     {|MA0045:using var transaction = CreateTransaction();|}
+                }
+
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_MA0045OptionDisabled_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration("MA0045.enable_db_special_cases", "false");
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+
+            class Test
+            {
+                private void A()
+                {
+                    {|MA0045:using var transaction = CreateTransaction();|}
+                }
+
+                private MyDbTransaction CreateTransaction() => throw null;
+            }
+
+            class MyDbTransaction : DbTransaction
+            {
+                protected override DbConnection DbConnection => throw null;
+                public override IsolationLevel IsolationLevel => throw null;
+                public override void Commit() => throw null;
+                public override void Rollback() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1134")]
+    public Task PrivateNonAsync_UsingFactoryMethod_DbTransaction_NoDisposeAsyncOverride_MA0045OptionEnabledOverridesMA0042Option_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.SetConfiguration(
+            ("MA0042.enable_db_special_cases", "false"),
+            ("MA0045.enable_db_special_cases", "true"));
+        test.TestCode = """
+            using System.Data;
+            using System.Data.Common;
+
+            class Test
+            {
+                private void A()
+                {
+                    using var transaction = CreateTransaction();
                 }
 
                 private MyDbTransaction CreateTransaction() => throw null;

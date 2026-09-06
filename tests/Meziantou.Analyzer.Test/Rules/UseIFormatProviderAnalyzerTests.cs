@@ -329,6 +329,39 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public Task Int32ToStringWithoutCultureInfo_InToStringMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = 0;
+
+            class Sample
+            {
+                public string ToString(int value) => value.ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Int32ToStringWithoutCultureInfo_InToStringMethod_DisabledConfig()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0011.exclude_tostring_methods", "false");
+        test.TestCode = """
+            _ = 0;
+
+            class Sample
+            {
+                public string ToString(int value) => {|MA0011:value.ToString()|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CultureInsensitiveTypeAttribute_Assembly()
     {
         var test = CreateTest();

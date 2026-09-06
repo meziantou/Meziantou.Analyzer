@@ -50,6 +50,41 @@ public sealed class LoggerParameterTypeAnalyzer_SerilogTests
     }
 
     [Fact]
+    public Task SeriLog_Log_Information_StringConcat()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Serilog;
+
+            var a = "test";
+            Log.Information("{Prop} " + a, {|MA0139:(int?)1|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SeriLog_Log_Information_StringConcat_NonConstantDisabled()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0139.allow_non_constant_formats", "false");
+        test.TestCode = """
+            using Serilog;
+
+            var a = "test";
+            Log.Information("{Prop} " + a, (int?)1);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task SeriLog_Log_Information_Params()
     {
         var test = CreateTest();
