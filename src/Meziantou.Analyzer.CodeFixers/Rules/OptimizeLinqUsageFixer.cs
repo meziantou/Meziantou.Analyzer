@@ -214,7 +214,12 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var generator = editor.Generator;
         var countExpression = generator.MemberAccessExpression(invocation.Arguments[0].Syntax, "Count");
-        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0));
+
+        // The invocation may be the operand of an operator or the target of a member access, both of which bind
+        // tighter than '!=', so the comparison must be parenthesized. Simplifier removes the useless parentheses.
+        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0))
+            .Parenthesize()
+            .WithTrailingTrivia(nodeToFix.GetTrailingTrivia());
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();

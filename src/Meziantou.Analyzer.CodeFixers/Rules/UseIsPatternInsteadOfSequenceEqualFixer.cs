@@ -33,7 +33,12 @@ public sealed class UseIsPatternInsteadOfSequenceEqualFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var operation = (IInvocationOperation)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken)!;
 
-        var newExpression = SyntaxFactory.IsPatternExpression((ExpressionSyntax)operation.Arguments[0].Value.Syntax, SyntaxFactory.ConstantPattern((ExpressionSyntax)operation.Arguments[1].Value.Syntax));
+        // The invocation may be the operand of an operator or the target of a member access, both of which bind
+        // tighter than 'is', so the pattern must be parenthesized. Simplifier removes the useless parentheses.
+        var newExpression = SyntaxFactory.IsPatternExpression((ExpressionSyntax)operation.Arguments[0].Value.Syntax, SyntaxFactory.ConstantPattern((ExpressionSyntax)operation.Arguments[1].Value.Syntax))
+            .Parenthesize()
+            .WithTrailingTrivia(nodeToFix.GetTrailingTrivia());
+
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }
