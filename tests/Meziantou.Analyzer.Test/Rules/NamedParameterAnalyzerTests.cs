@@ -1152,6 +1152,30 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task CallerMustUseNamedArgument_AttributeDeclaredInCompilation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class RequireNamedArgumentAttribute : System.Attribute { }
+            }
+
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgument]object a) { }
+
+                void A()
+                {
+                    _ = new Test({|MA0003:new object()|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CallerMustUseNamedArgument_False()
     {
         var test = CreateTest();
