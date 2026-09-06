@@ -102,7 +102,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
             if (enumerableAnyMethod is not null &&
                 SymbolEqualityComparer.Default.Equals(invocationOperation.TargetMethod.OriginalDefinition, enumerableAnyMethod) &&
                 invocationOperation.Arguments.Length == 1 &&
-                invocationOperation.Arguments[0].Value is IInvocationOperation getCustomAttributesInvocation)
+                invocationOperation.Arguments[0].Value.UnwrapConversions() is IInvocationOperation getCustomAttributesInvocation)
             {
                 replacement = CreateAttributeIsDefinedInvocation(generator, semanticModel, getCustomAttributesInvocation, negate: false);
             }
@@ -158,7 +158,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         if (countInvocation.Arguments.Length != 1)
             return null;
 
-        if (countInvocation.Arguments[0].Value is not IInvocationOperation invocation)
+        if (countInvocation.Arguments[0].Value.UnwrapConversions() is not IInvocationOperation invocation)
             return null;
 
         if (invocation.TargetMethod.Name != "GetCustomAttributes")
