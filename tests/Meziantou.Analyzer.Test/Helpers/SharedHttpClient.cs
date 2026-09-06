@@ -3,19 +3,6 @@ internal static class SharedHttpClient
 {
     public static HttpClient Instance { get; } = CreateHttpClient();
 
-    public static async Task<bool> IsUrlAccessible(this HttpClient httpClient, Uri url, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using var response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken).ConfigureAwait(false);
-            return response.IsSuccessStatusCode;
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
     [SuppressMessage("Reliability", "CA2000:Dispose objects before losing scope")]
     private static HttpClient CreateHttpClient()
     {
