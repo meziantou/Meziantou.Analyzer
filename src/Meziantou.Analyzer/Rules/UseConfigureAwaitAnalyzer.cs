@@ -108,7 +108,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (MustUseConfigureAwait(operation.SemanticModel!, context.Options, operation.Syntax, context.CancellationToken))
             {
-                var data = ImmutableDictionary<string, string?>.Empty.Add("kind", "foreach");
+                var data = ImmutableDictionary<string, string?>.Empty.Add(UseConfigureAwaitAnalyzerCommon.KindKey, "foreach");
                 context.ReportDiagnostic(Rule, data, operation.Collection);
             }
 
@@ -167,7 +167,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                 if (MustUseConfigureAwait(resources.SemanticModel!, context.Options, resources.Syntax, context.CancellationToken))
                 {
-                    var properties = ImmutableDictionary<string, string?>.Empty.Add("kind", "using");
+                    var properties = ImmutableDictionary<string, string?>.Empty.Add(UseConfigureAwaitAnalyzerCommon.KindKey, "using");
                     context.ReportDiagnostic(Rule, properties, resources);
                 }
             }

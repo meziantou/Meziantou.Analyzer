@@ -30,23 +30,24 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         if (semanticModel?.GetDeclaredSymbol(nodeToFix, cancellationToken: context.CancellationToken) is not IMethodSymbol)
             return;
 
-        var diagnostic = context.Diagnostics[0];
+        if (!context.Diagnostics[0].Properties.TryGetValue(ValidateArgumentsCorrectlyAnalyzerCommon.IndexKey, out var indexValue) ||
+            !int.TryParse(indexValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var index))
+            return;
 
         var title = "Use local function";
         var codeAction = CodeAction.Create(
             title,
-            ct => Refactor(context.Document, diagnostic, nodeToFix, ct),
+            ct => Refactor(context.Document, index, nodeToFix, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, int index, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var index = int.Parse(diagnostic.Properties["Index"]!, CultureInfo.InvariantCulture);
         var symbol = (IMethodSymbol?)editor.SemanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken);
         if (symbol is null)
             return document;

@@ -262,10 +262,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
         {
             return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-                .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
-                .Add("ParameterName", parameterInfo.Name)
-                .Add("ParameterIsEnumeratorCancellation", parameterInfo.HasEnumeratorCancellationAttribute.ToString())
-                .Add("CancellationTokens", string.Join(',', cancellationTokens));
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIsEnumeratorCancellationKey, parameterInfo.HasEnumeratorCancellationAttribute.ToString())
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.CancellationTokensKey, string.Join(',', cancellationTokens));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)

@@ -17,7 +17,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsFixer : CodeF
         if (nodeToFix is not ParameterSyntax parameterSyntax)
             return;
 
-        if (!context.Diagnostics[0].Properties.TryGetValue("HasDefaultValue", out var hasValue))
+        if (!context.Diagnostics[0].Properties.TryGetValue(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.HasDefaultValueKey, out var hasValue))
             return;
 
         if (hasValue == "false")
@@ -31,7 +31,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsFixer : CodeF
         }
         else
         {
-            if (!context.Diagnostics[0].Properties.TryGetValue("DefaultValue", out var value))
+            if (!context.Diagnostics[0].Properties.TryGetValue(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.DefaultValueKey, out var value))
                 return;
 
             var title = "Use parent's default value";

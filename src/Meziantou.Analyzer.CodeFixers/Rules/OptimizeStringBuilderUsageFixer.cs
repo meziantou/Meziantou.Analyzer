@@ -23,7 +23,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         if (diagnostic is null)
             return;
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault(OptimizeStringBuilderUsageAnalyzerCommon.DataKey, ""), ignoreCase: false, out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
             return;
 
         var title = "Optimize StringBuilder usage";
@@ -38,7 +38,10 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceWithChar:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                if (diagnostic.Properties.GetValueOrDefault(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey) is not [var constValue, ..])
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, constValue, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeStringBuilderUsageData.SplitStringInterpolation:
@@ -383,9 +386,8 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> ReplaceArgWithCharacter(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceArgWithCharacter(Document document, char constValue, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
-        var constValue = diagnostic.Properties["ConstantValue"]![0];
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
