@@ -80,42 +80,42 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
 
                 if (operation.Arguments.Length == 1)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L], context.CancellationToken))
+                    if (ArgumentsEquals(operation, [621355968000000000L], context.CancellationToken))
                         return true;
 
-                    if (IsUnixEpochProperty(operation.Arguments[0]))
+                    if (IsUnixEpochProperty(GetArgument(operation, 0)))
                         return true;
                 }
                 else if (operation.Arguments.Length == 2)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[1]))
+                    if (ArgumentsEquals(operation, [621355968000000000L], context.CancellationToken) && IsTimeSpanZero(GetArgument(operation, 1)))
                         return true;
 
-                    if (IsUnixEpochProperty(operation.Arguments[0]) && IsTimeSpanZero(operation.Arguments[1]))
+                    if (IsUnixEpochProperty(GetArgument(operation, 0)) && IsTimeSpanZero(GetArgument(operation, 1)))
                         return true;
                 }
                 else if (operation.Arguments.Length == 7)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[6]))
+                    if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(GetArgument(operation, 6)))
                         return true;
                 }
                 else if (operation.Arguments.Length == 8)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 7), [1970, 1, 1, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[7]))
+                    if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(GetArgument(operation, 7)))
                         return true;
                 }
                 else if (operation.Arguments.Length == 9)
                 {
-                    if (ArgumentsEquals(operation.Arguments.AsSpan(0, 8), [1970, 1, 1, 0, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(operation.Arguments[8]))
+                    if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0, 0, 0], context.CancellationToken) && IsTimeSpanZero(GetArgument(operation, 8)))
                         return true;
                 }
 
                 return false;
             }
 
-            bool IsUnixEpochProperty(IArgumentOperation argumentOperation)
+            bool IsUnixEpochProperty(IArgumentOperation? argumentOperation)
             {
-                if (argumentOperation.Value is IMemberReferenceOperation memberReference)
+                if (argumentOperation?.Value is IMemberReferenceOperation memberReference)
                 {
                     if (memberReference.Member.Name == "UnixEpoch" && memberReference.Member.ContainingType.IsEqualTo(_dateTimeSymbol))
                         return true;
@@ -132,59 +132,87 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
 
             if (operation.Arguments.Length == 1)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [621355968000000000L], cancellationToken))
+                if (ArgumentsEquals(operation, [621355968000000000L], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 2)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 1), [621355968000000000L], cancellationToken) && IsDateTimeKindUtc(operation.Arguments[1], cancellationToken))
+                if (ArgumentsEquals(operation, [621355968000000000L], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 1), cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 3)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1], cancellationToken))
+                if (ArgumentsEquals(operation, [1970, 1, 1], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 6)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(), [1970, 1, 1, 0, 0, 0], cancellationToken))
+                if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], cancellationToken))
                     return true;
             }
             else if (operation.Arguments.Length == 7)
             {
-                if (ArgumentsEquals(operation.Arguments.AsSpan(0, 6), [1970, 1, 1, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(operation.Arguments[6], cancellationToken))
+                if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 6), cancellationToken))
                     return true;
             }
 
             return false;
         }
 
-        private bool IsDateTimeKindUtc(IArgumentOperation argument, CancellationToken cancellationToken)
+        private bool IsDateTimeKindUtc(IArgumentOperation? argument, CancellationToken cancellationToken)
         {
-            if (_dateTimeKindSymbol is null)
+            if (_dateTimeKindSymbol is null || argument is null)
                 return false;
 
-            return argument.Value.TryGetConstantValue(out var value, cancellationToken) && (DateTimeKind)value! == DateTimeKind.Utc;
+            var parameter = argument.Parameter;
+            if (parameter is null || !parameter.Type.IsEqualTo(_dateTimeKindSymbol))
+                return false;
+
+            return argument.Value.TryGetConstantValue(out var value, cancellationToken) && value is int intValue && intValue == (int)DateTimeKind.Utc;
         }
 
-        private static bool ArgumentsEquals(ReadOnlySpan<IArgumentOperation> arguments, object[] expectedValues, CancellationToken cancellationToken)
+        /// <summary>
+        /// Gets the argument for the parameter at the given position, whatever the order of the arguments in the source code.
+        /// </summary>
+        private static IArgumentOperation? GetArgument(IObjectCreationOperation operation, int parameterOrdinal)
         {
-            for (var i = 0; i < arguments.Length; i++)
+            foreach (var argument in operation.Arguments)
             {
-                var argument = arguments[i];
+                if (argument.Parameter?.Ordinal == parameterOrdinal)
+                    return argument;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Determines whether the arguments of the leading parameters are the constants <paramref name="expectedValues"/>,
+        /// whatever the order of the arguments in the source code. The arguments of the remaining parameters are not validated.
+        /// </summary>
+        private static bool ArgumentsEquals(IObjectCreationOperation operation, object[] expectedValues, CancellationToken cancellationToken)
+        {
+            var matchedParameters = 0;
+            foreach (var argument in operation.Arguments)
+            {
+                var parameter = argument.Parameter;
+                if (parameter is null || parameter.Ordinal >= expectedValues.Length)
+                    continue;
+
                 if (!argument.Value.TryGetConstantValue(out var value, cancellationToken))
                     return false;
 
-                if (!Equals(value, expectedValues[i]))
+                if (!Equals(value, expectedValues[parameter.Ordinal]))
                     return false;
+
+                matchedParameters++;
             }
 
-            return true;
+            return matchedParameters == expectedValues.Length;
         }
 
-        private bool IsTimeSpanZero(IArgumentOperation operation)
+        private bool IsTimeSpanZero(IArgumentOperation? operation)
         {
-            return _timeSpanOperation.GetMilliseconds(operation.Value) is 0L;
+            return operation is not null && _timeSpanOperation.GetMilliseconds(operation.Value) is 0L;
         }
     }
 }
