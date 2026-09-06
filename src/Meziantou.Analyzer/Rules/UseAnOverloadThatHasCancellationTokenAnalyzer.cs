@@ -49,7 +49,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
-    private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new("MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new(["MA0032.allow_overloads_with_optional_parameters", "MA0032.allowOverloadsWithOptionalParameters"], defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 

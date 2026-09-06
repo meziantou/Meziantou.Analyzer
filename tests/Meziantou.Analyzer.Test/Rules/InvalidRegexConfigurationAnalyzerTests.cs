@@ -87,7 +87,8 @@ public sealed class InvalidRegexConfigurationAnalyzerTests
     [Fact]
     public void AllOptionsEndingWithRegexAreValidatedByTheRule()
     {
-        var validatedKeys = InvalidRegexConfigurationAnalyzer.GetRegexConfigurations().Select(configuration => configuration.Key).ToArray();
+        // The legacy names of an option are validated too, so every key of a definition is considered
+        var validatedKeys = InvalidRegexConfigurationAnalyzer.GetRegexConfigurations().SelectMany(configuration => configuration.Keys).ToArray();
 
         var missingKeys = new List<string>();
         foreach (var type in typeof(InvalidRegexConfigurationAnalyzer).Assembly.GetTypes())
@@ -97,9 +98,9 @@ public sealed class InvalidRegexConfigurationAnalyzerTests
                 if (field.FieldType != typeof(ConfigurationDefinition<string>))
                     continue;
 
-                if (field.GetValue(null) is ConfigurationDefinition<string> { IsRegex: false } configuration && configuration.Key.EndsWith("_regex", StringComparison.Ordinal))
+                if (field.GetValue(null) is ConfigurationDefinition<string> { IsRegex: false } configuration)
                 {
-                    missingKeys.Add(configuration.Key);
+                    missingKeys.AddRange(configuration.Keys.Where(key => key.EndsWith("_regex", StringComparison.Ordinal)));
                 }
             }
         }

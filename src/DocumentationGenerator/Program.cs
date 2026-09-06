@@ -2,6 +2,7 @@
 #pragma warning disable CA1849
 #pragma warning disable MA0004
 #pragma warning disable MA0009
+using System.Collections;
 using System.Reflection;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
@@ -42,9 +43,24 @@ var diagnosticSuppressors = assemblies.SelectMany(assembly => assembly.GetExport
   .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
   .ToList();
 
+// Options that are not owned by a rule, such as the well-known .editorconfig options shared with other tools
+var globalConfigurationKeys = new HashSet<string>(StringComparer.Ordinal)
+{
+    "max_line_length",
+};
+
 var configurationDefinitions = GetConfigurationDefinitions(assemblies);
 var ruleConfigurationKeys = GetRuleConfigurationKeys(configurationDefinitions);
-var declaredConfigurationKeys = new HashSet<string>(configurationDefinitions.Select(definition => definition.Key), StringComparer.Ordinal);
+var declaredConfigurationKeys = new HashSet<string>(configurationDefinitions.SelectMany(definition => definition), StringComparer.Ordinal);
+
+foreach (var configurationKey in declaredConfigurationKeys.Order(StringComparer.Ordinal))
+{
+    if (globalConfigurationKeys.Contains(configurationKey) || TryGetRuleIdPrefix(configurationKey, out _))
+        continue;
+
+    documentationValidationErrorCount++;
+    Console.Error.WriteLine($"Cannot find the rule owning the configuration key '{configurationKey}'. Prefix the key with the rule id, or add it to the global configuration keys of the documentation generator.");
+}
 
 var sb = new StringBuilder();
 sb.Append("# ").Append(assemblies[0].GetName().Name).Append("'s rules\n");
@@ -512,44 +528,88 @@ static string GetBoolean(bool value)
     return value ? "✔️" : "❌";
 }
 
-static IReadOnlyList<(string Key, bool IsHidden)> GetConfigurationDefinitions(IEnumerable<Assembly> assemblies)
+// Each definition is the current name of an option, followed by its legacy names
+static IReadOnlyList<IReadOnlyList<string>> GetConfigurationDefinitions(IEnumerable<Assembly> assemblies)
 {
-    var configurationDefinitionType = typeof(ConfigurationDefinition<bool>).GetGenericTypeDefinition();
-    var keyPropertyName = nameof(ConfigurationDefinition<bool>.Key);
-    var isHiddenPropertyName = nameof(ConfigurationDefinition<bool>.IsHidden);
-    var result = new List<(string Key, bool IsHidden)>();
+    var keysPropertyName = nameof(ConfigurationDefinition<bool>.Keys);
+    var result = new List<IReadOnlyList<string>>();
 
     foreach (var type in assemblies.SelectMany(assembly => assembly.GetTypes()))
     {
         foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
         {
-            if (!field.FieldType.IsGenericType || field.FieldType.GetGenericTypeDefinition() != configurationDefinitionType)
+            if (!CanContainConfigurationDefinitions(field.FieldType))
                 continue;
 
-            var fieldValue = field.GetValue(null);
-            if (fieldValue is null)
-                continue;
-
-            if (field.FieldType.GetProperty(keyPropertyName)?.GetValue(fieldValue) is not string key)
-                continue;
-
-            var isHidden = field.FieldType.GetProperty(isHiddenPropertyName)?.GetValue(fieldValue) is bool value && value;
-            result.Add((key, isHidden));
+            foreach (var configuration in EnumerateConfigurationDefinitions(field.GetValue(null)))
+            {
+                if (configuration.GetType().GetProperty(keysPropertyName)?.GetValue(configuration) is IEnumerable<string> keys)
+                {
+                    result.Add([.. keys]);
+                }
+            }
         }
     }
 
     return result;
 }
 
-static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<(string Key, bool IsHidden)> configurationDefinitions)
+static bool IsConfigurationDefinition(Type type)
+{
+    return type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ConfigurationDefinition<>);
+}
+
+// A rule does not always expose its options as fields of their own: some of them keep a registry of the options
+// they handle. Only the fields that can hold a definition are read, so that unrelated static constructors are not run.
+static bool CanContainConfigurationDefinitions(Type type)
+{
+    if (IsConfigurationDefinition(type))
+        return true;
+
+    if (type.IsArray)
+        return type.GetElementType() is { } elementType && CanContainConfigurationDefinitions(elementType);
+
+    // Only the collections of definitions are walked: another generic type that merely mentions the type of a
+    // definition, such as a cached lambda taking one, is not a container
+    if (type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(type))
+        return Array.Exists(type.GetGenericArguments(), CanContainConfigurationDefinitions);
+
+    return false;
+}
+
+static IEnumerable<object> EnumerateConfigurationDefinitions(object? value)
+{
+    if (value is null)
+        yield break;
+
+    if (IsConfigurationDefinition(value.GetType()))
+    {
+        yield return value;
+        yield break;
+    }
+
+    // Only enumerable containers can be walked. Throw instead of silently dropping the definitions of a container
+    // with an unsupported shape, as the documentation of the rules owning them would not be validated anymore.
+    if (value is not IEnumerable enumerable)
+        throw new InvalidOperationException($"Cannot enumerate the configuration definitions of '{value.GetType()}'");
+
+    foreach (var item in enumerable)
+    {
+        foreach (var configuration in EnumerateConfigurationDefinitions(item))
+        {
+            yield return configuration;
+        }
+    }
+}
+
+static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<IReadOnlyList<string>> configurationDefinitions)
 {
     var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
 
-    foreach (var (key, isHidden) in configurationDefinitions)
+    foreach (var definition in configurationDefinitions)
     {
-        if (isHidden)
-            continue;
-
+        // Only the current name of an option is documented: its legacy names are still supported, but they must not be advertised
+        var key = definition[0];
         if (TryGetRuleIdPrefix(key, out var ruleId) is false)
             continue;
 
@@ -574,6 +634,14 @@ static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKe
 static bool TryGetRuleIdPrefix(string key, [NotNullWhen(true)] out string? ruleId)
 {
     ruleId = null;
+
+    // A few options use the "dotnet_diagnostic.<rule id>.<option>" form instead of the usual "<rule id>.<option>" form
+    const string DotNetDiagnosticPrefix = "dotnet_diagnostic.";
+    if (key.StartsWith(DotNetDiagnosticPrefix, StringComparison.Ordinal))
+    {
+        key = key.Substring(DotNetDiagnosticPrefix.Length);
+    }
+
     if (key.Length < 6)
         return false;
 

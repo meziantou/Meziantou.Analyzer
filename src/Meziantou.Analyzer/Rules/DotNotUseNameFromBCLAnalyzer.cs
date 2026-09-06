@@ -18,8 +18,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
-    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)") { RegexOptions = RegexOptions.None };
-    internal static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true, RegexOptions = RegexOptions.None };
+    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new([RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex"], defaultValue: "^System($|\\.)") { RegexOptions = RegexOptions.None };
 
     // The tables are big, so they are only loaded when the rule runs, and only the configured one is loaded
     private static readonly Lazy<Dictionary<string, string[]>> Types = new(() => LoadTypes(preview: false));
@@ -68,13 +67,8 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static Regex? GetNamespacesRegex(SymbolAnalysisContext context, ISymbol symbol)
     {
-        // The legacy option is only used when the current one is not configured. An invalid pattern falls back to the
-        // default pattern instead of failing the analysis.
-        var configuration = context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out _)
-            ? NamespacesRegexConfiguration
-            : LegacyNamepacesRegexConfiguration;
-
-        return context.Options.GetConfigurationRegex(symbol, configuration);
+        // An invalid pattern falls back to the default pattern instead of failing the analysis
+        return context.Options.GetConfigurationRegex(symbol, NamespacesRegexConfiguration);
     }
 
     private static Dictionary<string, string[]> LoadTypes(bool preview)

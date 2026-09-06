@@ -67,16 +67,20 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
             foreach (var configuration in RegexConfigurations)
             {
-                if (!options.TryGetValue(configuration.Key, out var value))
-                    continue;
-
-                reportedValues ??= [];
-                if (!reportedValues.Add((configuration.Key, value, configuration.RegexOptions)))
-                    continue;
-
-                if (!RegexCache.IsValidPattern(value, configuration.RegexOptions, out var errorMessage))
+                // The legacy names of an option are validated too, as they are still supported
+                foreach (var key in configuration.Keys)
                 {
-                    context.ReportDiagnostic(Rule, Location.None, configuration.Key, errorMessage);
+                    if (!options.TryGetValue(key, out var value))
+                        continue;
+
+                    reportedValues ??= [];
+                    if (!reportedValues.Add((key, value, configuration.RegexOptions)))
+                        continue;
+
+                    if (!RegexCache.IsValidPattern(value, configuration.RegexOptions, out var errorMessage))
+                    {
+                        context.ReportDiagnostic(Rule, Location.None, key, errorMessage);
+                    }
                 }
             }
         }

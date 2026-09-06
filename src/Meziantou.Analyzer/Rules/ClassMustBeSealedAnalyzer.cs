@@ -17,8 +17,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> ExceptionsShouldBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".exceptions_should_be_sealed", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> PublicClassShouldBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", defaultValue: false);
-    private static readonly ConfigurationDefinition<bool> ClassWithVirtualMemberShoudBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed", defaultValue: false) { IsHidden = true };
-    private static readonly ConfigurationDefinition<bool> ClassWithVirtualMemberShouldBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_should_be_sealed", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ClassWithVirtualMemberShouldBeSealedConfiguration = new([RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_should_be_sealed", RuleIdentifiers.ClassMustBeSealed + ".class_with_virtual_member_shoud_be_sealed"], defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -130,8 +129,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
         private static bool SealedClassWithVirtualMember(AnalyzerOptions options, ISymbol symbol)
         {
-            var defaultValue = options.GetConfigurationValue(symbol, ClassWithVirtualMemberShoudBeSealedConfiguration);
-            return options.GetConfigurationValue(symbol, ClassWithVirtualMemberShouldBeSealedConfiguration, defaultValue);
+            return options.GetConfigurationValue(symbol, ClassWithVirtualMemberShouldBeSealedConfiguration);
         }
     }
 }
