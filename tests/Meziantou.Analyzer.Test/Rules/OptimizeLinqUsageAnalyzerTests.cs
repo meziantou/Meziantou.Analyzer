@@ -2279,6 +2279,50 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Theory]
+    [InlineData("OrderBy(x => x.Length)")]
+    [InlineData("OrderByDescending(x => x.Length)")]
+    [InlineData("Order()")]
+    [InlineData("OrderDescending()")]
+    public Task Enumerable_WhereWithIndexAfterOrderBy_Valid(string a)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> enumerable = null;
+                    enumerable.{{a}}.Where((x, i) => i < 3);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("OrderBy(x => x.Length)")]
+    [InlineData("OrderByDescending(x => x.Length)")]
+    public Task Queryable_WhereWithIndexAfterOrderBy_Valid(string a)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    System.Linq.IQueryable<string> query = null;
+                    query.{{a}}.Where((x, i) => i < 3);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("Order")]
     [InlineData("OrderDescending")]
     public Task Enumerable_WhereAfterOrder_Invalid(string a)
