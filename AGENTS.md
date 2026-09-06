@@ -49,6 +49,7 @@ When you change any file under `src/Meziantou.Analyzer.Annotations`, you MUST:
 - The analyzers must be under `src/Meziantou.Analyzer/Rules/`
 - The code fixers must be under `src/Meziantou.Analyzer.CodeFixers/Rules`
 - The tests must be under `tests/Meziantou.Analyzer.Test/Rules`
+- When the value of a configuration option is a regular expression, set the `RegexOptions` of its `ConfigurationDefinition<string>` and use them to create the `Regex`. `InvalidRegexConfigurationAnalyzer` (MA0220) discovers these options from the assembly and reports the invalid patterns, so the option is validated with the options it is used with. Also add the option to [`docs/Rules/MA0220.md`](/docs/Rules/MA0220.md).
 
 The analyzer must use `IOperation` or `ISymbol` to analyze the content. Only fallback to `SyntaxNode` when the other ways are not supported.
 
