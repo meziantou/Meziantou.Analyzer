@@ -134,7 +134,15 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
 
         private static bool IsReturnValueIgnored(IInvocationOperation invocation)
         {
-            var parent = invocation.Parent;
+            // Walk up the conditional accesses the invocation is the right-hand side of ('a?.M()'),
+            // as the value of the whole conditional access is the value of the invocation
+            IOperation operation = invocation;
+            while (operation.Parent is IConditionalAccessOperation conditionalAccess && conditionalAccess.WhenNotNull == operation)
+            {
+                operation = conditionalAccess;
+            }
+
+            var parent = operation.Parent;
             if (parent is IAwaitOperation)
             {
                 parent = parent.Parent;
