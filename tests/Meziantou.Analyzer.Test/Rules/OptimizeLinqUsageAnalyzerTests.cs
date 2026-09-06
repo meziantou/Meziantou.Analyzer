@@ -1417,6 +1417,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("source.Select(dt => dt.Name)")]            // No cast
     [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
+    [InlineData("source.Select(dt => (BaseType)other)")]    // Cast of a captured parameter, not of the element itself
+    [InlineData("source.Select((dt, index) => (object)index)")] // Cast of the index, not of the element itself
     public Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
         var test = new CodeFixTest();
@@ -1427,7 +1429,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
                 class BaseType { public string Name { get; set; } }
                 class DerivedType : BaseType {}
 
-                public Test()
+                public Test(object other)
                 {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
                     {{selectInvocation}};

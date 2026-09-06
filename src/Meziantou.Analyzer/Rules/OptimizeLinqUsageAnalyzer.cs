@@ -842,8 +842,12 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type is null)
                 return;
 
-            // If the cast is not applied directly to the source element (one of the selector's arguments)
-            if (castOp.Operand.Kind != OperationKind.ParameterReference)
+            // If the cast is not applied directly to the source element (the first parameter of the selector)
+            if (castOp.Operand is not IParameterReferenceOperation parameterReference)
+                return;
+
+            var selectorLambda = selectorArg.Descendants().OfType<IAnonymousFunctionOperation>().FirstOrDefault();
+            if (selectorLambda is null || selectorLambda.Symbol.Parameters.Length == 0 || !parameterReference.Parameter.IsEqualTo(selectorLambda.Symbol.Parameters[0]))
                 return;
 
             // Ensure the code is valid after replacement. The semantic may be different if you use Cast<T>() instead of Select(x => (T)x).
