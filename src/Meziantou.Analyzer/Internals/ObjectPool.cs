@@ -41,6 +41,12 @@ internal static class ObjectPool
         var provider = new DefaultObjectPoolProvider();
         return provider.Create(new StringBuilderPooledObjectPolicy());
     }
+
+    public static ObjectPool<Queue<T>> CreateQueuePool<T>()
+    {
+        var provider = new DefaultObjectPoolProvider();
+        return provider.Create(new QueuePooledObjectPolicy<T>());
+    }
 }
 
 /// <summary>
@@ -342,6 +348,40 @@ internal sealed class StringBuilderPooledObjectPolicy : PooledObjectPolicy<Strin
             return false;
         }
 
+        obj.Clear();
+        return true;
+    }
+}
+
+/// <summary>
+/// A policy for pooling <see cref="Queue{T}"/> instances.
+/// </summary>
+/// <typeparam name="T">The type of the items of the pooled queues.</typeparam>
+internal sealed class QueuePooledObjectPolicy<T> : PooledObjectPolicy<Queue<T>>
+{
+    /// <summary>
+    /// Gets or sets the maximum number of items a <see cref="Queue{T}"/> can contain to be retained,
+    /// when <see cref="Return(Queue{T})"/> is invoked.
+    /// </summary>
+    /// <value>Defaults to <c>1024</c>.</value>
+    public int MaximumRetainedCount { get; set; } = 1024;
+
+    /// <inheritdoc />
+    public override Queue<T> Create()
+    {
+        return new Queue<T>();
+    }
+
+    /// <inheritdoc />
+    public override bool Return(Queue<T> obj)
+    {
+        if (obj.Count > MaximumRetainedCount)
+        {
+            // Too big. Discard this one.
+            return false;
+        }
+
+        // Clear the queue so the pool does not keep the items alive
         obj.Clear();
         return true;
     }

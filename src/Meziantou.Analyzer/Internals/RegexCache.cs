@@ -32,18 +32,6 @@ internal static class RegexCache
     }
 
     /// <summary>
-    /// Indicates whether the pattern matches the input. Returns <paramref name="defaultValue"/> when the pattern
-    /// is invalid or when the evaluation times out.
-    /// </summary>
-    public static bool IsMatch(string pattern, RegexOptions options, string input, bool defaultValue)
-    {
-        if (!TryGetOrCreate(pattern, options, out var regex))
-            return defaultValue;
-
-        return IsMatch(regex, input, defaultValue);
-    }
-
-    /// <summary>
     /// Indicates whether the regex matches the input. Returns <paramref name="defaultValue"/> when the evaluation times out.
     /// </summary>
     public static bool IsMatch(Regex regex, string input, bool defaultValue)
@@ -59,14 +47,10 @@ internal static class RegexCache
     }
 
     /// <summary>
-    /// Replaces all the matches of the pattern in the input. Returns <paramref name="defaultValue"/> when the pattern
-    /// is invalid or when the evaluation times out.
+    /// Replaces all the matches of the regex in the input. Returns <paramref name="defaultValue"/> when the evaluation times out.
     /// </summary>
-    public static string Replace(string pattern, RegexOptions options, string input, string replacement, string defaultValue)
+    public static string Replace(Regex regex, string input, string replacement, string defaultValue)
     {
-        if (!TryGetOrCreate(pattern, options, out var regex))
-            return defaultValue;
-
         try
         {
             return regex.Replace(input, replacement);

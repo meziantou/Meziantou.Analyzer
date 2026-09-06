@@ -39,16 +39,16 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length == 0)
             return;
 
-        // Determine if this is a known format method, what the format arg index is,
+        // Determine if this is a known format method, which parameter is the format string,
         // and whether to report when there are no formatting arguments.
-        int formatArgumentIndex;
+        int formatParameterOrdinal;
         bool reportWhenNoFormattingArgs;
 
         if (method.ContainingType.SpecialType == SpecialType.System_String && method.Name == "Format")
         {
             // string.Format - report even when called with no args (e.g. string.Format("abc"))
             reportWhenNoFormattingArgs = true;
-            formatArgumentIndex = GetFormatArgIndex(operation, formatProviderType);
+            formatParameterOrdinal = GetFormatParameterOrdinal(method, formatProviderType);
         }
         else if (consoleType is not null && method.ContainingType.IsEqualTo(consoleType) &&
                  (method.Name == "Write" || method.Name == "WriteLine"))
@@ -59,27 +59,28 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
                 return;
 
             reportWhenNoFormattingArgs = false;
-            formatArgumentIndex = 0;
+            formatParameterOrdinal = 0;
         }
         else if (stringBuilderType is not null && method.ContainingType.IsEqualTo(stringBuilderType) &&
                  method.Name == "AppendFormat")
         {
             // StringBuilder.AppendFormat - report even when called with no args
             reportWhenNoFormattingArgs = true;
-            formatArgumentIndex = GetFormatArgIndex(operation, formatProviderType);
+            formatParameterOrdinal = GetFormatParameterOrdinal(method, formatProviderType);
         }
         else
         {
             return;
         }
 
-        if (formatArgumentIndex < 0 || formatArgumentIndex >= operation.Arguments.Length)
+        // Named arguments can be written in any order, so the argument of a parameter must be
+        // located using the parameter ordinal instead of the position in the argument list.
+        var formatArgument = GetArgumentForParameter(operation, formatParameterOrdinal);
+        if (formatArgument is null)
             return;
 
-        var formatArgument = operation.Arguments[formatArgumentIndex];
-
         // Check if there are any formatting arguments after the format string
-        var hasFormattingArguments = HasFormattingArguments(operation, formatArgumentIndex);
+        var hasFormattingArguments = HasFormattingArguments(operation, formatParameterOrdinal);
 
         // Case 1: No formatting arguments at all
         if (!hasFormattingArguments)
@@ -102,19 +103,31 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static int GetFormatArgIndex(IInvocationOperation operation, ITypeSymbol? formatProviderType)
+    private static int GetFormatParameterOrdinal(IMethodSymbol method, ITypeSymbol? formatProviderType)
     {
-        if (operation.Arguments.Length > 0 && operation.Arguments[0].Parameter?.Type.IsEqualTo(formatProviderType) == true)
+        if (method.Parameters.Length > 0 && method.Parameters[0].Type.IsEqualTo(formatProviderType))
             return 1;
 
         return 0;
     }
 
-    private static bool HasFormattingArguments(IInvocationOperation operation, int formatArgumentIndex)
+    private static IArgumentOperation? GetArgumentForParameter(IInvocationOperation operation, int parameterOrdinal)
     {
-        for (var i = formatArgumentIndex + 1; i < operation.Arguments.Length; i++)
+        foreach (var argument in operation.Arguments)
         {
-            var arg = operation.Arguments[i];
+            if (argument.Parameter?.Ordinal == parameterOrdinal)
+                return argument;
+        }
+
+        return null;
+    }
+
+    private static bool HasFormattingArguments(IInvocationOperation operation, int formatParameterOrdinal)
+    {
+        foreach (var arg in operation.Arguments)
+        {
+            if (arg.Parameter is not { } parameter || parameter.Ordinal <= formatParameterOrdinal)
+                continue;
 
             // Check if this is a params array argument
             if (arg.ArgumentKind == ArgumentKind.ParamArray && arg.Value is IArrayCreationOperation arrayCreation)

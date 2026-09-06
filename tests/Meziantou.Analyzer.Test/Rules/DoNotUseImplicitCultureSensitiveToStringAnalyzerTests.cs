@@ -402,6 +402,93 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     }
 
     [Fact]
+    public Task StringConcat_ToString_Int32()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void ToString() { _ = "abc" + -1; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringConcat_ToString_Int32_ConfigNotExcludeToString()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.exclude_tostring_methods", "false");
+        test.TestCode = """
+            class Test
+            {
+                void ToString() { _ = "abc" + {|MA0075:-1|}; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringConcat_NullableInt32()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() { _ = "abc" + {|MA0075:(int?)-1|}; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringConcat_NullableInt32_ConfigNotConsiderNullableTypes()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.consider_nullable_types", "false");
+        test.TestCode = """
+            class Test
+            {
+                void A() { _ = "abc" + (int?)-1; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringInterpolation_NullableInt32()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() { _ = $"{|MA0076:{(int?)-1}|}"; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringInterpolation_NullableInt32_ConfigNotConsiderNullableTypes()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.consider_nullable_types", "false");
+        test.TestCode = """
+            class Test
+            {
+                void A() { _ = $"{(int?)-1}"; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ObjectToString()
     {
         var test = CreateTest();
@@ -428,6 +515,112 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
                 {
                     var sample = new Sample();
                     _ = $"Value: {{|MA0107:sample|}}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InToStringMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => new object().ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InToStringMethod_ConfigNotExcludeToString()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0107.exclude_tostring_methods", "false");
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => {|MA0107:new object().ToString()|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InToStringMethod_MA0075ConfigDoesNotApply()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.exclude_tostring_methods", "false");
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => new object().ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {sample}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod_ConfigNotExcludeToString()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0107.exclude_tostring_methods", "false");
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {{|MA0107:sample|}}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod_MA0076ConfigDoesNotApply()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.exclude_tostring_methods", "false");
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {sample}";
                 }
             }
             """;

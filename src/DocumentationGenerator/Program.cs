@@ -49,10 +49,13 @@ var globalConfigurationKeys = new HashSet<string>(StringComparer.Ordinal)
     "max_line_length",
 };
 
-var (ruleConfigurationKeys, unattributedConfigurationKeys) = GetRuleConfigurationKeys(assemblies);
-foreach (var configurationKey in unattributedConfigurationKeys)
+var configurationDefinitions = GetConfigurationDefinitions(assemblies);
+var ruleConfigurationKeys = GetRuleConfigurationKeys(configurationDefinitions);
+var declaredConfigurationKeys = new HashSet<string>(configurationDefinitions.SelectMany(definition => definition), StringComparer.Ordinal);
+
+foreach (var configurationKey in declaredConfigurationKeys.Order(StringComparer.Ordinal))
 {
-    if (globalConfigurationKeys.Contains(configurationKey))
+    if (globalConfigurationKeys.Contains(configurationKey) || TryGetRuleIdPrefix(configurationKey, out _))
         continue;
 
     documentationValidationErrorCount++;
@@ -115,6 +118,25 @@ Console.WriteLine(sb.ToString());
 
             documentationValidationErrorCount++;
             Console.Error.WriteLine($"Missing configuration key '{configurationKey}' in {path.MakePathRelativeTo(outputFolder)}");
+        }
+    }
+
+    // Last segments that look like a configuration key but are not one: links to another rule page or to a source file, and the severity of a rule
+    var nonConfigurationKeySuffixes = new HashSet<string>(StringComparer.Ordinal) { "md", "cs", "severity" };
+
+    void ValidateRuleDocumentationConfigurationKeysExist(FullPath path, string content)
+    {
+        foreach (Match match in Regex.Matches(content, @"(?<![\w.])(?:dotnet_diagnostic\.)?MA[0-9]{4}\.(?<suffix>[A-Za-z0-9_]+)"))
+        {
+            var key = match.Value;
+            if (nonConfigurationKeySuffixes.Contains(match.Groups["suffix"].Value))
+                continue;
+
+            if (declaredConfigurationKeys.Contains(key))
+                continue;
+
+            documentationValidationErrorCount++;
+            Console.Error.WriteLine($"Configuration key '{key}' in {path.MakePathRelativeTo(outputFolder)} is not declared by any ConfigurationDefinition");
         }
     }
 
@@ -196,6 +218,7 @@ Console.WriteLine(sb.ToString());
                 newContent = Regex.Replace(newContent, "(?<=<!-- sources -->\\r?\\n).*(?=<!-- sources -->)", (sourceLinks.Count == 1 ? "Source: " : "Sources: ") + string.Join(", ", sourceLinks) + "\n", RegexOptions.Singleline);
 
                 ValidateRuleDocumentationContainsConfigurationKeys(detailPath, diagnostic.Id, newContent);
+                ValidateRuleDocumentationConfigurationKeysExist(detailPath, newContent);
                 WriteFileIfChanged(detailPath, newContent);
             }
             else
@@ -505,11 +528,11 @@ static string GetBoolean(bool value)
     return value ? "✔️" : "❌";
 }
 
-static (IReadOnlyDictionary<string, IReadOnlyList<string>> RuleKeys, IReadOnlyList<string> UnattributedKeys) GetRuleConfigurationKeys(IEnumerable<Assembly> assemblies)
+// Each definition is the current name of an option, followed by its legacy names
+static IReadOnlyList<IReadOnlyList<string>> GetConfigurationDefinitions(IEnumerable<Assembly> assemblies)
 {
     var keysPropertyName = nameof(ConfigurationDefinition<bool>.Keys);
-    var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
-    var unattributedKeys = new HashSet<string>(StringComparer.Ordinal);
+    var result = new List<IReadOnlyList<string>>();
 
     foreach (var type in assemblies.SelectMany(assembly => assembly.GetTypes()))
     {
@@ -520,41 +543,15 @@ static (IReadOnlyDictionary<string, IReadOnlyList<string>> RuleKeys, IReadOnlyLi
 
             foreach (var configuration in EnumerateConfigurationDefinitions(field.GetValue(null)))
             {
-                if (configuration.GetType().GetProperty(keysPropertyName)?.GetValue(configuration) is not IEnumerable<string> configurationKeys)
-                    continue;
-
-                // Only the current name of an option is documented: its legacy names are still supported, but they must not be advertised
-                var isCurrentName = true;
-                foreach (var key in configurationKeys)
+                if (configuration.GetType().GetProperty(keysPropertyName)?.GetValue(configuration) is IEnumerable<string> keys)
                 {
-                    if (TryGetRuleIdPrefix(key, out var ruleId) is false)
-                    {
-                        unattributedKeys.Add(key);
-                    }
-                    else if (isCurrentName)
-                    {
-                        if (!result.TryGetValue(ruleId, out var keys))
-                        {
-                            keys = [with(StringComparer.Ordinal)];
-                            result.Add(ruleId, keys);
-                        }
-
-                        keys.Add(key);
-                    }
-
-                    isCurrentName = false;
+                    result.Add([.. keys]);
                 }
             }
         }
     }
 
-    var output = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
-    foreach (var item in result)
-    {
-        output[item.Key] = [.. item.Value.Order(StringComparer.Ordinal)];
-    }
-
-    return (output, [.. unattributedKeys.Order(StringComparer.Ordinal)]);
+    return result;
 }
 
 static bool IsConfigurationDefinition(Type type)
@@ -563,8 +560,7 @@ static bool IsConfigurationDefinition(Type type)
 }
 
 // A rule does not always expose its options as fields of their own: some of them keep a registry of the options
-// they handle (MA0220). Only the fields that can hold a definition are read, so that unrelated static
-// constructors are not run.
+// they handle. Only the fields that can hold a definition are read, so that unrelated static constructors are not run.
 static bool CanContainConfigurationDefinitions(Type type)
 {
     if (IsConfigurationDefinition(type))
@@ -573,7 +569,9 @@ static bool CanContainConfigurationDefinitions(Type type)
     if (type.IsArray)
         return type.GetElementType() is { } elementType && CanContainConfigurationDefinitions(elementType);
 
-    if (type.IsGenericType)
+    // Only the collections of definitions are walked: another generic type that merely mentions the type of a
+    // definition, such as a cached lambda taking one, is not a container
+    if (type.IsGenericType && typeof(IEnumerable).IsAssignableFrom(type))
         return Array.Exists(type.GetGenericArguments(), CanContainConfigurationDefinitions);
 
     return false;
@@ -602,6 +600,35 @@ static IEnumerable<object> EnumerateConfigurationDefinitions(object? value)
             yield return configuration;
         }
     }
+}
+
+static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<IReadOnlyList<string>> configurationDefinitions)
+{
+    var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+    foreach (var definition in configurationDefinitions)
+    {
+        // Only the current name of an option is documented: its legacy names are still supported, but they must not be advertised
+        var key = definition[0];
+        if (TryGetRuleIdPrefix(key, out var ruleId) is false)
+            continue;
+
+        if (!result.TryGetValue(ruleId, out var keys))
+        {
+            keys = [with(StringComparer.Ordinal)];
+            result.Add(ruleId, keys);
+        }
+
+        keys.Add(key);
+    }
+
+    var output = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
+    foreach (var item in result)
+    {
+        output[item.Key] = [.. item.Value.Order(StringComparer.Ordinal)];
+    }
+
+    return output;
 }
 
 static bool TryGetRuleIdPrefix(string key, [NotNullWhen(true)] out string? ruleId)

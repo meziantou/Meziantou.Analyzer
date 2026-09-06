@@ -33,7 +33,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> AllowTypeNamePrefixConfiguration = new(Rule.Id + ".allow_type_name_prefix", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> UseLongestTypeNamePrefixConfiguration = new(Rule.Id + ".use_longest_type_name_prefix", defaultValue: false);
     private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsConfiguration = new(Rule.Id + ".excluded_file_name_parts", defaultValue: string.Empty);
-    private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsRegexConfiguration = new(Rule.Id + ".excluded_file_name_parts_regex", defaultValue: string.Empty);
+    private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsRegexConfiguration = new(Rule.Id + ".excluded_file_name_parts_regex", defaultValue: string.Empty) { RegexOptions = RegexOptions.CultureInvariant | RegexOptions.IgnoreCase };
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
@@ -191,16 +191,16 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static string? GetFileNameWithoutExcludedParts(SymbolAnalysisContext context, SyntaxTree sourceTree, ReadOnlySpan<char> filePath)
     {
         var excludedParts = context.Options.GetConfigurationValue(sourceTree, ExcludedFileNamePartsConfiguration);
-        var excludedPartsRegex = context.Options.GetConfigurationValue(sourceTree, ExcludedFileNamePartsRegexConfiguration);
-        if (string.IsNullOrEmpty(excludedParts) && string.IsNullOrEmpty(excludedPartsRegex))
+        context.Options.TryGetConfigurationRegex(sourceTree, ExcludedFileNamePartsRegexConfiguration, out var excludedPartsRegex);
+        if (string.IsNullOrEmpty(excludedParts) && excludedPartsRegex is null)
             return null;
 
         var fileName = GetFileNameWithoutExtension(filePath).ToString();
 
         // The regex is applied first, so it can match the dots that MA0048.excluded_file_name_parts may remove
-        if (!string.IsNullOrEmpty(excludedPartsRegex))
+        if (excludedPartsRegex is not null)
         {
-            fileName = RegexCache.Replace(excludedPartsRegex, RegexOptions.CultureInvariant | RegexOptions.IgnoreCase, fileName, replacement: "", defaultValue: fileName);
+            fileName = RegexCache.Replace(excludedPartsRegex, fileName, replacement: "", defaultValue: fileName);
         }
 
         foreach (var part in excludedParts.Split([',', '|'], StringSplitOptions.RemoveEmptyEntries))

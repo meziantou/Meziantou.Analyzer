@@ -510,6 +510,35 @@ public sealed class LoggerParameterTypeAnalyzerTests
     }
 
     [Fact]
+    public Task ConfigurationFromAttribute_AttributeDefinedInTheProject()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            [assembly: Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0124:2|});
+            logger.LogInformation("{Prop}", 2L);
+            logger.LogInformation("{Prop}", "");
+
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class StructuredLogFieldAttribute : System.Attribute
+                {
+                    public StructuredLogFieldAttribute(string parameterName, params System.Type[] allowedTypes) { }
+                }
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task LoggerMessageAttribute_ValidParameterTypes()
     {
         var test = CreateTest();
@@ -749,6 +778,69 @@ public sealed class LoggerParameterTypeAnalyzerTests
             """;
         test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
             Name;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedMessageArgument_InvalidParameterType()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventId = 10_004, Level = LogLevel.Trace, Message = "Test message with {Prop}")]
+                static partial void LogTestMessage(ILogger logger, int {|MA0124:Prop|});
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedMessageArgument_ValidParameterType()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventId = 10_004, Level = LogLevel.Trace, Message = "Test message with {Prop}")]
+                static partial void LogTestMessage(ILogger logger, string Prop);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedEventNameArgument_IsNotUsedAsMessage()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventName = "{Prop}", Level = LogLevel.Trace, Message = "Test message")]
+                static partial void LogTestMessage(ILogger logger, int Prop);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
             """));
 
         return test.RunAsync();

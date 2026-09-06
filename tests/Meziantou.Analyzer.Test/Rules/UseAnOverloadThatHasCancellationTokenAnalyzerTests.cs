@@ -843,6 +843,101 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     }
 
     [Fact]
+    public Task AwaitForEach_NoCancellationTokenAvailable_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A(IAsyncEnumerable<int> enumerable)
+                {
+                    await foreach (var item in {|MA0080:enumerable|})
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitForEach_Method_NoCancellationTokenAvailable_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A()
+                {
+                    await foreach (var item in {|MA0080:Enumerate()|})
+                    {
+                    }
+                }
+
+                public static IAsyncEnumerable<int> Enumerate() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitForEach_NoCancellationTokenAvailable_InterfaceImplementation_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            interface ITest
+            {
+                Task A(IAsyncEnumerable<int> enumerable);
+            }
+
+            class Test : ITest
+            {
+                public async Task A(IAsyncEnumerable<int> enumerable)
+                {
+                    await foreach (var item in enumerable)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitForEach_NoCancellationTokenAvailable_ExcludedMethod_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.AddMeziantouAnnotations();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A()
+                {
+                    await foreach (var item in Enumerate())
+                    {
+                    }
+                }
+
+                [Meziantou.Analyzer.Annotations.ExcludeFromCancellationTokenAnalysis]
+                public static IAsyncEnumerable<int> Enumerate() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task DisposeAsync_NoNeedForCancellationToken()
     {
         var test = CreateTest();

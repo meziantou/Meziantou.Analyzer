@@ -197,6 +197,38 @@ public sealed class ClassMustBeSealedAnalyzerTests
     }
 
     [Fact]
+    public Task VirtualMember_EditorConfig_DocumentedConfigurationName()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0053.class_with_virtual_member_should_be_sealed", "true");
+        test.TestCode = """
+            internal class {|MA0053:SampleException|}
+            {
+                protected virtual void A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VirtualMember_EditorConfig_DocumentedConfigurationNameOverridesLegacyOne()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(
+            ("MA0053.class_with_virtual_member_shoud_be_sealed", "true"),
+            ("MA0053.class_with_virtual_member_should_be_sealed", "false"));
+        test.TestCode = """
+            internal class SampleException
+            {
+                protected virtual void A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ComImport()
     {
         var test = CreateTest();

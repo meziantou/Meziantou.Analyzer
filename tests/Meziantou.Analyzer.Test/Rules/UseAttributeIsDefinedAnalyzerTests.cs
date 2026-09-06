@@ -858,4 +858,131 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task MemberInfo_GetCustomAttributes_Array_Any()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Any()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_GetCustomAttributes_Array_Any()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:Attribute.GetCustomAttributes(member, typeof(ObsoleteAttribute)).Any()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MemberInfo_GetCustomAttributes_Array_Count_GreaterThanZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: true).Count() > 0|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UserDefinedGetCustomAttributesExtensionMethod_Any_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            using System.Reflection;
+
+            static class Extensions
+            {
+                public static object[] GetCustomAttributes(this MemberInfo member, string name) => null;
+            }
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttributes("name").Any();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -96,28 +96,15 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 operation = operation.UnwrapConversions();
                 if (operation is IParameterReferenceOperation { Parameter: var parameter })
                 {
-                    if (parameter.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || parameter.Type.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
-                    {
-                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
-                    }
-                    else if (reportTypesWithDataClassification && TypeContainsMembersWithDataClassification(parameter.Type, dataClassificationAttributeSymbol))
-                    {
-                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
-                    }
+                    ValidateSymbol(diagnosticReporter, parameter, parameter.Type, containingType: null, reportOperation, dataClassificationAttributeSymbol, reportTypesWithDataClassification);
                 }
                 else if (operation is IPropertyReferenceOperation { Property: var property })
                 {
-                    if (property.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || property.ContainingType.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
-                    {
-                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
-                    }
+                    ValidateSymbol(diagnosticReporter, property, property.Type, property.ContainingType, reportOperation, dataClassificationAttributeSymbol, reportTypesWithDataClassification);
                 }
                 else if (operation is IFieldReferenceOperation { Field: var field })
                 {
-                    if (field.HasAttribute(dataClassificationAttributeSymbol, inherits: true) || field.ContainingType.HasAttribute(dataClassificationAttributeSymbol, inherits: true))
-                    {
-                        diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
-                    }
+                    ValidateSymbol(diagnosticReporter, field, field.Type, field.ContainingType, reportOperation, dataClassificationAttributeSymbol, reportTypesWithDataClassification);
                 }
                 else if (operation is IArrayElementReferenceOperation arrayElementReferenceOperation)
                 {
@@ -144,6 +131,20 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                             diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                         }
                     }
+                }
+            }
+
+            static void ValidateSymbol(DiagnosticReporter diagnosticReporter, ISymbol symbol, ITypeSymbol type, INamedTypeSymbol? containingType, IOperation reportOperation, INamedTypeSymbol dataClassificationAttributeSymbol, bool reportTypesWithDataClassification)
+            {
+                if (symbol.HasAttribute(dataClassificationAttributeSymbol, inherits: true) ||
+                    type.HasAttribute(dataClassificationAttributeSymbol, inherits: true) ||
+                    containingType?.HasAttribute(dataClassificationAttributeSymbol, inherits: true) is true)
+                {
+                    diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
+                }
+                else if (reportTypesWithDataClassification && TypeContainsMembersWithDataClassification(type, dataClassificationAttributeSymbol))
+                {
+                    diagnosticReporter.ReportDiagnostic(Rule, reportOperation);
                 }
             }
         }
