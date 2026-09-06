@@ -25,7 +25,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
         context.RegisterCompilationStartAction(context =>
         {
             var analyzerContext = new AnalyzerContext(context.Compilation);

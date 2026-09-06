@@ -35,6 +35,25 @@ MA0051.report_generated_code = true
 When neither is set, each rule uses its own default, which is to not report in generated code, except for the rules
 below. To turn off a rule entirely, set its severity to `none` instead.
 
+## Opting out with the environment variable
+
+Analyzing generated code costs build time, and a project where nothing reports in generated code pays it for nothing.
+Set the `MEZIANTOU_ANALYZER_GENERATED_CODE` environment variable to skip generated code entirely:
+
+| Value | Behavior |
+|-------|----------|
+| not set, empty, or any other value | The rules analyze generated code, and `report_generated_code` decides what they report |
+| `false` (case-insensitive) or `0` | The rules skip generated code, except the ones that need it |
+
+The variable can only remove analysis from the rules that do not need it. Two kinds of rules are unaffected: the ones
+that report in generated code by default, listed below, and the ones that need to see the whole compilation to be
+correct, such as MA0053, which reports a class that no other class inherits from and would report a false positive if
+the deriving class were declared in a generated file.
+
+The option above only decides what the rules report, not what they analyze, so `report_generated_code = true` has no
+effect on a rule that skips generated code because of the variable. Setting it to `false` always works, as a rule can
+only report what it is allowed to report.
+
 ## Rules reporting in generated code by default
 
 <!-- rules -->
@@ -80,10 +99,14 @@ written file does not make the code generated, and a partial type declared in a 
 one reports only in the hand written file. Use the `generated_code` option below for the files the detection does not
 recognize.
 
+The rules that skip generated code because of the environment variable never see it, so they follow the detection of
+Roslyn instead, which also considers the symbols marked with `[GeneratedCode]` or `[DebuggerNonUserCode]` generated.
+
 ## Using the `generated_code` option
 
 Roslyn supports the `generated_code` option, which overrides the detection above for a set of files. Unlike
-`report_generated_code`, it applies to **all** the analyzers, not only to Meziantou.Analyzer:
+`report_generated_code` and the environment variable, it applies to **all** the analyzers, not only to
+Meziantou.Analyzer:
 
 ```ini
 [Generated/**.cs]
@@ -92,3 +115,23 @@ generated_code = false
 
 Use `report_generated_code` when you want Meziantou.Analyzer specifically to report everything Roslyn considers
 generated, and `generated_code` when you want all the analyzers to treat a specific set of files as regular code.
+
+## Why an environment variable
+
+An analyzer must declare how it handles generated code from `Initialize(AnalysisContext)`, and the options of the
+`.editorconfig` files are not available at that point: they can only be read from the analysis callbacks, which run
+later. An environment variable is the only configuration that can be read early enough, which is why the global
+opt-out is not an `.editorconfig` option.
+
+This has consequences that are worth knowing:
+
+- **The compiler server caches the value.** `dotnet build` and `msbuild` run the analyzers inside `VBCSCompiler`,
+  which is reused across builds and keeps the environment it was started with. Run `dotnet build-server shutdown`
+  after changing the variable.
+- **The IDEs cache it too.** Visual Studio, Rider, and the C# extension of Visual Studio Code run the analyzers in
+  their own long-lived processes. Restart the IDE after changing the variable.
+- **Changing the variable does not invalidate the build.** It is not a compiler input, so MSBuild considers the
+  projects up-to-date and skips the compilation. Rebuild the solution to see the new diagnostics.
+- **There is no MSBuild property.** MSBuild can only pass environment variables to a process it starts itself,
+  which is not the case when the compilation is delegated to the compiler server. A property would work on some
+  machines and silently do nothing on others.

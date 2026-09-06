@@ -18,7 +18,7 @@ public sealed class NonConstantStaticFieldsShouldNotBeVisibleAnalyzer : Diagnost
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.Field);
     }

@@ -33,7 +33,19 @@ internal sealed class CSharpAnalyzerTest<TAnalyzer>
     /// </summary>
     public IList<DiagnosticAnalyzer> AdditionalAnalyzers { get; } = [];
 
-    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers() => [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
+    /// <summary>
+    /// How the analyzers handle generated code. This is how the tests simulate the
+    /// <c>MEZIANTOU_ANALYZER_GENERATED_CODE</c> environment variable, which the rules read once per process.
+    /// </summary>
+    public GeneratedCodeAnalysisFlags? GeneratedCodeAnalysisFlags { get; set; }
+
+    protected override IEnumerable<DiagnosticAnalyzer> GetDiagnosticAnalyzers()
+    {
+        IEnumerable<DiagnosticAnalyzer> analyzers = [.. base.GetDiagnosticAnalyzers(), .. AdditionalAnalyzers];
+        return GeneratedCodeAnalysisFlags is { } flags
+            ? analyzers.Select(analyzer => new Helpers.GeneratedCodeAnalysisAnalyzer(analyzer, flags))
+            : analyzers;
+    }
 
     /// <summary>
     /// Runs the source generators shipped with the .NET reference pack the test compiles against, so that the

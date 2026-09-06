@@ -1,4 +1,5 @@
 ﻿M:Microsoft.CodeAnalysis.Compilation.GetTypeByMetadataName(System.String); Use GetBestTypeByMetadataName instead
+M:Microsoft.CodeAnalysis.Diagnostics.AnalysisContext.ConfigureGeneratedCodeAnalysis(Microsoft.CodeAnalysis.Diagnostics.GeneratedCodeAnalysisFlags); Use ConfigureAnalysisOfGeneratedCode instead, so users can opt out of analyzing generated code
 M:Microsoft.CodeAnalysis.Diagnostics.SymbolAnalysisContext.ReportDiagnostic(Microsoft.CodeAnalysis.Diagnostic); Use the ReportDiagnostic methods of ContextExtensions instead, so the diagnostics located in generated code are filtered by GeneratedCodeReporting
 M:Microsoft.CodeAnalysis.Diagnostics.OperationAnalysisContext.ReportDiagnostic(Microsoft.CodeAnalysis.Diagnostic); Use the ReportDiagnostic methods of ContextExtensions instead, so the diagnostics located in generated code are filtered by GeneratedCodeReporting
 M:Microsoft.CodeAnalysis.Diagnostics.OperationBlockAnalysisContext.ReportDiagnostic(Microsoft.CodeAnalysis.Diagnostic); Use the ReportDiagnostic methods of ContextExtensions instead, so the diagnostics located in generated code are filtered by GeneratedCodeReporting
