@@ -6,28 +6,28 @@ namespace Meziantou.Analyzer.Test.Internals;
 public sealed class AnalysisContextExtensionsTests
 {
     [Theory]
-    [InlineData("0")]
-    [InlineData(" 0 ")]
-    [InlineData("false")]
-    [InlineData("False")]
-    [InlineData("FALSE")]
-    [InlineData("  false  ")]
-    public void GetAdditionalFlags_OptedOut(string value)
+    [InlineData("1")]
+    [InlineData(" 1 ")]
+    [InlineData("true")]
+    [InlineData("True")]
+    [InlineData("TRUE")]
+    [InlineData("  true  ")]
+    public void GetAdditionalFlags_OptedIn(string value)
     {
-        Assert.Equal(GeneratedCodeAnalysisFlags.None, AnalysisContextExtensions.GetAdditionalFlags(value));
+        Assert.Equal(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics, AnalysisContextExtensions.GetAdditionalFlags(value));
     }
 
     [Theory]
     [InlineData(null)]
     [InlineData("")]
     [InlineData("   ")]
-    [InlineData("1")]
-    [InlineData("true")]
-    [InlineData("True")]
+    [InlineData("0")]
+    [InlineData("false")]
+    [InlineData("False")]
     [InlineData("dummy")]
-    [InlineData("falsy")]
-    public void GetAdditionalFlags_NotOptedOut(string? value)
+    [InlineData("truthy")]
+    public void GetAdditionalFlags_NotOptedIn(string? value)
     {
-        Assert.Equal(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics, AnalysisContextExtensions.GetAdditionalFlags(value));
+        Assert.Equal(GeneratedCodeAnalysisFlags.None, AnalysisContextExtensions.GetAdditionalFlags(value));
     }
 }

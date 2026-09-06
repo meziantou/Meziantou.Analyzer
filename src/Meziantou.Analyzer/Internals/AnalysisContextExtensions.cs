@@ -14,11 +14,11 @@ internal static class AnalysisContextExtensions
     private static readonly GeneratedCodeAnalysisFlags AdditionalFlags = GetAdditionalFlags(ReadEnvironmentVariable());
 
     /// <summary>
-    /// Configures how the analyzer handles generated code. The rules analyze generated code and report the
-    /// diagnostics located in it, which <see cref="GeneratedCodeReporting"/> then filters, unless the
-    /// <c>MEZIANTOU_ANALYZER_GENERATED_CODE</c> environment variable opts out, as analyzing generated code has a
-    /// cost. <paramref name="defaultFlags"/> is the minimum, which opting out cannot remove: it is what the rule
-    /// needs to be correct, or to report in generated code by default.
+    /// Configures how the analyzer handles generated code. The rules skip generated code, as analyzing it has a
+    /// cost, unless the <c>MEZIANTOU_ANALYZER_GENERATED_CODE</c> environment variable opts in, in which case they
+    /// analyze it and report the diagnostics located in it, which <see cref="GeneratedCodeReporting"/> then
+    /// filters. <paramref name="defaultFlags"/> is the minimum, which not opting in cannot remove: it is what the
+    /// rule needs to be correct, or to report in generated code by default.
     /// </summary>
     public static void ConfigureAnalysisOfGeneratedCode(this AnalysisContext context, GeneratedCodeAnalysisFlags defaultFlags)
     {
@@ -29,9 +29,9 @@ internal static class AnalysisContextExtensions
 
     internal static GeneratedCodeAnalysisFlags GetAdditionalFlags(string? value) => value?.Trim() switch
     {
-        "0" => GeneratedCodeAnalysisFlags.None,
-        var trimmed when string.Equals(trimmed, "false", StringComparison.OrdinalIgnoreCase) => GeneratedCodeAnalysisFlags.None,
-        _ => GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics,
+        "1" => GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics,
+        var trimmed when string.Equals(trimmed, "true", StringComparison.OrdinalIgnoreCase) => GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics,
+        _ => GeneratedCodeAnalysisFlags.None,
     };
 
     private static string? ReadEnvironmentVariable()

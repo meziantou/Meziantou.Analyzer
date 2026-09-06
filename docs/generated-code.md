@@ -1,14 +1,15 @@
 # Analyzing generated code
 
-The rules analyze generated code, so they see the whole compilation, but most of them do not report the diagnostics
-located in generated code, which is the expected behavior for the vast majority of projects: you cannot fix code you
-do not own. Some rules are the exception and report in generated code by default, as the generated file is the
-subject of the rule, such as the Blazor rules that work on the code generated from the `.razor` files.
+The rules skip generated code, which is the expected behavior for the vast majority of projects: you cannot fix code
+you do not own, and analyzing code nobody looks at costs build time. Some rules are the exception and analyze it
+anyway: the ones whose subject is the generated file itself, such as the Blazor rules that work on the code generated
+from the `.razor` files, and the ones that need to see the whole compilation to be correct. Set the
+`MEZIANTOU_ANALYZER_GENERATED_CODE` environment variable to opt in to analyzing generated code with every rule.
 
 ## Configuration
 
-The `report_generated_code` option indicates whether a rule reports the diagnostics located in generated code. It can
-be set for a single rule, or for all of them at once with the `MA` prefix:
+The `report_generated_code` option indicates whether a rule reports the diagnostics located in the generated code it
+analyzes. It can be set for a single rule, or for all of them at once with the `MA` prefix:
 
 ```ini
 [*.cs]
@@ -35,24 +36,23 @@ MA0051.report_generated_code = true
 When neither is set, each rule uses its own default, which is to not report in generated code, except for the rules
 below. To turn off a rule entirely, set its severity to `none` instead.
 
-## Opting out with the environment variable
+This option only decides what a rule reports, not what it analyzes, so `report_generated_code = true` has no effect on
+a rule that does not analyze generated code: it needs the environment variable below. Setting it to `false` always
+works, as a rule can only report what it is allowed to report.
 
-Analyzing generated code costs build time, and a project where nothing reports in generated code pays it for nothing.
-Set the `MEZIANTOU_ANALYZER_GENERATED_CODE` environment variable to skip generated code entirely:
+## Opting in with the environment variable
+
+Set the `MEZIANTOU_ANALYZER_GENERATED_CODE` environment variable to analyze generated code with every rule:
 
 | Value | Behavior |
 |-------|----------|
-| not set, empty, or any other value | The rules analyze generated code, and `report_generated_code` decides what they report |
-| `false` (case-insensitive) or `0` | The rules skip generated code, except the ones that need it |
+| `true` (case-insensitive) or `1` | The rules analyze generated code, and `report_generated_code` decides what they report |
+| not set, empty, or any other value | The rules skip generated code, except the ones that need it |
 
-The variable can only remove analysis from the rules that do not need it. Two kinds of rules are unaffected: the ones
-that report in generated code by default, listed below, and the ones that need to see the whole compilation to be
-correct, such as MA0053, which reports a class that no other class inherits from and would report a false positive if
-the deriving class were declared in a generated file.
-
-The option above only decides what the rules report, not what they analyze, so `report_generated_code = true` has no
-effect on a rule that skips generated code because of the variable. Setting it to `false` always works, as a rule can
-only report what it is allowed to report.
+Two kinds of rules analyze generated code without the variable: the ones that report in generated code by default,
+listed below, and the ones that need to see the whole compilation to be correct, such as MA0053, which reports a class
+that no other class inherits from and would report a false positive if the deriving class were declared in a generated
+file. `report_generated_code` works on those rules whether the variable is set or not.
 
 ## Rules reporting in generated code by default
 
@@ -99,8 +99,9 @@ written file does not make the code generated, and a partial type declared in a 
 one reports only in the hand written file. Use the `generated_code` option below for the files the detection does not
 recognize.
 
-The rules that skip generated code because of the environment variable never see it, so they follow the detection of
-Roslyn instead, which also considers the symbols marked with `[GeneratedCode]` or `[DebuggerNonUserCode]` generated.
+The rules that do not analyze generated code never see it, so they follow the detection of Roslyn instead, which also
+considers the symbols marked with `[GeneratedCode]` or `[DebuggerNonUserCode]` generated. The two detections only
+differ for a rule the variable opted in.
 
 ## Using the `generated_code` option
 
@@ -121,7 +122,7 @@ generated, and `generated_code` when you want all the analyzers to treat a speci
 An analyzer must declare how it handles generated code from `Initialize(AnalysisContext)`, and the options of the
 `.editorconfig` files are not available at that point: they can only be read from the analysis callbacks, which run
 later. An environment variable is the only configuration that can be read early enough, which is why the global
-opt-out is not an `.editorconfig` option.
+opt-in is not an `.editorconfig` option.
 
 This has consequences that are worth knowing:
 
