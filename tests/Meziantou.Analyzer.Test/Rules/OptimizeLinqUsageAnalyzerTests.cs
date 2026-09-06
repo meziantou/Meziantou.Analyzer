@@ -865,6 +865,102 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Fact]
+    public Task Any_List_Negated_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    if (!{|MA0112:collection.Any()|}) { }
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    if (!(collection.Count != 0)) { }
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_List_MemberAccess_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = {|MA0112:collection.Any()|}.ToString();
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = (collection.Count != 0).ToString();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_List_KeepsTrivia_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = /* before */ {|MA0112:collection.Any()|} /* after */;
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = /* before */ collection.Count != 0 /* after */;
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Any_Array()
     {
         var test = new CodeFixTest();
