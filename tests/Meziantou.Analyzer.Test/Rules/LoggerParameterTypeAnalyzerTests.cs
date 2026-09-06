@@ -510,6 +510,35 @@ public sealed class LoggerParameterTypeAnalyzerTests
     }
 
     [Fact]
+    public Task ConfigurationFromAttribute_AttributeDefinedInTheProject()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            [assembly: Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute("Prop", typeof(string), typeof(long))]
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0124:2|});
+            logger.LogInformation("{Prop}", 2L);
+            logger.LogInformation("{Prop}", "");
+
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class StructuredLogFieldAttribute : System.Attribute
+                {
+                    public StructuredLogFieldAttribute(string parameterName, params System.Type[] allowedTypes) { }
+                }
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task LoggerMessageAttribute_ValidParameterTypes()
     {
         var test = CreateTest();
