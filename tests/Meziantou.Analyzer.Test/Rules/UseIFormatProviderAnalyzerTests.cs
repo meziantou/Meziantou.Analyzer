@@ -42,7 +42,7 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
-    public Task Int32_PositiveToStringWithoutCultureInfo_ShouldReportDiagnostic()
+    public Task Int32_PositiveToStringWithoutCultureInfo_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """

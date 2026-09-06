@@ -421,7 +421,7 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
-    public Task False_ShouldReportDiagnostic()
+    public Task False_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -438,7 +438,7 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
-    public Task Null_ShouldReportDiagnostic()
+    public Task Null_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
