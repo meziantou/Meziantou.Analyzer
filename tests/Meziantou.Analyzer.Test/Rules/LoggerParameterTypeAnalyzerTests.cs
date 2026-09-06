@@ -753,4 +753,67 @@ public sealed class LoggerParameterTypeAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedMessageArgument_InvalidParameterType()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventId = 10_004, Level = LogLevel.Trace, Message = "Test message with {Prop}")]
+                static partial void LogTestMessage(ILogger logger, int {|MA0124:Prop|});
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedMessageArgument_ValidParameterType()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventId = 10_004, Level = LogLevel.Trace, Message = "Test message with {Prop}")]
+                static partial void LogTestMessage(ILogger logger, string Prop);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LoggerMessageAttribute_NamedEventNameArgument_IsNotUsedAsMessage()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            partial class LoggerExtensions
+            {
+                [LoggerMessage(EventName = "{Prop}", Level = LogLevel.Trace, Message = "Test message")]
+                static partial void LogTestMessage(ILogger logger, int Prop);
+            }
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.String
+            """));
+
+        return test.RunAsync();
+    }
 }
