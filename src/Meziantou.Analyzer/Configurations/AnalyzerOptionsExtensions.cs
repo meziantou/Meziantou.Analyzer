@@ -7,7 +7,7 @@ public static class AnalyzerOptionsExtensions
         if (!configuration.HasDefaultValue)
             throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
 
-        if (TryGetConfigurationValue(options, syntaxTree, configuration.Key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, configuration, out var value))
         {
             return ChangeType(value, configuration);
         }
@@ -17,7 +17,7 @@ public static class AnalyzerOptionsExtensions
 
     public static T GetConfigurationValue<T>(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<T> configuration, T defaultValue)
     {
-        if (TryGetConfigurationValue(options, syntaxTree, configuration.Key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, configuration, out var value))
             return ChangeType(value, configuration.Key, defaultValue);
 
         return defaultValue;
@@ -43,26 +43,10 @@ public static class AnalyzerOptionsExtensions
         if (!configuration.HasDefaultValue)
             throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
 
-        foreach (var location in symbol.Locations)
-        {
-            var syntaxTree = location.SourceTree;
-            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, configuration.Key, out var value))
-                return ChangeType(value, configuration);
-        }
+        if (options.TryGetConfigurationValue(symbol, configuration, out var value))
+            return ChangeType(value, configuration);
 
         return configuration.DefaultValue;
-    }
-
-    public static T GetConfigurationValue<T>(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<T> configuration, T defaultValue)
-    {
-        foreach (var location in symbol.Locations)
-        {
-            var syntaxTree = location.SourceTree;
-            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, configuration.Key, out var value))
-                return ChangeType(value, configuration.Key, defaultValue);
-        }
-
-        return defaultValue;
     }
 
     public static bool TryGetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, [NotNullWhen(true)] out string? value)
@@ -73,12 +57,26 @@ public static class AnalyzerOptionsExtensions
 
     public static bool TryGetConfigurationValue<T>(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<T> configuration, [NotNullWhen(true)] out string? value)
     {
-        return TryGetConfigurationValue(options, syntaxTree, configuration.Key, out value);
+        foreach (var key in configuration.Keys)
+        {
+            if (TryGetConfigurationValue(options, syntaxTree, key, out value))
+                return true;
+        }
+
+        value = null;
+        return false;
     }
 
     public static bool TryGetConfigurationValue<T>(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<T> configuration, [NotNullWhen(true)] out string? value)
     {
-        return TryGetConfigurationValue(options, symbol, configuration.Key, out value);
+        foreach (var key in configuration.Keys)
+        {
+            if (TryGetConfigurationValue(options, symbol, key, out value))
+                return true;
+        }
+
+        value = null;
+        return false;
     }
 
     public static bool TryGetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, [NotNullWhen(true)] out string? value)

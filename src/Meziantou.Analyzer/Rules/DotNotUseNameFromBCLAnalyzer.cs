@@ -18,8 +18,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
-    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
-    internal static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
+    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new([RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex"], defaultValue: "^System($|\\.)");
 
     private static Dictionary<string, List<string>>? s_types;
     private static Dictionary<string, List<string>>? s_typesPreview;
@@ -70,12 +69,7 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static Regex? GetNamespacesRegex(SymbolAnalysisContext context, ISymbol symbol)
     {
-        var pattern = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
-        if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredPattern))
-        {
-            pattern = configuredPattern;
-        }
-
+        var pattern = context.Options.GetConfigurationValue(symbol, NamespacesRegexConfiguration);
         if (RegexCache.TryGetOrCreate(pattern, RegexOptions.None, out var regex))
             return regex;
 

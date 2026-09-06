@@ -24,7 +24,6 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
     [
         NamedParameterAnalyzer.ExcludedMethodsRegexConfiguration,
         DotNotUseNameFromBCLAnalyzer.NamespacesRegexConfiguration,
-        DotNotUseNameFromBCLAnalyzer.LegacyNamepacesRegexConfiguration,
     ];
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
@@ -49,16 +48,20 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
             foreach (var configuration in RegexConfigurations)
             {
-                if (!options.TryGetValue(configuration.Key, out var value))
-                    continue;
-
-                reportedValues ??= [];
-                if (!reportedValues.Add((configuration.Key, value)))
-                    continue;
-
-                if (!RegexCache.IsValidPattern(value, RegexOptions.None, out var errorMessage))
+                // The legacy names of an option are reported too, as they are still supported
+                foreach (var key in configuration.Keys)
                 {
-                    context.ReportDiagnostic(Rule, Location.None, configuration.Key, errorMessage);
+                    if (!options.TryGetValue(key, out var value))
+                        continue;
+
+                    reportedValues ??= [];
+                    if (!reportedValues.Add((key, value)))
+                        continue;
+
+                    if (!RegexCache.IsValidPattern(value, RegexOptions.None, out var errorMessage))
+                    {
+                        context.ReportDiagnostic(Rule, Location.None, key, errorMessage);
+                    }
                 }
             }
         }

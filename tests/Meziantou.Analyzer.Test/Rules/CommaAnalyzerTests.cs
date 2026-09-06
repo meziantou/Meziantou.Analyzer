@@ -367,11 +367,13 @@ public sealed class CommaAnalyzerTests
         return test.RunAsync();
     }
 
-    [Fact]
-    public Task SwitchExpressionWithoutLeadingComma_IgnoreCatchAll()
+    [Theory]
+    [InlineData("MA0007.ignore_catch_all_arm")]
+    [InlineData("MA0007.IgnoreCatchAllArm")]
+    public Task SwitchExpressionWithoutLeadingComma_IgnoreCatchAll(string configurationKey)
     {
         var test = CreateTest();
-        test.TestState.SetConfiguration("MA0007.IgnoreCatchAllArm", "true");
+        test.TestState.SetConfiguration(configurationKey, "true");
         test.TestCode = """
             class TypeName
             {

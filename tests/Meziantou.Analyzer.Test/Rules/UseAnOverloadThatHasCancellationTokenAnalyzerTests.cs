@@ -1161,12 +1161,14 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
         return test.RunAsync();
     }
 
-    [Fact]
-    public Task SuggestOverloadWithOptionalParameters_AllowOptionalParameters_True()
+    [Theory]
+    [InlineData("MA0032.allow_overloads_with_optional_parameters")]
+    [InlineData("MA0032.allowOverloadsWithOptionalParameters")]
+    public Task SuggestOverloadWithOptionalParameters_AllowOptionalParameters_True(string configurationKey)
     {
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
-        test.TestState.SetConfiguration("MA0032.allowOverloadsWithOptionalParameters", "true");
+        test.TestState.SetConfiguration(configurationKey, "true");
         test.TestCode = """
             using System.Threading;
             using System.Threading.Tasks;
