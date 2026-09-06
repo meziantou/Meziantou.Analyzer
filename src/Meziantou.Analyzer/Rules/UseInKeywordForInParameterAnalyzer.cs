@@ -163,7 +163,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
                 return HasEquivalentParameterList(targetMethod.Parameters, method.Parameters, argumentIndex);
             });
 
-        return !overloadFinder.FindSimilarMethods(targetMethod, options, targetMethod.Name, additionalParameterTypes: default).IsEmpty;
+        return overloadFinder.FindFirstSimilarMethod(targetMethod, options, targetMethod.Name, additionalParameterTypes: default) is not null;
     }
 
     private static bool HasEquivalentParameterList(ImmutableArray<IParameterSymbol> currentParameters, ImmutableArray<IParameterSymbol> candidateParameters, int argumentIndex)
