@@ -91,6 +91,97 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public Task Stream_Read_ConditionalAccess_ReturnValueNotUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(Stream stream)
+                {
+                    stream?{|MA0060:.Read(null, 0, 0)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Stream_Read_NestedConditionalAccess_ReturnValueNotUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(Test test)
+                {
+                    test?.GetStream()?{|MA0060:.Read(null, 0, 0)|};
+                }
+
+                Stream GetStream() => null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Stream_ReadAsync_ConditionalAccess_ReturnValueNotUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                async void A(Stream stream)
+                {
+                    await stream?{|MA0060:.ReadAsync(null, 0, 0)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Stream_Read_ConditionalAccess_ReturnValueUsed_DiscardOperator()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.IO;
+            class Test
+            {
+                void A(Stream stream)
+                {
+                    _ = stream?.Read(null, 0, 0);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task String_Trim_IsReceiverOfConditionalAccess_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(string value)
+                {
+                    value.Trim()?.ToString();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Stream_ReadByte_ReturnValueNotUsed_NoDiagnostic()
     {
         var test = CreateTest();

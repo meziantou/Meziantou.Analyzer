@@ -111,6 +111,73 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzerTests
     }
 
     [Fact]
+    public Task GetHashCode_OnlyEqualsOverriden()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            #pragma warning disable CS0659
+            struct Test
+            {
+                public override bool Equals(object o) => throw null;
+            }
+
+            class Sample
+            {
+                public void A()
+                {
+                    _ = {|MA0065:new Test().GetHashCode()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_OnlyGetHashCodeOverriden()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            struct Test
+            {
+                public override int GetHashCode() => throw null;
+            }
+
+            class Sample
+            {
+                public void A()
+                {
+                    _ = {|MA0065:new Test().Equals(new Test())|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("new System.Collections.Generic.HashSet<Test>()")]
+    [InlineData("new System.Collections.Generic.Dictionary<Test, object>()")]
+    public Task Constructor_OnlyEqualsOverriden(string text)
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = $$"""
+            #pragma warning disable CS0659
+            struct Test
+            {
+                public override bool Equals(object o) => throw null;
+
+                void A()
+                {
+                    _ = {|MA0066:{{text}}|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task GetHashCode_Enum()
     {
         var test = new AnalyzerTest();

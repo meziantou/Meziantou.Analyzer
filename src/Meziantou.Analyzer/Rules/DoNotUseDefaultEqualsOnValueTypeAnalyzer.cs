@@ -60,7 +60,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             if (ValueTypeSymbol is not null)
             {
                 ValueTypeEqualsSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
-                ValueTypeGetHashCodeSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.Equals)).OfType<IMethodSymbol>().FirstOrDefault();
+                ValueTypeGetHashCodeSymbol = ValueTypeSymbol.GetMembers(nameof(ValueType.GetHashCode)).OfType<IMethodSymbol>().FirstOrDefault();
             }
 
             ImmutableDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary");

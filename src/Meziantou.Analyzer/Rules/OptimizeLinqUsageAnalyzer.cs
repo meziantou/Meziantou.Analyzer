@@ -187,41 +187,41 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateLinqChainProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string methodName)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("MethodName", methodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationStartKey, lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationLengthKey, lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, methodName);
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateSingleOperationProperties(OptimizeLinqUsageData data, IInvocationOperation operation)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateDuplicateOrderByProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string expectedMethodName, string methodName)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("ExpectedMethodName", expectedMethodName);
-            builder.Add("MethodName", methodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationStartKey, lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationLengthKey, lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.ExpectedMethodNameKey, expectedMethodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, methodName);
             return builder.ToImmutable();
         }
 
@@ -664,7 +664,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() < 10
                             message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                                .Add("SkipMinusOne", value: "");
+                                .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         }
 
                         break;
@@ -731,7 +731,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() >= 2
                             message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                                .Add("SkipMinusOne", value: "");
+                                .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         }
 
                         break;
@@ -765,7 +765,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add("SkipMinusOne", value: "");
+                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
@@ -784,7 +784,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add("SkipMinusOne", value: "");
+                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         break;
                 }
             }
@@ -792,10 +792,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (message is not null)
             {
                 properties = properties
-                       .Add("OperandOperationStart", otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                       .Add("OperandOperationLength", otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                       .Add("CountOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                       .Add("CountOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+                       .Add(OptimizeLinqUsageAnalyzerCommon.OperandOperationStartKey, otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.OperandOperationLengthKey, otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.CountOperationStartKey, operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.CountOperationLengthKey, operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
 
                 context.ReportDiagnostic(OptimizeCountRule, properties, binaryOperation, message);
             }

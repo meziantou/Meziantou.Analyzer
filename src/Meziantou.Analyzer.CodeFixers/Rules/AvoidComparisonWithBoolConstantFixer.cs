@@ -19,28 +19,35 @@ public sealed class AvoidComparisonWithBoolConstantFixer : CodeFixProvider
         if (nodeToFix is not BinaryExpressionSyntax)
             return;
 
-        var diagnostic = context.Diagnostics[0];
+        var properties = context.Diagnostics[0].Properties;
+        if (!properties.TryGetValue(AvoidComparisonWithBoolConstantAnalyzerCommon.NodeToKeepSpanStartKey, out var nodeToKeepSpanStartValue) ||
+            !int.TryParse(nodeToKeepSpanStartValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var nodeToKeepSpanStart))
+            return;
+
+        if (!properties.TryGetValue(AvoidComparisonWithBoolConstantAnalyzerCommon.NodeToKeepSpanLengthKey, out var nodeToKeepSpanLengthValue) ||
+            !int.TryParse(nodeToKeepSpanLengthValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var nodeToKeepSpanLength))
+            return;
+
+        if (!properties.TryGetValue(AvoidComparisonWithBoolConstantAnalyzerCommon.LogicalNotOperatorNeededKey, out var logicalNotOperatorNeededValue) ||
+            !bool.TryParse(logicalNotOperatorNeededValue, out var logicalNotOperatorNeeded))
+            return;
 
         var title = "Remove comparison with bool constant";
         var codeAction = CodeAction.Create(
             title,
-            ct => RemoveComparisonWithBoolConstant(context.Document, diagnostic, nodeToFix, ct),
+            ct => RemoveComparisonWithBoolConstant(context.Document, nodeToFix, new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), logicalNotOperatorNeeded, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> RemoveComparisonWithBoolConstant(Document document, SyntaxNode nodeToFix, TextSpan nodeToKeepSpan, bool logicalNotOperatorNeeded, CancellationToken cancellationToken)
     {
-        var nodeToKeepSpanStart = int.Parse(diagnostic.Properties["NodeToKeepSpanStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var nodeToKeepSpanLength = int.Parse(diagnostic.Properties["NodeToKeepSpanLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var logicalNotOperatorNeeded = bool.Parse(diagnostic.Properties["LogicalNotOperatorNeeded"]!);
-
         var syntaxRoot = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (syntaxRoot is null)
             return document;
 
-        var nodeToKeep = syntaxRoot.FindNode(new TextSpan(nodeToKeepSpanStart, nodeToKeepSpanLength), getInnermostNodeForTie: true);
+        var nodeToKeep = syntaxRoot.FindNode(nodeToKeepSpan, getInnermostNodeForTie: true);
         if (nodeToKeep.Parent.IsKind(SyntaxKind.ParenthesizedExpression))
         {
             nodeToKeep = nodeToKeep.Parent;

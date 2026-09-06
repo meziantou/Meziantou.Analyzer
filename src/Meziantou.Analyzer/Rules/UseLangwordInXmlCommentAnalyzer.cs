@@ -178,7 +178,7 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                                     if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
                                     {
                                         // The langword attribute is the way to document a keyword, so the language is not needed
-                                        var properties = ImmutableDictionary<string, string?>.Empty.Add("keyword", codeText.Text);
+                                        var properties = ImmutableDictionary<string, string?>.Empty.Add(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, codeText.Text);
                                         context.ReportDiagnostic(Rule, properties, elementSyntax);
                                         continue;
                                     }

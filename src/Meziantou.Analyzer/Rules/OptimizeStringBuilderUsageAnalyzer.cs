@@ -110,7 +110,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeStringBuilderUsageData data)
         {
-            return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal).Add("Data", data.ToString());
+            return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal).Add(OptimizeStringBuilderUsageAnalyzerCommon.DataKey, data.ToString());
         }
 
         private void AnalyzeAppendFormat(OperationAnalysisContext context, IInvocationOperation operation)
@@ -162,7 +162,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     else if (constValue.Length == 1)
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
-                            .Add("ConstantValue", constValue);
+                            .Add(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey, constValue);
                         context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                         return true;
                     }
@@ -201,7 +201,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
-                            .Add("ConstantValue", constValue);
+                            .Add(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey, constValue);
                         context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
                         return true;
                     }

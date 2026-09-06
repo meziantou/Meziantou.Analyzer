@@ -263,6 +263,19 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 }
             }
 
+            if (formatString is null)
+            {
+                // The message can also be set using the Message property: [LoggerMessage(Message = "...")]
+                foreach (var arg in loggerMessageAttribute.NamedArguments)
+                {
+                    if (arg.Key is "Message" && arg.Value.Type.IsString() && arg.Value.Value is string namedStr)
+                    {
+                        formatString = namedStr;
+                        break;
+                    }
+                }
+            }
+
             if (string.IsNullOrEmpty(formatString))
                 return;
 
