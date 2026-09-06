@@ -23,51 +23,6 @@ internal static class SymbolExtensions
         return symbol is IFieldSymbol field && field.IsConst;
     }
 
-    public static IEnumerable<ISymbol> GetAllMembers(this INamespaceOrTypeSymbol? symbol)
-    {
-        while (symbol is not null)
-        {
-            foreach (var member in symbol.GetMembers())
-                yield return member;
-
-            if (symbol is ITypeSymbol typeSymbol)
-            {
-                symbol = typeSymbol.BaseType;
-            }
-            else
-            {
-                yield break;
-            }
-        }
-    }
-
-    public static IEnumerable<ISymbol> GetAllMembers(this INamespaceOrTypeSymbol? symbol, string name)
-    {
-        while (symbol is not null)
-        {
-            foreach (var member in symbol.GetMembers(name))
-                yield return member;
-
-            if (symbol is INamedTypeSymbol { TypeKind: TypeKind.Interface } interfaceSymbol)
-            {
-                foreach (var iface in interfaceSymbol.AllInterfaces)
-                {
-                    foreach (var member in iface.GetMembers(name))
-                        yield return member;
-                }
-            }
-
-            if (symbol is ITypeSymbol typeSymbol)
-            {
-                symbol = typeSymbol.BaseType;
-            }
-            else
-            {
-                yield break;
-            }
-        }
-    }
-
     public static bool IsTopLevelStatement(this ISymbol symbol, CancellationToken cancellationToken)
     {
         if (symbol.DeclaringSyntaxReferences.Length == 0)

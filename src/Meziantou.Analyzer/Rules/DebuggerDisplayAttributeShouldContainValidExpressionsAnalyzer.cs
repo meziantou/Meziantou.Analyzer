@@ -231,9 +231,15 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         static ISymbol? FindSymbol(Compilation compilation, ISymbol parent, string name)
         {
-            if (parent is INamespaceOrTypeSymbol typeSymbol)
+            if (parent is INamespaceOrTypeSymbol namespaceOrTypeSymbol)
             {
-                if (typeSymbol.GetAllMembers(name).FirstOrDefault() is { } member)
+                // Explicitly implemented interface members are not accessible on an expression typed with the implementing type,
+                // so the members of the implemented interfaces are only relevant for interfaces
+                IEnumerable<ISymbol> members = namespaceOrTypeSymbol is ITypeSymbol typeSymbol
+                    ? typeSymbol.GetAllMembers(name, includeInterfaceMembers: typeSymbol.TypeKind is TypeKind.Interface)
+                    : namespaceOrTypeSymbol.GetMembers(name);
+
+                if (members.FirstOrDefault() is { } member)
                 {
                     if (member is INamespaceOrTypeSymbol)
                         return member;
@@ -242,7 +248,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                 }
 
                 // Interfaces don't derive from System.Object, but its members are still accessible on interface-typed expressions
-                if (typeSymbol is ITypeSymbol { TypeKind: TypeKind.Interface })
+                if (namespaceOrTypeSymbol is ITypeSymbol { TypeKind: TypeKind.Interface })
                 {
                     if (compilation.GetSpecialType(SpecialType.System_Object).GetMembers(name).FirstOrDefault() is { } objectMember)
                         return objectMember.GetSymbolType();
