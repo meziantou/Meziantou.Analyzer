@@ -722,4 +722,140 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task UserDefinedGetCustomAttributeExtensionMethod_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Reflection;
+
+            static class Extensions
+            {
+                public static object GetCustomAttribute(this MemberInfo member, string name) => null;
+            }
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttribute("name") != null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UserDefinedGetCustomAttributesExtensionMethod_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Reflection;
+
+            static class Extensions
+            {
+                public static object[] GetCustomAttributes(this MemberInfo member, string name) => null;
+            }
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = member.GetCustomAttributes("name").Length > 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UserDefinedGetCustomAttributeStaticMethod_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Reflection;
+
+            static class Helper
+            {
+                public static object GetCustomAttribute(MemberInfo member, string name) => null;
+            }
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Helper.GetCustomAttribute(member, "name") != null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MemberInfo_GetCustomAttributes_WithAttributeType_Length_GreaterThanZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:member.GetCustomAttributes(typeof(ObsoleteAttribute), inherit: true).Length > 0|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(ObsoleteAttribute), inherit: true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MemberInfo_GetCustomAttributes_WithInherit_Length_GreaterThanZero()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:member.GetCustomAttributes(inherit: true).Length > 0|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = Attribute.IsDefined(member, typeof(Attribute), inherit: true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

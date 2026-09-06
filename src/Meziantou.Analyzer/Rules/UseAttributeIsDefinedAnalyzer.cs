@@ -41,7 +41,6 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _assemblySymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Assembly");
         private readonly INamedTypeSymbol? _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
         private readonly INamedTypeSymbol? _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
-        private readonly INamedTypeSymbol? _parameterInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.ParameterInfo");
         private readonly INamedTypeSymbol? _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
         private readonly INamedTypeSymbol? _customAttributeExtensionsSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.CustomAttributeExtensions");
         private readonly IMethodSymbol? _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, compilation) as IMethodSymbol;
@@ -209,39 +208,30 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
         private bool IsGetCustomAttributeInvocation(IOperation operation, out IInvocationOperation? invocation)
         {
             invocation = operation.UnwrapConversions() as IInvocationOperation;
-            if (invocation is null)
-                return false;
-
-            if (invocation.TargetMethod.Name != "GetCustomAttribute")
-                return false;
-
-            // For extension methods, the instance is in the first argument
-            var instance = invocation.Instance;
-            if (instance is null && invocation.TargetMethod.IsExtensionMethod && invocation.Arguments.Length > 0)
+            if (invocation is null || !IsAttributeProviderInvocation(invocation, "GetCustomAttribute"))
             {
-                instance = invocation.Arguments[0].Value;
-            }
-            else if (instance is null && invocation.TargetMethod.IsStatic && SymbolEqualityComparer.Default.Equals(invocation.TargetMethod.ContainingType, _attributeSymbol))
-            {
-                if (invocation.Arguments.Length > 0)
-                {
-                    instance = invocation.Arguments[0].Value;
-                }
+                invocation = null;
+                return false;
             }
 
-            if (instance is null)
-                return false;
-
-            return IsValidInstanceType(instance.Type);
+            return true;
         }
 
         private bool IsGetCustomAttributesInvocation(IOperation operation, out IInvocationOperation? invocation)
         {
             invocation = operation as IInvocationOperation;
-            if (invocation is null)
+            if (invocation is null || !IsAttributeProviderInvocation(invocation, "GetCustomAttributes"))
+            {
+                invocation = null;
                 return false;
+            }
 
-            if (invocation.TargetMethod.Name != "GetCustomAttributes")
+            return true;
+        }
+
+        private bool IsAttributeProviderInvocation(IInvocationOperation invocation, string methodName)
+        {
+            if (invocation.TargetMethod.Name != methodName)
                 return false;
 
             if (!IsMethodFromReflectionTypes(invocation.TargetMethod))
@@ -269,28 +259,14 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
         private bool IsMethodFromReflectionTypes(IMethodSymbol method)
         {
-            if (SymbolEqualityComparer.Default.Equals(method.ContainingType, _customAttributeExtensionsSymbol))
+            if (method.ContainingType.IsEqualToAny(_customAttributeExtensionsSymbol, _attributeSymbol))
                 return true;
 
-            if (SymbolEqualityComparer.Default.Equals(method.ContainingType, _attributeSymbol))
-                return true;
-
-            // Check for extension methods on reflection types
-            if (method.Name is "GetCustomAttribute" or "GetCustomAttributes")
-            {
-                if (method.Parameters.Length > 0)
-                {
-                    var firstParamType = method.Parameters[0].Type;
-                    if (IsReflectionType(firstParamType) || IsParameterInfo(firstParamType))
-                        return true;
-                }
-            }
-
-            return false;
+            // Instance methods of the reflection types, such as MemberInfo.GetCustomAttributes(Type, bool).
+            // Methods declared by the user are not considered, even when they are named GetCustomAttribute(s)
+            // and take a reflection type as their first parameter.
+            return !method.IsStatic && IsValidInstanceType(method.ContainingType);
         }
-
-        private bool IsParameterInfo(ITypeSymbol type) => type.IsEqualTo(_parameterInfoSymbol);
-        private bool IsReflectionType(ITypeSymbol type) => type.IsEqualToAny(_assemblySymbol, _moduleSymbol, _memberInfoSymbol, _typeSymbol);
 
         private bool IsValidInstanceType(ITypeSymbol? type)
         {
