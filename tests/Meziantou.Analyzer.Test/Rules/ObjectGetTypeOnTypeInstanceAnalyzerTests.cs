@@ -18,6 +18,8 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzerTests
     [InlineData("string.Empty.GetType();")]
     [InlineData("12.GetType();")]
     [InlineData("System.Type.GetType(\"\");")]
+    [InlineData("object o = 12; o.GetType();")]
+    [InlineData("System.Reflection.MemberInfo member = null; member.GetType();")]
     public Task Valid(string code)
     {
         var test = CreateTest();
@@ -35,6 +37,8 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzerTests
             abstract class Test
             {
                 public Test(int a) { }
+
+                object M() => GetType();
             };
             """;
 
@@ -42,9 +46,13 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzerTests
     }
 
     [Theory]
-    [InlineData("new object().GetType().GetType();")]
-    [InlineData("((System.Type)null).GetType();")]
-    [InlineData("default(System.Type).GetType();")]
+    [InlineData("[|new object().GetType().GetType()|];")]
+    [InlineData("[|((System.Type)null).GetType()|];")]
+    [InlineData("[|default(System.Type).GetType()|];")]
+    [InlineData("[|typeof(int).GetType()|];")]
+    [InlineData("System.Type type = typeof(int); [|type.GetType()|];")]
+    [InlineData("System.Reflection.TypeInfo type = null; [|type.GetType()|];")]
+    [InlineData("object type = typeof(int); [|type.GetType()|];")]
     public Task Invalid(string code)
     {
         var test = CreateTest();
