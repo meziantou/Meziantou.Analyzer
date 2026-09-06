@@ -29,13 +29,12 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         {
             var analyzerContext = new AnalyzerContext(compilationContext.Compilation, compilationContext.Options);
             compilationContext.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-            compilationContext.RegisterOperationAction(analyzerContext.AnalyzeArgument, OperationKind.Argument);
+            compilationContext.RegisterOperationAction(AnalyzerContext.AnalyzeArgument, OperationKind.Argument);
         });
     }
 
     private sealed class AnalyzerContext(Compilation compilation, AnalyzerOptions options)
     {
-        private INamedTypeSymbol? DoNotIgnoreAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.DoNotIgnoreAttribute");
         private INamedTypeSymbol? SystemDiagnosticsContractsPureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Diagnostics.Contracts.PureAttribute");
         private INamedTypeSymbol? JetBrainsAnnotationsPureAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("JetBrains.Annotations.PureAttribute");
         private INamedTypeSymbol? StreamSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IO.Stream");
@@ -56,11 +55,8 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
         private ImmutableHashSet<ISymbol> AssemblyLevelDoNotIgnoreSymbols { get; } = GetAssemblyLevelDoNotIgnoreSymbols(compilation);
         private AnalyzerOptions Options { get; } = options;
 
-        public void AnalyzeArgument(OperationAnalysisContext context)
+        public static void AnalyzeArgument(OperationAnalysisContext context)
         {
-            if (DoNotIgnoreAttributeSymbol is null)
-                return;
-
             var argument = (IArgumentOperation)context.Operation;
             if (argument.Parameter is not { RefKind: RefKind.Out } outParam)
                 return;
@@ -68,12 +64,12 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
             if (argument.Value is not IDiscardOperation)
                 return;
 
-            if (!outParam.HasAttribute(DoNotIgnoreAttributeSymbol))
+            var attr = FindDoNotIgnoreAttribute(outParam.GetAttributes());
+            if (attr is null)
                 return;
 
             var methodName = argument.Parent is IInvocationOperation inv ? inv.TargetMethod.Name : "?";
-            var attr = outParam.GetFirstAttribute(DoNotIgnoreAttributeSymbol);
-            var message = attr is not null ? GetMessageFromAttributeData(attr) : null;
+            var message = GetMessageFromAttributeData(attr);
             context.ReportDiagnostic(Rule, argument, $"The out parameter '{outParam.Name}' of '{methodName}' should not be discarded{GetMessageSuffix(message)}");
         }
 
@@ -90,15 +86,12 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 return;
 
             // Check attribute on return value
-            if (DoNotIgnoreAttributeSymbol is not null)
+            var returnValueAttribute = FindDoNotIgnoreAttribute(targetMethod.GetReturnTypeAttributes());
+            if (returnValueAttribute is not null)
             {
-                var attr = targetMethod.GetReturnTypeAttribute(DoNotIgnoreAttributeSymbol);
-                if (attr is not null)
-                {
-                    var message = GetMessageFromAttributeData(attr);
-                    context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used{GetMessageSuffix(message)}");
-                    return;
-                }
+                var message = GetMessageFromAttributeData(returnValueAttribute);
+                context.ReportDiagnostic(Rule, invocation, $"The return value of '{targetMethod.Name}' should be used{GetMessageSuffix(message)}");
+                return;
             }
 
             if (AssemblyLevelDoNotIgnoreSymbols.Contains(targetMethod.OriginalDefinition))
@@ -257,6 +250,17 @@ public sealed class DoNotIgnoreReturnValueAnalyzer : DiagnosticAnalyzer
                 method.ReturnType.SpecialType == SpecialType.System_Boolean &&
                 method.Parameters.Length >= 2 &&
                 method.Parameters[method.Parameters.Length - 1].RefKind != RefKind.None;
+        }
+
+        private static AttributeData? FindDoNotIgnoreAttribute(ImmutableArray<AttributeData> attributes)
+        {
+            foreach (var attribute in attributes)
+            {
+                if (AnnotationAttributes.IsDoNotIgnoreAttributeSymbol(attribute.AttributeClass))
+                    return attribute;
+            }
+
+            return null;
         }
 
         private static string GetMessageSuffix(string? message) => message is null ? "" : ": " + message;

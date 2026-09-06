@@ -1074,4 +1074,119 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Attribute_ReturnValue_NotUsed_AttributeDefinedInTheProject()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Test
+            {
+                [return: Meziantou.Analyzer.Annotations.DoNotIgnore]
+                static int Compute() => 0;
+
+                void A()
+                {
+                    {|MA0060:Compute()|};
+                }
+            }
+
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class DoNotIgnoreAttribute : System.Attribute
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_OutParameter_Discarded_AttributeDefinedInTheProject()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Test
+            {
+                static bool TryGet([Meziantou.Analyzer.Annotations.DoNotIgnore] out int value) { value = 0; return true; }
+
+                void A()
+                {
+                    TryGet({|#0:out _|});
+                }
+            }
+
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class DoNotIgnoreAttribute : System.Attribute
+                {
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0060", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("The out parameter 'value' of 'TryGet' should not be discarded"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AssemblyAttribute_SimpleMethod_NotUsed_AttributeDefinedInTheProject()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            [assembly: Meziantou.Analyzer.Annotations.DoNotIgnore("M:Test.Sample")]
+
+            class Test
+            {
+                static int Sample() => 42;
+
+                void A()
+                {
+                    {|MA0060:Sample()|};
+                }
+            }
+
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class DoNotIgnoreAttribute : System.Attribute
+                {
+                    public DoNotIgnoreAttribute(string xmlDocumentationId) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_ReturnValue_NotUsed_AttributeDefinedInAReferencedProject()
+    {
+        var test = new AnalyzerTest();
+        test.TestState.AdditionalProjects["Library"].Sources.Add(("Library.cs", """
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class DoNotIgnoreAttribute : System.Attribute
+                {
+                }
+            }
+
+            public class Library
+            {
+                [return: Meziantou.Analyzer.Annotations.DoNotIgnore]
+                public static int Compute() => 0;
+            }
+            """));
+        test.TestState.AdditionalProjectReferences.Add("Library");
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    {|MA0060:Library.Compute()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
