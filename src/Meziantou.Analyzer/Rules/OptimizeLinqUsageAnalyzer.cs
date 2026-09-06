@@ -234,6 +234,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.Where))
                     {
+                        // Cannot move Where before OrderBy when using Func<TSource,int,bool> as the index would refer to the unsorted sequence
+                        if (IsIndexedPredicateOverload(parent.TargetMethod))
+                            return;
+
                         var properties = CreateLinqChainProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod, operation, parent, parent.TargetMethod.Name);
 
                         context.ReportDiagnostic(OptimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
@@ -460,13 +464,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.TargetMethod.Name == nameof(Enumerable.Where))
             {
                 // Cannot replace Where when using Func<TSource,int,bool>
-                if (operation.TargetMethod.Parameters.Length != 2)
-                    return;
-
-                if (operation.TargetMethod.Parameters[1].Type is not INamedTypeSymbol type)
-                    return;
-
-                if (type.TypeArguments.Length == 3)
+                if (IsIndexedPredicateOverload(operation.TargetMethod))
                     return;
 
                 // Check parent methods
@@ -492,6 +490,30 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Detects the overloads taking a predicate with the index of the element, such as <c>Where(Func&lt;TSource,int,bool&gt;)</c>.
+        /// Returns <see langword="true" /> when the shape of the method is unknown, so the callers stay on the safe side.
+        /// </summary>
+        private bool IsIndexedPredicateOverload(IMethodSymbol method)
+        {
+            if (method.Parameters.Length != 2)
+                return true;
+
+            if (method.Parameters[1].Type is not INamedTypeSymbol type)
+                return true;
+
+            // Queryable methods take an Expression<Func<...>>
+            if (type.OriginalDefinition.IsEqualTo(ExpressionOfTSymbol))
+            {
+                if (type.TypeArguments is not [INamedTypeSymbol delegateType])
+                    return true;
+
+                type = delegateType;
+            }
+
+            return type.TypeArguments.Length == 3;
         }
 
         private bool IsExpressionPredicateReference(IOperation operation)
