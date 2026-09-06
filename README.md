@@ -249,6 +249,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|ℹ️|✔️|❌|❌|
 |[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|👻|✔️|✔️|❌|
 |[MA0220](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0220.md)|Design|The configured regular expression is not valid|⚠️|✔️|❌|❌|
+|[MA0221](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0221.md)|Design|TryGetValue method should use \[MaybeNullWhen(false)\] on the value parameter|ℹ️|❌|✔️|❌|
 
 <!-- rules -->
 

@@ -655,3 +655,6 @@ dotnet_diagnostic.MA0219.severity = silent
 
 # MA0220: The configured regular expression is not valid
 dotnet_diagnostic.MA0220.severity = warning
+
+# MA0221: TryGetValue method should use [MaybeNullWhen(false)] on the value parameter
+dotnet_diagnostic.MA0221.severity = none
