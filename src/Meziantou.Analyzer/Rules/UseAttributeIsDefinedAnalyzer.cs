@@ -219,7 +219,8 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
         private bool IsGetCustomAttributesInvocation(IOperation operation, out IInvocationOperation? invocation)
         {
-            invocation = operation as IInvocationOperation;
+            // The overloads returning an array are wrapped in an implicit conversion when they are used as an IEnumerable<T>
+            invocation = operation.UnwrapConversions() as IInvocationOperation;
             if (invocation is null || !IsAttributeProviderInvocation(invocation, "GetCustomAttributes"))
             {
                 invocation = null;
