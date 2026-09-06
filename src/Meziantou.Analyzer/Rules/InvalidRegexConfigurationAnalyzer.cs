@@ -1,3 +1,4 @@
+using System.Reflection;
 using System.Text.RegularExpressions;
 using Meziantou.Analyzer.Configurations;
 
@@ -16,18 +17,35 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InvalidRegexConfiguration));
 
-    /// <summary>
-    /// The options whose value must be a valid regular expression. The rules ignore an invalid value,
-    /// so this rule is the only way for the user to know the option is not applied.
-    /// </summary>
-    private static readonly ConfigurationDefinition<string>[] RegexConfigurations =
-    [
-        NamedParameterAnalyzer.ExcludedMethodsRegexConfiguration,
-        DotNotUseNameFromBCLAnalyzer.NamespacesRegexConfiguration,
-        DotNotUseNameFromBCLAnalyzer.LegacyNamepacesRegexConfiguration,
-    ];
+    private static readonly ConfigurationDefinition<string>[] RegexConfigurations = GetRegexConfigurations();
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+
+    /// <summary>
+    /// Gets the options whose value must be a valid regular expression. The rules ignore an invalid value, so this rule
+    /// is the only way for the user to know the option is not applied. The options are discovered from the assembly, so
+    /// a new option is validated as soon as its <see cref="ConfigurationDefinition{T}.RegexOptions"/> are set.
+    /// </summary>
+    internal static ConfigurationDefinition<string>[] GetRegexConfigurations()
+    {
+        var configurations = new List<ConfigurationDefinition<string>>();
+        foreach (var type in typeof(InvalidRegexConfigurationAnalyzer).Assembly.GetTypes())
+        {
+            foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                if (field.FieldType != typeof(ConfigurationDefinition<string>))
+                    continue;
+
+                if (field.GetValue(null) is ConfigurationDefinition<string> { IsRegex: true } configuration)
+                {
+                    configurations.Add(configuration);
+                }
+            }
+        }
+
+        // The order of the fields is not deterministic, so sort the configurations to report the diagnostics in a stable order
+        return [.. configurations.OrderBy(configuration => configuration.Key, StringComparer.Ordinal)];
+    }
 
     public override void Initialize(AnalysisContext context)
     {
@@ -40,7 +58,7 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeCompilation(CompilationAnalysisContext context)
     {
         // The options can be different for each syntax tree, but a value must be reported only once
-        HashSet<(string Key, string Value)>? reportedValues = null;
+        HashSet<(string Key, string Value, RegexOptions Options)>? reportedValues = null;
 
         foreach (var syntaxTree in context.Compilation.SyntaxTrees)
         {
@@ -49,16 +67,20 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
             var options = context.Options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
             foreach (var configuration in RegexConfigurations)
             {
-                if (!options.TryGetValue(configuration.Key, out var value))
-                    continue;
-
-                reportedValues ??= [];
-                if (!reportedValues.Add((configuration.Key, value)))
-                    continue;
-
-                if (!RegexCache.IsValidPattern(value, RegexOptions.None, out var errorMessage))
+                // The legacy names of an option are validated too, as they are still supported
+                foreach (var key in configuration.Keys)
                 {
-                    context.ReportDiagnostic(Rule, Location.None, configuration.Key, errorMessage);
+                    if (!options.TryGetValue(key, out var value))
+                        continue;
+
+                    reportedValues ??= [];
+                    if (!reportedValues.Add((key, value, configuration.RegexOptions)))
+                        continue;
+
+                    if (!RegexCache.IsValidPattern(value, configuration.RegexOptions, out var errorMessage))
+                    {
+                        context.ReportDiagnostic(Rule, Location.None, key, errorMessage);
+                    }
                 }
             }
         }

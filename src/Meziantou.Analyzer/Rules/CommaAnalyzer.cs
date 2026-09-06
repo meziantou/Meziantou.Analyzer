@@ -17,7 +17,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingCommaInObjectInitializer));
 
-    private static readonly ConfigurationDefinition<bool> IgnoreCatchAllArmConfiguration = new(Rule.Id + ".IgnoreCatchAllArm", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IgnoreCatchAllArmConfiguration = new([Rule.Id + ".ignore_catch_all_arm", Rule.Id + ".IgnoreCatchAllArm"], defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 

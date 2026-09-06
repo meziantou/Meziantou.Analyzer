@@ -178,4 +178,26 @@ internal static class AnnotationAttributes
             }
         };
     }
+
+    public static bool IsStructuredLogFieldAttributeSymbol(ITypeSymbol? symbol)
+    {
+        // Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute
+        return symbol is INamedTypeSymbol
+        {
+            Name: "StructuredLogFieldAttribute",
+            ContainingSymbol: INamespaceSymbol
+            {
+                Name: "Annotations",
+                ContainingSymbol: INamespaceSymbol
+                {
+                    Name: "Analyzer",
+                    ContainingSymbol: INamespaceSymbol
+                    {
+                        Name: "Meziantou",
+                        ContainingSymbol: INamespaceSymbol { IsGlobalNamespace: true }
+                    }
+                }
+            }
+        };
+    }
 }

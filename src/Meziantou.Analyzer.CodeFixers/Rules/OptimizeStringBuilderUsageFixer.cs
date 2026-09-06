@@ -23,7 +23,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         if (diagnostic is null)
             return;
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault(OptimizeStringBuilderUsageAnalyzerCommon.DataKey, ""), ignoreCase: false, out OptimizeStringBuilderUsageData data) || data == OptimizeStringBuilderUsageData.None)
             return;
 
         var title = "Optimize StringBuilder usage";
@@ -38,7 +38,10 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceWithChar:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, diagnostic, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                if (diagnostic.Properties.GetValueOrDefault(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey) is not [var constValue, ..])
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceArgWithCharacter(context.Document, constValue, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeStringBuilderUsageData.SplitStringInterpolation:
@@ -74,6 +77,15 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceSubstring:
+                var substringSemanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                if (substringSemanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation { Arguments: [{ Value: IInvocationOperation substringOperation }, ..] })
+                    return;
+
+                // Substring(startIndex) is replaced by Append(str, startIndex, str.Length - startIndex),
+                // so both the string and the start index are evaluated twice
+                if (substringOperation.Arguments.Length == 1 && (!CanBeEvaluatedMultipleTimes(substringOperation.Instance) || !CanBeEvaluatedMultipleTimes(substringOperation.Arguments[0].Value)))
+                    return;
+
                 context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceSubstring(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
@@ -204,6 +216,23 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         }
 
         return operation.Type is IArrayTypeSymbol { Rank: 1, ElementType.SpecialType: SpecialType.System_Char };
+    }
+
+    /// <summary>
+    /// Indicates whether duplicating the expression in the generated code is safe, i.e. evaluating it twice
+    /// has no side effect and always returns the same value.
+    /// </summary>
+    private static bool CanBeEvaluatedMultipleTimes(IOperation? operation)
+    {
+        return operation switch
+        {
+            null => false,
+            IConversionOperation { IsImplicit: true } conversion => CanBeEvaluatedMultipleTimes(conversion.Operand),
+            IParenthesizedOperation parenthesized => CanBeEvaluatedMultipleTimes(parenthesized.Operand),
+            ILiteralOperation or IInstanceReferenceOperation or ILocalReferenceOperation or IParameterReferenceOperation => true,
+            IFieldReferenceOperation fieldReference => fieldReference.Field.IsStatic || fieldReference.Field.IsConst || CanBeEvaluatedMultipleTimes(fieldReference.Instance),
+            _ => operation.ConstantValue.HasValue,
+        };
     }
 
     private static async Task<Document> RemoveToString(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
@@ -357,9 +386,8 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> ReplaceArgWithCharacter(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceArgWithCharacter(Document document, char constValue, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
-        var constValue = diagnostic.Properties["ConstantValue"]![0];
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var argument = nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();

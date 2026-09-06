@@ -401,6 +401,66 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task Int32_ExcludedMethodDeclarationId_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods", "M:Other.Method|M:TypeName.MyMethod(System.Int32,System.Int64,System.Int16)"));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod(1, 1L, 3);
+                }
+
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Int32_ExcludedMethodDeclarationIdOfAnotherMethod_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods", "M:TypeName.MyMethod(System.Int32)"));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
+                }
+
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Int32_ExcludedMethodWithEmptyRegex_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods_regex", ""));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
+                }
+
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Int32_ExcludedMethodWithInvalidRegex_ShouldReportDiagnostic()
     {
         var test = CreateTest();
@@ -421,7 +481,7 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
-    public Task False_ShouldReportDiagnostic()
+    public Task False_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -438,7 +498,7 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
-    public Task Null_ShouldReportDiagnostic()
+    public Task Null_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -1140,6 +1200,30 @@ public sealed class NamedParameterAnalyzerTests
             class Test
             {
                 public Test([Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute]object a) { }
+
+                void A()
+                {
+                    _ = new Test({|MA0003:new object()|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CallerMustUseNamedArgument_AttributeDeclaredInCompilation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            namespace Meziantou.Analyzer.Annotations
+            {
+                internal sealed class RequireNamedArgumentAttribute : System.Attribute { }
+            }
+
+            class Test
+            {
+                public Test([Meziantou.Analyzer.Annotations.RequireNamedArgument]object a) { }
 
                 void A()
                 {

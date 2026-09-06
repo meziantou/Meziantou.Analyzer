@@ -231,11 +231,6 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         static ISymbol? FindSymbol(Compilation compilation, ISymbol parent, string name)
         {
-            if (name is "ToString" or "GetHashCode")
-            {
-                compilation.GetSpecialType(SpecialType.System_Object).GetMembers(name).FirstOrDefault();
-            }
-
             if (parent is INamespaceOrTypeSymbol typeSymbol)
             {
                 if (typeSymbol.GetAllMembers(name).FirstOrDefault() is { } member)
@@ -244,6 +239,13 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         return member;
 
                     return member.GetSymbolType();
+                }
+
+                // Interfaces don't derive from System.Object, but its members are still accessible on interface-typed expressions
+                if (typeSymbol is ITypeSymbol { TypeKind: TypeKind.Interface })
+                {
+                    if (compilation.GetSpecialType(SpecialType.System_Object).GetMembers(name).FirstOrDefault() is { } objectMember)
+                        return objectMember.GetSymbolType();
                 }
             }
 

@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -30,10 +31,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(ctx =>
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeAwaitOperation, OperationKind.Await);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeForEachStatement, OperationKind.Loop);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingOperation, OperationKind.Using);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingDeclarationOperation, OperationKind.UsingDeclaration);
+            ctx.RegisterOperationBlockStartAction(analyzerContext.AnalyzeOperationBlockStart);
         });
     }
 
@@ -56,6 +54,56 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         private INamedTypeSymbol? AspNetCore_ITagHelperComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent");
         private INamedTypeSymbol? AspNetCore_IFilterMetadata { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
         private INamedTypeSymbol? AspNetCore_IComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+
+        public void AnalyzeOperationBlockStart(OperationBlockStartAnalysisContext context)
+        {
+            // The containing type is the same for all the operations of the block, so the framework types
+            // are only checked once per operation block instead of once per await
+            var blockContext = new OperationBlockContext(this, HasSynchronizationContext(context.OwningSymbol.ContainingType));
+            context.RegisterOperationAction(blockContext.AnalyzeAwaitOperation, OperationKind.Await);
+            context.RegisterOperationAction(blockContext.AnalyzeForEachStatement, OperationKind.Loop);
+            context.RegisterOperationAction(blockContext.AnalyzeUsingOperation, OperationKind.Using);
+            context.RegisterOperationAction(blockContext.AnalyzeUsingDeclarationOperation, OperationKind.UsingDeclaration);
+        }
+
+        private bool HasSynchronizationContext(INamedTypeSymbol? containingType)
+        {
+            if (containingType is null)
+                return false;
+
+            return containingType.InheritsFrom(WPF_DispatcherObject) ||
+                   containingType.Implements(WPF_ICommand) ||
+                   containingType.InheritsFrom(WinForms_Control) || // WinForms
+                   containingType.InheritsFrom(WebForms_WebControl) || // ASP.NET (Webforms)
+                   containingType.InheritsFrom(AspNetCore_ControllerBase) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
+                   containingType.Implements(AspNetCore_IRazorPage) || // ASP.NET Core
+                   containingType.Implements(AspNetCore_ITagHelper) || // ASP.NET Core
+                   containingType.Implements(AspNetCore_ITagHelperComponent) || // ASP.NET Core
+                   containingType.Implements(AspNetCore_IFilterMetadata) ||
+                   containingType.Implements(AspNetCore_IComponent); // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
+        }
+
+        public bool IsConfiguredAsyncDisposable(ITypeSymbol type) => type.IsEqualTo(ConfiguredAsyncDisposableSymbol);
+
+        public bool IsConfiguredCancelableAsyncEnumerable(ITypeSymbol type) => type.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol);
+
+        public bool IsAsyncEnumerable(ITypeSymbol? type) => type.IsEqualTo(IAsyncEnumerableSymbol);
+
+        public bool IsConfiguredTaskAwaitable(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
+        {
+            var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).ConvertedType;
+            if (awaitExpressionType is null)
+                return false;
+
+            return ConfiguredTaskAwaitableSymbol.IsEqualTo(awaitExpressionType) ||
+                   ConfiguredTaskAwaitableOfTSymbol.IsEqualTo(awaitExpressionType.OriginalDefinition);
+        }
+    }
+
+    private sealed class OperationBlockContext(AnalyzerContext analyzerContext, bool hasSynchronizationContext)
+    {
+        private ConfiguredAwaits? _configuredAwaits;
+        private ConcurrentDictionary<StatementSyntax, bool>? _endPointIsReachable;
 
         public void AnalyzeAwaitOperation(OperationAnalysisContext context)
         {
@@ -90,7 +138,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             if (collectionType is null)
                 return;
 
-            if (collectionType.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
+            if (analyzerContext.IsConfiguredCancelableAsyncEnumerable(collectionType))
             {
                 // Enumerable().WithCancellation(ct) or Enumerable().ConfigureAwait(false)
                 if (HasConfigureAwait(operation.Collection) && HasPartOfTypeIAsyncEnumerable(operation.Collection))
@@ -108,7 +156,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (MustUseConfigureAwait(operation.SemanticModel!, context.Options, operation.Syntax, context.CancellationToken))
             {
-                var data = ImmutableDictionary<string, string?>.Empty.Add("kind", "foreach");
+                var data = ImmutableDictionary<string, string?>.Empty.Add(UseConfigureAwaitAnalyzerCommon.KindKey, "foreach");
                 context.ReportDiagnostic(Rule, data, operation.Collection);
             }
 
@@ -131,7 +179,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             bool HasPartOfTypeIAsyncEnumerable(IOperation operation)
             {
-                if (operation.Type.IsEqualTo(IAsyncEnumerableSymbol))
+                if (analyzerContext.IsAsyncEnumerable(operation.Type))
                     return true;
 
                 foreach (var child in operation.GetChildOperations())
@@ -167,7 +215,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                 if (MustUseConfigureAwait(resources.SemanticModel!, context.Options, resources.Syntax, context.CancellationToken))
                 {
-                    var properties = ImmutableDictionary<string, string?>.Empty.Add("kind", "using");
+                    var properties = ImmutableDictionary<string, string?>.Empty.Add(UseConfigureAwaitAnalyzerCommon.KindKey, "using");
                     context.ReportDiagnostic(Rule, properties, resources);
                 }
             }
@@ -193,7 +241,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
                     // ConfiguredCancelableAsyncEnumerable
                     var variableType = declarator.Initializer.Value.GetActualType(context.CancellationToken);
-                    if (variableType is null || variableType.IsEqualTo(ConfiguredAsyncDisposableSymbol))
+                    if (variableType is null || analyzerContext.IsConfiguredAsyncDisposable(variableType))
                         return;
 
                     if (!CanAddConfigureAwait(variableType, declarator.Initializer.Value))
@@ -216,87 +264,102 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                     return true;
             }
 
-            if (HasPreviousConfigureAwait(semanticModel, node, cancellationToken))
+            // The context detection can only prevent the diagnostic from being reported, and a previous
+            // ConfigureAwait(false) in the same method overrides it. So, when the code is not in a context that
+            // has a SynchronizationContext, the result is the same whatever the previous awaits are, and there is
+            // no need to run the expensive control flow analysis of HasPreviousConfigureAwait.
+            if (!hasSynchronizationContext && !IsInUnitTestMethod(semanticModel, node, cancellationToken))
                 return true;
 
-            var containingClass = GetParentSymbol<INamedTypeSymbol>(semanticModel, node, cancellationToken);
-            if (containingClass is not null)
-            {
-                if (containingClass.InheritsFrom(WPF_DispatcherObject) ||
-                    containingClass.Implements(WPF_ICommand) ||
-                    containingClass.InheritsFrom(WinForms_Control) || // WinForms
-                    containingClass.InheritsFrom(WebForms_WebControl) || // ASP.NET (Webforms)
-                    containingClass.InheritsFrom(AspNetCore_ControllerBase) || // ASP.NET Core (as there is no SynchronizationContext, ConfigureAwait(false) is useless)
-                    containingClass.Implements(AspNetCore_IRazorPage) || // ASP.NET Core
-                    containingClass.Implements(AspNetCore_ITagHelper) || // ASP.NET Core
-                    containingClass.Implements(AspNetCore_ITagHelperComponent) || // ASP.NET Core
-                    containingClass.Implements(AspNetCore_IFilterMetadata) ||
-                    containingClass.Implements(AspNetCore_IComponent))  // Blazor has a synchronization context, see https://github.com/meziantou/Meziantou.Analyzer/issues/96
-                {
-                    return false;
-                }
-            }
+            // If ConfigureAwait(false) is used somewhere in the method, all the following awaits should use it too
+            return HasPreviousConfigureAwait(semanticModel, node, cancellationToken);
+        }
 
+        private static bool IsInUnitTestMethod(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken)
+        {
             var containingMethod = GetParentSymbol<IMethodSymbol>(semanticModel, node, cancellationToken);
-            if (containingMethod is not null && containingMethod.IsUnitTestMethod())
-                return false;
-
-            return true;
+            return containingMethod is not null && containingMethod.IsUnitTestMethod();
         }
 
         private bool HasPreviousConfigureAwait(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken)
         {
             // Find all previous awaits with ConfiguredAwait(false)
-            // Use context.SemanticModel.AnalyzeControlFlow to check if the current await is accessible from one of the previous await
+            // Use semanticModel.AnalyzeControlFlow to check if the current await is accessible from one of the previous await
             // https://joshvarty.com/2015/03/24/learn-roslyn-now-control-flow-analysis/
             var method = node.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-            if (method is not null)
+            if (method is null)
+                return false;
+
+            var configuredAwaits = GetConfiguredAwaits(semanticModel, method, cancellationToken);
+            if (configuredAwaits.Length == 0)
+                return false;
+
+            var nodeStart = node.SpanStart;
+            var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
+            foreach (var otherAwaitExpression in configuredAwaits)
             {
-                var otherAwaitExpressions = method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>();
-                foreach (var expr in otherAwaitExpressions)
-                {
-                    if (HasPreviousConfigureAwait(expr))
-                        return true;
+                // The awaits are ordered by position, so the next ones cannot be before the current node
+                if (otherAwaitExpression.SpanStart > nodeStart)
+                    break;
 
-                    bool HasPreviousConfigureAwait(AwaitExpressionSyntax otherAwaitExpression)
-                    {
-                        if (otherAwaitExpression == node)
-                            return false;
+                if (otherAwaitExpression == node)
+                    continue;
 
-                        if (otherAwaitExpression.GetLocation().SourceSpan.Start > node.GetLocation().SourceSpan.Start)
-                            return false;
-
-                        if (!IsConfiguredTaskAwaitable(semanticModel, otherAwaitExpression, cancellationToken))
-                            return false;
-
-                        var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
-                        var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
-                        while (parentStatement is not null && nodeStatement != parentStatement)
-                        {
-                            if (!IsEndPointReachable(semanticModel, parentStatement))
-                                return false;
-
-                            parentStatement = parentStatement.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
-                        }
-
-                        return true;
-                    }
-                }
+                if (IsReachableFrom(semanticModel, otherAwaitExpression, nodeStatement))
+                    return true;
             }
 
             return false;
         }
 
-        private static bool IsEndPointReachable(SemanticModel semanticModel, StatementSyntax statementSyntax)
+        private bool IsReachableFrom(SemanticModel semanticModel, AwaitExpressionSyntax otherAwaitExpression, StatementSyntax? nodeStatement)
         {
-            var result = semanticModel.AnalyzeControlFlow(statementSyntax);
-            if (result is null || !result.Succeeded)
-                return false;
+            var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
+            while (parentStatement is not null && nodeStatement != parentStatement)
+            {
+                if (!IsEndPointReachable(semanticModel, parentStatement))
+                    return false;
 
-            if (!result.EndPointIsReachable)
-                return false;
+                parentStatement = parentStatement.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
+            }
 
             return true;
+        }
+
+        private AwaitExpressionSyntax[] GetConfiguredAwaits(SemanticModel semanticModel, MethodDeclarationSyntax method, CancellationToken cancellationToken)
+        {
+            // All the operations of a block belong to the same method, so the awaits of the method are only
+            // enumerated once instead of once per await
+            var cached = _configuredAwaits;
+            if (cached is not null && cached.Method == method)
+                return cached.Awaits;
+
+            List<AwaitExpressionSyntax>? awaits = null;
+            foreach (var awaitExpression in method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>())
+            {
+                if (analyzerContext.IsConfiguredTaskAwaitable(semanticModel, awaitExpression, cancellationToken))
+                {
+                    awaits ??= [];
+                    awaits.Add(awaitExpression);
+                }
+            }
+
+            var result = awaits is null ? [] : awaits.ToArray();
+            _configuredAwaits = new ConfiguredAwaits(method, result);
+            return result;
+        }
+
+        private bool IsEndPointReachable(SemanticModel semanticModel, StatementSyntax statementSyntax)
+        {
+            // The same statements are walked over and over while looking for the awaits of a method
+            var cache = _endPointIsReachable ??= new ConcurrentDictionary<StatementSyntax, bool>();
+            if (cache.TryGetValue(statementSyntax, out var isReachable))
+                return isReachable;
+
+            var result = semanticModel.AnalyzeControlFlow(statementSyntax);
+            isReachable = result is not null && result.Succeeded && result.EndPointIsReachable;
+            cache[statementSyntax] = isReachable;
+            return isReachable;
         }
 
         private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, IOperation operation)
@@ -306,22 +369,12 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
         private static bool CanAddConfigureAwait(ITypeSymbol awaitedType, SemanticModel semanticModel, SyntaxNode node)
         {
-            var location = node.GetLocation().SourceSpan.End;
+            var location = node.Span.End;
             var result = semanticModel.LookupSymbols(location, container: awaitedType, name: "ConfigureAwait", includeReducedExtensionMethods: true);
             if (result.Length > 0)
                 return true;
 
             return false;
-        }
-
-        private bool IsConfiguredTaskAwaitable(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
-        {
-            var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).ConvertedType;
-            if (awaitExpressionType is null)
-                return false;
-
-            return ConfiguredTaskAwaitableSymbol.IsEqualTo(awaitExpressionType) ||
-                   ConfiguredTaskAwaitableOfTSymbol.IsEqualTo(awaitExpressionType.OriginalDefinition);
         }
 
         private static T? GetParentSymbol<T>(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken) where T : class, ISymbol
@@ -338,10 +391,16 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             return default;
         }
 
-        private enum ReportMode
+        private sealed class ConfiguredAwaits(MethodDeclarationSyntax method, AwaitExpressionSyntax[] awaits)
         {
-            DetectContext,
-            Always,
+            public MethodDeclarationSyntax Method { get; } = method;
+            public AwaitExpressionSyntax[] Awaits { get; } = awaits;
         }
+    }
+
+    private enum ReportMode
+    {
+        DetectContext,
+        Always,
     }
 }

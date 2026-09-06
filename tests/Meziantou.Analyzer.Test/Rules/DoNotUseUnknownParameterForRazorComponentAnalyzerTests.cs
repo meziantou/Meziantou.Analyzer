@@ -117,11 +117,12 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzerTests
     }
 
     [Theory]
-    [InlineData("UnknownParams")]
-    public Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsInvalid(string parameterName)
+    [InlineData("UnknownParams", "MA0115.report_pascal_case_unmatched_parameter")]
+    [InlineData("UnknownParams", "MA0115.ReportPascalCaseUnmatchedParameter")]
+    public Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsInvalid(string parameterName, string configurationKey)
     {
         var test = CreateTest();
-        test.TestState.SetConfiguration("MA0115.ReportPascalCaseUnmatchedParameter", "true");
+        test.TestState.SetConfiguration(configurationKey, "true");
         test.TestCode = $$"""
             using Microsoft.AspNetCore.Components;
             class TypeName : ComponentBase
@@ -151,14 +152,15 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzerTests
     }
 
     [Theory]
-    [InlineData("Param1")]
-    [InlineData("Param2")]
-    [InlineData("Param3")]
-    [InlineData("UnknownParams")]
-    public Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsValid(string parameterName)
+    [InlineData("Param1", "MA0115.report_pascal_case_unmatched_parameter")]
+    [InlineData("Param2", "MA0115.report_pascal_case_unmatched_parameter")]
+    [InlineData("Param3", "MA0115.report_pascal_case_unmatched_parameter")]
+    [InlineData("UnknownParams", "MA0115.report_pascal_case_unmatched_parameter")]
+    [InlineData("UnknownParams", "MA0115.ReportPascalCaseUnmatchedParameter")]
+    public Task ComponentWithCaptureUnmatchedValues_PascalCaseParameterIsValid(string parameterName, string configurationKey)
     {
         var test = CreateTest();
-        test.TestState.SetConfiguration("MA0115.ReportPascalCaseUnmatchedParameter", "false");
+        test.TestState.SetConfiguration(configurationKey, "false");
         test.TestCode = $$"""
             using Microsoft.AspNetCore.Components;
             class TypeName : ComponentBase

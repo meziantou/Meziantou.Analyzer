@@ -61,6 +61,25 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     }
 
     [Fact]
+    public Task InternalType_DoNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = "internal class Action { }";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalType_ConsiderNonPublicSymbols_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.only_consider_public_symbols", "false");
+        test.TestCode = "internal class {|MA0104:Action|} { }";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Regex_DoNotReportDiagnostic()
     {
         var test = CreateTest();
@@ -95,6 +114,16 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
     {
         var test = CreateTest();
         test.TestState.SetConfiguration("MA0104.namepaces_regex", "[");
+        test.TestCode = "public class {|MA0104:Action|} { }";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyRegex_UseDefaultRegex()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namespaces_regex", "");
         test.TestCode = "public class {|MA0104:Action|} { }";
 
         return test.RunAsync();

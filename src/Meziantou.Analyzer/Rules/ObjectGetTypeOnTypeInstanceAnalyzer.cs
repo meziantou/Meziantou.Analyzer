@@ -26,21 +26,33 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
             if (typeSymbol is null)
                 return;
 
+            // System.Type hides Object.GetType() with "public new Type GetType()", so the invocation resolves to
+            // Type.GetType() when the instance is statically typed as System.Type, and to Object.GetType() otherwise
+            var objectGetTypeSymbol = GetParameterlessGetTypeMethod(context.Compilation.ObjectType);
+            var typeGetTypeSymbol = GetParameterlessGetTypeMethod(typeSymbol);
+            if (objectGetTypeSymbol is null && typeGetTypeSymbol is null)
+                return;
+
             context.RegisterOperationAction(context =>
             {
                 var operation = (IInvocationOperation)context.Operation;
-                if (operation.Instance is not null && operation.TargetMethod.Name == "GetType" && operation.TargetMethod.ContainingType.IsObject())
-                {
-                    var instanceType = operation.Instance.GetActualType(context.CancellationToken);
-                    if (instanceType is null)
-                        return;
 
-                    if (instanceType.IsOrInheritsFrom(typeSymbol))
-                    {
-                        context.ReportDiagnostic(Rule, operation);
-                    }
+                // The instance of Type.GetType() is statically typed as System.Type, so there is nothing left to check
+                if (operation.TargetMethod.IsEqualTo(typeGetTypeSymbol))
+                {
+                    context.ReportDiagnostic(Rule, operation);
+                    return;
+                }
+
+                // The instance of Object.GetType() can still hold a System.Type, which only the data flow analysis can tell
+                if (operation.TargetMethod.IsEqualTo(objectGetTypeSymbol) && operation.Instance?.GetActualType(context.CancellationToken)?.IsOrInheritsFrom(typeSymbol) is true)
+                {
+                    context.ReportDiagnostic(Rule, operation);
                 }
             }, OperationKind.Invocation);
         });
+
+        static IMethodSymbol? GetParameterlessGetTypeMethod(ITypeSymbol type)
+            => type.GetMembers("GetType").OfType<IMethodSymbol>().FirstOrDefault(method => method is { IsStatic: false, Parameters.IsEmpty: true });
     }
 }

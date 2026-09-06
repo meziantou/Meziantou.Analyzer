@@ -820,8 +820,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         public ImmutableDictionary<string, string?> CreateProperties()
         {
             return ImmutableDictionary<string, string?>.Empty
-                .Add("Data", Data.ToString())
-                .Add("MethodName", AsyncMethodName);
+                .Add(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.DataKey, Data.ToString())
+                .Add(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.MethodNameKey, AsyncMethodName);
         }
     }
 }

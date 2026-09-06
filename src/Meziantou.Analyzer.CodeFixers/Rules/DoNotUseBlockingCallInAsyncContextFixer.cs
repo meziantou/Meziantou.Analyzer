@@ -15,7 +15,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             return;
 
         var properties = context.Diagnostics[0].Properties;
-        if (!properties.TryGetValue("Data", out var dataStr) || !Enum.TryParse<DoNotUseBlockingCallInAsyncContextData>(dataStr, ignoreCase: false, out var data))
+        if (!properties.TryGetValue(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.DataKey, out var dataStr) || !Enum.TryParse<DoNotUseBlockingCallInAsyncContextData>(dataStr, ignoreCase: false, out var data))
             return;
 
         switch (data)

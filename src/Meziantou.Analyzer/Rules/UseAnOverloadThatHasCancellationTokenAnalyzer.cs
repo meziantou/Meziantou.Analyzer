@@ -49,7 +49,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
-    private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new("MA0032.allowOverloadsWithOptionalParameters", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new(["MA0032.allow_overloads_with_optional_parameters", "MA0032.allowOverloadsWithOptionalParameters"], defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
@@ -262,10 +262,10 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
         {
             return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-                .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
-                .Add("ParameterName", parameterInfo.Name)
-                .Add("ParameterIsEnumeratorCancellation", parameterInfo.HasEnumeratorCancellationAttribute.ToString())
-                .Add("CancellationTokens", string.Join(',', cancellationTokens));
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIsEnumeratorCancellationKey, parameterInfo.HasEnumeratorCancellationAttribute.ToString())
+                .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.CancellationTokensKey, string.Join(',', cancellationTokens));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)

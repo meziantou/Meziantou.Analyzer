@@ -865,6 +865,102 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Fact]
+    public Task Any_List_Negated_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    if (!{|MA0112:collection.Any()|}) { }
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    if (!(collection.Count != 0)) { }
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_List_MemberAccess_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = {|MA0112:collection.Any()|}.ToString();
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = (collection.Count != 0).ToString();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_List_KeepsTrivia_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = /* before */ {|MA0112:collection.Any()|} /* after */;
+                }
+            }
+
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var collection = new System.Collections.Generic.List<int>();
+                    _ = /* before */ collection.Count != 0 /* after */;
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Any_Array()
     {
         var test = new CodeFixTest();
@@ -1417,6 +1513,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("source.Select(dt => dt.Name)")]            // No cast
     [InlineData("source.Select(dt => (object)dt.Name)")]    // Cast of property, not of element itself
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
+    [InlineData("source.Select(dt => (BaseType)other)")]    // Cast of a captured parameter, not of the element itself
+    [InlineData("source.Select((dt, index) => (object)index)")] // Cast of the index, not of the element itself
     public Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
         var test = new CodeFixTest();
@@ -1427,7 +1525,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
                 class BaseType { public string Name { get; set; } }
                 class DerivedType : BaseType {}
 
-                public Test()
+                public Test(object other)
                 {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
                     {{selectInvocation}};
@@ -2269,6 +2367,50 @@ public sealed class OptimizeLinqUsageAnalyzerTests
                 {
                     System.Collections.Generic.IEnumerable<string> enumerable = null;
                     enumerable.Where(x => x != null).{{a}}(x => x.Length);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("OrderBy(x => x.Length)")]
+    [InlineData("OrderByDescending(x => x.Length)")]
+    [InlineData("Order()")]
+    [InlineData("OrderDescending()")]
+    public Task Enumerable_WhereWithIndexAfterOrderBy_Valid(string a)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> enumerable = null;
+                    enumerable.{{a}}.Where((x, i) => i < 3);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("OrderBy(x => x.Length)")]
+    [InlineData("OrderByDescending(x => x.Length)")]
+    public Task Queryable_WhereWithIndexAfterOrderBy_Valid(string a)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    System.Linq.IQueryable<string> query = null;
+                    query.{{a}}.Where((x, i) => i < 3);
                 }
             }
             """;

@@ -7,7 +7,7 @@
 |[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait|<span title='Warning'>⚠️</span>|✔️|✔️|<span title='MA0004.report'>✔️</span>|
 |[MA0005](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0005.md)|Performance|Use Array.Empty\<T\>()|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0006](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0006.md)|Usage|Use String.Equals instead of equality operator|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
-|[MA0007](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0007.md)|Style|Add a comma after the last value|<span title='Info'>ℹ️</span>|✔️|✔️|<span title='MA0007.IgnoreCatchAllArm'>✔️</span>|
+|[MA0007](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0007.md)|Style|Add a comma after the last value|<span title='Info'>ℹ️</span>|✔️|✔️|<span title='MA0007.ignore_catch_all_arm'>✔️</span>|
 |[MA0008](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0008.md)|Performance|Add StructLayoutAttribute|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0009](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0009.md)|Security|Add regex evaluation timeout|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0010](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0010.md)|Design|Mark attributes with AttributeUsageAttribute|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
@@ -32,7 +32,7 @@
 |[MA0029](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0029.md)|Performance|Combine LINQ methods|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0030](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0030.md)|Performance|Remove useless OrderBy call|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0031](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0031.md)|Performance|Optimize Enumerable.Count() usage|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
-|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use an overload with a CancellationToken argument, even when no token is available in scope|<span title='Info'>ℹ️</span>|❌|❌|<span title='MA0032.allowOverloadsWithOptionalParameters'>✔️</span>|
+|[MA0032](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0032.md)|Usage|Use an overload with a CancellationToken argument, even when no token is available in scope|<span title='Info'>ℹ️</span>|❌|❌|<span title='MA0032.allow_overloads_with_optional_parameters'>✔️</span>|
 |[MA0033](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0033.md)|Design|Do not tag instance fields with ThreadStaticAttribute|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0035](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0035.md)|Usage|Do not use dangerous threading methods|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0036](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0036.md)|Design|Make class static|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
@@ -47,7 +47,7 @@
 |[MA0045](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0045.md)|Design|Do not use blocking calls, even when the calling method must become async|<span title='Info'>ℹ️</span>|❌|✔️|<span title='MA0045.enable_db_special_cases&#xA;MA0045.enable_sqlite_special_cases'>✔️</span>|
 |[MA0046](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0046.md)|Design|Use EventHandler\<T\> to declare events|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0047](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0047.md)|Design|Declare types in namespaces|<span title='Warning'>⚠️</span>|✔️|❌|❌|
-|[MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md)|Design|File name must match type name|<span title='Warning'>⚠️</span>|✔️|❌|<span title='MA0048.allow_oft_for_all_generic_types&#xA;MA0048.allow_type_name_prefix&#xA;MA0048.exclude_file_local_types&#xA;MA0048.excluded_file_name_parts&#xA;MA0048.excluded_file_name_parts_regex&#xA;MA0048.mode&#xA;MA0048.only_validate_first_type&#xA;MA0048.use_longest_type_name_prefix'>✔️</span>|
+|[MA0048](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0048.md)|Design|File name must match type name|<span title='Warning'>⚠️</span>|✔️|❌|<span title='MA0048.allow_oft_for_all_generic_types&#xA;MA0048.allow_type_name_prefix&#xA;MA0048.exclude_file_local_types&#xA;MA0048.excluded_file_name_parts&#xA;MA0048.excluded_file_name_parts_regex&#xA;MA0048.mode&#xA;MA0048.only_validate_first_type&#xA;MA0048.use_longest_type_name_prefix&#xA;dotnet_diagnostic.MA0048.excluded_symbol_names'>✔️</span>|
 |[MA0049](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0049.md)|Design|Type name should not match containing namespace|<span title='Error'>❌</span>|✔️|❌|❌|
 |[MA0050](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0050.md)|Design|Validate arguments correctly in iterator methods|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0051](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0051.md)|Design|Method is too long|<span title='Warning'>⚠️</span>|✔️|❌|<span title='MA0051.maximum_lines_per_method&#xA;MA0051.maximum_statements_per_method&#xA;MA0051.skip_local_functions'>✔️</span>|
@@ -106,7 +106,7 @@
 |[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|<span title='Warning'>⚠️</span>|❌|❌|<span title='MA0104.namespaces_regex&#xA;MA0104.only_consider_public_symbols&#xA;MA0104.use_preview_types'>✔️</span>|
 |[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
-|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|<span title='Info'>ℹ️</span>|❌|❌|❌|
+|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|<span title='Info'>ℹ️</span>|❌|❌|<span title='MA0107.exclude_tostring_methods'>✔️</span>|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|<span title='Info'>ℹ️</span>|❌|❌|❌|
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
@@ -114,7 +114,7 @@
 |[MA0112](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0112.md)|Performance|Use 'Count \> 0' instead of 'Any()'|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 |[MA0113](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0113.md)|Design|Use DateTime.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0114](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0114.md)|Design|Use DateTimeOffset.UnixEpoch|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
-|[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|<span title='Warning'>⚠️</span>|✔️|❌|<span title='MA0115.ReportPascalCaseUnmatchedParameter'>✔️</span>|
+|[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Usage|Unknown component parameter|<span title='Warning'>⚠️</span>|✔️|❌|<span title='MA0115.report_pascal_case_unmatched_parameter'>✔️</span>|
 |[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Design|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Design|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\]|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
 |[MA0118](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0118.md)|Design|\[JSInvokable\] methods must be public|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
@@ -219,6 +219,7 @@
 |[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|<span title='Info'>ℹ️</span>|✔️|❌|❌|
 |[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|<span title='Hidden'>👻</span>|✔️|✔️|❌|
 |[MA0220](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0220.md)|Design|The configured regular expression is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0221](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0221.md)|Design|TryGetValue method should use \[MaybeNullWhen(false)\] on the value parameter|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

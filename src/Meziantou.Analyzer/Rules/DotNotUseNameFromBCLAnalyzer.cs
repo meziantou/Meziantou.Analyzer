@@ -18,19 +18,16 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> OnlyConsiderPublicSymbolsConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".only_consider_public_symbols", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> UsePreviewTypesConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".use_preview_types", defaultValue: false);
-    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", defaultValue: "^System($|\\.)");
-    internal static readonly ConfigurationDefinition<string> LegacyNamepacesRegexConfiguration = new(RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex", defaultValue: "^System($|\\.)") { IsHidden = true };
+    internal static readonly ConfigurationDefinition<string> NamespacesRegexConfiguration = new([RuleIdentifiers.DotNotUseNameFromBCL + ".namespaces_regex", RuleIdentifiers.DotNotUseNameFromBCL + ".namepaces_regex"], defaultValue: "^System($|\\.)") { RegexOptions = RegexOptions.None };
 
-    private static Dictionary<string, List<string>>? s_types;
-    private static Dictionary<string, List<string>>? s_typesPreview;
+    // The tables are big, so they are only loaded when the rule runs, and only the configured one is loaded
+    private static readonly Lazy<Dictionary<string, string[]>> Types = new(() => LoadTypes(preview: false));
+    private static readonly Lazy<Dictionary<string, string[]>> PreviewTypes = new(() => LoadTypes(preview: true));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
-        s_types ??= LoadTypes(preview: false);
-        s_typesPreview ??= LoadTypes(preview: true);
-
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
@@ -50,8 +47,8 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
         }
 
         var usePreviewTypes = context.Options.GetConfigurationValue(symbol, UsePreviewTypesConfiguration);
-        var types = usePreviewTypes ? s_typesPreview : s_types;
-        if (types!.TryGetValue(symbol.MetadataName, out var namespaces))
+        var types = usePreviewTypes ? PreviewTypes.Value : Types.Value;
+        if (types.TryGetValue(symbol.MetadataName, out var namespaces))
         {
             var namespaceRegex = GetNamespacesRegex(context, symbol);
             if (namespaceRegex is null)
@@ -70,28 +67,21 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static Regex? GetNamespacesRegex(SymbolAnalysisContext context, ISymbol symbol)
     {
-        var pattern = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
-        if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredPattern))
-        {
-            pattern = configuredPattern;
-        }
-
-        if (RegexCache.TryGetOrCreate(pattern, RegexOptions.None, out var regex))
-            return regex;
-
-        // The configured pattern is invalid, so fallback to the default pattern instead of failing the analysis
-        RegexCache.TryGetOrCreate(NamespacesRegexConfiguration.DefaultValue, RegexOptions.None, out regex);
-        return regex;
+        // An invalid pattern falls back to the default pattern instead of failing the analysis
+        return context.Options.GetConfigurationRegex(symbol, NamespacesRegexConfiguration);
     }
 
-    private static Dictionary<string, List<string>> LoadTypes(bool preview)
+    private static Dictionary<string, string[]> LoadTypes(bool preview)
     {
-        var types = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        var types = new Dictionary<string, string[]>(StringComparer.Ordinal);
 
         var resourceName = preview ? "Meziantou.Analyzer.Resources.bcl-preview.txt" : "Meziantou.Analyzer.Resources.bcl.txt";
         using var stream = typeof(DotNotUseNameFromBCLAnalyzer).Assembly.GetManifestResourceStream(resourceName);
         if (stream is null)
             return types;
+
+        // The same few hundred namespaces are repeated on thousands of lines, so they are deduplicated to keep a single instance of each
+        var knownNamespaces = new Dictionary<string, string>(StringComparer.Ordinal);
 
         using var sr = new StreamReader(stream);
         while (sr.ReadLine() is { } line)
@@ -100,13 +90,17 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
             var ns = line[..index];
             var name = line[(index + 1)..];
 
-            if (!types.TryGetValue(name, out var list))
+            if (knownNamespaces.TryGetValue(ns, out var knownNamespace))
             {
-                list = [];
-                types.Add(name, list);
+                ns = knownNamespace;
+            }
+            else
+            {
+                knownNamespaces.Add(ns, ns);
             }
 
-            list.Add(ns);
+            // Very few names are declared in multiple namespaces, so the arrays are sized exactly instead of using a list
+            types[name] = types.TryGetValue(name, out var existingNamespaces) ? [.. existingNamespaces, ns] : [ns];
         }
 
         return types;

@@ -130,9 +130,9 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
         private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
         {
             return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-                .Add("ParameterIndex", parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
-                .Add("ParameterName", parameterInfo.Name)
-                .Add("Paths", string.Join(',', cancellationTokens));
+                .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
+                .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
+                .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.PathsKey, string.Join(',', cancellationTokens));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)

@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Meziantou.Analyzer.Configurations;
 
 public static class AnalyzerOptionsExtensions
@@ -7,7 +9,7 @@ public static class AnalyzerOptionsExtensions
         if (!configuration.HasDefaultValue)
             throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
 
-        if (TryGetConfigurationValue(options, syntaxTree, configuration.Key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, configuration, out var value))
         {
             return ChangeType(value, configuration);
         }
@@ -17,7 +19,7 @@ public static class AnalyzerOptionsExtensions
 
     public static T GetConfigurationValue<T>(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<T> configuration, T defaultValue)
     {
-        if (TryGetConfigurationValue(options, syntaxTree, configuration.Key, out var value))
+        if (TryGetConfigurationValue(options, syntaxTree, configuration, out var value))
             return ChangeType(value, configuration.Key, defaultValue);
 
         return defaultValue;
@@ -43,26 +45,52 @@ public static class AnalyzerOptionsExtensions
         if (!configuration.HasDefaultValue)
             throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
 
-        foreach (var location in symbol.Locations)
-        {
-            var syntaxTree = location.SourceTree;
-            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, configuration.Key, out var value))
-                return ChangeType(value, configuration);
-        }
+        if (options.TryGetConfigurationValue(symbol, configuration, out var value))
+            return ChangeType(value, configuration);
 
         return configuration.DefaultValue;
     }
 
-    public static T GetConfigurationValue<T>(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<T> configuration, T defaultValue)
+    /// <summary>
+    /// Gets the <see cref="Regex"/> of an option whose value is a regular expression (<see cref="ConfigurationDefinition{T}.IsRegex"/>).
+    /// The regex is created with the <see cref="ConfigurationDefinition{T}.RegexOptions"/> of the option and cached, so a value is
+    /// parsed only once. Returns <see langword="false"/> when the option is not configured, when its value is empty, or when its
+    /// value is not a valid pattern. MA0220 reports the invalid patterns, so the rules can ignore them.
+    /// </summary>
+    public static bool TryGetConfigurationRegex(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<string> configuration, [NotNullWhen(true)] out Regex? regex)
     {
-        foreach (var location in symbol.Locations)
-        {
-            var syntaxTree = location.SourceTree;
-            if (syntaxTree is not null && options.TryGetConfigurationValue(syntaxTree, configuration.Key, out var value))
-                return ChangeType(value, configuration.Key, defaultValue);
-        }
+        if (TryGetConfigurationValue(options, syntaxTree, configuration, out var pattern) && pattern.Length > 0)
+            return RegexCache.TryGetOrCreate(pattern, configuration.RegexOptions, out regex);
 
-        return defaultValue;
+        regex = null;
+        return false;
+    }
+
+    /// <inheritdoc cref="TryGetConfigurationRegex(AnalyzerOptions, SyntaxTree, ConfigurationDefinition{string}, out Regex?)"/>
+    public static bool TryGetConfigurationRegex(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<string> configuration, [NotNullWhen(true)] out Regex? regex)
+    {
+        if (TryGetConfigurationValue(options, symbol, configuration, out var pattern) && pattern.Length > 0)
+            return RegexCache.TryGetOrCreate(pattern, configuration.RegexOptions, out regex);
+
+        regex = null;
+        return false;
+    }
+
+    /// <summary>
+    /// Gets the <see cref="Regex"/> of an option whose value is a regular expression, or the <see cref="Regex"/> of the default value
+    /// of the option when it is not configured or when its value is not a valid pattern. Returns <see langword="null"/> when the
+    /// default value itself is not a valid pattern.
+    /// </summary>
+    public static Regex? GetConfigurationRegex(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<string> configuration)
+    {
+        if (!configuration.HasDefaultValue)
+            throw new InvalidOperationException($"Configuration value for '{configuration.Key}' is not set and has no default value.");
+
+        if (TryGetConfigurationRegex(options, symbol, configuration, out var regex))
+            return regex;
+
+        RegexCache.TryGetOrCreate(configuration.DefaultValue, configuration.RegexOptions, out regex);
+        return regex;
     }
 
     public static bool TryGetConfigurationValue(this AnalyzerOptions options, SyntaxTree syntaxTree, string key, [NotNullWhen(true)] out string? value)
@@ -73,12 +101,26 @@ public static class AnalyzerOptionsExtensions
 
     public static bool TryGetConfigurationValue<T>(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<T> configuration, [NotNullWhen(true)] out string? value)
     {
-        return TryGetConfigurationValue(options, syntaxTree, configuration.Key, out value);
+        foreach (var key in configuration.Keys)
+        {
+            if (TryGetConfigurationValue(options, syntaxTree, key, out value))
+                return true;
+        }
+
+        value = null;
+        return false;
     }
 
     public static bool TryGetConfigurationValue<T>(this AnalyzerOptions options, ISymbol symbol, ConfigurationDefinition<T> configuration, [NotNullWhen(true)] out string? value)
     {
-        return TryGetConfigurationValue(options, symbol, configuration.Key, out value);
+        foreach (var key in configuration.Keys)
+        {
+            if (TryGetConfigurationValue(options, symbol, key, out value))
+                return true;
+        }
+
+        value = null;
+        return false;
     }
 
     public static bool TryGetConfigurationValue(this AnalyzerOptions options, ISymbol symbol, string key, [NotNullWhen(true)] out string? value)

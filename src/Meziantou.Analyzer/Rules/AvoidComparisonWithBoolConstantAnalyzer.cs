@@ -69,9 +69,9 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
             binaryOperation.OperatorKind == BinaryOperatorKind.Equals;
 
         var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-            .Add("NodeToKeepSpanStart", nodeToKeep.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-            .Add("NodeToKeepSpanLength", nodeToKeep.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-            .Add("LogicalNotOperatorNeeded", logicalNotOperatorNeeded.ToString());
+            .Add(AvoidComparisonWithBoolConstantAnalyzerCommon.NodeToKeepSpanStartKey, nodeToKeep.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+            .Add(AvoidComparisonWithBoolConstantAnalyzerCommon.NodeToKeepSpanLengthKey, nodeToKeep.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+            .Add(AvoidComparisonWithBoolConstantAnalyzerCommon.LogicalNotOperatorNeededKey, logicalNotOperatorNeeded.ToString());
 
         var operatorTokenLocation = ((BinaryExpressionSyntax)binaryOperation.Syntax).OperatorToken.GetLocation();
         context.ReportDiagnostic(Rule, properties, operatorTokenLocation);

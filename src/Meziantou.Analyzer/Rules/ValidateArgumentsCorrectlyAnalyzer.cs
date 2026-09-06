@@ -84,7 +84,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
             if (lastThrowIndex is not null && firstYieldIndex is not null && lastThrowIndex < firstYieldIndex)
             {
                 var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-                    .Add("Index", lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
+                    .Add(ValidateArgumentsCorrectlyAnalyzerCommon.IndexKey, lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
 
                 context.ReportDiagnostic(Rule, properties, methodSymbol);
             }

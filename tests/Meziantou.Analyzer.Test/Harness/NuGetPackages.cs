@@ -8,8 +8,10 @@ using Meziantou.Analyzer.Test.Helpers;
 namespace Meziantou.Analyzer.Test.Harness;
 
 /// <summary>
-/// Downloads the NuGet packages the tests reference, and caches them for the whole test run. The tests use it for
+/// Resolves the NuGet packages the tests reference, and caches them for the whole test run. The tests use it for
 /// the analyzers they run besides the ones of this repository, which the testing library cannot resolve itself.
+/// The packages the build already restored are read from the NuGet global packages folder, so that the tests
+/// only download the ones that are not there yet.
 /// </summary>
 internal static class NuGetPackages
 {
@@ -19,12 +21,22 @@ internal static class NuGetPackages
     // The result is shared by all the tests through Cache, so it would hang the whole test run.
     private static readonly TimeSpan NuGetDownloadTimeout = TimeSpan.FromSeconds(60);
 
+    /// <summary>
+    /// The folder NuGet extracts the restored packages to, which the testing library also uses for the packages
+    /// referenced by <see cref="Microsoft.CodeAnalysis.Testing.ReferenceAssemblies"/>. It is resolved the way NuGet
+    /// does when no NuGet.config sets 'globalPackagesFolder', which is enough as the packages that are not found
+    /// there are downloaded.
+    /// </summary>
+    private static readonly string GlobalPackagesFolder = Environment.GetEnvironmentVariable("NUGET_PACKAGES") is { Length: > 0 } folder
+        ? folder
+        : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".nuget", "packages");
+
     public static async Task<string[]> GetReferencesAsync(string packageName, string version, string[] includedPaths)
     {
         var bytes = Encoding.UTF8.GetBytes("v2:" + packageName + '@' + version + ':' + string.Join(',', includedPaths));
         var hash = SHA256.HashData(bytes);
         var key = Convert.ToBase64String(hash).Replace('/', '_');
-        var task = Cache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Download));
+        var task = Cache.GetOrAdd(key, _ => new Lazy<Task<string[]>>(Resolve));
         try
         {
             return await task.Value.ConfigureAwait(false);
@@ -35,49 +47,46 @@ internal static class NuGetPackages
             throw;
         }
 
-        async Task<string[]> Download()
+        async Task<string[]> Resolve()
+        {
+            var packageFolder = GetRestoredPackageFolder(packageName, version) ?? await DownloadPackageWithRetries().ConfigureAwait(false);
+            return GetAssemblies(packageFolder, includedPaths);
+        }
+
+        async Task<string> DownloadPackageWithRetries()
         {
             var cacheFolder = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Meziantou.AnalyzerTests", "ref", key);
             var completionFile = Path.Combine(cacheFolder, ".complete");
-            bool IsCacheValid()
+
+            // A folder without the completion marker was left behind by an interrupted download,
+            // so it holds an incomplete package and must be downloaded again.
+            bool IsCacheValid() => File.Exists(completionFile);
+
+            if (IsCacheValid())
+                return cacheFolder;
+
+            const int MaxAttempts = 5;
+            for (var attempt = 1; ; attempt++)
             {
-                if (!Directory.Exists(cacheFolder))
-                    return false;
-
-                if (File.Exists(completionFile))
-                    return true;
-
-                return Directory.EnumerateFileSystemEntries(cacheFolder).Any();
-            }
-
-            if (!IsCacheValid())
-            {
-                await DownloadPackageWithRetries().ConfigureAwait(false);
-            }
-
-            async Task DownloadPackageWithRetries()
-            {
-                const int MaxAttempts = 5;
-                for (var attempt = 1; ; attempt++)
+                try
                 {
-                    try
-                    {
-                        await DownloadPackage().ConfigureAwait(false);
-                        return;
-                    }
-                    catch (Exception ex) when (!IsLastAttempt(attempt) && IsTransientException(ex))
-                    {
-                        await Task.Delay(100 * attempt).ConfigureAwait(false);
-                    }
+                    await DownloadPackage().ConfigureAwait(false);
+                    return cacheFolder;
                 }
-
-                static bool IsLastAttempt(int attempt) => attempt >= MaxAttempts;
-                static bool IsTransientException(Exception exception) => exception is HttpRequestException or IOException or InvalidDataException or OperationCanceledException or TimeoutException;
+                catch (Exception ex) when (!IsLastAttempt(attempt) && IsTransientException(ex))
+                {
+                    await Task.Delay(100 * attempt).ConfigureAwait(false);
+                }
             }
+
+            static bool IsLastAttempt(int attempt) => attempt >= MaxAttempts;
+            static bool IsTransientException(Exception exception) => exception is HttpRequestException or IOException or InvalidDataException or OperationCanceledException or TimeoutException;
 
             async Task DownloadPackage()
             {
-                var tempFolder = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"));
+                // The temporary folder is a sibling of the cache folder, so that moving it is a rename.
+                // Directory.Move cannot move a folder to another volume, which the temp folder may be on.
+                var tempFolder = Path.Combine(Path.GetDirectoryName(cacheFolder)!, Guid.NewGuid().ToString("N"));
                 try
                 {
                     Directory.CreateDirectory(tempFolder);
@@ -113,11 +122,16 @@ internal static class NuGetPackages
 
                     try
                     {
-                        Directory.CreateDirectory(Path.GetDirectoryName(cacheFolder)!);
+                        if (Directory.Exists(cacheFolder) && !IsCacheValid())
+                        {
+                            Directory.Delete(cacheFolder, recursive: true);
+                        }
+
                         Directory.Move(tempFolder, cacheFolder);
                     }
                     catch (Exception ex)
                     {
+                        // Another test run may have downloaded the package at the same time
                         if (!IsCacheValid())
                         {
                             throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
@@ -132,32 +146,48 @@ internal static class NuGetPackages
                     }
                 }
             }
+        }
+    }
 
-            var dlls = Directory.GetFiles(cacheFolder, "*.dll", SearchOption.AllDirectories);
+    [SuppressMessage("Globalization", "CA1308:Normalize strings to uppercase", Justification = "NuGet names the folders of the global packages folder in lowercase")]
+    private static string? GetRestoredPackageFolder(string packageName, string version)
+    {
+        // NuGet extracts a package to a folder named after the lowercase package name and version,
+        // and writes '.nupkg.metadata' in it once the extraction is complete
+        var packageFolder = Path.Combine(GlobalPackagesFolder, packageName.ToLowerInvariant(), version.ToLowerInvariant());
+        return File.Exists(Path.Combine(packageFolder, ".nupkg.metadata")) ? packageFolder : null;
+    }
+
+    private static string[] GetAssemblies(string packageFolder, string[] includedPaths)
+    {
+        var result = new List<string>();
+        foreach (var dll in Directory.EnumerateFiles(packageFolder, "*.dll", SearchOption.AllDirectories))
+        {
+            var relativePath = Path.GetRelativePath(packageFolder, dll).Replace(Path.DirectorySeparatorChar, '/');
+            if (!includedPaths.Any(path => relativePath.StartsWith(path, StringComparison.Ordinal)))
+                continue;
 
             // Filter invalid .NET assembly
-            var result = new List<string>();
-            foreach (var dll in dlls)
+            if (Path.GetFileName(dll) is "System.EnterpriseServices.Wrapper.dll")
+                continue;
+
+            if (Path.GetFileName(dll).EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
+                continue;
+
+            try
             {
-                if (Path.GetFileName(dll) == "System.EnterpriseServices.Wrapper.dll")
-                    continue;
-
-                if (Path.GetFileName(dll).EndsWith(".resources.dll", StringComparison.OrdinalIgnoreCase))
-                    continue;
-
-                try
-                {
-                    using var stream = File.OpenRead(dll);
-                    using var peFile = new PEReader(stream);
-                    var metadataReader = peFile.GetMetadataReader();
-                    result.Add(dll);
-                }
-                catch
-                {
-                }
+                using var stream = File.OpenRead(dll);
+                using var peFile = new PEReader(stream);
+                _ = peFile.GetMetadataReader();
+            }
+            catch
+            {
+                continue;
             }
 
-            return [.. result];
+            result.Add(dll);
         }
+
+        return [.. result];
     }
 }

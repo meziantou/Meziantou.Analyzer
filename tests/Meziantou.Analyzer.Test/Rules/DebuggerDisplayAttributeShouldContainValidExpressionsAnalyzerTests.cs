@@ -459,4 +459,49 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("Foo.ToString()")]
+    [InlineData("Foo.GetHashCode()")]
+    [InlineData("Foo.GetType()")]
+    [InlineData("Foo.Equals(null)")]
+    [InlineData("Foo.ToString().Length")]
+    public Task ObjectMembersOnInterfaceTypedMember(string value)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Diagnostics;
+            [DebuggerDisplay("{{{value}}}")]
+            public class Dummy
+            {
+                public IFoo Foo { get; }
+            }
+
+            public interface IFoo
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UnknownMemberOnInterfaceTypedMember()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            [{|MA0151:DebuggerDisplay("{Foo.Unknown()}")|}]
+            public class Dummy
+            {
+                public IFoo Foo { get; }
+            }
+
+            public interface IFoo
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

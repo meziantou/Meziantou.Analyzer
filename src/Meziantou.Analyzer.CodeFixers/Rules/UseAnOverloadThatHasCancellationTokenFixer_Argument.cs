@@ -16,16 +16,16 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
 
         if (nodeToFix.IsKind(SyntaxKind.InvocationExpression))
         {
-            if (!int.TryParse(context.Diagnostics[0].Properties["ParameterIndex"], NumberStyles.None, CultureInfo.InvariantCulture, out var parameterIndex))
+            if (!int.TryParse(context.Diagnostics[0].Properties.GetValueOrDefault(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIndexKey), NumberStyles.None, CultureInfo.InvariantCulture, out var parameterIndex))
                 return;
 
-            if (!context.Diagnostics[0].Properties.TryGetValue("ParameterName", out var parameterName) || parameterName is null)
+            if (!context.Diagnostics[0].Properties.TryGetValue(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterNameKey, out var parameterName) || parameterName is null)
                 return;
 
-            if (!context.Diagnostics[0].Properties.TryGetValue("ParameterIsEnumeratorCancellation", out var parameterIsEnumeratorCancellation) || !bool.TryParse(parameterIsEnumeratorCancellation, out var isEnumeratorCancellation))
+            if (!context.Diagnostics[0].Properties.TryGetValue(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIsEnumeratorCancellationKey, out var parameterIsEnumeratorCancellation) || !bool.TryParse(parameterIsEnumeratorCancellation, out var isEnumeratorCancellation))
                 return;
 
-            if (!context.Diagnostics[0].Properties.TryGetValue("CancellationTokens", out var cancellationTokens) || cancellationTokens is null)
+            if (!context.Diagnostics[0].Properties.TryGetValue(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.CancellationTokensKey, out var cancellationTokens) || cancellationTokens is null)
                 return;
 
             foreach (var cancellationToken in cancellationTokens.Split(','))
