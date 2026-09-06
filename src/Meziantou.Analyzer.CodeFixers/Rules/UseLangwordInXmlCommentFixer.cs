@@ -16,7 +16,7 @@ public sealed class UseLangwordInXmlCommentFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        if (!context.Diagnostics[0].Properties.TryGetValue("keyword", out var keyword) || keyword is null)
+        if (!context.Diagnostics[0].Properties.TryGetValue(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, out var keyword) || keyword is null)
             return;
 
         var title = $"Use <see langword=\"{keyword}\" />";

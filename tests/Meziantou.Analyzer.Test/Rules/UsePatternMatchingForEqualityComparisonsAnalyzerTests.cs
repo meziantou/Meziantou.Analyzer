@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
@@ -25,6 +25,21 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
             using System.Linq;
             using System.Linq.Expressions;
             _ = (Expression<Func<int, bool>>)(item => item == 0);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task DisabledInExpression_NestedInBlocks()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Linq;
+            if (args.Length > 0)
+            {
+                _ = Enumerable.Empty<int>().AsQueryable().Where(item => item == 0);
+            }
             """;
 
         return test.RunAsync();

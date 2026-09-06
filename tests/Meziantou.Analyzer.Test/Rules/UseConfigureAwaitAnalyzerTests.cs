@@ -850,4 +850,184 @@ public sealed class UseConfigureAwaitAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task LocalFunction_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                void Test()
+                {
+                    async Task LocalAsync()
+                    {
+                        {|MA0004:await Task.Delay(1)|};
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                void Test()
+                {
+                    async Task LocalAsync()
+                    {
+                        await Task.Delay(1).ConfigureAwait(false);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Lambda_InFieldInitializer_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                Func<Task> _value = async () => {|MA0004:await Task.Delay(1)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                Func<Task> _value = async () => await Task.Delay(1).ConfigureAwait(false);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Lambda_InWpfWindowClass_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                void Test()
+                {
+                    Func<Task> value = async () => await Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitFalse_InLambda_InWpfWindowClass_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    Func<Task> value = async () => {|MA0004:await Task.Delay(1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    Func<Task> value = async () => await Task.Delay(1).ConfigureAwait(false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitFalse_InUnitTestMethod_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                [Xunit.Fact]
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    {|MA0004:await Task.Delay(1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                [Xunit.Fact]
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    await Task.Delay(1).ConfigureAwait(false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitInPropertyAccessorLocalFunction_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                Task Value
+                {
+                    get
+                    {
+                        async Task LocalAsync() => {|MA0004:await Task.Delay(1)|};
+                        return LocalAsync();
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                Task Value
+                {
+                    get
+                    {
+                        async Task LocalAsync() => await Task.Delay(1).ConfigureAwait(false);
+                        return LocalAsync();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

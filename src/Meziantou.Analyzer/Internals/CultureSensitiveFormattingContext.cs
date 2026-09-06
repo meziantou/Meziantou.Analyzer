@@ -1,9 +1,14 @@
+using System.Collections.Concurrent;
+
 namespace Meziantou.Analyzer.Internals;
 
 internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 {
     private readonly HashSet<ISymbol> _excludedMethods = CreateExcludedMethods(compilation);
     private readonly HashSet<ISymbol> _cultureInsensitiveMembers = CreateCultureInsensitiveMembers(compilation);
+
+    // The culture sensitivity of a type only depends on the type and the options, both of which are stable for a compilation
+    private readonly ConcurrentDictionary<CultureSensitivityCacheKey, CultureSensitivity> _cultureSensitivityCache = new();
 
     public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
     public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
@@ -524,6 +529,17 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         if (typeSymbol is null)
             return CultureSensitivity.MaybeCultureSensitiveOpaqueRuntimeType;
 
+        var key = new CultureSensitivityCacheKey(typeSymbol, options);
+        if (_cultureSensitivityCache.TryGetValue(key, out var cachedCultureSensitivity))
+            return cachedCultureSensitivity;
+
+        var cultureSensitivity = GetCultureSensitivityCore(typeSymbol, options);
+        _cultureSensitivityCache[key] = cultureSensitivity;
+        return cultureSensitivity;
+    }
+
+    private CultureSensitivity GetCultureSensitivityCore(ITypeSymbol typeSymbol, CultureSensitiveOptions options)
+    {
         if (MustUnwrapNullableOfT(options))
         {
             typeSymbol = typeSymbol.GetUnderlyingNullableTypeOrSelf();
@@ -633,7 +649,18 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
         }
 
         bool HasToStringWithFormatProvider(ITypeSymbol type)
-            => type.GetAllMembers().OfType<IMethodSymbol>().Any(m => m is { Name: "ToString", IsStatic: false, ReturnType: { SpecialType: SpecialType.System_String }, Parameters: [var param1] } && param1.Type.IsOrInheritsFrom(FormatProviderSymbol) && m.DeclaredAccessibility is Accessibility.Public);
+        {
+            for (ITypeSymbol? currentType = type; currentType is not null; currentType = currentType.BaseType)
+            {
+                foreach (var member in currentType.GetMembers(nameof(ToString)))
+                {
+                    if (member is IMethodSymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public, ReturnType.SpecialType: SpecialType.System_String, Parameters: [var param1] } && param1.Type.IsOrInheritsFrom(FormatProviderSymbol))
+                        return true;
+                }
+            }
+
+            return false;
+        }
     }
 
     private CultureSensitivity GetCultureSensitivity(ITypeParameterSymbol typeParameter, CultureSensitiveOptions options)
@@ -951,5 +978,17 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             return true;
 
         return false;
+    }
+
+    private readonly struct CultureSensitivityCacheKey(ITypeSymbol typeSymbol, CultureSensitiveOptions options) : IEquatable<CultureSensitivityCacheKey>
+    {
+        public ITypeSymbol TypeSymbol { get; } = typeSymbol;
+        public CultureSensitiveOptions Options { get; } = options;
+
+        public bool Equals(CultureSensitivityCacheKey other) => Options == other.Options && SymbolEqualityComparer.Default.Equals(TypeSymbol, other.TypeSymbol);
+
+        public override bool Equals(object? obj) => obj is CultureSensitivityCacheKey other && Equals(other);
+
+        public override int GetHashCode() => (SymbolEqualityComparer.Default.GetHashCode(TypeSymbol) * 397) ^ (int)Options;
     }
 }

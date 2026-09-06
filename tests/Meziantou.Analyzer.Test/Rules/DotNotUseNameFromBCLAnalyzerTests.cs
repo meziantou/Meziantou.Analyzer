@@ -118,4 +118,14 @@ public sealed class DotNotUseNameFromBCLAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task EmptyRegex_UseDefaultRegex()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0104.namespaces_regex", "");
+        test.TestCode = "public class {|MA0104:Action|} { }";
+
+        return test.RunAsync();
+    }
 }

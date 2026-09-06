@@ -111,6 +111,39 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
     }
 
     [Fact]
+    public Task AddOrUpdate_AddValueFactoryUsingTheKey_ReportsOnlyTheLambdaParameterRule()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, {|MA0105:k => key|}, (k, v) => k + v);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_AddValueFactoryUsingTheKey_UpdateValueFactoryUsingAClosure()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var value = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, {|MA0105:k => key|}, {|MA0106:(k, v) => value|});
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AddOrUpdate_Parameter()
     {
         var test = new CodeFixTest();

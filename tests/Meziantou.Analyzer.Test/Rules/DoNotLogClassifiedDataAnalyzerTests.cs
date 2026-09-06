@@ -175,6 +175,151 @@ public sealed class DoNotLogClassifiedDataAnalyzerTests
     }
 
     [Fact]
+    public Task Logger_LogInformation_DataClassification_Property_AttributeOnPropertyType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
+
+            class Dummy
+            {
+                public Credentials Prop { get; set; }
+            }
+
+            [TaxonomyAttribute()]
+            class Credentials
+            {
+            }
+
+            class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+            {
+                public TaxonomyAttribute() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Logger_LogInformation_DataClassification_Field_AttributeOnFieldType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
+
+            class Dummy
+            {
+                public Credentials Prop;
+            }
+
+            [TaxonomyAttribute()]
+            class Credentials
+            {
+            }
+
+            class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+            {
+                public TaxonomyAttribute() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Logger_LogInformation_DataClassification_Property_AttributeOnDeclaringType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", {|MA0153:new Dummy().Prop|});
+
+            [TaxonomyAttribute()]
+            class Dummy
+            {
+                public string Prop { get; set; }
+            }
+
+            class TaxonomyAttribute : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+            {
+                public TaxonomyAttribute() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Logger_LogInformation_DataClassification_Property_TypeWithClassifiedMembers_ConfigEnabled()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0153.report_types_with_data_classification_attributes", "true");
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Patient}", {|MA0153:new Dummy().Patient|});
+
+            class Dummy
+            {
+                public PatientInfo Patient { get; set; }
+            }
+
+            class PatientInfo
+            {
+                [PiiData] public string PatientId { get; set; }
+                public ulong RecordId { get; set; }
+            }
+
+            class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+            {
+                public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Logger_LogInformation_DataClassification_Property_TypeWithClassifiedMembers_ConfigDisabled()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0153.report_types_with_data_classification_attributes", "false");
+        test.TestCode = """
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Patient}", new Dummy().Patient);
+
+            class Dummy
+            {
+                public PatientInfo Patient { get; set; }
+            }
+
+            class PatientInfo
+            {
+                [PiiData] public string PatientId { get; set; }
+                public ulong RecordId { get; set; }
+            }
+
+            class PiiData : Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute
+            {
+                public PiiData() : base(Microsoft.Extensions.Compliance.Classification.DataClassification.Unknown) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Logger_BeginScope_DataClassification_Property()
     {
         var test = CreateTest();
