@@ -106,7 +106,7 @@
 |[MA0104](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0104.md)|Design|Do not create a type with a name from the BCL|<span title='Warning'>⚠️</span>|❌|❌|<span title='MA0104.namespaces_regex&#xA;MA0104.only_consider_public_symbols&#xA;MA0104.use_preview_types'>✔️</span>|
 |[MA0105](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0105.md)|Performance|Use the lambda parameters instead of using a closure|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0106](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0106.md)|Performance|Avoid closure by using an overload with the 'factoryArgument' parameter|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
-|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|<span title='Info'>ℹ️</span>|❌|❌|❌|
+|[MA0107](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0107.md)|Design|Do not use object.ToString|<span title='Info'>ℹ️</span>|❌|❌|<span title='MA0107.exclude_tostring_methods'>✔️</span>|
 |[MA0108](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0108.md)|Usage|Remove redundant argument value|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0109](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0109.md)|Design|Consider adding an overload with a Span\<T\> or Memory\<T\>|<span title='Info'>ℹ️</span>|❌|❌|❌|
 |[MA0110](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0110.md)|Performance|Use the Regex source generator|<span title='Info'>ℹ️</span>|✔️|✔️|❌|

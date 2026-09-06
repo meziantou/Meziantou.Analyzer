@@ -436,6 +436,112 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     }
 
     [Fact]
+    public Task ObjectToString_InToStringMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => new object().ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InToStringMethod_ConfigNotExcludeToString()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0107.exclude_tostring_methods", "false");
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => {|MA0107:new object().ToString()|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InToStringMethod_MA0075ConfigDoesNotApply()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0075.exclude_tostring_methods", "false");
+        test.TestCode = """
+            class Test
+            {
+                public override string ToString() => new object().ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {sample}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod_ConfigNotExcludeToString()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0107.exclude_tostring_methods", "false");
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {{|MA0107:sample|}}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ObjectToString_InterpolatedString_InToStringMethod_MA0076ConfigDoesNotApply()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0076.exclude_tostring_methods", "false");
+        test.TestCode = """
+            sealed class Sample {}
+
+            class Test
+            {
+                public override string ToString()
+                {
+                    var sample = new Sample();
+                    return $"Value: {sample}";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ObjectToString_InterpolatedStringHandler_NoDiagnostic()
     {
         var test = CreateTest();

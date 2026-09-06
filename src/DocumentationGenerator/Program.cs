@@ -42,7 +42,9 @@ var diagnosticSuppressors = assemblies.SelectMany(assembly => assembly.GetExport
   .Select(type => (DiagnosticSuppressor)Activator.CreateInstance(type)!)
   .ToList();
 
-var ruleConfigurationKeys = GetRuleConfigurationKeys(assemblies);
+var configurationDefinitions = GetConfigurationDefinitions(assemblies);
+var ruleConfigurationKeys = GetRuleConfigurationKeys(configurationDefinitions);
+var declaredConfigurationKeys = new HashSet<string>(configurationDefinitions.Select(definition => definition.Key), StringComparer.Ordinal);
 
 var sb = new StringBuilder();
 sb.Append("# ").Append(assemblies[0].GetName().Name).Append("'s rules\n");
@@ -100,6 +102,25 @@ Console.WriteLine(sb.ToString());
 
             documentationValidationErrorCount++;
             Console.Error.WriteLine($"Missing configuration key '{configurationKey}' in {path.MakePathRelativeTo(outputFolder)}");
+        }
+    }
+
+    // Last segments that look like a configuration key but are not one: links to another rule page or to a source file, and the severity of a rule
+    var nonConfigurationKeySuffixes = new HashSet<string>(StringComparer.Ordinal) { "md", "cs", "severity" };
+
+    void ValidateRuleDocumentationConfigurationKeysExist(FullPath path, string content)
+    {
+        foreach (Match match in Regex.Matches(content, @"(?<![\w.])(?:dotnet_diagnostic\.)?MA[0-9]{4}\.(?<suffix>[A-Za-z0-9_]+)"))
+        {
+            var key = match.Value;
+            if (nonConfigurationKeySuffixes.Contains(match.Groups["suffix"].Value))
+                continue;
+
+            if (declaredConfigurationKeys.Contains(key))
+                continue;
+
+            documentationValidationErrorCount++;
+            Console.Error.WriteLine($"Configuration key '{key}' in {path.MakePathRelativeTo(outputFolder)} is not declared by any ConfigurationDefinition");
         }
     }
 
@@ -181,6 +202,7 @@ Console.WriteLine(sb.ToString());
                 newContent = Regex.Replace(newContent, "(?<=<!-- sources -->\\r?\\n).*(?=<!-- sources -->)", (sourceLinks.Count == 1 ? "Source: " : "Sources: ") + string.Join(", ", sourceLinks) + "\n", RegexOptions.Singleline);
 
                 ValidateRuleDocumentationContainsConfigurationKeys(detailPath, diagnostic.Id, newContent);
+                ValidateRuleDocumentationConfigurationKeysExist(detailPath, newContent);
                 WriteFileIfChanged(detailPath, newContent);
             }
             else
@@ -490,12 +512,12 @@ static string GetBoolean(bool value)
     return value ? "✔️" : "❌";
 }
 
-static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<Assembly> assemblies)
+static IReadOnlyList<(string Key, bool IsHidden)> GetConfigurationDefinitions(IEnumerable<Assembly> assemblies)
 {
     var configurationDefinitionType = typeof(ConfigurationDefinition<bool>).GetGenericTypeDefinition();
     var keyPropertyName = nameof(ConfigurationDefinition<bool>.Key);
     var isHiddenPropertyName = nameof(ConfigurationDefinition<bool>.IsHidden);
-    var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+    var result = new List<(string Key, bool IsHidden)>();
 
     foreach (var type in assemblies.SelectMany(assembly => assembly.GetTypes()))
     {
@@ -508,23 +530,36 @@ static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKe
             if (fieldValue is null)
                 continue;
 
-            if (field.FieldType.GetProperty(isHiddenPropertyName)?.GetValue(fieldValue) is bool isHidden && isHidden)
-                continue;
-
             if (field.FieldType.GetProperty(keyPropertyName)?.GetValue(fieldValue) is not string key)
                 continue;
 
-            if (TryGetRuleIdPrefix(key, out var ruleId) is false)
-                continue;
-
-            if (!result.TryGetValue(ruleId, out var keys))
-            {
-                keys = [with(StringComparer.Ordinal)];
-                result.Add(ruleId, keys);
-            }
-
-            keys.Add(key);
+            var isHidden = field.FieldType.GetProperty(isHiddenPropertyName)?.GetValue(fieldValue) is bool value && value;
+            result.Add((key, isHidden));
         }
+    }
+
+    return result;
+}
+
+static IReadOnlyDictionary<string, IReadOnlyList<string>> GetRuleConfigurationKeys(IEnumerable<(string Key, bool IsHidden)> configurationDefinitions)
+{
+    var result = new Dictionary<string, HashSet<string>>(StringComparer.Ordinal);
+
+    foreach (var (key, isHidden) in configurationDefinitions)
+    {
+        if (isHidden)
+            continue;
+
+        if (TryGetRuleIdPrefix(key, out var ruleId) is false)
+            continue;
+
+        if (!result.TryGetValue(ruleId, out var keys))
+        {
+            keys = [with(StringComparer.Ordinal)];
+            result.Add(ruleId, keys);
+        }
+
+        keys.Add(key);
     }
 
     var output = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal);
