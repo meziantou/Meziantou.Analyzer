@@ -68,18 +68,13 @@ public class DotNotUseNameFromBCLAnalyzer : DiagnosticAnalyzer
 
     private static Regex? GetNamespacesRegex(SymbolAnalysisContext context, ISymbol symbol)
     {
-        var pattern = context.Options.GetConfigurationValue(symbol, LegacyNamepacesRegexConfiguration);
-        if (context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out var configuredPattern))
-        {
-            pattern = configuredPattern;
-        }
+        // The legacy option is only used when the current one is not configured. An invalid pattern falls back to the
+        // default pattern instead of failing the analysis.
+        var configuration = context.Options.TryGetConfigurationValue(symbol, NamespacesRegexConfiguration, out _)
+            ? NamespacesRegexConfiguration
+            : LegacyNamepacesRegexConfiguration;
 
-        if (RegexCache.TryGetOrCreate(pattern, NamespacesRegexConfiguration.RegexOptions, out var regex))
-            return regex;
-
-        // The configured pattern is invalid, so fallback to the default pattern instead of failing the analysis
-        RegexCache.TryGetOrCreate(NamespacesRegexConfiguration.DefaultValue, NamespacesRegexConfiguration.RegexOptions, out regex);
-        return regex;
+        return context.Options.GetConfigurationRegex(symbol, configuration);
     }
 
     private static Dictionary<string, string[]> LoadTypes(bool preview)
