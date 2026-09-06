@@ -692,34 +692,39 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
         public LogValuesFormatter(string format)
         {
             var sb = ObjectPool.SharedStringBuilderPool.Get();
-            var scanIndex = 0;
-            var endIndex = format.Length;
-
-            while (scanIndex < endIndex)
+            try
             {
-                var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
-                var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
+                var scanIndex = 0;
+                var endIndex = format.Length;
 
-                if (closeBraceIndex == endIndex)
+                while (scanIndex < endIndex)
                 {
-                    sb.Append(format, scanIndex, endIndex - scanIndex);
-                    scanIndex = endIndex;
-                }
-                else
-                {
-                    // Format item syntax : { index[,alignment][ :formatString] }.
-                    var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
+                    var openBraceIndex = FindBraceIndex(format, '{', scanIndex, endIndex);
+                    var closeBraceIndex = FindBraceIndex(format, '}', openBraceIndex, endIndex);
 
-                    sb.Append(format, scanIndex, openBraceIndex - scanIndex + 1);
-                    sb.Append(ValueNames.Count.ToString(CultureInfo.InvariantCulture));
-                    ValueNames.Add(format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1));
-                    sb.Append(format, formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
+                    if (closeBraceIndex == endIndex)
+                    {
+                        sb.Append(format, scanIndex, endIndex - scanIndex);
+                        scanIndex = endIndex;
+                    }
+                    else
+                    {
+                        // Format item syntax : { index[,alignment][ :formatString] }.
+                        var formatDelimiterIndex = FindIndexOfAny(format, FormatDelimiters, openBraceIndex, closeBraceIndex);
 
-                    scanIndex = closeBraceIndex + 1;
+                        sb.Append(format, scanIndex, openBraceIndex - scanIndex + 1);
+                        sb.Append(ValueNames.Count.ToString(CultureInfo.InvariantCulture));
+                        ValueNames.Add(format.Substring(openBraceIndex + 1, formatDelimiterIndex - openBraceIndex - 1));
+                        sb.Append(format, formatDelimiterIndex, closeBraceIndex - formatDelimiterIndex + 1);
+
+                        scanIndex = closeBraceIndex + 1;
+                    }
                 }
             }
-
-            ObjectPool.SharedStringBuilderPool.Return(sb);
+            finally
+            {
+                ObjectPool.SharedStringBuilderPool.Return(sb);
+            }
         }
 
         public List<string> ValueNames { get; } = [];
