@@ -401,6 +401,26 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task Int32_ExcludedMethodWithEmptyRegex_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0003.expression_kinds", "numeric"), ("MA0003.excluded_methods_regex", ""));
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    MyMethod({|MA0003:1|}, {|MA0003:1L|}, {|MA0003:3|});
+                }
+
+                void MyMethod(int a, long b, short c) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Int32_ExcludedMethodWithInvalidRegex_ShouldReportDiagnostic()
     {
         var test = CreateTest();

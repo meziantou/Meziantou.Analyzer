@@ -248,10 +248,10 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (argumentOperation is not null && !argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
                             return;
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
+                        if (syntaxContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
                         {
                             var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                            if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, ExcludedMethodsRegexConfiguration.RegexOptions, declarationId, defaultValue: false))
+                            if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, declarationId, defaultValue: false))
                                 return;
                         }
 
