@@ -6,7 +6,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly ObjectPool<Queue<SyntaxNode>> NodeQueuePool = ObjectPool.Create<Queue<SyntaxNode>>();
+    private static readonly ObjectPool<Queue<SyntaxNode>> NodeQueuePool = ObjectPool.CreateQueuePool<SyntaxNode>();
 
     private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
     {
@@ -158,43 +158,48 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
                 // <code>{keyword}</code>
 
                 var queue = NodeQueuePool.Get();
-                foreach (var item in documentation.ChildNodes())
+                try
                 {
-                    queue.Enqueue(item);
-                }
-
-                while (queue.TryDequeue(out var childNode))
-                {
-                    if (childNode is XmlElementSyntax elementSyntax)
+                    foreach (var item in documentation.ChildNodes())
                     {
-                        var elementName = elementSyntax.StartTag.Name.LocalName.Text;
-                        if (string.Equals(elementName, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(elementName, "code", StringComparison.OrdinalIgnoreCase))
-                        {
-                            if (elementSyntax.StartTag.Attributes.Count == 0)
-                            {
-                                var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
-                                if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
-                                {
-                                    // The langword attribute is the way to document a keyword, so the language is not needed
-                                    var properties = ImmutableDictionary<string, string?>.Empty.Add(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, codeText.Text);
-                                    context.ReportDiagnostic(Rule, properties, elementSyntax);
-                                    continue;
-                                }
-                            }
+                        queue.Enqueue(item);
+                    }
 
-                            AnalyzeLanguageAttributes(context, elementSyntax);
-                        }
-                        else
+                    while (queue.TryDequeue(out var childNode))
+                    {
+                        if (childNode is XmlElementSyntax elementSyntax)
                         {
-                            foreach (var child in elementSyntax.Content)
+                            var elementName = elementSyntax.StartTag.Name.LocalName.Text;
+                            if (string.Equals(elementName, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(elementName, "code", StringComparison.OrdinalIgnoreCase))
                             {
-                                queue.Enqueue(child);
+                                if (elementSyntax.StartTag.Attributes.Count == 0)
+                                {
+                                    var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
+                                    if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
+                                    {
+                                        // The langword attribute is the way to document a keyword, so the language is not needed
+                                        var properties = ImmutableDictionary<string, string?>.Empty.Add(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, codeText.Text);
+                                        context.ReportDiagnostic(Rule, properties, elementSyntax);
+                                        continue;
+                                    }
+                                }
+
+                                AnalyzeLanguageAttributes(context, elementSyntax);
+                            }
+                            else
+                            {
+                                foreach (var child in elementSyntax.Content)
+                                {
+                                    queue.Enqueue(child);
+                                }
                             }
                         }
                     }
                 }
-
-                NodeQueuePool.Return(queue);
+                finally
+                {
+                    NodeQueuePool.Return(queue);
+                }
             }
         }
     }
