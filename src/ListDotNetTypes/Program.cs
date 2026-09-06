@@ -15,7 +15,7 @@ var packages = new[]
 
 using var cache = new SourceCacheContext();
 var repository = Repository.Factory.GetCoreV3("https://api.nuget.org/v3/index.json");
-var resource = await repository.GetResourceAsync<FindPackageByIdResource>();
+var resource = await repository.GetResourceAsync<FindPackageByIdResource>() ?? throw new InvalidOperationException($"Cannot get the {nameof(FindPackageByIdResource)} resource");
 
 foreach (var includePreview in new[] { false, true })
 {
