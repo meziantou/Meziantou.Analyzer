@@ -42,8 +42,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
     private static readonly ConfigurationDefinition<bool> StringInterpolationTreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".treat_opaque_runtime_types_as_culture_sensitive", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> StringConcatTreatUnsealedTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".treat_unsealed_types_as_culture_sensitive", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> StringInterpolationTreatUnsealedTypesAsCultureSensitiveConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".treat_unsealed_types_as_culture_sensitive", defaultValue: false);
-    private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".exclude_tostring_methods", defaultValue: true);
-    private static readonly ConfigurationDefinition<bool> ExcludeToStringMethodsInterpolationConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".exclude_tostring_methods", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> StringConcatExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToString + ".exclude_tostring_methods", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> StringInterpolationExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".exclude_tostring_methods", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> ObjectToStringExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseCultureSensitiveObjectToString + ".exclude_tostring_methods", defaultValue: true);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringConcatRule, StringInterpolationRule, ObjectToStringRule);
 
@@ -70,7 +71,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         public static void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            if (IsExcludedMethod(context, ExcludeToStringMethodsConfiguration, operation))
+            if (IsExcludedMethod(context, ObjectToStringExcludeToStringMethodsConfiguration, operation))
                 return;
 
             if (operation.TargetMethod.Name == "ToString" && operation.TargetMethod.ContainingType.IsObject() && operation.TargetMethod.Parameters.Length == 0)
@@ -94,7 +95,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operation.ConstantValue.HasValue)
                 return;
 
-            if (IsExcludedMethod(context, ExcludeToStringMethodsConfiguration, operation))
+            if (IsExcludedMethod(context, StringConcatExcludeToStringMethodsConfiguration, operation))
                 return;
 
             if (_cultureSensitiveContext.IsInCultureInsensitiveParameterContext(operation))
@@ -119,7 +120,11 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operation.ConstantValue.HasValue)
                 return;
 
-            if (IsExcludedMethod(context, ExcludeToStringMethodsInterpolationConfiguration, operation))
+            // MA0076 and MA0107 are excluded independently, as they have their own configuration key
+            var isInToStringMethod = IsInToStringMethod(context, operation);
+            var reportStringInterpolation = !isInToStringMethod || !context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, StringInterpolationExcludeToStringMethodsConfiguration);
+            var reportObjectToString = !isInToStringMethod || !context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, ObjectToStringExcludeToStringMethodsConfiguration);
+            if (!reportStringInterpolation && !reportObjectToString)
                 return;
 
             if (_cultureSensitiveContext.IsInInterpolatedStringHandlerContext(operation))
@@ -145,12 +150,12 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
                 if (expression is null || type is null)
                     continue;
 
-                if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(part, options | CultureSensitiveOptions.UseInvocationReturnType), options))
+                if (reportStringInterpolation && CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(part, options | CultureSensitiveOptions.UseInvocationReturnType), options))
                 {
                     context.ReportDiagnostic(StringInterpolationRule, part);
                 }
 
-                if (CultureSensitiveFormattingContext.UsesObjectToString(type, context.CancellationToken))
+                if (reportObjectToString && CultureSensitiveFormattingContext.UsesObjectToString(type, context.CancellationToken))
                 {
                     context.ReportDiagnostic(ObjectToStringRule, expression);
                 }
@@ -160,12 +165,17 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
         private static bool IsExcludedMethod(OperationAnalysisContext context, ConfigurationDefinition<bool> configuration, IOperation operation)
         {
             // ToString show culture-sensitive data by default
-            if (operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
+            if (IsInToStringMethod(context, operation))
             {
                 return context.Options.GetConfigurationValue(operation.Syntax.SyntaxTree, configuration);
             }
 
             return false;
+        }
+
+        private static bool IsInToStringMethod(OperationAnalysisContext context, IOperation operation)
+        {
+            return operation?.GetContainingMethod(context.CancellationToken)?.Name == "ToString";
         }
 
         private bool ShouldReportCultureSensitiveOperand(OperationAnalysisContext context, DiagnosticDescriptor rule, IOperation operand)

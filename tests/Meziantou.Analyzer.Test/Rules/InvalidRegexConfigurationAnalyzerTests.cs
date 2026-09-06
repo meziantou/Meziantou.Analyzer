@@ -1,3 +1,6 @@
+using System.Reflection;
+using Meziantou.Analyzer.Configurations;
+using Meziantou.Analyzer.Rules;
 using Microsoft.CodeAnalysis;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
@@ -28,6 +31,7 @@ public sealed class InvalidRegexConfigurationAnalyzerTests
     [InlineData("MA0003.excluded_methods_regex")]
     [InlineData("MA0104.namespaces_regex")]
     [InlineData("MA0104.namepaces_regex")]
+    [InlineData("MA0048.excluded_file_name_parts_regex")]
     public Task ValidRegex_DoNotReportDiagnostic(string key)
     {
         var test = CreateTest();
@@ -41,6 +45,7 @@ public sealed class InvalidRegexConfigurationAnalyzerTests
     [InlineData("MA0003.excluded_methods_regex")]
     [InlineData("MA0104.namespaces_regex")]
     [InlineData("MA0104.namepaces_regex")]
+    [InlineData("MA0048.excluded_file_name_parts_regex")]
     public Task InvalidRegex_ReportDiagnostic(string key)
     {
         var test = CreateTest();
@@ -73,5 +78,36 @@ public sealed class InvalidRegexConfigurationAnalyzerTests
         test.ExpectedDiagnostics.Add(ExpectedInvalidRegex());
 
         return test.RunAsync();
+    }
+
+    /// <summary>
+    /// The rule validates the options discovered from the assembly, so an option whose value is a regular expression
+    /// must set its <see cref="ConfigurationDefinition{T}.RegexOptions"/> to be validated by this rule.
+    /// </summary>
+    [Fact]
+    public void AllOptionsEndingWithRegexAreValidatedByTheRule()
+    {
+        var validatedKeys = InvalidRegexConfigurationAnalyzer.GetRegexConfigurations().Select(configuration => configuration.Key).ToArray();
+
+        var missingKeys = new List<string>();
+        foreach (var type in typeof(InvalidRegexConfigurationAnalyzer).Assembly.GetTypes())
+        {
+            foreach (var field in type.GetFields(BindingFlags.Static | BindingFlags.Public | BindingFlags.NonPublic))
+            {
+                if (field.FieldType != typeof(ConfigurationDefinition<string>))
+                    continue;
+
+                if (field.GetValue(null) is ConfigurationDefinition<string> { IsRegex: false } configuration && configuration.Key.EndsWith("_regex", StringComparison.Ordinal))
+                {
+                    missingKeys.Add(configuration.Key);
+                }
+            }
+        }
+
+        Assert.Empty(missingKeys);
+        Assert.Contains("MA0048.excluded_file_name_parts_regex", validatedKeys, StringComparer.Ordinal);
+        Assert.Contains("MA0003.excluded_methods_regex", validatedKeys, StringComparer.Ordinal);
+        Assert.Contains("MA0104.namespaces_regex", validatedKeys, StringComparer.Ordinal);
+        Assert.Contains("MA0104.namepaces_regex", validatedKeys, StringComparer.Ordinal);
     }
 }

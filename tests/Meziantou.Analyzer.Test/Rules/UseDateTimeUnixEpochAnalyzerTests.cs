@@ -15,6 +15,8 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)")]
     [InlineData("new DateTime(621355968000000000)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Utc)")]
+    [InlineData("new DateTime(day: 1, month: 1, year: 1970)")]
+    [InlineData("new DateTime(kind: DateTimeKind.Utc, year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0)")]
     public Task UnixEpoch_DateTime(string code)
     {
         var test = CreateTest();
@@ -50,6 +52,7 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, default(TimeSpan))")]
+    [InlineData("new DateTimeOffset(offset: TimeSpan.Zero, day: 1, month: 1, year: 1970, hour: 0, minute: 0, second: 0)")]
     public Task UnixEpoch_DateTimeOffset(string code)
     {
         var test = CreateTest();
@@ -83,6 +86,9 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Local)")]
     [InlineData("new DateTime(621355968000000001)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Local)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, null)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, new System.Globalization.GregorianCalendar())")]
+    [InlineData("new DateTime(day: 1, month: 1, year: 1971)")]
     public Task NonUnixEpoch_DateTime(string code)
     {
         var test = CreateTest();
@@ -107,6 +113,8 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.MinValue)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, TimeSpan.FromMinutes(1))")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.FromHours(-1))")]
+    [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, null, TimeSpan.Zero)")]
+    [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, new System.Globalization.GregorianCalendar(), TimeSpan.Zero)")]
     public Task NonUnixEpoch_DateTimeOffset(string code)
     {
         var test = CreateTest();

@@ -39,7 +39,7 @@ public sealed class UseArrayEmptyAnalyzerTests
     [Theory]
     [InlineData("new int[1]")]
     [InlineData("new int[] { 0 }")]
-    public Task NonEmptyArray_ShouldReportError(string code)
+    public Task NonEmptyArray_ShouldNotReportError(string code)
     {
         var test = CreateTest();
         test.TestCode = $$"""

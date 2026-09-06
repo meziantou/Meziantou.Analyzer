@@ -37,7 +37,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(context.Document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        if (context.Diagnostics[0].Properties.TryGetValue("kind", out var kind))
+        if (context.Diagnostics[0].Properties.TryGetValue(UseConfigureAwaitAnalyzerCommon.KindKey, out var kind))
         {
             if (kind is "foreach")
             {

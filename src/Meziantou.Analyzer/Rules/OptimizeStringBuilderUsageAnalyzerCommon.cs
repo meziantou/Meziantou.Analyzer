@@ -2,6 +2,9 @@ namespace Meziantou.Analyzer.Rules;
 
 internal static class OptimizeStringBuilderUsageAnalyzerCommon
 {
+    internal const string DataKey = "Data";
+    internal const string ConstantValueKey = "ConstantValue";
+
     public static string? GetConstStringValue(IOperation operation)
     {
         var sb = ObjectPool.SharedStringBuilderPool.Get();

@@ -187,41 +187,41 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
         private static ImmutableDictionary<string, string?> CreateProperties(OptimizeLinqUsageData data)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateLinqChainProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string methodName)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("MethodName", methodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationStartKey, lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationLengthKey, lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, methodName);
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateSingleOperationProperties(OptimizeLinqUsageData data, IInvocationOperation operation)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
             return builder.ToImmutable();
         }
 
         private static ImmutableDictionary<string, string?> CreateDuplicateOrderByProperties(OptimizeLinqUsageData data, IInvocationOperation firstOperation, IInvocationOperation lastOperation, string expectedMethodName, string methodName)
         {
             var builder = ImmutableDictionary.CreateBuilder<string, string?>(StringComparer.Ordinal);
-            builder.Add("Data", data.ToString());
-            builder.Add("FirstOperationStart", firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("FirstOperationLength", firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationStart", lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
-            builder.Add("LastOperationLength", lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
-            builder.Add("ExpectedMethodName", expectedMethodName);
-            builder.Add("MethodName", methodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.DataKey, data.ToString());
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, firstOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, firstOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationStartKey, lastOperation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.LastOperationLengthKey, lastOperation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.ExpectedMethodNameKey, expectedMethodName);
+            builder.Add(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, methodName);
             return builder.ToImmutable();
         }
 
@@ -234,6 +234,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.Where))
                     {
+                        // Cannot move Where before OrderBy when using Func<TSource,int,bool> as the index would refer to the unsorted sequence
+                        if (IsIndexedPredicateOverload(parent.TargetMethod))
+                            return;
+
                         var properties = CreateLinqChainProperties(OptimizeLinqUsageData.CombineWhereWithNextMethod, operation, parent, parent.TargetMethod.Name);
 
                         context.ReportDiagnostic(OptimizeWhereAndOrderByRule, properties, parent, operation.TargetMethod.Name);
@@ -460,13 +464,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.TargetMethod.Name == nameof(Enumerable.Where))
             {
                 // Cannot replace Where when using Func<TSource,int,bool>
-                if (operation.TargetMethod.Parameters.Length != 2)
-                    return;
-
-                if (operation.TargetMethod.Parameters[1].Type is not INamedTypeSymbol type)
-                    return;
-
-                if (type.TypeArguments.Length == 3)
+                if (IsIndexedPredicateOverload(operation.TargetMethod))
                     return;
 
                 // Check parent methods
@@ -492,6 +490,30 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Detects the overloads taking a predicate with the index of the element, such as <c>Where(Func&lt;TSource,int,bool&gt;)</c>.
+        /// Returns <see langword="true" /> when the shape of the method is unknown, so the callers stay on the safe side.
+        /// </summary>
+        private bool IsIndexedPredicateOverload(IMethodSymbol method)
+        {
+            if (method.Parameters.Length != 2)
+                return true;
+
+            if (method.Parameters[1].Type is not INamedTypeSymbol type)
+                return true;
+
+            // Queryable methods take an Expression<Func<...>>
+            if (type.OriginalDefinition.IsEqualTo(ExpressionOfTSymbol))
+            {
+                if (type.TypeArguments is not [INamedTypeSymbol delegateType])
+                    return true;
+
+                type = delegateType;
+            }
+
+            return type.TypeArguments.Length == 3;
         }
 
         private bool IsExpressionPredicateReference(IOperation operation)
@@ -642,7 +664,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() < 10
                             message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() < {value}' with 'Skip({value - 1}).Any() == false'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                                .Add("SkipMinusOne", value: "");
+                                .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         }
 
                         break;
@@ -709,7 +731,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             // expr.Count() >= 2
                             message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() >= {value}' with 'Skip({value - 1}).Any()'");
                             properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                                .Add("SkipMinusOne", value: "");
+                                .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         }
 
                         break;
@@ -743,7 +765,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         // expr.Count() < 10
                         message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add("SkipMinusOne", value: "");
+                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
@@ -762,7 +784,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         // expr.Count() >= 2
                         message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
                         properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add("SkipMinusOne", value: "");
+                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
                         break;
                 }
             }
@@ -770,10 +792,10 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (message is not null)
             {
                 properties = properties
-                       .Add("OperandOperationStart", otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                       .Add("OperandOperationLength", otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
-                       .Add("CountOperationStart", operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
-                       .Add("CountOperationLength", operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
+                       .Add(OptimizeLinqUsageAnalyzerCommon.OperandOperationStartKey, otherOperand.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.OperandOperationLengthKey, otherOperand.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.CountOperationStartKey, operation.Syntax.Span.Start.ToString(CultureInfo.InvariantCulture))
+                       .Add(OptimizeLinqUsageAnalyzerCommon.CountOperationLengthKey, operation.Syntax.Span.Length.ToString(CultureInfo.InvariantCulture));
 
                 context.ReportDiagnostic(OptimizeCountRule, properties, binaryOperation, message);
             }
@@ -842,8 +864,12 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type is null)
                 return;
 
-            // If the cast is not applied directly to the source element (one of the selector's arguments)
-            if (castOp.Operand.Kind != OperationKind.ParameterReference)
+            // If the cast is not applied directly to the source element (the first parameter of the selector)
+            if (castOp.Operand is not IParameterReferenceOperation parameterReference)
+                return;
+
+            var selectorLambda = selectorArg.Descendants().OfType<IAnonymousFunctionOperation>().FirstOrDefault();
+            if (selectorLambda is null || selectorLambda.Symbol.Parameters.Length == 0 || !parameterReference.Parameter.IsEqualTo(selectorLambda.Symbol.Parameters[0]))
                 return;
 
             // Ensure the code is valid after replacement. The semantic may be different if you use Cast<T>() instead of Select(x => (T)x).

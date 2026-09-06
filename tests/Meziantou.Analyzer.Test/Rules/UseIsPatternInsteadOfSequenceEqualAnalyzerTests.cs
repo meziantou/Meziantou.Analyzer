@@ -125,6 +125,60 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
     }
 
     [Fact]
+    public Task ReadOnlySpanChar_SequenceEqual_Negated()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            Span<char> str = default;
+            if (!{|MA0128:str.SequenceEqual("bar")|}) { }
+            """;
+        test.FixedCode = """
+            using System;
+            Span<char> str = default;
+            if (!(str is "bar")) { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReadOnlySpanChar_SequenceEqual_MemberAccess()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            Span<char> str = default;
+            _ = {|MA0128:str.SequenceEqual("bar")|}.ToString();
+            """;
+        test.FixedCode = """
+            using System;
+            Span<char> str = default;
+            _ = (str is "bar").ToString();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReadOnlySpanChar_SequenceEqual_KeepsTrivia()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            Span<char> str = default;
+            _ = /* before */ {|MA0128:str.SequenceEqual("bar")|} /* after */;
+            """;
+        test.FixedCode = """
+            using System;
+            Span<char> str = default;
+            _ = /* before */ str is "bar" /* after */;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ReadOnlySpanChar_EqualsOrdinalIgnoreCase()
     {
         var test = CreateTest();

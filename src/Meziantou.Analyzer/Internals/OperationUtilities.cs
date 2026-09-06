@@ -9,25 +9,20 @@ internal sealed class OperationUtilities(Compilation compilation)
         if (_expressionSymbol is null)
             return false;
 
-        foreach (var op in operation.Ancestors())
+        for (var op = operation.Parent; op is not null; op = op.Parent)
         {
-            if (op is IArgumentOperation argumentOperation)
+            switch (op)
             {
-                if (argumentOperation.Parameter is null)
-                    continue;
-
-                var type = argumentOperation.Parameter.Type;
-                if (type.InheritsFrom(_expressionSymbol))
+                case IArgumentOperation { Parameter: { } parameter } when parameter.Type.InheritsFrom(_expressionSymbol):
                     return true;
-            }
-            else if (op is IConversionOperation conversionOperation)
-            {
-                var type = conversionOperation.Type;
-                if (type is null)
-                    continue;
 
-                if (type.InheritsFrom(_expressionSymbol))
+                case IConversionOperation { Type: { } type } when type.InheritsFrom(_expressionSymbol):
                     return true;
+
+                // An expression tree can only be entered by converting a lambda, so the search can stop at the first
+                // enclosing body that is not the body of a lambda (method body, local function body, nested block, ...)
+                case IBlockOperation when op.Parent is not IAnonymousFunctionOperation:
+                    return false;
             }
         }
 

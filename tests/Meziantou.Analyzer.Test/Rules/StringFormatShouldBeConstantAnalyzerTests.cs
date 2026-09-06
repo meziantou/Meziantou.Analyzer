@@ -965,4 +965,140 @@ public sealed class StringFormatShouldBeConstantAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task StringFormat_NamedArgumentsOutOfOrderWithPlaceholder_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class Test
+            {
+                void Method()
+                {
+                    _ = string.Format(arg0: "hello", format: "{0}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringFormat_NamedArgumentsOutOfOrderWithoutPlaceholder_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class Test
+            {
+                void Method()
+                {
+                    _ = {|MA0183:string.Format(arg0: "hello", format: "abc")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringFormat_NamedArgumentsOutOfOrderWithProviderAndPlaceholder_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class Test
+            {
+                void Method(object obj)
+                {
+                    _ = string.Format(arg0: obj, provider: CultureInfo.InvariantCulture, format: "{0}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringFormat_NamedArgumentsOutOfOrderWithProviderAndNoPlaceholder_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Globalization;
+
+            class Test
+            {
+                void Method(object obj)
+                {
+                    _ = {|MA0183:string.Format(arg0: obj, provider: CultureInfo.InvariantCulture, format: "abc")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringBuilderAppendFormat_NamedArgumentsOutOfOrderWithPlaceholder_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Text;
+
+            class Test
+            {
+                void Method(StringBuilder sb)
+                {
+                    sb.AppendFormat(arg0: "hello", format: "{0}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConsoleWriteLine_NamedArgumentsOutOfOrderWithPlaceholder_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class Test
+            {
+                void Method()
+                {
+                    Console.WriteLine(arg0: "hello", format: "{0}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConsoleWriteLine_NamedArgumentsOutOfOrderWithoutPlaceholder_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class Test
+            {
+                void Method()
+                {
+                    {|MA0183:Console.WriteLine(arg0: "hello", format: "abc")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

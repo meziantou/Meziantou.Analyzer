@@ -41,7 +41,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             return;
         }
 
-        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault("Data", ""), ignoreCase: false, out OptimizeLinqUsageData data) || data is OptimizeLinqUsageData.None)
+        if (!Enum.TryParse(diagnostic.Properties.GetValueOrDefault(OptimizeLinqUsageAnalyzerCommon.DataKey, ""), ignoreCase: false, out OptimizeLinqUsageData data) || data is OptimizeLinqUsageData.None)
             return;
 
         // If the so-called nodeToFix is a Name (most likely a method name such as 'Select' or 'Count'),
@@ -101,20 +101,30 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.DuplicatedOrderBy:
-                var useThenByTitle = "Use " + diagnostic.Properties["ExpectedMethodName"];
-                var removeOrderByTitle = "Remove " + diagnostic.Properties["MethodName"];
-                context.RegisterCodeFix(CodeAction.Create(useThenByTitle, ct => UseThenBy(context.Document, diagnostic, ct), equivalenceKey: "UseThenBy"), context.Diagnostics);
-                context.RegisterCodeFix(CodeAction.Create(removeOrderByTitle, ct => RemoveDuplicatedOrderBy(context.Document, diagnostic, ct), equivalenceKey: "RemoveOrderBy"), context.Diagnostics);
+                if (!TryGetFirstOperationSpan(diagnostic, out var orderByFirstSpan) || !TryGetLastOperationSpan(diagnostic, out var orderByLastSpan))
+                    return;
+
+                if (!diagnostic.Properties.TryGetValue(OptimizeLinqUsageAnalyzerCommon.ExpectedMethodNameKey, out var expectedMethodName) || expectedMethodName is null)
+                    return;
+
+                if (!diagnostic.Properties.TryGetValue(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, out var methodName) || methodName is null)
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create("Use " + expectedMethodName, ct => UseThenBy(context.Document, orderByLastSpan, expectedMethodName, ct), equivalenceKey: "UseThenBy"), context.Diagnostics);
+                context.RegisterCodeFix(CodeAction.Create("Remove " + methodName, ct => RemoveDuplicatedOrderBy(context.Document, orderByFirstSpan, orderByLastSpan, ct), equivalenceKey: "RemoveOrderBy"), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.CombineWhereWithNextMethod:
+                if (!TryGetFirstOperationSpan(diagnostic, out var whereFirstSpan) || !TryGetLastOperationSpan(diagnostic, out var whereLastSpan))
+                    return;
+
                 if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_WhereBeforeOrderBy)
                 {
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReorderWhereBeforeOrderBy(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReorderWhereBeforeOrderBy(context.Document, whereFirstSpan, whereLastSpan, ct), equivalenceKey: title), context.Diagnostics);
                 }
                 else
                 {
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, whereFirstSpan, whereLastSpan, ct), equivalenceKey: title), context.Diagnostics);
                 }
 
                 break;
@@ -128,23 +138,27 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseNotAny:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, constantValue: false, ct), equivalenceKey: title), context.Diagnostics);
-                break;
-
             case OptimizeLinqUsageData.UseAny:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, diagnostic, nodeToFix, constantValue: true, ct), equivalenceKey: title), context.Diagnostics);
+                if (!TryGetCountOperationSpan(diagnostic, out var anyCountSpan))
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseAny(context.Document, anyCountSpan, nodeToFix, constantValue: data is OptimizeLinqUsageData.UseAny, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseTakeAndCount:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, diagnostic, ct), equivalenceKey: title), context.Diagnostics);
+                if (!TryGetCountOperationSpan(diagnostic, out var takeCountSpan) || !TryGetOperandOperationSpan(diagnostic, out var takeOperandSpan))
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, takeCountSpan, takeOperandSpan, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseSkipAndAny:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, comparandValue: true, ct), equivalenceKey: title), context.Diagnostics);
-                break;
-
             case OptimizeLinqUsageData.UseSkipAndNotAny:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, diagnostic, nodeToFix, comparandValue: false, ct), equivalenceKey: title), context.Diagnostics);
+                if (!TryGetCountOperationSpan(diagnostic, out var skipCountSpan) || !TryGetOperandOperationSpan(diagnostic, out var skipOperandSpan))
+                    return;
+
+                var skipMinusOne = diagnostic.Properties.ContainsKey(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseSkipAndAny(context.Document, skipCountSpan, skipOperandSpan, skipMinusOne, nodeToFix, comparandValue: data is OptimizeLinqUsageData.UseSkipAndAny, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseCastInsteadOfSelect:
@@ -155,6 +169,31 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseOrderInsteadOfOrderBy(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
+    }
+
+    private static bool TryGetFirstOperationSpan(Diagnostic diagnostic, out TextSpan span)
+        => TryGetSpan(diagnostic, OptimizeLinqUsageAnalyzerCommon.FirstOperationStartKey, OptimizeLinqUsageAnalyzerCommon.FirstOperationLengthKey, out span);
+
+    private static bool TryGetLastOperationSpan(Diagnostic diagnostic, out TextSpan span)
+        => TryGetSpan(diagnostic, OptimizeLinqUsageAnalyzerCommon.LastOperationStartKey, OptimizeLinqUsageAnalyzerCommon.LastOperationLengthKey, out span);
+
+    private static bool TryGetCountOperationSpan(Diagnostic diagnostic, out TextSpan span)
+        => TryGetSpan(diagnostic, OptimizeLinqUsageAnalyzerCommon.CountOperationStartKey, OptimizeLinqUsageAnalyzerCommon.CountOperationLengthKey, out span);
+
+    private static bool TryGetOperandOperationSpan(Diagnostic diagnostic, out TextSpan span)
+        => TryGetSpan(diagnostic, OptimizeLinqUsageAnalyzerCommon.OperandOperationStartKey, OptimizeLinqUsageAnalyzerCommon.OperandOperationLengthKey, out span);
+
+    private static bool TryGetSpan(Diagnostic diagnostic, string startKey, string lengthKey, out TextSpan span)
+    {
+        if (diagnostic.Properties.TryGetValue(startKey, out var startValue) && int.TryParse(startValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var start) &&
+            diagnostic.Properties.TryGetValue(lengthKey, out var lengthValue) && int.TryParse(lengthValue, NumberStyles.Integer, CultureInfo.InvariantCulture, out var length))
+        {
+            span = new TextSpan(start, length);
+            return true;
+        }
+
+        span = default;
+        return false;
     }
 
     private static bool TryGetInvocationExpressionAncestor(ref SyntaxNode nodeToFix)
@@ -174,13 +213,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return false;
     }
 
-    private static async Task<Document> UseAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
+    private static async Task<Document> UseAny(Document document, TextSpan countOperationSpan, SyntaxNode nodeToFix, bool constantValue, CancellationToken cancellationToken)
     {
-        var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
+        var countNode = root?.FindNode(countOperationSpan, getInnermostNodeForTie: true);
         if (countNode is null)
             return document;
 
@@ -214,22 +250,22 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var generator = editor.Generator;
         var countExpression = generator.MemberAccessExpression(invocation.Arguments[0].Syntax, "Count");
-        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0));
+
+        // The invocation may be the operand of an operator or the target of a member access, both of which bind
+        // tighter than '!=', so the comparison must be parenthesized. Simplifier removes the useless parentheses.
+        var newExpression = generator.ValueNotEqualsExpression(countExpression, generator.LiteralExpression(0))
+            .Parenthesize()
+            .WithTrailingTrivia(nodeToFix.GetTrailingTrivia());
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseTakeAndCount(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> UseTakeAndCount(Document document, TextSpan countOperationSpan, TextSpan operandOperationSpan, CancellationToken cancellationToken)
     {
-        var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var operandOperationStart = int.Parse(diagnostic.Properties["OperandOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var operandOperationLength = int.Parse(diagnostic.Properties["OperandOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
-        var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+        var countNode = root?.FindNode(countOperationSpan, getInnermostNodeForTie: true);
+        var operandNode = root?.FindNode(operandOperationSpan, getInnermostNodeForTie: true);
         if (countNode is null || operandNode is null)
             return document;
 
@@ -269,17 +305,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseSkipAndAny(Document document, Diagnostic diagnostic, SyntaxNode nodeToFix, bool comparandValue, CancellationToken cancellationToken)
+    private static async Task<Document> UseSkipAndAny(Document document, TextSpan countOperationSpan, TextSpan operandOperationSpan, bool skipMinusOne, SyntaxNode nodeToFix, bool comparandValue, CancellationToken cancellationToken)
     {
-        var countOperationStart = int.Parse(diagnostic.Properties["CountOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var countOperationLength = int.Parse(diagnostic.Properties["CountOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var operandOperationStart = int.Parse(diagnostic.Properties["OperandOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var operandOperationLength = int.Parse(diagnostic.Properties["OperandOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var skipMinusOne = diagnostic.Properties.ContainsKey("SkipMinusOne");
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var countNode = root?.FindNode(new TextSpan(countOperationStart, countOperationLength), getInnermostNodeForTie: true);
-        var operandNode = root?.FindNode(new TextSpan(operandOperationStart, operandOperationLength), getInnermostNodeForTie: true);
+        var countNode = root?.FindNode(countOperationSpan, getInnermostNodeForTie: true);
+        var operandNode = root?.FindNode(operandOperationSpan, getInnermostNodeForTie: true);
         if (countNode is null || operandNode is null)
             return document;
 
@@ -560,18 +590,13 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         }
     }
 
-    private static async Task<Document> RemoveDuplicatedOrderBy(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> RemoveDuplicatedOrderBy(Document document, TextSpan firstOperationSpan, TextSpan lastOperationSpan, CancellationToken cancellationToken)
     {
         // a."b()".c()
         // a.c()
-        var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
-        var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+        var firstNode = root?.FindNode(firstOperationSpan, getInnermostNodeForTie: true);
+        var lastNode = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
         if (firstNode is null || lastNode is null)
             return document;
 
@@ -587,14 +612,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseThenBy(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> UseThenBy(Document document, TextSpan lastOperationSpan, string expectedMethodName, CancellationToken cancellationToken)
     {
-        var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var expectedMethodName = diagnostic.Properties["ExpectedMethodName"]!;
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+        var nodeToFix = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
         if (nodeToFix is null)
             return document;
 
@@ -610,19 +631,14 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> CombineWhereWithNextMethod(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> CombineWhereWithNextMethod(Document document, TextSpan firstOperationSpan, TextSpan lastOperationSpan, CancellationToken cancellationToken)
     {
         // enumerable.Where(x=> x).C() => enumerable.C(x=> x)
         // enumerable.Where(x=> x).C(y=>y) => enumerable.C(y=> y && y)
         // enumerable.Where(Condition).C(y=>y) => enumerable.C(y=> Condition(y) && y)
-        var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
-        var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+        var firstNode = root?.FindNode(firstOperationSpan, getInnermostNodeForTie: true);
+        var lastNode = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
         if (firstNode is null || lastNode is null)
             return document;
 
@@ -697,16 +713,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         }
     }
 
-    private static async Task<Document> ReorderWhereBeforeOrderBy(Document document, Diagnostic diagnostic, CancellationToken cancellationToken)
+    private static async Task<Document> ReorderWhereBeforeOrderBy(Document document, TextSpan firstOperationSpan, TextSpan lastOperationSpan, CancellationToken cancellationToken)
     {
-        var firstOperationStart = int.Parse(diagnostic.Properties["FirstOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var firstOperationLength = int.Parse(diagnostic.Properties["FirstOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationStart = int.Parse(diagnostic.Properties["LastOperationStart"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-        var lastOperationLength = int.Parse(diagnostic.Properties["LastOperationLength"]!, NumberStyles.Integer, CultureInfo.InvariantCulture);
-
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var firstNode = root?.FindNode(new TextSpan(firstOperationStart, firstOperationLength), getInnermostNodeForTie: true);
-        var lastNode = root?.FindNode(new TextSpan(lastOperationStart, lastOperationLength), getInnermostNodeForTie: true);
+        var firstNode = root?.FindNode(firstOperationSpan, getInnermostNodeForTie: true);
+        var lastNode = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
         if (firstNode is null || lastNode is null)
             return document;
 

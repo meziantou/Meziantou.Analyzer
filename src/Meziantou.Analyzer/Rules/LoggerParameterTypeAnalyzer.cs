@@ -103,7 +103,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
             LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
             LoggerMessageAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
-            StructuredLogFieldAttributeSymbol = compilation.GetBestTypeByMetadataName("Meziantou.Analyzer.Annotations.StructuredLogFieldAttribute");
 
             SerilogLoggerEnrichmentConfigurationWithPropertySymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Configuration.LoggerEnrichmentConfiguration.WithProperty(System.String,System.Object,System.Boolean)", compilation);
             SerilogLogForContextSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Log.ForContext(System.String,System.Object,System.Boolean)", compilation);
@@ -201,18 +200,14 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     }
                 }
 
-                if (StructuredLogFieldAttributeSymbol is not null)
+                foreach (var attribute in context.Compilation.Assembly.GetAttributes())
                 {
-                    var attributes = context.Compilation.Assembly.GetAttributes();
-                    foreach (var attribute in attributes)
-                    {
-                        if (!attribute.AttributeClass.IsEqualTo(StructuredLogFieldAttributeSymbol))
-                            continue;
+                    if (!AnnotationAttributes.IsStructuredLogFieldAttributeSymbol(attribute.AttributeClass))
+                        continue;
 
-                        if (attribute.ConstructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string name }, TypedConstant { Kind: TypedConstantKind.Array } types])
-                        {
-                            configuration[name] = [.. types.Values.Select(v => v.Value as ITypeSymbol).WhereNotNull()];
-                        }
+                    if (attribute.ConstructorArguments is [{ Type.SpecialType: SpecialType.System_String, IsNull: false, Value: string name }, TypedConstant { Kind: TypedConstantKind.Array } types])
+                    {
+                        configuration[name] = [.. types.Values.Select(v => v.Value as ITypeSymbol).WhereNotNull()];
                     }
                 }
 
@@ -224,8 +219,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 }
             }
         }
-
-        public INamedTypeSymbol? StructuredLogFieldAttributeSymbol { get; private set; }
 
         public INamedTypeSymbol? LoggerSymbol { get; }
         public INamedTypeSymbol? LoggerExtensionsSymbol { get; }
@@ -260,6 +253,19 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                 {
                     formatString = str;
                     break;
+                }
+            }
+
+            if (formatString is null)
+            {
+                // The message can also be set using the Message property: [LoggerMessage(Message = "...")]
+                foreach (var arg in loggerMessageAttribute.NamedArguments)
+                {
+                    if (arg.Key is "Message" && arg.Value.Type.IsString() && arg.Value.Value is string namedStr)
+                    {
+                        formatString = namedStr;
+                        break;
+                    }
                 }
             }
 
