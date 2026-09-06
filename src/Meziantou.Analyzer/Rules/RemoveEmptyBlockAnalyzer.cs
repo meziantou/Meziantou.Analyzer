@@ -21,7 +21,7 @@ public sealed class RemoveEmptyBlockAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureGeneratedCodeAnalysis(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterSyntaxNodeAction(AnalyzeFinally, SyntaxKind.FinallyClause);
         context.RegisterSyntaxNodeAction(AnalyzeElse, SyntaxKind.ElseClause);

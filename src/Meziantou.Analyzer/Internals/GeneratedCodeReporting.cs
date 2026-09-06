@@ -6,7 +6,10 @@ namespace Meziantou.Analyzer.Internals;
 /// <summary>
 /// Decides whether a rule reports the diagnostics located in generated code. The analyzers configure Roslyn to
 /// analyze generated code and to report the diagnostics located in it, as <c>ConfigureGeneratedCodeAnalysis</c>
-/// cannot read the <c>.editorconfig</c> options, so the decision is taken when a diagnostic is reported.
+/// cannot read the <c>.editorconfig</c> options, so the decision is taken when a diagnostic is reported. The
+/// options below only apply to what the analyzers actually analyze: a rule stops reporting in generated code when
+/// the <c>MEZIANTOU_ANALYZER_GENERATED_CODE</c> environment variable opts out of analyzing it, unless the rule
+/// needs it (see <see cref="AnalysisContextExtensions.ConfigureAnalysisOfGeneratedCode"/>).
 /// </summary>
 internal static class GeneratedCodeReporting
 {

@@ -312,5 +312,15 @@ MA0051.report_generated_code = false
 A few rules report in generated code by default, such as the Blazor rules that work on the code generated from the
 `.razor` files.
 
+Analyzing generated code costs build time. Set the `MEZIANTOU_ANALYZER_GENERATED_CODE` environment variable to
+`false` (or `0`) to opt out, which makes the rules skip generated code entirely, except the few that need it:
+
+```bash
+MEZIANTOU_ANALYZER_GENERATED_CODE=false
+```
+
+Note that the analyzers run in a long-lived process. After changing the variable, run `dotnet build-server shutdown`
+and rebuild, or restart your IDE.
+
 See [Analyzing generated code](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/generated-code.md)
 for the list of those rules and for the detection of the generated files.
