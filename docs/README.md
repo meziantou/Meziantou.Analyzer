@@ -219,6 +219,7 @@
 |[MA0218](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0218.md)|Design|The language attribute is empty|<span title='Info'>ℹ️</span>|✔️|❌|❌|
 |[MA0219](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0219.md)|Design|Set the language attribute in XML comment|<span title='Hidden'>👻</span>|✔️|✔️|❌|
 |[MA0220](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0220.md)|Design|The configured regular expression is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0221](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0221.md)|Design|TryGetValue method should use \[MaybeNullWhen(false)\] on the value parameter|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
