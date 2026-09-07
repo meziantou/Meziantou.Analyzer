@@ -63,10 +63,14 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
                 {
                     foreach (var argument in attribute.ArgumentList.Arguments)
                     {
-                        IParameterSymbol? parameter = null;
+                        // A property or field initializer is not a constructor parameter
                         if (argument.NameEquals is not null)
+                            continue;
+
+                        IParameterSymbol? parameter = null;
+                        if (argument.NameColon is not null)
                         {
-                            parameter = constructor.Parameters.FirstOrDefault(p => p.Name == argument.NameEquals.Name.Identifier.ValueText);
+                            parameter = constructor.Parameters.FirstOrDefault(p => p.Name == argument.NameColon.Name.Identifier.ValueText);
                         }
                         else
                         {

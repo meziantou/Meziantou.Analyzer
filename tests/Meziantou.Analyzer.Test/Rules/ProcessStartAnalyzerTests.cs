@@ -102,6 +102,40 @@ public sealed class ProcessStartAnalyzerTests
     }
 
     [Fact]
+    public Task Process_start_should_fix_when_use_shell_execute_is_not_set_by_setting_it_to_true()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|MA0161:new ProcessStartInfo()|};
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.CodeActionEquivalenceKey = "Set UseShellExecute to true";
+        test.FixedCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = new ProcessStartInfo() { UseShellExecute = true };
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_set_to_true_and_output_redirected()
     {
         var test = new CodeFixTest();

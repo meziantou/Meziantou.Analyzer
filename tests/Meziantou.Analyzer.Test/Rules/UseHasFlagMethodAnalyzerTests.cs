@@ -928,4 +928,82 @@ public sealed class UseHasFlagMethodAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task EqualityCheck_BitwiseAndOnTheRight_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => {|MA0192:MyEnum.Flag1 == (value & MyEnum.Flag1)|};
+            }
+            """;
+        test.FixedCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => value.HasFlag(MyEnum.Flag1);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public Task EqualityCheck_UnderlyingType_ReportDiagnostic(string underlyingType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum MyEnum : {{underlyingType}}
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => {|MA0192:(value & MyEnum.Flag1) == MyEnum.Flag1|};
+            }
+            """;
+        test.FixedCode = $$"""
+            [System.Flags]
+            enum MyEnum : {{underlyingType}}
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => value.HasFlag(MyEnum.Flag1);
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

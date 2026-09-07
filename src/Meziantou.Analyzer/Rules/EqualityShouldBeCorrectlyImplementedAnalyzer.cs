@@ -171,17 +171,6 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             return false;
         }
 
-        private static bool HasMethodInHierarchy(INamedTypeSymbol type, Func<IMethodSymbol, bool> predicate)
-        {
-            foreach (var member in type.GetAllMembers(includeInterfaceMembers: true).OfType<IMethodSymbol>())
-            {
-                if (predicate(member))
-                    return true;
-            }
-
-            return false;
-        }
-
         private static bool HasComparisonOperator(INamedTypeSymbol parentType)
         {
             var operatorNames = new List<string>(6)
@@ -205,16 +194,6 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             return operatorNames.Count == 0;
         }
 
-        private static bool IsEqualsMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(object.Equals) &&
-            symbol.ReturnType.IsBoolean() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsObject() &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
-        }
-
         private bool IsEqualsMethodOverride(IMethodSymbol symbol)
         {
             // Check if it's an Equals(object) method AND it's overridden (not the base System.Object method)
@@ -226,16 +205,6 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
                    !symbol.IsStatic &&
                    !symbol.IsEqualTo(ObjectEqualsSymbol) &&
                    !symbol.IsEqualTo(ValueTypeEqualsSymbol);
-        }
-
-        private static bool IsCompareToMethod(IMethodSymbol symbol)
-        {
-            return symbol.Name == nameof(IComparable.CompareTo) &&
-            symbol.ReturnType.IsInt32() &&
-            symbol.Parameters.Length == 1 &&
-            symbol.Parameters[0].Type.IsObject() &&
-            symbol.DeclaredAccessibility == Accessibility.Public &&
-            !symbol.IsStatic;
         }
 
         private static bool IsCompareToOfTMethod(IMethodSymbol symbol)

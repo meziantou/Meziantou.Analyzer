@@ -53,6 +53,33 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     }
 
     [Fact]
+    public Task MissingAttribute_FixWithSequentialLayout()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct {|MA0008:TypeName|}
+            {
+                int a;
+                int b;
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.CodeActionEquivalenceKey = "Add Sequential StructLayout attribute";
+        test.FixedCode = """
+            using System.Runtime.InteropServices;
+
+            [StructLayout(LayoutKind.Sequential)]
+            struct TypeName
+            {
+                int a;
+                int b;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AddAttributeShouldUseShortname()
     {
         var test = CreateTest();

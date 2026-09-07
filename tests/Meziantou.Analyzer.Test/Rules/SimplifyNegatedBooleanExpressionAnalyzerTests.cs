@@ -114,6 +114,40 @@ public sealed class SimplifyNegatedBooleanExpressionAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("<", ">=")]
+    [InlineData("<=", ">")]
+    [InlineData(">", "<=")]
+    [InlineData(">=", "<")]
+    public Task RelationalComparison_FlipOperator(string operatorText, string negatedOperatorText)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TestClass
+            {
+                void Test(int value, int max, object target)
+                {
+                    _ = {|MA0213:!(value {{operatorText}} max && !IsEditable(target))|};
+                }
+
+                bool IsEditable(object target) => true;
+            }
+            """;
+        test.FixedCode = $$"""
+            class TestClass
+            {
+                void Test(int value, int max, object target)
+                {
+                    _ = value {{negatedOperatorText}} max || IsEditable(target);
+                }
+
+                bool IsEditable(object target) => true;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task ReturnExpression()
     {

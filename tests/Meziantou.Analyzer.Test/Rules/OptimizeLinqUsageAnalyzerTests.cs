@@ -461,6 +461,41 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Fact]
+    public Task LongCount_ArrayAsync()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[10];
+                    _ = list.{|#0:LongCount|}();
+                    list.LongCount(x => x == 0);
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(RuleIdentifiers.UseListOfTMethodsInsteadOfEnumerableExtensionMethods, DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use 'LongLength' instead of 'LongCount()'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var list = new int[10];
+                    _ = list.LongLength;
+                    list.LongCount(x => x == 0);
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Count_VariableTypedAsEnumerableAssignedToList()
     {
         var test = new CodeFixTest();
@@ -641,6 +676,41 @@ public sealed class OptimizeLinqUsageAnalyzerTests
                 {
                     var enumerable = System.Linq.Enumerable.Empty<int>();
                     _ = enumerable.Any();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Count(x => x > 0) == 0", "Replace 'Count() == 0' with 'Any() == false'", "!enumerable.Any(x => x > 0)")]
+    [InlineData("Count(x => x > 0) > 0", "Replace 'Count() > 0' with 'Any()'", "enumerable.Any(x => x > 0)")]
+    public Task Count_WithPredicate_Any(string text, string expectedMessage, string fixedExpression)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    _ = {|#0:enumerable.{{text}}|};
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0031", DiagnosticSeverity.Info).WithLocation(0).WithMessage(expectedMessage));
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    _ = {{fixedExpression}};
                 }
             }
 

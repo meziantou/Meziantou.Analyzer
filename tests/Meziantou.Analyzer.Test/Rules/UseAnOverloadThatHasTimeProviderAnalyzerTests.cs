@@ -128,6 +128,38 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
     }
 
     [Fact]
+    public Task WhenAvailable_NestedPropOfNestedProp()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample foo)
+                {
+                    {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
+                }
+
+                class Sample { public Nested B {get;} }
+                class Nested { public System.TimeProvider A {get;} }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(Sample foo)
+                {
+                    System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo.B.A);
+                }
+
+                class Sample { public Nested B {get;} }
+                class Nested { public System.TimeProvider A {get;} }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task OptionalParameter_WhenAvailable()
     {
         var test = CreateTest();
