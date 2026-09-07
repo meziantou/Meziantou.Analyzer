@@ -593,7 +593,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         private bool HasDisposeAsyncMethod(INamedTypeSymbol symbol)
         {
-            var members = symbol.GetAllMembers("DisposeAsync");
+            var members = symbol.GetAllMembers("DisposeAsync", includeInterfaceMembers: true);
             foreach (var member in members.OfType<IMethodSymbol>())
             {
                 if (member.Parameters.Length != 0)

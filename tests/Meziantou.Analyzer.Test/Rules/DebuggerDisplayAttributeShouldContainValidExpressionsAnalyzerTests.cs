@@ -486,6 +486,73 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     }
 
     [Fact]
+    public Task BaseInterfaceMemberOnInterfaceTypedMember()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("{Foo.Value}")]
+            public class Dummy
+            {
+                public IFoo Foo { get; }
+            }
+
+            public interface IFoo : IBar
+            {
+            }
+
+            public interface IBar
+            {
+                string Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitlyImplementedInterfaceMember()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            [DebuggerDisplay("{Value}")]
+            public class Dummy : IFoo
+            {
+                public string Value => throw null;
+            }
+
+            public interface IFoo
+            {
+                string Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitlyImplementedInterfaceMemberIsNotAccessible()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            [{|MA0151:DebuggerDisplay("{Value}")|}]
+            public class Dummy : IFoo
+            {
+                string IFoo.Value => throw null;
+            }
+
+            public interface IFoo
+            {
+                string Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task UnknownMemberOnInterfaceTypedMember()
     {
         var test = CreateTest();

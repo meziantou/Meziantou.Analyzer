@@ -899,6 +899,84 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    public Task Using_InterfaceInheritingIAsyncDisposable_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            interface ISample : IDisposable, IAsyncDisposable
+            {
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:using var value = Create();|}
+                }
+
+                private ISample Create() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Using_InterfaceNotInheritingIAsyncDisposable_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            interface ISample : IDisposable
+            {
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    using var value = Create();
+                }
+
+                private ISample Create() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Using_ExplicitlyImplementedIAsyncDisposable_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Sample : IDisposable, IAsyncDisposable
+            {
+                void IDisposable.Dispose() => throw null;
+                ValueTask IAsyncDisposable.DisposeAsync() => throw null;
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:using var value = new Sample();|}
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ExtensionMethod()
     {
         var test = new CodeFixTest();

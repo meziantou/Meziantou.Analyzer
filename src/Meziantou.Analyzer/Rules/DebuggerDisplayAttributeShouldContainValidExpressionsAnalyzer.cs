@@ -233,10 +233,11 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         {
             if (parent is INamespaceOrTypeSymbol namespaceOrTypeSymbol)
             {
-                // Explicitly implemented interface members are not accessible on an expression typed with the implementing type,
-                // so the members of the implemented interfaces are only relevant for interfaces
+                // The members of the base interfaces of an interface are always enumerated, and the explicitly implemented
+                // interface members are not accessible on an expression typed with the implementing type, so the members
+                // of the implemented interfaces must not be enumerated
                 IEnumerable<ISymbol> members = namespaceOrTypeSymbol is ITypeSymbol typeSymbol
-                    ? typeSymbol.GetAllMembers(name, includeInterfaceMembers: typeSymbol.TypeKind is TypeKind.Interface)
+                    ? typeSymbol.GetAllMembers(name, includeInterfaceMembers: false)
                     : namespaceOrTypeSymbol.GetMembers(name);
 
                 if (members.FirstOrDefault() is { } member)
