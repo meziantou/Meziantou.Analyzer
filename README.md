@@ -252,6 +252,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0221](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0221.md)|Design|TryGetValue method should use \[MaybeNullWhen(false)\] on the value parameter|ℹ️|❌|✔️|❌|
 |[MA0222](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0222.md)|Design|JsonSourceGenerationOptions should set RespectNullableAnnotations|⚠️|❌|✔️|❌|
 |[MA0223](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0223.md)|Design|JsonSourceGenerationOptions should set RespectRequiredConstructorParameters|⚠️|❌|✔️|❌|
+|[MA0224](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0224.md)|Design|JsonSerializerOptions should set RespectNullableAnnotations|⚠️|❌|✔️|❌|
+|[MA0225](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0225.md)|Design|JsonSerializerOptions should set RespectRequiredConstructorParameters|⚠️|❌|✔️|❌|
 
 <!-- rules -->
 

@@ -664,3 +664,9 @@ dotnet_diagnostic.MA0222.severity = none
 
 # MA0223: JsonSourceGenerationOptions should set RespectRequiredConstructorParameters
 dotnet_diagnostic.MA0223.severity = none
+
+# MA0224: JsonSerializerOptions should set RespectNullableAnnotations
+dotnet_diagnostic.MA0224.severity = none
+
+# MA0225: JsonSerializerOptions should set RespectRequiredConstructorParameters
+dotnet_diagnostic.MA0225.severity = none
