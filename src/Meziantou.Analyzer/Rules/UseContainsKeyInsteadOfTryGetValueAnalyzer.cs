@@ -11,15 +11,14 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzer : DiagnosticAnaly
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseContainsKeyInsteadOfTryGetValue),
-        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseContainsKeyInsteadOfTryGetValue));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationStartAction(ctx =>
         {

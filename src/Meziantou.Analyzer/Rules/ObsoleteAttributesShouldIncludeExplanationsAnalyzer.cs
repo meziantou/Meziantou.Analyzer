@@ -11,15 +11,14 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ObsoleteAttributesShouldIncludeExplanations),
-        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ObsoleteAttributesShouldIncludeExplanations));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationStartAction(ctx =>
         {

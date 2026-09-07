@@ -11,15 +11,14 @@ public sealed class OptimizeGuidCreationAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeGuidCreation),
-        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.OptimizeGuidCreation));
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationStartAction(ctx =>
         {
