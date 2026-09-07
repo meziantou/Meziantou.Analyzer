@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Runtime.InteropServices;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -55,6 +55,49 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
 
     }
 
+    private enum PropertyValue
+    {
+        NotSet,
+        False,
+        True,
+        Unknown,
+    }
+
+    // The property names cannot use nameof as System.Diagnostics.ProcessStartInfo is banned in analyzers (RS1035)
+    [StructLayout(LayoutKind.Auto)]
+    private struct ProcessStartInfoProperties
+    {
+        public PropertyValue UseShellExecute { get; private set; }
+        private PropertyValue RedirectStandardError { get; set; }
+        private PropertyValue RedirectStandardInput { get; set; }
+        private PropertyValue RedirectStandardOutput { get; set; }
+
+        public readonly bool IsRedirecting
+            => RedirectStandardError is PropertyValue.True || RedirectStandardInput is PropertyValue.True || RedirectStandardOutput is PropertyValue.True;
+
+        public void Set(string propertyName, PropertyValue value)
+        {
+            switch (propertyName)
+            {
+                case "UseShellExecute":
+                    UseShellExecute = value;
+                    break;
+
+                case "RedirectStandardError":
+                    RedirectStandardError = value;
+                    break;
+
+                case "RedirectStandardInput":
+                    RedirectStandardInput = value;
+                    break;
+
+                case "RedirectStandardOutput":
+                    RedirectStandardOutput = value;
+                    break;
+            }
+        }
+    }
+
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly INamedTypeSymbol? _processStartInfoSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.ProcessStartInfo");
@@ -79,51 +122,94 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
         public void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
             var operation = (IObjectCreationOperation)context.Operation;
-            if (IsProcessStartInfoCreation(operation))
-            {
-                if (operation is { Initializer: { } initializer })
-                {
-                    var useShellExecuteInitializer = initializer.Initializers.OfType<ISimpleAssignmentOperation>()
-                        .FirstOrDefault(x => x.Target.Syntax is IdentifierNameSyntax { Identifier.Text: "UseShellExecute" });
+            if (!IsProcessStartInfoCreation(operation))
+                return;
 
-                    if (useShellExecuteInitializer is null)
-                    {
-                        if (IsRedirectingInputOrOutput(operation.SemanticModel!, initializer))
-                        {
-                            // Redirecting standard input or output while UseShellExecute is not explicitly set
-                            context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
-                        }
-                        else
-                        {
-                            // Constructing ProcessStartInfo without setting UseShellExecute in the initializer
-                            context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
-                        }
-                    }
-                    else if (IsInitializedToTrue(operation.SemanticModel!, useShellExecuteInitializer))
-                    {
-                        if (IsRedirectingInputOrOutput(operation.SemanticModel!, initializer))
-                        {
-                            // Redirecting standard input or output while UseShellExecute is set to true
-                            context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
-                        }
-                    }
-                }
-                else
+            var properties = GetProperties(operation);
+            if (properties.IsRedirecting)
+            {
+                if (properties.UseShellExecute is PropertyValue.NotSet or PropertyValue.True)
                 {
-                    // Constructing ProcessStartInfo with not initializer at all
-                    context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
+                    // Redirecting standard input or output while UseShellExecute is not explicitly set to false
+                    context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
                 }
+            }
+            else if (properties.UseShellExecute is PropertyValue.NotSet)
+            {
+                // Constructing ProcessStartInfo without setting UseShellExecute
+                context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
             }
         }
 
-        private static bool IsInitializedToTrue(SemanticModel semanticModel, ISimpleAssignmentOperation simpleAssignmentOperation)
-            => semanticModel.GetConstantValue(simpleAssignmentOperation.Value.Syntax) is { HasValue: true, Value: true };
+        private ProcessStartInfoProperties GetProperties(IObjectCreationOperation operation)
+        {
+            var result = default(ProcessStartInfoProperties);
+            if (operation.Initializer is not null)
+            {
+                foreach (var assignment in operation.Initializer.Initializers.OfType<ISimpleAssignmentOperation>())
+                {
+                    if (assignment.Target is IPropertyReferenceOperation propertyReference)
+                    {
+                        result.Set(propertyReference.Property.Name, GetAssignedValue(assignment.Value));
+                    }
+                }
+            }
 
-        private static bool IsRedirectingInputOrOutput(SemanticModel semanticModel,
-            IObjectOrCollectionInitializerOperation initializer) =>
-            initializer.Initializers.OfType<ISimpleAssignmentOperation>()
-                .Any(x => x.Target.Syntax is IdentifierNameSyntax { Identifier.Text: "RedirectStandardError" or "RedirectStandardInput" or "RedirectStandardOutput" }
-                                             && IsInitializedToTrue(semanticModel, x));
+            // The properties can also be set after the object is created:
+            //   var psi = new ProcessStartInfo();
+            //   psi.UseShellExecute = false;
+            var target = GetAssignmentTargetSymbol(operation);
+            if (target is not null)
+            {
+                foreach (var descendant in GetRootOperation(operation).Descendants())
+                {
+                    // Only the assignments that follow the creation apply to the created instance
+                    if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: { } instance } propertyReference } assignment
+                        && descendant.Syntax.SpanStart > operation.Syntax.SpanStart
+                        && propertyReference.Property.ContainingType.IsEqualTo(_processStartInfoSymbol)
+                        && target.IsEqualTo(GetReferencedSymbol(instance)))
+                    {
+                        result.Set(propertyReference.Property.Name, GetAssignedValue(assignment.Value));
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        private static PropertyValue GetAssignedValue(IOperation operation) => operation.ConstantValue switch
+        {
+            { HasValue: true, Value: true } => PropertyValue.True,
+            { HasValue: true, Value: false } => PropertyValue.False,
+            _ => PropertyValue.Unknown,
+        };
+
+        private static ISymbol? GetAssignmentTargetSymbol(IObjectCreationOperation operation) => operation.Parent switch
+        {
+            IVariableInitializerOperation { Parent: IVariableDeclaratorOperation declarator } => declarator.Symbol,
+            ISimpleAssignmentOperation assignment => GetReferencedSymbol(assignment.Target),
+            _ => null,
+        };
+
+        private static ISymbol? GetReferencedSymbol(IOperation? operation) => operation switch
+        {
+            ILocalReferenceOperation localReference => localReference.Local,
+            IParameterReferenceOperation parameterReference => parameterReference.Parameter,
+            IFieldReferenceOperation { Instance: null or IInstanceReferenceOperation } fieldReference => fieldReference.Field,
+            IPropertyReferenceOperation { Instance: null or IInstanceReferenceOperation } propertyReference => propertyReference.Property,
+            _ => null,
+        };
+
+        private static IOperation GetRootOperation(IOperation operation)
+        {
+            var result = operation;
+            while (result.Parent is not null)
+            {
+                result = result.Parent;
+            }
+
+            return result;
+        }
 
         private bool IsProcessStartInfo(IArgumentOperation operation)
             => operation.Value.Type.IsEqualTo(_processStartInfoSymbol);
