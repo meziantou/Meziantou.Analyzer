@@ -31,6 +31,12 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
     {
         public INamedTypeSymbol? EventArgsSymbol { get; } = compilation.GetBestTypeByMetadataName("System.EventArgs");
 
+        /// <summary>
+        /// <c>System.EventHandler&lt;TSender, TEventArgs&gt;</c>, which does not constrain <c>TSender</c> to <c>object</c>
+        /// nor <c>TEventArgs</c> to <c>System.EventArgs</c>, so any construction of it is a valid event type.
+        /// </summary>
+        public INamedTypeSymbol? EventHandlerOfTSenderTEventArgsSymbol { get; } = compilation.GetBestTypeByMetadataName("System.EventHandler`2");
+
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (IEventSymbol)context.Symbol;
@@ -49,6 +55,12 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 
         private bool IsValidSignature(IMethodSymbol methodSymbol, [NotNullWhen(false)] out string? message)
         {
+            if (methodSymbol.ContainingType.OriginalDefinition.IsEqualTo(EventHandlerOfTSenderTEventArgsSymbol))
+            {
+                message = null;
+                return true;
+            }
+
             if (!methodSymbol.ReturnsVoid)
             {
                 message = "The delegate must return void";

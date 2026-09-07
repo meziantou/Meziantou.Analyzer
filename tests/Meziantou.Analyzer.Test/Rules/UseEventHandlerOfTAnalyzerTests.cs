@@ -40,6 +40,38 @@ public sealed class UseEventHandlerOfTAnalyzerTests
     }
 
     [Fact]
+    public Task ValidEvent_EventHandlerOfTSenderTEventArgs()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class SampleEventArgs : System.EventArgs
+            {
+            }
+
+            class Test
+            {
+                event System.EventHandler<Test, SampleEventArgs> myevent;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidEvent_EventHandlerOfTSenderTEventArgs_EventArgsDoesNotInheritFromEventArgs()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                event System.EventHandler<Test, string> myevent;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ValidEvent_CustomDelegate()
     {
         var test = CreateTest();
