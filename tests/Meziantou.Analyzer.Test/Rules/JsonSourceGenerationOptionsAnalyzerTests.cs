@@ -9,19 +9,42 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class JsonSourceGenerationOptionsAnalyzerTests
 {
-    // The options are only available from .NET 9, and the System.Text.Json source generator implements
-    // the members of JsonSerializerContext the tests do not declare
-    private static AnalyzerTest CreateTest(ReferenceAssemblies? referenceAssemblies = null) => new()
-    {
-        UseFrameworkSourceGenerators = true,
-        ReferenceAssemblies = referenceAssemblies ?? ReferenceAssemblies.Net.Net90,
-    };
+    /// <summary>
+    /// The target framework the tests compile against, or <see langword="null"/> to use the latest one the harness
+    /// provides. The source generators shipped with a .NET version cannot be loaded by the older versions of
+    /// Roslyn, so the tests lower the target framework to the latest one the running version of Roslyn can load.
+    /// </summary>
+    private static ReferenceAssemblies? DefaultReferenceAssemblies =>
+#if ROSLYN_5_0_OR_GREATER
+        null;
+#elif ROSLYN_4_14_OR_GREATER
+        ReferenceAssemblies.Net.Net100;
+#else
+        ReferenceAssemblies.Net.Net90;
+#endif
 
-    private static CodeFixTest CreateCodeFixTest() => new()
+    // The System.Text.Json source generator implements the members of JsonSerializerContext the tests do not declare
+    private static AnalyzerTest CreateTest(ReferenceAssemblies? referenceAssemblies = null)
     {
-        UseFrameworkSourceGenerators = true,
-        ReferenceAssemblies = ReferenceAssemblies.Net.Net90,
-    };
+        var test = new AnalyzerTest { UseFrameworkSourceGenerators = true };
+        if ((referenceAssemblies ?? DefaultReferenceAssemblies) is { } assemblies)
+        {
+            test.ReferenceAssemblies = assemblies;
+        }
+
+        return test;
+    }
+
+    private static CodeFixTest CreateCodeFixTest()
+    {
+        var test = new CodeFixTest { UseFrameworkSourceGenerators = true };
+        if (DefaultReferenceAssemblies is { } assemblies)
+        {
+            test.ReferenceAssemblies = assemblies;
+        }
+
+        return test;
+    }
 
     [Theory]
     [InlineData("RespectNullableAnnotations = true, RespectRequiredConstructorParameters = true")]
@@ -111,7 +134,7 @@ public sealed class JsonSourceGenerationOptionsAnalyzerTests
     public Task StrictDefaults(string arguments)
     {
         // JsonSerializerDefaults.Strict, introduced in .NET 10, sets both options
-        var test = CreateTest(ReferenceAssemblies.Net.Net100);
+        var test = CreateTest();
         test.TestCode = $$"""
             using System.Text.Json;
             using System.Text.Json.Serialization;
@@ -129,7 +152,7 @@ public sealed class JsonSourceGenerationOptionsAnalyzerTests
     [InlineData("JsonSerializerDefaults.General")]
     public Task DefaultsNotSettingTheOptions(string arguments)
     {
-        var test = CreateTest(ReferenceAssemblies.Net.Net100);
+        var test = CreateTest();
         test.TestCode = $$"""
             using System.Text.Json;
             using System.Text.Json.Serialization;
