@@ -221,6 +221,8 @@ internal static class RuleIdentifiers
     public const string MissingLanguageAttributeInXmlComment = "MA0219";
     public const string InvalidRegexConfiguration = "MA0220";
     public const string MissingMaybeNullWhenAttributeOnTryGetValue = "MA0221";
+    public const string SetRespectNullableAnnotations = "MA0222";
+    public const string SetRespectRequiredConstructorParameters = "MA0223";
 
     public static string GetHelpUri(string identifier)
     {

@@ -658,3 +658,9 @@ dotnet_diagnostic.MA0220.severity = error
 
 # MA0221: TryGetValue method should use [MaybeNullWhen(false)] on the value parameter
 dotnet_diagnostic.MA0221.severity = error
+
+# MA0222: JsonSourceGenerationOptions should set RespectNullableAnnotations
+dotnet_diagnostic.MA0222.severity = error
+
+# MA0223: JsonSourceGenerationOptions should set RespectRequiredConstructorParameters
+dotnet_diagnostic.MA0223.severity = error
