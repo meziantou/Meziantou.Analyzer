@@ -152,7 +152,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                     return [[]];
 
                 var result = new List<ISymbol[]>();
-                var members = symbol.GetAllMembers();
+                var members = symbol.GetAllMembers(includeInterfaceMembers: true);
                 foreach (var member in members)
                 {
                     if (member.IsImplicitlyDeclared)

@@ -243,7 +243,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             return document;
 
         var missingOperators = new HashSet<string>(ComparisonOperatorNames, StringComparer.Ordinal);
-        foreach (var method in declaredTypeSymbol.GetAllMembers().OfType<IMethodSymbol>())
+        foreach (var method in declaredTypeSymbol.GetAllMembers(includeInterfaceMembers: true).OfType<IMethodSymbol>())
         {
             if (method.MethodKind is MethodKind.UserDefinedOperator)
             {

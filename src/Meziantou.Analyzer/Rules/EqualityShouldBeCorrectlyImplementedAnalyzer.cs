@@ -173,7 +173,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
 
         private static bool HasMethodInHierarchy(INamedTypeSymbol type, Func<IMethodSymbol, bool> predicate)
         {
-            foreach (var member in type.GetAllMembers().OfType<IMethodSymbol>())
+            foreach (var member in type.GetAllMembers(includeInterfaceMembers: true).OfType<IMethodSymbol>())
             {
                 if (predicate(member))
                     return true;
@@ -194,7 +194,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             "op_Inequality",
         };
 
-            foreach (var member in parentType.GetAllMembers().OfType<IMethodSymbol>())
+            foreach (var member in parentType.GetAllMembers(includeInterfaceMembers: true).OfType<IMethodSymbol>())
             {
                 if (member.MethodKind is MethodKind.UserDefinedOperator)
                 {

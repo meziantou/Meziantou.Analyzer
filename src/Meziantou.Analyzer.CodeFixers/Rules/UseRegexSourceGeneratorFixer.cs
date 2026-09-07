@@ -96,7 +96,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (typeSymbol is not null)
         {
-            var members = typeSymbol.GetAllMembers().ToArray();
+            var members = typeSymbol.GetAllMembers(includeInterfaceMembers: true).ToArray();
             // If we're going to remove a field/variable, exclude it from the uniqueness check
             if (shouldRemoveFieldOrVariable)
             {

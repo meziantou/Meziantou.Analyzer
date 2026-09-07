@@ -159,7 +159,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
                 return false;
 
             // Check all members (properties and fields) including inherited members
-            foreach (var member in type.GetAllMembers())
+            foreach (var member in type.GetAllMembers(includeInterfaceMembers: true))
             {
                 if (member is IPropertySymbol property)
                 {

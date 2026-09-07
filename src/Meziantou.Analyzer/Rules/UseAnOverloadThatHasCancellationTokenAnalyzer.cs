@@ -288,7 +288,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return [[]];
 
                 var result = new List<ISymbol[]>();
-                var members = symbol.GetAllMembers();
+                var members = symbol.GetAllMembers(includeInterfaceMembers: true);
                 foreach (var member in members)
                 {
                     if (member.IsImplicitlyDeclared)
