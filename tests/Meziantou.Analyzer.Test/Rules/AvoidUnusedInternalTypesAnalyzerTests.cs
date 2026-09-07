@@ -2408,6 +2408,42 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public Task InternalClassUsedAsArrayElementType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal class UsedClass
+            {
+            }
+
+            public class Sample
+            {
+                public object Create() => new UsedClass[0];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassUsedAsJaggedArrayElementType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal class UsedClass
+            {
+            }
+
+            public class Sample
+            {
+                public object Create() => new UsedClass[0][];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CodeFix_RemoveType_WithAssemblyAttribute()
     {
         var test = CreateTest();

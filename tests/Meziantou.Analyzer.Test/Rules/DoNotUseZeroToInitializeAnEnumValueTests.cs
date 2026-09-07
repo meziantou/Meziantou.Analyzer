@@ -539,6 +539,137 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public Task Assignation_CodeFix_EnumBaseType(string baseType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            enum MyEnum : {{baseType}} { A = 0, B = 1 }
+
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = {|MA0099:0|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            enum MyEnum : {{baseType}} { A = 0, B = 1 }
+
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = MyEnum.A;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Reassignation_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = default;
+                    a = {|MA0099:0|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void A()
+                {
+                    MyEnum a = default;
+                    a = MyEnum.A;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionalParameter_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = {|MA0099:0|})
+                {
+                }
+            }
+            """;
+        test.FixedCode = """
+            enum MyEnum { A = 0, B = 1 }
+            class Test
+            {
+                void A(MyEnum a = MyEnum.A)
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportOnArgument_ZeroInArgument_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0099.report_on", "argument");
+        test.TestCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void M(MyEnum x) { }
+
+                void A()
+                {
+                    M({|MA0099:0|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            enum MyEnum { A = 0, B = 1 }
+
+            class Test
+            {
+                void M(MyEnum x) { }
+
+                void A()
+                {
+                    M(MyEnum.A);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1210")]
     public Task ReportOnArgument_ZeroInAssignment_NoDiagnostic()

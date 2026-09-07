@@ -174,4 +174,106 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzerTest
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public Task NonPowerOfTwo_UnderlyingType(string underlyingType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum {|MA0062:Test|} : {{underlyingType}}
+            {
+                A = 1,
+                B = 2,
+                C = 5, // Non valid
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public Task PowerOfTwoOrCombination_UnderlyingType(string underlyingType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum Test : {{underlyingType}}
+            {
+                A = 1,
+                B = 2,
+                C = 3,
+                D = 4,
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("sbyte", "-1")]
+    [InlineData("byte", "0xFF")]
+    [InlineData("short", "-1")]
+    [InlineData("ushort", "0xFFFF")]
+    [InlineData("int", "-1")]
+    [InlineData("uint", "0xFFFFFFFF")]
+    [InlineData("long", "-1")]
+    [InlineData("ulong", "0xFFFFFFFFFFFFFFFF")]
+    public Task AllBitSet_UnderlyingType_WithoutConfiguration(string underlyingType, string allBitsSetValue)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum {|MA0062:Test|} : {{underlyingType}}
+            {
+                None     = 0,
+                Option1  = 1,
+                All      = {{allBitsSetValue}},
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("sbyte", "-1")]
+    [InlineData("byte", "0xFF")]
+    [InlineData("short", "-1")]
+    [InlineData("ushort", "0xFFFF")]
+    [InlineData("int", "-1")]
+    [InlineData("uint", "0xFFFFFFFF")]
+    [InlineData("long", "-1")]
+    [InlineData("ulong", "0xFFFFFFFFFFFFFFFF")]
+    public Task AllBitSet_UnderlyingType_WithConfiguration(string underlyingType, string allBitsSetValue)
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0062.allow_all_bits_set_value", "true");
+        test.TestCode = $$"""
+            [System.Flags]
+            enum Test : {{underlyingType}}
+            {
+                None     = 0,
+                Option1  = 1,
+                All      = {{allBitsSetValue}},
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -197,6 +197,37 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     }
 
     [Fact]
+    public Task CallingMethodWithClassThatContainsANestedPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithFullPath()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public static void A(HttpContext context)
+                {
+                    {|#0:MethodWithCancellationToken()|};
+                }
+
+                public static void MethodWithCancellationToken() => throw null;
+                public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+
+            class HttpContext
+            {
+                public HttpRequest Request { get; }
+            }
+
+            class HttpRequest
+            {
+                public System.Threading.CancellationToken RequestAborted { get; }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: context.Request.RequestAborted"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CallingMethodWithRecordPropsThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
         var test = CreateTest();

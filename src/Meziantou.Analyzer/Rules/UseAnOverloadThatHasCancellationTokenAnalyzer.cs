@@ -1,8 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Configurations;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -349,8 +347,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (availableSymbols.Count == 0 && XunitTestContextSymbol is null)
                 return [];
 
-            var isInStaticContext = operation.IsInStaticContext(cancellationToken);
-
             // For each symbol, get their members
             var paths = new List<string>();
             foreach (var availableSymbol in availableSymbols)
@@ -364,9 +360,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     foreach (var member in members)
                     {
                         if (!AreAllSymbolsAccessibleFromOperation(member, operation))
-                            continue;
-
-                        if (availableSymbol.Name is null && isInStaticContext && member.Length > 0 && !member[0].IsStatic)
                             continue;
 
                         var fullPath = ComputeFullPath(availableSymbol.Name, member);
@@ -396,11 +389,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return true;
             }
 
-            static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
+            static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
             {
-                if (prefix is null)
-                    return string.Join('.', symbols.Select(symbol => symbol.Name));
-
                 var suffix = string.Join('.', symbols.Select(symbol => symbol.Name));
                 if (string.IsNullOrEmpty(suffix))
                     return prefix;
@@ -412,15 +402,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             {
                 return operation.SemanticModel!.IsAccessible(operation.Syntax.Span.Start, symbol);
             }
-        }
-
-        private static ITypeSymbol? GetContainingType(IOperation operation, CancellationToken cancellationToken)
-        {
-            var ancestor = operation.Syntax.Ancestors().FirstOrDefault(node => node is TypeDeclarationSyntax);
-            if (ancestor is null)
-                return null;
-
-            return operation.SemanticModel!.GetDeclaredSymbol(ancestor, cancellationToken) as ITypeSymbol;
         }
 
         private static IEnumerable<T> Prepend<T>(T value, IEnumerable<T> items)
@@ -436,13 +417,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
     [StructLayout(LayoutKind.Auto)]
     private readonly struct NameAndType
     {
-        public NameAndType(string? name, ITypeSymbol? typeSymbol)
+        public NameAndType(string name, ITypeSymbol? typeSymbol)
         {
             Name = name;
             TypeSymbol = typeSymbol;
         }
 
-        public string? Name { get; }
+        public string Name { get; }
         public ITypeSymbol? TypeSymbol { get; }
     }
 }

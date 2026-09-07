@@ -659,6 +659,40 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length < 1", "!")]
+    [InlineData("member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length <= 0", "!")]
+    public Task GetCustomAttributes_Length_Comparison(string expression, string negation)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:{{expression}}|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {{negation}}Attribute.IsDefined(member, typeof(ObsoleteAttribute), false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Attribute_GetCustomAttributes_Length_GreaterThanZero()
     {

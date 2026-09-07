@@ -45,6 +45,36 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task MissingConfigureAwait_ShouldReportError_FixWithConfigureAwaitTrue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    {|MA0004:await Task.Delay(1)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.CodeActionEquivalenceKey = "Use ConfigureAwait(true)";
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MissingConfigureAwait_AwaitForeach_ShouldReportError()
     {
         var test = CreateTest();

@@ -72,41 +72,7 @@ public sealed class DoNotUseZeroToInitializeAnEnumValueFixer : CodeFixProvider
 
     private static INamedTypeSymbol? GetTargetEnumType(SemanticModel semanticModel, ExpressionSyntax expression, CancellationToken cancellationToken)
     {
-        if (semanticModel.GetTypeInfo(expression, cancellationToken).ConvertedType is INamedTypeSymbol { EnumUnderlyingType: not null } convertedEnumType)
-            return convertedEnumType;
-
-        if (expression.Parent is EqualsValueClauseSyntax equalsValueClause)
-        {
-            if (equalsValueClause.Parent is ParameterSyntax parameterSyntax)
-            {
-                if (semanticModel.GetDeclaredSymbol(parameterSyntax, cancellationToken) is IParameterSymbol parameterSymbol &&
-                    parameterSymbol.Type is INamedTypeSymbol { EnumUnderlyingType: not null } parameterEnumType)
-                {
-                    return parameterEnumType;
-                }
-            }
-            else if (equalsValueClause.Parent is VariableDeclaratorSyntax variableDeclaratorSyntax &&
-                     semanticModel.GetDeclaredSymbol(variableDeclaratorSyntax, cancellationToken) is ILocalSymbol localSymbol &&
-                     localSymbol.Type is INamedTypeSymbol { EnumUnderlyingType: not null } localEnumType)
-            {
-                return localEnumType;
-            }
-        }
-
-        if (expression.Parent is AssignmentExpressionSyntax assignmentExpression &&
-            assignmentExpression.Right == expression &&
-            semanticModel.GetTypeInfo(assignmentExpression.Left, cancellationToken).Type is INamedTypeSymbol { EnumUnderlyingType: not null } assignmentEnumType)
-        {
-            return assignmentEnumType;
-        }
-
-        if (expression.Parent is ArgumentSyntax argumentSyntax &&
-            semanticModel.GetOperation(argumentSyntax, cancellationToken) is IArgumentOperation { Parameter.Type: INamedTypeSymbol { EnumUnderlyingType: not null } parameterEnumType2 })
-        {
-            return parameterEnumType2;
-        }
-
-        return null;
+        return semanticModel.GetTypeInfo(expression, cancellationToken).ConvertedType is INamedTypeSymbol { EnumUnderlyingType: not null } enumType ? enumType : null;
     }
 
     private static async Task<Document> UseEnumField(Document document, ExpressionSyntax expressionToFix, IFieldSymbol fieldSymbol, CancellationToken cancellationToken)

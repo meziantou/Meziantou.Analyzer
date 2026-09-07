@@ -261,72 +261,16 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
             return true;
         }
 
-        switch (patternOperation)
+        // A qualified enum member in a pattern is parsed as a type, so the constant pattern the compiler
+        // binds it to has the syntax of the expression instead of the syntax of a pattern
+        if (patternOperation is IConstantPatternOperation { Value.Syntax: ExpressionSyntax expressionSyntax })
         {
-            case IConstantPatternOperation constantPatternOperation:
-                if (constantPatternOperation.Syntax is PatternSyntax syntaxPattern)
-                {
-                    patternSyntax = syntaxPattern;
-                    return true;
-                }
-
-                if (constantPatternOperation.Value?.Syntax is ExpressionSyntax expressionSyntax)
-                {
-                    patternSyntax = ConstantPattern(expressionSyntax);
-                    return true;
-                }
-
-                break;
-
-            case INegatedPatternOperation negatedPatternOperation:
-                if (TryCreatePatternSyntax(negatedPatternOperation.Pattern, out var negatedPatternSyntax))
-                {
-                    patternSyntax = UnaryPattern(
-                        negatedPatternSyntax is BinaryPatternSyntax
-                            ? ParenthesizedPattern(negatedPatternSyntax)
-                            : negatedPatternSyntax);
-                    return true;
-                }
-
-                break;
-
-            case IBinaryPatternOperation binaryPatternOperation:
-                if (TryCreatePatternSyntax(binaryPatternOperation.LeftPattern, out var leftPatternSyntax) &&
-                    TryCreatePatternSyntax(binaryPatternOperation.RightPattern, out var rightPatternSyntax) &&
-                    TryGetPatternOperator(binaryPatternOperation.OperatorKind, out var binaryPatternKind, out var operatorTokenKind))
-                {
-                    patternSyntax = BinaryPattern(
-                        binaryPatternKind,
-                        ParenthesizePatternIfNeeded(leftPatternSyntax, binaryPatternKind),
-                        Token(operatorTokenKind),
-                        ParenthesizePatternIfNeeded(rightPatternSyntax, binaryPatternKind));
-                    return true;
-                }
-
-                break;
+            patternSyntax = ConstantPattern(expressionSyntax);
+            return true;
         }
 
         patternSyntax = null!;
         return false;
-    }
-
-    private static bool TryGetPatternOperator(BinaryOperatorKind operatorKind, out SyntaxKind binaryPatternKind, out SyntaxKind operatorTokenKind)
-    {
-        switch (operatorKind)
-        {
-            case BinaryOperatorKind.And:
-                binaryPatternKind = SyntaxKind.AndPattern;
-                operatorTokenKind = SyntaxKind.AndKeyword;
-                return true;
-            case BinaryOperatorKind.Or:
-                binaryPatternKind = SyntaxKind.OrPattern;
-                operatorTokenKind = SyntaxKind.OrKeyword;
-                return true;
-            default:
-                binaryPatternKind = default;
-                operatorTokenKind = default;
-                return false;
-        }
     }
 
     private static bool CanMergeCandidates(SyntaxKind logicalExpressionKind, List<MergeCandidate> mergeCandidates)

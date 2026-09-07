@@ -14,23 +14,21 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+
+        // The rule only reports the local functions, as their name is mangled by the compiler
+        if (nodeToFix?.FirstAncestorOrSelf<LocalFunctionStatementSyntax>() is not { } localFunction)
             return;
 
         const string Title = "Set UnsafeAccessor Name";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => SetNameProperty(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => SetNameProperty(context.Document, localFunction, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> SetNameProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> SetNameProperty(Document document, LocalFunctionStatementSyntax localFunction, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var declaration = (SyntaxNode?)nodeToFix.FirstAncestorOrSelf<LocalFunctionStatementSyntax>() ?? nodeToFix.FirstAncestorOrSelf<MethodDeclarationSyntax>();
-        if (declaration is null)
-            declaration = editor.OriginalRoot;
-
-        foreach (var (attributeList, methodName) in EnumerateCandidateAttributes(declaration))
+        foreach (var attributeList in localFunction.AttributeLists)
         {
             foreach (var attribute in attributeList.Attributes)
             {
@@ -40,13 +38,10 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
                 if (HasNameProperty(attribute))
                     return document;
 
-                if (methodName.Length == 0)
-                    return document;
-
                 var argument = AttributeArgument(
                     NameEquals(IdentifierName("Name")),
                     nameColon: null,
-                    expression: LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(methodName)));
+                    expression: LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(localFunction.Identifier.ValueText)));
 
                 var newArgumentList = attribute.ArgumentList is null
                     ? AttributeArgumentList(SeparatedList(new[] { argument }))
@@ -59,44 +54,6 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
         }
 
         return document;
-    }
-
-    private static IEnumerable<(AttributeListSyntax AttributeList, string MethodName)> EnumerateCandidateAttributes(SyntaxNode declaration)
-    {
-        switch (declaration)
-        {
-            case LocalFunctionStatementSyntax localFunction:
-                foreach (var attributeList in localFunction.AttributeLists)
-                {
-                    yield return (attributeList, localFunction.Identifier.ValueText);
-                }
-
-                yield break;
-
-            case MethodDeclarationSyntax method:
-                foreach (var attributeList in method.AttributeLists)
-                {
-                    yield return (attributeList, method.Identifier.ValueText);
-                }
-
-                foreach (var localFunctionDeclaration in method.DescendantNodes().OfType<LocalFunctionStatementSyntax>())
-                {
-                    foreach (var attributeList in localFunctionDeclaration.AttributeLists)
-                    {
-                        yield return (attributeList, localFunctionDeclaration.Identifier.ValueText);
-                    }
-                }
-
-                yield break;
-        }
-
-        foreach (var localFunctionDeclaration in declaration.DescendantNodes().OfType<LocalFunctionStatementSyntax>())
-        {
-            foreach (var attributeList in localFunctionDeclaration.AttributeLists)
-            {
-                yield return (attributeList, localFunctionDeclaration.Identifier.ValueText);
-            }
-        }
     }
 
     private static bool HasNameProperty(AttributeSyntax attribute)

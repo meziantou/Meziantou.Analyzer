@@ -210,8 +210,6 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                 availableSymbols.Add(new(symbol.Name, symbolType));
             }
 
-            var isInStaticContext = operation.IsInStaticContext(cancellationToken);
-
             // For each symbol, get their members
             var paths = new List<string>();
             foreach (var availableSymbol in availableSymbols)
@@ -225,9 +223,6 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                     foreach (var member in members)
                     {
                         if (!AreAllSymbolsAccessibleFromOperation(member, operation))
-                            continue;
-
-                        if (availableSymbol.Name is null && isInStaticContext && member.Length > 0 && !member[0].IsStatic)
                             continue;
 
                         var fullPath = ComputeFullPath(availableSymbol.Name, member);
@@ -252,11 +247,8 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                 return true;
             }
 
-            static string ComputeFullPath(string? prefix, IEnumerable<ISymbol> symbols)
+            static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
             {
-                if (prefix is null)
-                    return string.Join('.', symbols.Select(symbol => symbol.Name));
-
                 var suffix = string.Join('.', symbols.Select(symbol => symbol.Name));
                 if (string.IsNullOrEmpty(suffix))
                     return prefix;
@@ -283,13 +275,13 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
     [StructLayout(LayoutKind.Auto)]
     private readonly struct NameAndType
     {
-        public NameAndType(string? name, ITypeSymbol? typeSymbol)
+        public NameAndType(string name, ITypeSymbol? typeSymbol)
         {
             Name = name;
             TypeSymbol = typeSymbol;
         }
 
-        public string? Name { get; }
+        public string Name { get; }
         public ITypeSymbol? TypeSymbol { get; }
     }
 }

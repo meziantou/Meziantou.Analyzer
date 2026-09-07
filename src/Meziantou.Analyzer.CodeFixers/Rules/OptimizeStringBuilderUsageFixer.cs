@@ -64,10 +64,6 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveToString(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
-            case OptimizeStringBuilderUsageData.ReplaceToStringWithAppendFormat:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceWithAppendFormat(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
-                break;
-
             case OptimizeStringBuilderUsageData.ReplaceStringFormatWithAppendFormat:
                 context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceStringFormatWithAppendFormat(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
@@ -256,46 +252,6 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
-    }
-
-    private static async Task<Document> ReplaceWithAppendFormat(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-    {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
-
-        var methodName = operation.TargetMethod.Name; // Append or AppendLine
-        var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
-
-        var toStringOperation = (IInvocationOperation)operation.Arguments[0].Value;
-
-        var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendFormat"),
-            toStringOperation.Arguments[1].Syntax,
-            GetFormatExpression(toStringOperation.Arguments[0].Value),
-            toStringOperation.GetChildOperations().First().Syntax);
-
-        if (isAppendLine)
-        {
-            newExpression = generator.InvocationExpression(generator.MemberAccessExpression(newExpression, "AppendLine"));
-        }
-
-        editor.ReplaceNode(nodeToFix, newExpression);
-        return editor.GetChangedDocument();
-
-        SyntaxNode GetFormatExpression(IOperation formatOperation)
-        {
-            if (formatOperation.ConstantValue.HasValue)
-            {
-                return generator.LiteralExpression("{0:" + (string?)formatOperation.ConstantValue.Value + "}");
-            }
-
-            return generator.AddExpression(generator.AddExpression(
-                generator.LiteralExpression("{0:"),
-                formatOperation.Syntax),
-                generator.LiteralExpression("}"));
-        }
     }
 
     private static async Task<Document> ReplaceStringFormatWithAppendFormat(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)

@@ -209,6 +209,152 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
     }
 
     [Fact]
+    public Task AddOrUpdate_Closure_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var value = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, k => k, {|MA0106:(k, v) => value|});
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var value = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, (k, arg) => k, (k, v, arg) => arg, value);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_FactoryArg_UsingTheKeyAndTheFactoryArg_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(key, {|MA0105:(k, arg) => factoryArg|}, factoryArg);
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(key, (k, arg) => arg, factoryArg);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_AddValueFactoryUsingTheKey_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, {|MA0105:k => key|}, (k, v) => k + v);
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, k => k, (k, v) => k + v);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_UpdateValueFactoryUsingTheKey_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, k => k, {|MA0105:(k, v) => key + v|});
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, k => k, (k, v) => k + v);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_FactoryArg_AddValueFactoryUsingTheKeyAndTheFactoryArg_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, {|MA0105:(k, arg) => factoryArg|}, (k, v, arg) => k + v + arg, factoryArg);
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, (k, arg) => arg, (k, v, arg) => k + v + arg, factoryArg);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_FactoryArg_UpdateValueFactoryUsingTheKeyAndTheFactoryArg_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, (k, arg) => k + arg, {|MA0105:(k, v, arg) => v + factoryArg|}, factoryArg);
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var key = 1;
+            var factoryArg = 1;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(key, (k, arg) => k + arg, (k, v, arg) => v + arg, factoryArg);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AddOrUpdate_Variable_netstandard2()
     {
         var test = new CodeFixTest();

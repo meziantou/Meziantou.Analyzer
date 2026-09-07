@@ -218,4 +218,104 @@ public sealed class MethodShouldNotBeTooLongAnalyzerTests
         var root = tree.GetRoot().DescendantNodes().OfType<BlockSyntax>().First();
         return MethodShouldNotBeTooLongAnalyzer.CountStatements(default, root);
     }
+
+    [Fact]
+    public Task TooLongPropertyAccessors_Statements()
+    {
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "2"));
+        test.TestCode = """
+            public class Test
+            {
+                int Property
+                {
+                    {|MA0051:get|}
+                    {
+                        var a = 0;var b = 0;
+                        return a + b;
+                    }
+                    {|MA0051:set|}
+                    {
+                        var a = 0;var b = 0;
+                        _ = a + b;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidPropertyAccessors_Statements()
+    {
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "2"));
+        test.TestCode = """
+            public class Test
+            {
+                int Property
+                {
+                    get
+                    {
+                        var a = 0;
+                        return a;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TooLongPropertyAccessor_ExpressionBody_Lines()
+    {
+        var test = CreateTest(("MA0051.maximum_lines_per_method", "1"));
+        test.TestCode = """
+            public class Test
+            {
+                int Property
+                {
+                    {|MA0051:get|} => 0 +
+                        1 +
+                        2;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TooLongConstructor_Statements()
+    {
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "2"));
+        test.TestCode = """
+            public class Test
+            {
+                {|MA0051:Test|}()
+                {
+                    var a = 0;var b = 0;var c = 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TooLongDestructor_Statements()
+    {
+        var test = CreateTest(("MA0051.maximum_statements_per_method", "2"));
+        test.TestCode = """
+            public class Test
+            {
+                ~{|MA0051:Test|}()
+                {
+                    var a = 0;var b = 0;var c = 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

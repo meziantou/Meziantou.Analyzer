@@ -10,11 +10,11 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         const string Title = "Make method public";
         foreach (var diagnostic in context.Diagnostics)
         {
-            var methodDeclaration = GetMethodDeclaration(root, semanticModel, diagnostic, context.CancellationToken);
+            // An explicit interface implementation cannot have an accessibility modifier
+            var methodDeclaration = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true).FirstAncestorOrSelf<MethodDeclarationSyntax>();
             if (methodDeclaration is null || methodDeclaration.ExplicitInterfaceSpecifier is not null)
                 continue;
 
@@ -64,23 +64,5 @@ public sealed class JSInvokableMethodsMustBePublicFixer : CodeFixProvider
                modifier.IsKind(SyntaxKind.InternalKeyword) ||
                modifier.IsKind(SyntaxKind.ProtectedKeyword) ||
                modifier.IsKind(SyntaxKind.PublicKeyword);
-    }
-
-    private static MethodDeclarationSyntax? GetMethodDeclaration(SyntaxNode? root, SemanticModel? semanticModel, Diagnostic diagnostic, CancellationToken cancellationToken)
-    {
-        if (semanticModel?.GetEnclosingSymbol(diagnostic.Location.SourceSpan.Start, cancellationToken) is IMethodSymbol methodSymbol)
-        {
-            return methodSymbol.DeclaringSyntaxReferences
-                .Select(reference => reference.GetSyntax(cancellationToken))
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault();
-        }
-
-        var nodeToFix = root?.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
-        return nodeToFix?.FirstAncestorOrSelf<MethodDeclarationSyntax>()
-            ?? root?.FindToken(diagnostic.Location.SourceSpan.Start).Parent?.FirstAncestorOrSelf<MethodDeclarationSyntax>()
-            ?? root?.DescendantNodes()
-                .OfType<MethodDeclarationSyntax>()
-                .FirstOrDefault(method => method.Identifier.Span.IntersectsWith(diagnostic.Location.SourceSpan) || method.Span.IntersectsWith(diagnostic.Location.SourceSpan));
     }
 }

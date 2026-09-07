@@ -558,6 +558,78 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
     }
 
     [Fact]
+    public Task NestedSimpleLambdaReturn_DoesNotAffectParent()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> Parent()
+                {
+                    Func<int, Task<int>> f = value => null;
+                    _ = f(0);
+                    return {|MA0214:Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
+                {
+                    Func<int, Task<int>> f = value => null;
+                    _ = f(0);
+                    return await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedAnonymousMethodReturn_DoesNotAffectParent()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                Task<int> Parent()
+                {
+                    Func<Task<int>> f = delegate { return null; };
+                    _ = f();
+                    return {|MA0214:Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                async Task<int> Parent()
+                {
+                    Func<Task<int>> f = delegate { return null; };
+                    _ = f();
+                    return await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AlreadyAsync_NoDiagnostic()
     {
         var test = CreateTest();

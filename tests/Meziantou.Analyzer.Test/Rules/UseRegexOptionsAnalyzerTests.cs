@@ -166,6 +166,32 @@ public sealed class UseRegexOptionsAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task GeneratedRegex_RegexOptions_NamedArguments_CodeFix()
+    {
+        var test = new GeneratedRegexCodeFixTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [{|MA0023:GeneratedRegex(options: RegexOptions.CultureInvariant, pattern: "([a-z]+)", matchTimeoutMilliseconds: -1)|}]
+                private static partial Regex Test();
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [GeneratedRegex(options: RegexOptions.CultureInvariant | RegexOptions.ExplicitCapture, pattern: "([a-z]+)", matchTimeoutMilliseconds: -1)]
+                private static partial Regex Test();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
 #if CSHARP13_OR_GREATER
     [Fact]
     public Task GeneratedRegexProperty_RegexOptions_Valid()

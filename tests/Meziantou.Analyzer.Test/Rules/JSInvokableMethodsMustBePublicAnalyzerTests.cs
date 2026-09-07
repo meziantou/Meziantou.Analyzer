@@ -40,6 +40,33 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzerTests
     }
 
     [Fact]
+    public Task ExplicitInterfaceImplementation_NoCodeFix()
+    {
+        const string Source = """
+            using Microsoft.JSInterop;
+
+            interface ITest
+            {
+                void A();
+            }
+
+            class Test : ITest
+            {
+                [JSInvokable]
+                void ITest.{|MA0118:A|}() => throw null;
+            }
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+
+        // An explicit interface implementation cannot have an accessibility modifier, so no code fix is offered
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Test_CodeFix_InternalMethod()
     {
         var test = CreateTest();
