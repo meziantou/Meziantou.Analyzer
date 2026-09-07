@@ -223,6 +223,8 @@ internal static class RuleIdentifiers
     public const string MissingMaybeNullWhenAttributeOnTryGetValue = "MA0221";
     public const string SetRespectNullableAnnotations = "MA0222";
     public const string SetRespectRequiredConstructorParameters = "MA0223";
+    public const string SetRespectNullableAnnotationsOnJsonSerializerOptions = "MA0224";
+    public const string SetRespectRequiredConstructorParametersOnJsonSerializerOptions = "MA0225";
 
     public static string GetHelpUri(string identifier)
     {
