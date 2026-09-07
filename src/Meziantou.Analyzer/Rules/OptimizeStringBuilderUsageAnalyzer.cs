@@ -283,7 +283,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                         return true;
                     }
                 }
-                else if (string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
+                else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Substring), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString())
                 {
                     var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceSubstring);
                     context.ReportDiagnostic(Rule, properties, operation, $"Use {methodName}(string, int, int) or {methodName}(ReadOnlySpan<char>) instead of Substring");
