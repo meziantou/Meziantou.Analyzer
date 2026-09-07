@@ -60,9 +60,6 @@ file. `report_generated_code` works on those rules whether the variable is set o
 
 |Id|Description|
 |--|-----------|
-|[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Use Task.ConfigureAwait|
-|[MA0068](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0068.md)|Invalid parameter name for nullable attribute|
-|[MA0070](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0070.md)|Obsolete attributes should include explanations|
 |[MA0115](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0115.md)|Unknown component parameter|
 |[MA0116](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0116.md)|Parameters with \[SupplyParameterFromQuery\] attributes should also be marked as \[Parameter\]|
 |[MA0117](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0117.md)|Parameters with \[EditorRequired\] attributes should also be marked as \[Parameter\]|
@@ -79,8 +76,6 @@ file. `report_generated_code` works on those rules whether the variable is set o
 |[MA0139](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0139.md)|Serilog parameter type is not valid|
 |[MA0144](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0144.md)|Use System.OperatingSystem to check the current OS|
 |[MA0153](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0153.md)|Do not log symbols decorated with DataClassificationAttribute directly|
-|[MA0160](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0160.md)|Use ContainsKey instead of TryGetValue|
-|[MA0176](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0176.md)|Optimize guid creation|
 |[MA0190](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0190.md)|Use partial property instead of partial method for GeneratedRegex|
 |[MA0195](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0195.md)|Do not use static fields before they are initialized|
 

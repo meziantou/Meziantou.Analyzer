@@ -16,8 +16,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseConfigureAwaitFalse),
-        customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseConfigureAwaitFalse));
 
     private static readonly ConfigurationDefinition<string> ReportModeConfiguration = new(RuleIdentifiers.UseConfigureAwaitFalse + ".report", defaultValue: "");
 
@@ -26,7 +25,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
-        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.Analyze | GeneratedCodeAnalysisFlags.ReportDiagnostics);
+        context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
         context.RegisterCompilationStartAction(ctx =>
         {
