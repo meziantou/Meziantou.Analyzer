@@ -53,6 +53,8 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, default(TimeSpan))")]
     [InlineData("new DateTimeOffset(offset: TimeSpan.Zero, day: 1, month: 1, year: 1970, hour: 0, minute: 0, second: 0)")]
+    [InlineData("new DateTimeOffset(DateTime.UnixEpoch, TimeSpan.FromMinutes(0, 0))")]
+    [InlineData("new DateTimeOffset(DateTime.UnixEpoch, new TimeSpan(0, 0, 0, 0, 0, 0))")]
     public Task UnixEpoch_DateTimeOffset(string code)
     {
         var test = CreateTest();
@@ -115,6 +117,8 @@ public class UseDateTimeUnixEpochAnalyzerTests
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, 0, TimeSpan.FromHours(-1))")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, null, TimeSpan.Zero)")]
     [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, 0, new System.Globalization.GregorianCalendar(), TimeSpan.Zero)")]
+    [InlineData("new DateTimeOffset(1970, 1, 1, 0, 0, 0, TimeSpan.FromMinutes(0, 60))")]
+    [InlineData("new DateTimeOffset(DateTime.UnixEpoch, new TimeSpan(1))")]
     public Task NonUnixEpoch_DateTimeOffset(string code)
     {
         var test = CreateTest();
