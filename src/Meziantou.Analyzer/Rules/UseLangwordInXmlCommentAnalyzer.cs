@@ -6,7 +6,7 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly ObjectPool<Queue<SyntaxNode>> NodeQueuePool = ObjectPool.CreateQueuePool<SyntaxNode>();
+    private static readonly ObjectPool<PooledQueue<SyntaxNode>> NodeQueuePool = ObjectPool.CreateQueuePool<SyntaxNode>();
 
     private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
     {
