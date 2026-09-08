@@ -35,7 +35,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
         if (finallyBlock is null)
             return;
 
-        foreach (var throwStatement in finallyBlock.DescendantNodes().Where(IsThrowStatement))
+        foreach (var throwStatement in finallyBlock.DescendantNodesInSameExecutionFlow().Where(IsThrowStatement))
         {
             context.ReportDiagnostic(Rule, throwStatement);
         }
