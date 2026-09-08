@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -23,23 +20,24 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSyntaxNodeAction(AnalyzeFinallyClause, SyntaxKind.FinallyClause);
+        context.RegisterOperationAction(AnalyzeThrow, OperationKind.Throw);
     }
 
-    private static void AnalyzeFinallyClause(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeThrow(OperationAnalysisContext context)
     {
-        if (context.Node is not FinallyClauseSyntax finallyClause)
-            return;
-
-        var finallyBlock = finallyClause.Block;
-        if (finallyBlock is null)
-            return;
-
-        foreach (var throwStatement in finallyBlock.DescendantNodesInSameExecutionFlow().Where(IsThrowStatement))
+        var operation = context.Operation;
+        var child = operation;
+        for (var parent = operation.Parent; parent is not null; child = parent, parent = parent.Parent)
         {
-            context.ReportDiagnostic(Rule, throwStatement);
+            // A lambda or a local function declared in a finally block is not executed by the finally block
+            if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                return;
+
+            if (parent is ITryOperation tryOperation && tryOperation.Finally == child)
+            {
+                context.ReportDiagnostic(Rule, operation);
+                return;
+            }
         }
     }
-
-    private static bool IsThrowStatement(SyntaxNode node) => node.IsKind(SyntaxKind.ThrowStatement);
 }

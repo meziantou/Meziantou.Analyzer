@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -23,17 +20,22 @@ public sealed class DoNotThrowFromFinalizerAnalyzer : DiagnosticAnalyzer
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSyntaxNodeAction(AnalyzeFinalizer, SyntaxKind.DestructorDeclaration);
+        context.RegisterOperationAction(AnalyzeThrow, OperationKind.Throw);
     }
 
-    private static void AnalyzeFinalizer(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeThrow(OperationAnalysisContext context)
     {
-        var node = (DestructorDeclarationSyntax)context.Node;
-        foreach (var throwStatement in node.DescendantNodesInSameExecutionFlow().Where(IsThrowStatement))
-        {
-            context.ReportDiagnostic(Rule, throwStatement);
-        }
-    }
+        if (context.ContainingSymbol is not IMethodSymbol { MethodKind: MethodKind.Destructor })
+            return;
 
-    private static bool IsThrowStatement(SyntaxNode node) => node.IsKind(SyntaxKind.ThrowStatement);
+        var operation = context.Operation;
+        for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+        {
+            // A lambda or a local function declared in a finalizer is not executed by the finalizer
+            if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                return;
+        }
+
+        context.ReportDiagnostic(Rule, operation);
+    }
 }
