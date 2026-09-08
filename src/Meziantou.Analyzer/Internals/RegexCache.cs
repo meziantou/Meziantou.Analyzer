@@ -1,4 +1,3 @@
-using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace Meziantou.Analyzer.Internals;
@@ -8,11 +7,15 @@ internal static class RegexCache
     // The patterns come from the configuration, so they can be invalid or subject to catastrophic backtracking.
     // The timeout ensures a single pattern cannot hang the compilation.
     private static readonly TimeSpan MatchTimeout = TimeSpan.FromSeconds(1);
-    private static readonly ConcurrentDictionary<(string Pattern, RegexOptions Options), (Regex? Regex, string? ErrorMessage)> Cache = new();
+
+    // The patterns come from the configuration of the analyzed projects, and an editor provides a new value at every
+    // keystroke, including the invalid intermediate ones. The cache is bounded, so the patterns of the closed projects
+    // and of the outdated configuration values do not stay alive for the lifetime of the process.
+    private static readonly BoundedCache<(string Pattern, RegexOptions Options), (Regex? Regex, string? ErrorMessage)> Cache = new(capacity: 128);
 
     /// <summary>
     /// Gets a cached <see cref="Regex"/> for the pattern. Returns <see langword="false"/> when the pattern is invalid.
-    /// Invalid patterns are cached, so a pattern is parsed only once.
+    /// Invalid patterns are cached too, so a pattern is parsed once until its entry is evicted from the cache.
     /// </summary>
     public static bool TryGetOrCreate(string pattern, RegexOptions options, [NotNullWhen(true)] out Regex? regex)
     {
