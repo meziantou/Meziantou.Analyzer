@@ -252,7 +252,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         {
             if (TryGetComparedOperand(patternOperation, out var comparedOperand, out _))
             {
-                pattern = GetFromBitwiseAnd(andOperation, comparedOperand);
+                pattern = GetFromBitwiseAnd(andOperation, comparedOperand, comparedOperandEvaluatedFirst: false);
                 return pattern is not null;
             }
         }
@@ -268,14 +268,14 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
 
         if (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } leftBitwiseAnd)
         {
-            var pattern = GetFromBitwiseAnd(leftBitwiseAnd, rightOperand);
+            var pattern = GetFromBitwiseAnd(leftBitwiseAnd, rightOperand, comparedOperandEvaluatedFirst: false);
             if (pattern is not null)
                 return pattern;
         }
 
         if (rightOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } rightBitwiseAnd)
         {
-            var pattern = GetFromBitwiseAnd(rightBitwiseAnd, leftOperand);
+            var pattern = GetFromBitwiseAnd(rightBitwiseAnd, leftOperand, comparedOperandEvaluatedFirst: true);
             if (pattern is not null)
                 return pattern;
         }
@@ -283,20 +283,22 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand)
+    private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand, bool comparedOperandEvaluatedFirst)
     {
         var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversions();
         var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
-        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation) &&
-            IsValidPattern(leftOperand, flagOperation))
+        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation, out var isConstantFlag) &&
+            IsValidPattern(leftOperand, flagOperation) &&
+            UseHasFlagMethodCommon.CanRewriteToHasFlag(leftOperand, isConstantFlag, preservesEvaluationOrder: !comparedOperandEvaluatedFirst))
         {
             return new(leftOperand, flagOperation);
         }
 
-        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation) &&
-            IsValidPattern(rightOperand, flagOperation))
+        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation, out isConstantFlag) &&
+            IsValidPattern(rightOperand, flagOperation) &&
+            UseHasFlagMethodCommon.CanRewriteToHasFlag(rightOperand, isConstantFlag, preservesEvaluationOrder: false))
         {
             return new(rightOperand, flagOperation);
         }
@@ -304,7 +306,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         return null;
     }
 
-    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation)
+    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation, out bool isConstantFlag)
     {
         potentialFlag = potentialFlag.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
@@ -319,12 +321,14 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
                 !NumericHelpers.IsZero(firstFieldReference.Field.ConstantValue))
             {
                 flagOperation = secondFieldReference;
+                isConstantFlag = true;
                 return true;
             }
 
             if (comparedOperand.IsConstantZero() && NumericHelpers.IsSingleBitSet(firstFieldReference.Field.ConstantValue))
             {
                 flagOperation = firstFieldReference;
+                isConstantFlag = true;
                 return true;
             }
         }
@@ -332,10 +336,12 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         if (!potentialFlag.IsConstantZero() && UseHasFlagMethodCommon.AreEquivalentOperands(potentialFlag, comparedOperand))
         {
             flagOperation = comparedOperand;
+            isConstantFlag = comparedOperand.ConstantValue.HasValue;
             return true;
         }
 
         flagOperation = null;
+        isConstantFlag = false;
         return false;
     }
 

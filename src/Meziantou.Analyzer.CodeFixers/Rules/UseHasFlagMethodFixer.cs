@@ -96,7 +96,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         {
             if (TryGetComparedOperand(patternOperation, out var comparedOperand, out var negate))
             {
-                pattern = GetFromBitwiseAnd(andOperation, comparedOperand, operationExpression, negate);
+                pattern = GetFromBitwiseAnd(andOperation, comparedOperand, operationExpression, negate, comparedOperandEvaluatedFirst: false);
                 return pattern is not null;
             }
         }
@@ -137,14 +137,14 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
 
         if (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } leftBitwiseAnd)
         {
-            var pattern = GetFromBitwiseAnd(leftBitwiseAnd, rightOperand, operationExpression, negate);
+            var pattern = GetFromBitwiseAnd(leftBitwiseAnd, rightOperand, operationExpression, negate, comparedOperandEvaluatedFirst: false);
             if (pattern is not null)
                 return pattern;
         }
 
         if (rightOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.And } rightBitwiseAnd)
         {
-            var pattern = GetFromBitwiseAnd(rightBitwiseAnd, leftOperand, operationExpression, negate);
+            var pattern = GetFromBitwiseAnd(rightBitwiseAnd, leftOperand, operationExpression, negate, comparedOperandEvaluatedFirst: true);
             if (pattern is not null)
                 return pattern;
         }
@@ -152,22 +152,24 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         return null;
     }
 
-    private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand, ExpressionSyntax operationExpression, bool negate)
+    private static HasFlagPattern? GetFromBitwiseAnd(IBinaryOperation bitwiseAndOperation, IOperation comparedOperand, ExpressionSyntax operationExpression, bool negate, bool comparedOperandEvaluatedFirst)
     {
         var leftOperand = bitwiseAndOperation.LeftOperand.UnwrapImplicitConversions();
         var rightOperand = bitwiseAndOperation.RightOperand.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
 
-        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation, out var comparedWithZero) &&
+        if (TryGetEnumFlagReference(rightOperand, comparedOperand, out var flagOperation, out var comparedWithZero, out var isConstantFlag) &&
             IsValidPattern(leftOperand, flagOperation) &&
+            UseHasFlagMethodCommon.CanRewriteToHasFlag(leftOperand, isConstantFlag, preservesEvaluationOrder: !comparedOperandEvaluatedFirst) &&
             leftOperand.Syntax is ExpressionSyntax enumValueExpression &&
             flagOperation.Syntax is ExpressionSyntax flagExpression)
         {
             return new(operationExpression, enumValueExpression, flagExpression, comparedWithZero ? !negate : negate);
         }
 
-        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation, out comparedWithZero) &&
+        if (TryGetEnumFlagReference(leftOperand, comparedOperand, out flagOperation, out comparedWithZero, out isConstantFlag) &&
             IsValidPattern(rightOperand, flagOperation) &&
+            UseHasFlagMethodCommon.CanRewriteToHasFlag(rightOperand, isConstantFlag, preservesEvaluationOrder: false) &&
             rightOperand.Syntax is ExpressionSyntax enumValueExpression2 &&
             flagOperation.Syntax is ExpressionSyntax flagExpression2)
         {
@@ -177,7 +179,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         return null;
     }
 
-    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation, out bool comparedWithZero)
+    private static bool TryGetEnumFlagReference(IOperation potentialFlag, IOperation comparedOperand, [NotNullWhen(true)] out IOperation? flagOperation, out bool comparedWithZero, out bool isConstantFlag)
     {
         potentialFlag = potentialFlag.UnwrapImplicitConversions();
         comparedOperand = comparedOperand.UnwrapImplicitConversions();
@@ -192,6 +194,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
             {
                 flagOperation = secondFieldReference;
                 comparedWithZero = false;
+                isConstantFlag = true;
                 return true;
             }
 
@@ -199,6 +202,7 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
             {
                 flagOperation = firstFieldReference;
                 comparedWithZero = true;
+                isConstantFlag = true;
                 return true;
             }
         }
@@ -207,11 +211,13 @@ public sealed class UseHasFlagMethodFixer : CodeFixProvider
         {
             flagOperation = comparedOperand;
             comparedWithZero = false;
+            isConstantFlag = comparedOperand.ConstantValue.HasValue;
             return true;
         }
 
         flagOperation = null;
         comparedWithZero = false;
+        isConstantFlag = false;
         return false;
     }
 

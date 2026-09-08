@@ -963,6 +963,250 @@ public sealed class UseHasFlagMethodAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task SideEffectBeforeFlagRead_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Change()
+                {
+                    _comparand = MyEnum.Flag2;
+                    return MyEnum.Flag2;
+                }
+
+                bool M() => (_comparand & Change()) == _comparand;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectAfterComparedOperandRead_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Change()
+                {
+                    _comparand = MyEnum.Flag2;
+                    return MyEnum.Flag2;
+                }
+
+                bool M() => _comparand == (Change() & _comparand);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectBeforeFlagRead_ReversedAndOperands_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Change()
+                {
+                    _comparand = MyEnum.Flag2;
+                    return MyEnum.Flag2;
+                }
+
+                bool M() => _comparand == (_comparand & Change());
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectWithPropertyFlag_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Value => _comparand;
+
+                bool M(MyEnum comparand) => comparand == (Value & comparand);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectBeforeConstantFlagRead_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                MyEnum Change() => MyEnum.Flag2;
+
+                bool M() => {|MA0192:MyEnum.Flag1 == (Change() & MyEnum.Flag1)|};
+            }
+            """;
+        test.FixedCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                MyEnum Change() => MyEnum.Flag2;
+
+                bool M() => Change().HasFlag(MyEnum.Flag1);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectAfterFlagRead_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Change()
+                {
+                    _comparand = MyEnum.Flag2;
+                    return MyEnum.Flag2;
+                }
+
+                bool M() => {|MA0192:(Change() & _comparand) == _comparand|};
+            }
+            """;
+        test.FixedCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                private MyEnum _comparand = MyEnum.Flag1;
+
+                MyEnum Change()
+                {
+                    _comparand = MyEnum.Flag2;
+                    return MyEnum.Flag2;
+                }
+
+                bool M() => Change().HasFlag(_comparand);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SideEffectFreeValue_ReversedAndOperands_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value, MyEnum comparand) => {|MA0192:comparand == (comparand & (value | MyEnum.Flag2))|};
+            }
+            """;
+        test.FixedCode = """
+            [System.Flags]
+            enum MyEnum
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value, MyEnum comparand) => (value | MyEnum.Flag2).HasFlag(comparand);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("sbyte")]
     [InlineData("byte")]
