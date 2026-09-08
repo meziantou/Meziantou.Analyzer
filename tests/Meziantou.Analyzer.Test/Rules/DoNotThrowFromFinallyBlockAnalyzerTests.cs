@@ -172,4 +172,158 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task FinallyThrowsFromThrowExpression_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(string value)
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        value = value ?? {|MA0072:throw new System.Exception()|};
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyRethrowsFromNestedCatchBlock_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                        }
+                        catch
+                        {
+                            {|MA0072:throw;|}
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TryBlockThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                        throw new System.Exception();
+                    }
+                    finally
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyDeclaresLambdaThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        System.Action action = () => throw new System.Exception();
+                        System.Func<string> func = () => throw new System.Exception();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyDeclaresLocalFunctionThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        void LocalFunction() => throw new System.Exception();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LambdaDeclaredInFinallyHasItsOwnFinallyThatThrows_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        System.Action action = () =>
+                        {
+                            try
+                            {
+                            }
+                            finally
+                            {
+                                {|MA0072:throw new System.Exception();|}
+                            }
+                        };
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
