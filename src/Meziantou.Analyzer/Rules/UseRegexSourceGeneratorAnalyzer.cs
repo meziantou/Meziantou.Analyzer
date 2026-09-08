@@ -159,10 +159,11 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (valueOperation.Type.IsEqualTo(_timespanSymbol))
             {
                 // GeneratedRegex only accepts an infinite or strictly positive match timeout, so a Regex built with
-                // any other value cannot be converted: the source generator would reject the generated attribute
+                // any other value cannot be converted: the source generator would reject the generated attribute.
+                // Its timeout is an Int32 number of milliseconds, so a longer duration cannot be converted either.
                 const long Infinite = -1;
                 var milliseconds = _timeSpanOperation.GetMilliseconds(valueOperation);
-                return milliseconds is Infinite || milliseconds > 0;
+                return milliseconds is Infinite or (> 0 and <= int.MaxValue);
             }
 
             return false;
