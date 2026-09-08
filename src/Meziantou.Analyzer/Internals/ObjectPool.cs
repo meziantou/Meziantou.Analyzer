@@ -1,6 +1,7 @@
 #pragma warning disable MA0048 // File name must match type name
 #pragma warning disable RS1035 // Do not use APIs banned for analyzers
 using System.Collections.Concurrent;
+using System.Diagnostics.CodeAnalysis;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -42,7 +43,7 @@ internal static class ObjectPool
         return provider.Create(new StringBuilderPooledObjectPolicy());
     }
 
-    public static ObjectPool<Queue<T>> CreateQueuePool<T>()
+    public static ObjectPool<PooledQueue<T>> CreateQueuePool<T>()
     {
         var provider = new DefaultObjectPoolProvider();
         return provider.Create(new QueuePooledObjectPolicy<T>());
@@ -354,30 +355,72 @@ internal sealed class StringBuilderPooledObjectPolicy : PooledObjectPolicy<Strin
 }
 
 /// <summary>
-/// A policy for pooling <see cref="Queue{T}"/> instances.
+/// A queue that keeps track of the maximum number of items it contained, so a pool can detect the instances whose
+/// backing array grew too much. <see cref="Queue{T}.Count"/> cannot be used for that purpose because the consumers
+/// usually dequeue all the items before returning the queue to the pool, and <see cref="Queue{T}.Clear"/> does not
+/// release the backing array.
+/// </summary>
+/// <typeparam name="T">The type of the items of the queue.</typeparam>
+internal sealed class PooledQueue<T>
+{
+    private readonly Queue<T> _queue = new();
+
+    /// <summary>
+    /// Gets the number of items contained in the queue.
+    /// </summary>
+    public int Count => _queue.Count;
+
+    /// <summary>
+    /// Gets the maximum number of items the queue contained since the last call to <see cref="Clear"/>.
+    /// </summary>
+    public int MaximumCount { get; private set; }
+
+    public void Enqueue(T item)
+    {
+        _queue.Enqueue(item);
+        if (_queue.Count > MaximumCount)
+        {
+            MaximumCount = _queue.Count;
+        }
+    }
+
+    public bool TryDequeue([MaybeNullWhen(false)] out T result)
+    {
+        return _queue.TryDequeue(out result);
+    }
+
+    public void Clear()
+    {
+        _queue.Clear();
+        MaximumCount = 0;
+    }
+}
+
+/// <summary>
+/// A policy for pooling <see cref="PooledQueue{T}"/> instances.
 /// </summary>
 /// <typeparam name="T">The type of the items of the pooled queues.</typeparam>
-internal sealed class QueuePooledObjectPolicy<T> : PooledObjectPolicy<Queue<T>>
+internal sealed class QueuePooledObjectPolicy<T> : PooledObjectPolicy<PooledQueue<T>>
 {
     /// <summary>
-    /// Gets or sets the maximum number of items a <see cref="Queue{T}"/> can contain to be retained,
-    /// when <see cref="Return(Queue{T})"/> is invoked.
+    /// Gets or sets the maximum number of items a <see cref="PooledQueue{T}"/> can have contained to be retained,
+    /// when <see cref="Return(PooledQueue{T})"/> is invoked.
     /// </summary>
     /// <value>Defaults to <c>1024</c>.</value>
     public int MaximumRetainedCount { get; set; } = 1024;
 
     /// <inheritdoc />
-    public override Queue<T> Create()
+    public override PooledQueue<T> Create()
     {
-        return new Queue<T>();
+        return new PooledQueue<T>();
     }
 
     /// <inheritdoc />
-    public override bool Return(Queue<T> obj)
+    public override bool Return(PooledQueue<T> obj)
     {
-        if (obj.Count > MaximumRetainedCount)
+        if (obj.MaximumCount > MaximumRetainedCount)
         {
-            // Too big. Discard this one.
+            // The backing array grew too much. Discard this one.
             return false;
         }
 
