@@ -29,7 +29,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeFinalizer(SyntaxNodeAnalysisContext context)
     {
         var node = (DestructorDeclarationSyntax)context.Node;
-        foreach (var throwStatement in node.DescendantNodes().Where(IsThrowStatement))
+        foreach (var throwStatement in node.DescendantNodesInSameExecutionFlow().Where(IsThrowStatement))
         {
             context.ReportDiagnostic(Rule, throwStatement);
         }
