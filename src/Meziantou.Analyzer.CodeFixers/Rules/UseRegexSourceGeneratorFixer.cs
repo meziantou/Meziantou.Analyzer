@@ -21,6 +21,30 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var compilation = semanticModel.Compilation;
+        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex") is null)
+            return;
+
+        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute") is null)
+            return;
+
+        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions") is null)
+            return;
+
+        var arguments = semanticModel.GetOperation(nodeToFix, context.CancellationToken) switch
+        {
+            IObjectCreationOperation objectCreationOperation => objectCreationOperation.Arguments,
+            IInvocationOperation invocationOperation => invocationOperation.Arguments,
+            _ => default,
+        };
+
+        if (arguments.IsDefault || !AreArgumentIndicesValid(arguments, context.Diagnostics[0].Properties))
+            return;
+
         // Check if C# 14 or later is available
         var isCSharp14OrAbove = false;
         if (context.Document.Project.ParseOptions is CSharpParseOptions parseOptions)
@@ -239,28 +263,18 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
         else if (operation is IInvocationOperation invocationOperation)
         {
-            var arguments = invocationOperation.Arguments;
-            var indices = new[]
-            {
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
-            };
-            foreach (var index in indices.Where(value => value is not null).OrderDescending())
-            {
-                arguments = arguments.RemoveAt(index.GetValueOrDefault());
-            }
+            var arguments = GetRemainingArgumentSyntaxes(invocationOperation.Arguments, properties);
 
             if (usePartialProperty)
             {
                 var accessProperty = generator.IdentifierName(methodName);
-                var method = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                var method = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), arguments);
                 newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
             }
             else
             {
                 var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
-                var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                var method = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), arguments);
                 newTypeDeclaration = newTypeDeclaration.ReplaceNode(nodeToFix, method);
             }
         }
@@ -369,9 +383,49 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         return document.WithSyntaxRoot(root);
     }
 
-    private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
+    /// <summary>
+    /// Returns the syntax of the arguments that must be kept on the instance method, in their source order, once the
+    /// arguments lifted to the <c>GeneratedRegex</c> attribute are removed.
+    /// </summary>
+    private static SyntaxNode[] GetRemainingArgumentSyntaxes(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties)
+    {
+        var liftedIndices = new[]
+        {
+            GetArgumentIndex(args, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
+            GetArgumentIndex(args, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
+            GetArgumentIndex(args, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
+        };
+
+        return [.. args.Where((_, index) => !liftedIndices.Contains(index)).Select(arg => arg.Syntax)];
+    }
+
+    /// <summary>
+    /// Ensures the argument indices reported by the analyzer can be applied to <paramref name="args"/>, so the fix is
+    /// only registered when it can produce a valid replacement.
+    /// </summary>
+    private static bool AreArgumentIndicesValid(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties)
+    {
+        if (GetArgumentIndex(args, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName) is null)
+            return false;
+
+        return IsIndexValid(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName)
+            && IsIndexValid(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName);
+
+        bool IsIndexValid(string name) => TryParseInt32(properties, name) is not { } index || (index >= 0 && index < args.Length);
+    }
+
+    private static int? GetArgumentIndex(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
     {
         var index = TryParseInt32(properties, name);
+        if (index is null || index.Value < 0 || index.Value >= args.Length)
+            return null;
+
+        return index;
+    }
+
+    private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
+    {
+        var index = GetArgumentIndex(args, properties, name);
         if (index is null)
             return null;
 
@@ -606,27 +660,17 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
         else if (operation is IInvocationOperation invocationOperation)
         {
-            var arguments = invocationOperation.Arguments;
-            var indices = new[]
-            {
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName),
-                TryParseInt32(properties, UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName),
-            };
-            foreach (var index in indices.Where(value => value is not null).OrderDescending())
-            {
-                arguments = arguments.RemoveAt(index.GetValueOrDefault());
-            }
+            var arguments = GetRemainingArgumentSyntaxes(invocationOperation.Arguments, properties);
 
             if (usePartialProperty)
             {
                 var accessProperty = generator.IdentifierName(methodName);
-                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(accessProperty, invocationOperation.TargetMethod.Name), arguments);
             }
             else
             {
                 var createRegexMethod = generator.InvocationExpression(generator.IdentifierName(methodName));
-                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), [.. arguments.Select(arg => arg.Syntax)]);
+                replacementNode = generator.InvocationExpression(generator.MemberAccessExpression(createRegexMethod, invocationOperation.TargetMethod.Name), arguments);
             }
         }
         else

@@ -144,6 +144,79 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     }
 
     [Fact]
+    public Task FinallyDeclaresLambdaThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        System.Action action = () => { throw new System.Exception(); };
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyDeclaresAnonymousMethodThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        System.Action action = delegate { throw new System.Exception(); };
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyDeclaresLocalFunctionThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        void LocalFunction() => Throw();
+                        void Throw()
+                        {
+                            throw new System.Exception();
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task FinallyThrowsFromSeveralLocations_DiagnosticIsReportedForEachOne()
     {
         var test = CreateTest();
@@ -249,7 +322,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     }
 
     [Fact]
-    public Task FinallyDeclaresLambdaThatThrows_NoDiagnosticReported()
+    public Task FinallyDeclaresLambdaWithThrowExpression_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -273,7 +346,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     }
 
     [Fact]
-    public Task FinallyDeclaresLocalFunctionThatThrows_NoDiagnosticReported()
+    public Task FinallyDeclaresLocalFunctionWithThrowExpression_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """

@@ -383,6 +383,76 @@ public class UseRegexSourceGeneratorAnalyzerTests
     }
 
     [Theory]
+    [InlineData("TimeSpan.FromSeconds(1, 500)", "1500")]
+    [InlineData("TimeSpan.FromSeconds(milliseconds: 500, seconds: 1)", "1500")]
+    [InlineData("TimeSpan.FromMilliseconds(1, 2000)", "3")]
+    [InlineData("TimeSpan.FromMinutes(1, 30)", "90000")]
+    [InlineData("TimeSpan.FromHours(1, 2, 3, 4)", "3723004")]
+    [InlineData("TimeSpan.FromDays(1, 2, 3, 4)", "93784000")]
+    [InlineData("new TimeSpan(seconds: 3, minutes: 2, hours: 1)", "3723000")]
+    [InlineData("new TimeSpan(1, 2, 3, 4, 5, 6000)", "93784011")]
+    public Task Timeout_MultipleComponents(string timeout, string milliseconds)
+    {
+        var test = CreateTest();
+
+        // The TimeSpan.FromXXX overloads taking multiple components were added in .NET 9, and the code fixer
+        // generates a partial method for the language versions that do not support partial properties
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net90;
+        test.LanguageVersion = LanguageVersion.CSharp12;
+
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                Regex a = {|MA0110:new Regex("testpattern", RegexOptions.None, {{timeout}})|};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                Regex a = MyRegex();
+
+                [GeneratedRegex("testpattern", RegexOptions.None, matchTimeoutMilliseconds: {{milliseconds}})]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("new TimeSpan(1)")]
+    [InlineData("TimeSpan.FromMilliseconds(0.5)")]
+    [InlineData("TimeSpan.MaxValue")]
+    [InlineData("TimeSpan.FromDays(30)")]
+    public Task Timeout_NotRepresentableInMilliseconds_NoDiagnostic(string timeout)
+    {
+        var test = CreateTest();
+
+        // The generator of .NET 11 requires C# 12, which is not the default language version of every supported Roslyn version
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+
+        // The generated attribute takes an Int32 number of milliseconds, so a duration that is not an exact
+        // number of milliseconds, or that is too long, cannot be converted without changing the timeout
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                Regex a = new Regex("testpattern", RegexOptions.None, {{timeout}});
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("System.Threading.Timeout.InfiniteTimeSpan")]
     [InlineData("Regex.InfiniteMatchTimeout")]
     public Task New_Timeout_Infinite(string timeout)
@@ -741,6 +811,35 @@ public class UseRegexSourceGeneratorAnalyzerTests
                         private static partial Regex MyRegex { get; }
                     }
                 }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegexIsMatch_NamedArgumentsInReverseOrder_PartialProperty()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch(pattern: "testpattern", input: "test")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                bool a = MyRegex.IsMatch(input: "test");
+
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex { get; }
             }
             """;
 
@@ -1382,4 +1481,138 @@ public class UseRegexSourceGeneratorAnalyzerTests
             """;
 
         return test.RunAsync();
-    }}
+    }
+
+    [Fact]
+    public Task RegexIsMatch_NamedArgumentsInReverseOrder()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch(pattern: "testpattern", input: "test")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch(input: "test");
+
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegexIsMatch_Options_Timeout_NamedArgumentsInReverseOrder()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                bool a = {|MA0110:Regex.IsMatch(matchTimeout: TimeSpan.FromSeconds(1), options: RegexOptions.ExplicitCapture, pattern: "testpattern", input: "test")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                bool a = MyRegex().IsMatch(input: "test");
+
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegexReplace_NamedArgumentsInReverseOrder()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                string a = {|MA0110:Regex.Replace(replacement: "replacement", pattern: "testpattern", input: "test")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                string a = MyRegex().Replace(replacement: "replacement", input: "test");
+
+                [GeneratedRegex("testpattern")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegexIsMatch_NonConstantPatternPassedAsNamedArgument()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                bool A(string pattern) => Regex.IsMatch(pattern: pattern, input: "test");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NewRegex_Options_Timeout_NamedArgumentsInReverseOrder()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                Regex a = {|MA0110:new Regex(matchTimeout: TimeSpan.FromSeconds(1), options: RegexOptions.ExplicitCapture, pattern: "testpattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                Regex a = MyRegex();
+
+                [GeneratedRegex("testpattern", RegexOptions.ExplicitCapture, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+}

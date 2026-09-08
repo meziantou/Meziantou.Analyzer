@@ -77,6 +77,60 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
     }
 
     [Fact]
+    public Task FinalizerDeclaresLambdaThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    System.Action action = () => { throw new System.Exception(); };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerDeclaresAnonymousMethodThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    System.Action action = delegate { throw new System.Exception(); };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerDeclaresLocalFunctionThatThrows_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    void LocalFunction()
+                    {
+                        throw new System.Exception();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task FinalizerThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
     {
         var test = CreateTest();
@@ -147,7 +201,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
     }
 
     [Fact]
-    public Task FinalizerDeclaresLambdaThatThrows_NoDiagnosticReported()
+    public Task FinalizerDeclaresLambdaWithThrowExpression_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -165,7 +219,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
     }
 
     [Fact]
-    public Task FinalizerDeclaresLocalFunctionThatThrows_NoDiagnosticReported()
+    public Task FinalizerDeclaresLocalFunctionWithThrowExpression_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """
