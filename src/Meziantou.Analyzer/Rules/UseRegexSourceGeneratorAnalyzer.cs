@@ -30,6 +30,11 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
+        // The parameters lifted to the GeneratedRegex attribute
+        private const string PatternParameterName = "pattern";
+        private const string OptionsParameterName = "options";
+        private const string MatchTimeoutParameterName = "matchTimeout";
+
         private readonly TimeSpanOperation _timeSpanOperation = new(compilation);
         private readonly ITypeSymbol? _regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
         private readonly ITypeSymbol? _regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
@@ -59,19 +64,12 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (!op.Type.IsEqualTo(_regexSymbol))
                 return;
 
-            foreach (var arg in op.Arguments)
-            {
-                if (!IsConstant(arg))
-                    return;
-            }
-
-            var properties = ImmutableDictionary.CreateRange(
-            [
-                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "0"),
-                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 1 ? "1" : null),
-                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 2 ? "2" : null),
-                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 2 ? _timeSpanOperation.GetMilliseconds(op.Arguments[2].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-            ]);
+            // Regex(string pattern)
+            // Regex(string pattern, RegexOptions options)
+            // Regex(string pattern, RegexOptions options, TimeSpan matchTimeout)
+            var properties = TryCreateProperties(op.Arguments);
+            if (properties is null)
+                return;
 
             context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
         }
@@ -86,68 +84,73 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (!method.IsStatic || !method.ContainingType.IsEqualTo(_regexSymbol))
                 return;
 
-            if (method.Name is "IsMatch" or "Match" or "Matches" or "Split")
+            // IsMatch/Match/Matches/Split(string input, string pattern[, RegexOptions options[, TimeSpan matchTimeout]])
+            // Replace(string input, string pattern, string replacement[, RegexOptions options[, TimeSpan matchTimeout]])
+            // Replace(string input, string pattern, MatchEvaluator evaluator[, RegexOptions options[, TimeSpan matchTimeout]])
+            if (method.Name is not ("IsMatch" or "Match" or "Matches" or "Split" or "Replace"))
+                return;
+
+            var properties = TryCreateProperties(op.Arguments);
+            if (properties is null)
+                return;
+
+            context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
+        }
+
+        /// <summary>
+        /// Computes the diagnostic properties describing the arguments the code fixer must lift to the
+        /// <c>GeneratedRegex</c> attribute, or <see langword="null"/> when the operation cannot be converted.
+        /// </summary>
+        /// <remarks>
+        /// The arguments are located from <see cref="IArgumentOperation.Parameter"/> instead of their position in
+        /// <paramref name="arguments"/>, as reordered named arguments are listed in evaluation order.
+        /// </remarks>
+        private ImmutableDictionary<string, string?>? TryCreateProperties(ImmutableArray<IArgumentOperation> arguments)
+        {
+            var patternIndex = GetArgumentIndex(arguments, PatternParameterName);
+            if (patternIndex is null)
+                return null;
+
+            var optionsIndex = GetArgumentIndex(arguments, OptionsParameterName);
+            var timeoutIndex = GetArgumentIndex(arguments, MatchTimeoutParameterName);
+
+            // An overload with an unknown parameter cannot be converted, as the parameter would be silently dropped
+            for (var i = 0; i < arguments.Length; i++)
             {
-                // IsMatch(string _, string)
-                // IsMatch(string _, string, RegexOptions)
-                // IsMatch(string _, string, RegexOptions, TimeSpan)
+                if (i == patternIndex || i == optionsIndex || i == timeoutIndex)
+                    continue;
 
-                // Match(string _, string)
-                // Match(string _, string, RegexOptions)
-                // Match(string _, string, RegexOptions, TimeSpan)
-
-                // Matches(string _, string)
-                // Matches(string _, string, RegexOptions)
-                // Matches(string _, string, RegexOptions, TimeSpan)
-
-                // Split(string _, string)
-                // Split(string _, string, RegexOptions)
-                // Split(string _, string, RegexOptions, TimeSpan)
-
-                for (var i = 1; i < op.Arguments.Length; i++)
-                {
-                    if (!IsConstant(op.Arguments[i]))
-                        return;
-                }
-
-                var properties = ImmutableDictionary.CreateRange(
-                [
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 2 ? "2" : null),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 3 ? "3" : null),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 3 ? _timeSpanOperation.GetMilliseconds(op.Arguments[3].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-                ]);
-
-                context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
+                if (arguments[i].Parameter?.Name is not ("input" or "replacement" or "evaluator"))
+                    return null;
             }
-            else if (method.Name is "Replace")
+
+            if (!IsConstant(arguments[patternIndex.Value]))
+                return null;
+
+            if (optionsIndex is not null && !IsConstant(arguments[optionsIndex.Value]))
+                return null;
+
+            if (timeoutIndex is not null && !IsConstant(arguments[timeoutIndex.Value]))
+                return null;
+
+            return ImmutableDictionary.CreateRange(
+            [
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, patternIndex.Value.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, optionsIndex?.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, timeoutIndex?.ToString(CultureInfo.InvariantCulture)),
+                new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, timeoutIndex is null ? null : _timeSpanOperation.GetMilliseconds(arguments[timeoutIndex.Value].Value)?.ToString(CultureInfo.InvariantCulture)),
+            ]);
+        }
+
+        private static int? GetArgumentIndex(ImmutableArray<IArgumentOperation> arguments, string parameterName)
+        {
+            for (var i = 0; i < arguments.Length; i++)
             {
-                // Replace(string _, string, MatchEvaluator _, RegexOptions, TimeSpan)
-                // Replace(string _, string, MatchEvaluator _, RegexOptions)
-                // Replace(string _, string, MatchEvaluator _)
-                // Replace(string _, string, string _, RegexOptions, TimeSpan)
-                // Replace(string _, string, string _, RegexOptions)
-                // Replace(string _, string, string _)
-
-                for (var i = 1; i < op.Arguments.Length; i++)
-                {
-                    if (i == 2)
-                        continue;
-
-                    if (!IsConstant(op.Arguments[i]))
-                        return;
-                }
-
-                var properties = ImmutableDictionary.CreateRange(
-                [
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, "1"),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName, op.Arguments.Length > 3 ? "3" : null),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, op.Arguments.Length > 4 ? "4" : null),
-                    new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, op.Arguments.Length > 4 ? _timeSpanOperation.GetMilliseconds(op.Arguments[4].Value)?.ToString(CultureInfo.InvariantCulture) : null),
-                ]);
-
-                context.ReportDiagnostic(RegexSourceGeneratorRule, properties, op);
+                if (arguments[i].Parameter?.Name == parameterName)
+                    return i;
             }
+
+            return null;
         }
 
         private bool IsConstant(IArgumentOperation argumentOperation)
