@@ -54,8 +54,9 @@ public static class AnalyzerOptionsExtensions
     /// <summary>
     /// Gets the <see cref="Regex"/> of an option whose value is a regular expression (<see cref="ConfigurationDefinition{T}.IsRegex"/>).
     /// The regex is created with the <see cref="ConfigurationDefinition{T}.RegexOptions"/> of the option and cached, so a value is
-    /// parsed only once. Returns <see langword="false"/> when the option is not configured, when its value is empty, or when its
-    /// value is not a valid pattern. MA0220 reports the invalid patterns, so the rules can ignore them.
+    /// parsed once until its entry is evicted from the cache. Returns <see langword="false"/> when the option is not configured,
+    /// when its value is empty, or when its value is not a valid pattern. MA0220 reports the invalid patterns, so the rules can
+    /// ignore them.
     /// </summary>
     public static bool TryGetConfigurationRegex(this AnalyzerOptions options, SyntaxTree syntaxTree, ConfigurationDefinition<string> configuration, [NotNullWhen(true)] out Regex? regex)
     {
