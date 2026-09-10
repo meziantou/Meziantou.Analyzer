@@ -224,6 +224,7 @@
 |[MA0223](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0223.md)|Design|JsonSourceGenerationOptions should set RespectRequiredConstructorParameters|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0224](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0224.md)|Design|JsonSerializerOptions should set RespectNullableAnnotations|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0225](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0225.md)|Design|JsonSerializerOptions should set RespectRequiredConstructorParameters|<span title='Warning'>⚠️</span>|❌|✔️|❌|
+|[MA0226](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0226.md)|Design|EventSource class should be sealed|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
