@@ -670,3 +670,6 @@ dotnet_diagnostic.MA0224.severity = suggestion
 
 # MA0225: JsonSerializerOptions should set RespectRequiredConstructorParameters
 dotnet_diagnostic.MA0225.severity = suggestion
+
+# MA0226: EventSource class should be sealed
+dotnet_diagnostic.MA0226.severity = suggestion
