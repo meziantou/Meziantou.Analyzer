@@ -26,7 +26,7 @@ internal static class UseTypeofInsteadOfGetTypeOnSealedTypeCommon
         if (instance is null || !IsSideEffectFree(instance))
             return null;
 
-        if (instance.Type is not INamedTypeSymbol { IsSealed: true, IsAnonymousType: false, TypeKind: not TypeKind.Error } type)
+        if (instance.Type is not INamedTypeSymbol { IsSealed: true } type)
             return null;
 
         // 'nullable.GetType()' returns the type of the underlying value, or throws when there is no value
@@ -34,10 +34,42 @@ internal static class UseTypeofInsteadOfGetTypeOnSealedTypeCommon
             return null;
 
         // 'typeof' does not support tuple element names, so use the underlying type of the named tuples
-        if (type.IsTupleType)
-            return type.TupleUnderlyingType ?? type;
+        if (type.IsTupleType && type.TupleUnderlyingType is { } tupleUnderlyingType)
+        {
+            type = tupleUnderlyingType;
+        }
+
+        if (!CanBeNamed(type))
+            return null;
 
         return type;
+    }
+
+    /// <summary>
+    /// Gets whether the type can be used with <c>typeof</c>, which the anonymous types and the types that contain
+    /// one cannot, such as <c>Container&lt;anonymous type&gt;</c>.
+    /// </summary>
+    private static bool CanBeNamed(ITypeSymbol type)
+    {
+        if (type.IsAnonymousType || type.TypeKind is TypeKind.Error)
+            return false;
+
+        if (type is IArrayTypeSymbol array)
+            return CanBeNamed(array.ElementType);
+
+        if (type is INamedTypeSymbol namedType)
+        {
+            if (namedType.ContainingType is not null && !CanBeNamed(namedType.ContainingType))
+                return false;
+
+            foreach (var typeArgument in namedType.TypeArguments)
+            {
+                if (!CanBeNamed(typeArgument))
+                    return false;
+            }
+        }
+
+        return true;
     }
 
     private static bool IsSideEffectFree(IOperation operation) => operation switch

@@ -27,12 +27,12 @@ public sealed class UseTypeofInsteadOfGetTypeOnSealedTypeFixer : CodeFixProvider
         if (UseTypeofInsteadOfGetTypeOnSealedTypeCommon.GetKnownType(operation) is not { } type)
             return;
 
-        var title = $"Use 'typeof({type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)})'";
+        // The equivalence key does not contain the type, so "Fix all" fixes the invocations of all the types at once
         context.RegisterCodeFix(
             CodeAction.Create(
-                title,
+                $"Use 'typeof({type.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)})'",
                 ct => UseTypeofAsync(context.Document, nodeToFix, type, ct),
-                equivalenceKey: title),
+                equivalenceKey: "Use typeof"),
             context.Diagnostics);
     }
 

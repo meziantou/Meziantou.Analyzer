@@ -61,6 +61,111 @@ public sealed class UseTypeofInsteadOfGetTypeOnSealedTypeAnalyzerTests
     }
 
     [Fact]
+    public Task SealedGenericTypeOfAnonymousType_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                sealed class Container<T> { }
+
+                static class Container
+                {
+                    public static Container<T> Create<T>(T value) => new Container<T>();
+                }
+
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        var value = Container.Create(new { Name = "" });
+                        return value.GetType();
+                    }
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task SealedTypeNestedInAGenericTypeOfAnonymousType_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Container<T>
+                {
+                    public sealed class Item { }
+
+                    public Item GetItem() => new Item();
+                }
+
+                static class Container
+                {
+                    public static Container<T> Create<T>(T value) => new Container<T>();
+                }
+
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        var value = Container.Create(new { Name = "" }).GetItem();
+                        return value.GetType();
+                    }
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task TupleOfAnonymousType_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        var value = (new { Name = "" }, 0);
+                        return value.GetType();
+                    }
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task ArrayOfAnonymousType_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        var value = new[] { new { Name = "" } };
+                        return value.GetType();
+                    }
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task Dynamic_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    System.Type Test(dynamic value) => value.GetType();
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
     public Task ConditionalAccess_NoDiagnostic()
     {
         return new CodeFixTest
@@ -389,6 +494,68 @@ public sealed class UseTypeofInsteadOfGetTypeOnSealedTypeAnalyzerTests
                 class Sample
                 {
                     System.Type Test((int Id, string Name) value) => typeof((int, string));
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericSealedTypeOfDynamic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                sealed class Container<T> { }
+
+                class Sample
+                {
+                    System.Type Test(Container<dynamic> value) => [|value.GetType()|];
+                }
+                """,
+            FixedCode = """
+                sealed class Container<T> { }
+
+                class Sample
+                {
+                    System.Type Test(Container<dynamic> value) => typeof(Container<dynamic>);
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task NullableReferenceType()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                #nullable enable
+                sealed class Container<T> { }
+
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        string? value = "";
+                        return [|value.GetType()|];
+                    }
+
+                    System.Type Test(Container<string?> value) => [|value.GetType()|];
+                }
+                """,
+            FixedCode = """
+                #nullable enable
+                sealed class Container<T> { }
+
+                class Sample
+                {
+                    System.Type Test()
+                    {
+                        string? value = "";
+                        return typeof(string);
+                    }
+
+                    System.Type Test(Container<string?> value) => typeof(Container<string?>);
                 }
                 """,
         }.RunAsync();
