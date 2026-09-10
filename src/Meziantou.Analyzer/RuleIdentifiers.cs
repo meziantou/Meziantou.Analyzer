@@ -227,6 +227,7 @@ internal static class RuleIdentifiers
     public const string SetRespectRequiredConstructorParametersOnJsonSerializerOptions = "MA0225";
     public const string EventSourceMustBeSealed = "MA0226";
     public const string AvoidEnumerableContainsOnSet = "MA0227";
+    public const string InvalidEventSourceImplementation = "MA0228";
 
     public static string GetHelpUri(string identifier)
     {

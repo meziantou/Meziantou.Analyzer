@@ -676,3 +676,6 @@ dotnet_diagnostic.MA0226.severity = none
 
 # MA0227: Avoid using 'Enumerable.Contains' on a set
 dotnet_diagnostic.MA0227.severity = none
+
+# MA0228: Invalid EventSource implementation
+dotnet_diagnostic.MA0228.severity = none

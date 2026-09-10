@@ -226,6 +226,7 @@
 |[MA0225](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0225.md)|Design|JsonSerializerOptions should set RespectRequiredConstructorParameters|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0226](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0226.md)|Design|EventSource class should be sealed|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0227](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0227.md)|Performance|Avoid using 'Enumerable.Contains' on a set|<span title='Warning'>⚠️</span>|❌|❌|❌|
+|[MA0228](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0228.md)|Usage|Invalid EventSource implementation|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
