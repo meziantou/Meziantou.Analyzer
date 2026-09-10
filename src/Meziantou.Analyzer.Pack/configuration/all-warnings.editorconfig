@@ -673,3 +673,6 @@ dotnet_diagnostic.MA0225.severity = warning
 
 # MA0226: EventSource class should be sealed
 dotnet_diagnostic.MA0226.severity = warning
+
+# MA0227: Avoid using 'Enumerable.Contains' on a set
+dotnet_diagnostic.MA0227.severity = warning
