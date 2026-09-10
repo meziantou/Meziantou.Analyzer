@@ -66,7 +66,7 @@ public sealed class EventSourceImplementationAnalyzer : DiagnosticAnalyzer
         messageFormat: messageFormat,
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: true,
+        isEnabledByDefault: false,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(ruleIdentifier));
 
