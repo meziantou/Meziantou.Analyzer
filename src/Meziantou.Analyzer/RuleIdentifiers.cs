@@ -238,6 +238,7 @@ internal static class RuleIdentifiers
     public const string EventSourceMismatchedPayloadOrder = "MA0236";
     public const string EventSourceMissingRelatedActivityIdParameter = "MA0237";
     public const string EventSourceUnsupportedParameterType = "MA0238";
+    public const string UseTypeofInsteadOfGetTypeOnSealedType = "MA0239";
 
     public static string GetHelpUri(string identifier)
     {

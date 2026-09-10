@@ -237,6 +237,7 @@
 |[MA0236](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0236.md)|Usage|The payload written by an EventSource event method must use the order of its parameters|<span title='Warning'>⚠️</span>|❌|❌|❌|
 |[MA0237](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0237.md)|Usage|An EventSource event method writing a related activity id must declare it as its first parameter|<span title='Warning'>⚠️</span>|❌|❌|❌|
 |[MA0238](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0238.md)|Usage|The parameter type of an EventSource event method is not supported|<span title='Warning'>⚠️</span>|❌|❌|❌|
+|[MA0239](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0239.md)|Performance|Use 'typeof' instead of 'GetType()' when the type is sealed|<span title='Info'>ℹ️</span>|❌|✔️|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
