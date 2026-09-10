@@ -709,3 +709,6 @@ dotnet_diagnostic.MA0237.severity = warning
 
 # MA0238: The parameter type of an EventSource event method is not supported
 dotnet_diagnostic.MA0238.severity = warning
+
+# MA0239: Use 'typeof' instead of 'GetType()' when the type is sealed
+dotnet_diagnostic.MA0239.severity = warning
