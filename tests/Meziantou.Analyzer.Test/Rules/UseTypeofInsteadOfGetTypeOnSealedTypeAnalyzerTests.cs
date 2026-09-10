@@ -152,6 +152,20 @@ public sealed class UseTypeofInsteadOfGetTypeOnSealedTypeAnalyzerTests
     }
 
     [Fact]
+    public Task UnknownType_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    System.Type Test({|CS0246:Unknown|} value) => value.GetType();
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
     public Task Dynamic_NoDiagnostic()
     {
         return new CodeFixTest
