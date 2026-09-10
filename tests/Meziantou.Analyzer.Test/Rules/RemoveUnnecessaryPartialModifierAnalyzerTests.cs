@@ -197,6 +197,117 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     }
 
     [Fact]
+    public Task PartialClass_ImplementingDisposable_InWindowsTargetFrameworks_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            namespace WinRT
+            {
+                sealed class WindowsRuntimeTypeAttribute : Attribute
+                {
+                }
+
+                sealed class GeneratedBindableCustomPropertyAttribute : Attribute
+                {
+                }
+
+                sealed class GeneratedWinRTExposedTypeAttribute : Attribute
+                {
+                }
+
+                sealed class WinRTExposedTypeAttribute : Attribute
+                {
+                }
+            }
+
+            partial class Sample : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PartialClass_ImplementingDisposable_WithoutWindowsTargetFramework_ReportsDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            {|MA0204:partial|} class Sample : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class Sample : IDisposable
+            {
+                public void Dispose()
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PartialContainingClass_WithNestedDisposableType_InWindowsTargetFrameworks_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            namespace WinRT
+            {
+                sealed class WindowsRuntimeTypeAttribute : Attribute
+                {
+                }
+
+                sealed class GeneratedBindableCustomPropertyAttribute : Attribute
+                {
+                }
+
+                sealed class GeneratedWinRTExposedTypeAttribute : Attribute
+                {
+                }
+
+                sealed class WinRTExposedTypeAttribute : Attribute
+                {
+                }
+            }
+
+            partial class Sample
+            {
+                partial class Nested : IDisposable
+                {
+                    public void Dispose()
+                    {
+                    }
+                }
+            }
+
+            partial class Sample
+            {
+                partial class Nested
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task PartialClass_InheritingFromWpfUserControl_NoDiagnostic()
     {
         var test = CreateTest();
