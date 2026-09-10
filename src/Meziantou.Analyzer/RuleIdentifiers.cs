@@ -227,6 +227,17 @@ internal static class RuleIdentifiers
     public const string SetRespectRequiredConstructorParametersOnJsonSerializerOptions = "MA0225";
     public const string EventSourceMustBeSealed = "MA0226";
     public const string AvoidEnumerableContainsOnSet = "MA0227";
+    public const string EventSourceEventIdMustBePositive = "MA0228";
+    public const string EventSourceDuplicateEventId = "MA0229";
+    public const string EventSourceDuplicateEventName = "MA0230";
+    public const string EventSourceEventMethodMustNotBeStatic = "MA0231";
+    public const string EventSourceEventMethodMustNotBeAnExplicitInterfaceImplementation = "MA0232";
+    public const string EventSourceAbstractTypeMustNotDeclareEventMethods = "MA0233";
+    public const string EventSourceMismatchedEventId = "MA0234";
+    public const string EventSourceMismatchedPayload = "MA0235";
+    public const string EventSourceMismatchedPayloadOrder = "MA0236";
+    public const string EventSourceMissingRelatedActivityIdParameter = "MA0237";
+    public const string EventSourceUnsupportedParameterType = "MA0238";
 
     public static string GetHelpUri(string identifier)
     {

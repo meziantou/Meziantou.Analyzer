@@ -676,3 +676,36 @@ dotnet_diagnostic.MA0226.severity = none
 
 # MA0227: Avoid using 'Enumerable.Contains' on a set
 dotnet_diagnostic.MA0227.severity = none
+
+# MA0228: The event id of an EventSource must be greater than zero
+dotnet_diagnostic.MA0228.severity = none
+
+# MA0229: The event id of an EventSource is already used by another event
+dotnet_diagnostic.MA0229.severity = none
+
+# MA0230: The event name of an EventSource is already used by another event
+dotnet_diagnostic.MA0230.severity = none
+
+# MA0231: An EventSource event method must not be static
+dotnet_diagnostic.MA0231.severity = none
+
+# MA0232: An EventSource event method must not be an explicit interface implementation
+dotnet_diagnostic.MA0232.severity = none
+
+# MA0233: An abstract EventSource must not declare event methods
+dotnet_diagnostic.MA0233.severity = none
+
+# MA0234: The event id written by an EventSource event method must match its [Event] attribute
+dotnet_diagnostic.MA0234.severity = none
+
+# MA0235: The payload written by an EventSource event method must match its parameters
+dotnet_diagnostic.MA0235.severity = none
+
+# MA0236: The payload written by an EventSource event method must use the order of its parameters
+dotnet_diagnostic.MA0236.severity = none
+
+# MA0237: An EventSource event method writing a related activity id must declare it as its first parameter
+dotnet_diagnostic.MA0237.severity = none
+
+# MA0238: The parameter type of an EventSource event method is not supported
+dotnet_diagnostic.MA0238.severity = none
