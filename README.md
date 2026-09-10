@@ -256,7 +256,17 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0225](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0225.md)|Design|JsonSerializerOptions should set RespectRequiredConstructorParameters|⚠️|❌|✔️|❌|
 |[MA0226](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0226.md)|Design|EventSource class should be sealed|⚠️|❌|✔️|❌|
 |[MA0227](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0227.md)|Performance|Avoid using 'Enumerable.Contains' on a set|⚠️|❌|❌|❌|
-|[MA0228](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0228.md)|Usage|Invalid EventSource implementation|⚠️|✔️|❌|❌|
+|[MA0228](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0228.md)|Usage|The event id of an EventSource must be greater than zero|⚠️|✔️|❌|❌|
+|[MA0229](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0229.md)|Usage|The event id of an EventSource is already used by another event|⚠️|✔️|❌|❌|
+|[MA0230](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0230.md)|Usage|The event name of an EventSource is already used by another event|⚠️|✔️|❌|❌|
+|[MA0231](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0231.md)|Usage|An EventSource event method must not be static|⚠️|✔️|❌|❌|
+|[MA0232](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0232.md)|Usage|An EventSource event method must not be an explicit interface implementation|⚠️|✔️|❌|❌|
+|[MA0233](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0233.md)|Usage|An abstract EventSource must not declare event methods|⚠️|✔️|❌|❌|
+|[MA0234](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0234.md)|Usage|The event id written by an EventSource event method must match its \[Event\] attribute|⚠️|✔️|❌|❌|
+|[MA0235](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0235.md)|Usage|The payload written by an EventSource event method must match its parameters|⚠️|✔️|❌|❌|
+|[MA0236](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0236.md)|Usage|The payload written by an EventSource event method must use the order of its parameters|⚠️|✔️|❌|❌|
+|[MA0237](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0237.md)|Usage|An EventSource event method writing a related activity id must declare it as its first parameter|⚠️|✔️|❌|❌|
+|[MA0238](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0238.md)|Usage|The parameter type of an EventSource event method is not supported|⚠️|✔️|❌|❌|
 
 <!-- rules -->
 

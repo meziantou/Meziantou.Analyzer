@@ -1,16 +1,16 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using AnalyzerTest = Meziantou.Analyzer.Test.Harness.CSharpAnalyzerTest<
-    Meziantou.Analyzer.Rules.InvalidEventSourceImplementationAnalyzer>;
+    Meziantou.Analyzer.Rules.EventSourceImplementationAnalyzer>;
 
 namespace Meziantou.Analyzer.Test.Rules;
 
-public sealed class InvalidEventSourceImplementationAnalyzerTests
+public sealed class EventSourceImplementationAnalyzerTests
 {
-    private static Task RunAsync(string testCode, string expectedMessage)
+    private static Task RunAsync(string testCode, string expectedRuleId, string expectedMessage)
     {
         var test = new AnalyzerTest { TestCode = testCode };
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0228", DiagnosticSeverity.Warning).WithLocation(0).WithMessage(expectedMessage));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult(expectedRuleId, DiagnosticSeverity.Warning).WithLocation(0).WithMessage(expectedMessage));
         return test.RunAsync();
     }
 
@@ -238,7 +238,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start() => WriteEvent({|#0:2|});
             }
-            """, "'WriteEvent' is called with the event id '2' but the method declares the event id '1'");
+            """, "MA0234", "'WriteEvent' is called with the event id '2' but the method declares the event id '1'");
     }
 
     [Fact]
@@ -255,7 +255,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [{|#0:Event(1)|}]
                 public void Stop() => WriteEvent(1);
             }
-            """, "The event id '1' is already used by the event 'Start'");
+            """, "MA0229", "The event id '1' is already used by the event 'Start'");
     }
 
     [Fact]
@@ -269,7 +269,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [{|#0:Event(0)|}]
                 public void Start() => WriteEvent(0);
             }
-            """, "The event id must be greater than 0");
+            """, "MA0228", "The event id must be greater than zero");
     }
 
     [Fact]
@@ -286,7 +286,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(2)]
                 public void {|#0:Start|}(string name) => WriteEvent(2, name);
             }
-            """, "The event name 'Start' is already used by another event");
+            """, "MA0230", "The event name 'Start' is already used by another event");
     }
 
     [Fact]
@@ -300,7 +300,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start(string name, int count) => {|#0:WriteEvent(1, name)|};
             }
-            """, "'WriteEvent' is called with 1 payload argument(s) but the method declares 2 payload parameter(s)");
+            """, "MA0235", "'WriteEvent' writes 1 payload item(s) but the event method declares 2 payload parameter(s)");
     }
 
     [Fact]
@@ -314,7 +314,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start(string name) => {|#0:WriteEvent(1, name, name)|};
             }
-            """, "'WriteEvent' is called with 2 payload argument(s) but the method declares 1 payload parameter(s)");
+            """, "MA0235", "'WriteEvent' writes 2 payload item(s) but the event method declares 1 payload parameter(s)");
     }
 
     [Fact]
@@ -328,7 +328,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start(string name, string category) => {|#0:WriteEvent(1, category, name)|};
             }
-            """, "'WriteEvent' must be called with the payload parameters of the method in the order they are declared");
+            """, "MA0236", "'WriteEvent' must write the payload parameters of the event method in the order they are declared");
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start(Uri {|#0:uri|}) => WriteEvent(1, uri);
             }
-            """, "The type 'System.Uri' is not supported by EventSource");
+            """, "MA0238", "The type 'System.Uri' is not supported by EventSource");
     }
 
     [Fact]
@@ -357,7 +357,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public static void {|#0:Start|}() { }
             }
-            """, "An event method must not be static");
+            """, "MA0231", "An event method must not be static");
     }
 
     [Fact]
@@ -371,7 +371,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [{|#0:Event(1)|}]
                 public void Start() => WriteEvent(1);
             }
-            """, "An abstract EventSource must not declare event methods");
+            """, "MA0233", "An abstract EventSource must not declare event methods");
     }
 
     [Fact]
@@ -390,7 +390,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 void ISample.{|#0:Start|}() => WriteEvent(1);
             }
-            """, "An event method must not be an explicit interface implementation");
+            """, "MA0232", "An event method must not be an explicit interface implementation");
     }
 
     [Fact]
@@ -408,7 +408,7 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                     WriteEventCore(1, {|#0:1|}, data);
                 }
             }
-            """, "'WriteEventCore' is called with an event data count of '1' but the method declares 2 payload parameter(s)");
+            """, "MA0235", "'WriteEventCore' writes 1 payload item(s) but the event method declares 2 payload parameter(s)");
     }
 
     [Fact]
@@ -423,6 +423,6 @@ public sealed class InvalidEventSourceImplementationAnalyzerTests
                 [Event(1)]
                 public void Start(Guid activityId, string name) => {|#0:WriteEventWithRelatedActivityId(1, activityId, name)|};
             }
-            """, "The first parameter of an event method calling 'WriteEventWithRelatedActivityId' must be a 'Guid' named 'relatedActivityId'");
+            """, "MA0237", "The first parameter of an event method calling 'WriteEventWithRelatedActivityId' must be a 'Guid' named 'relatedActivityId'");
     }
 }

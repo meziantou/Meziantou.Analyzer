@@ -226,7 +226,17 @@
 |[MA0225](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0225.md)|Design|JsonSerializerOptions should set RespectRequiredConstructorParameters|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0226](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0226.md)|Design|EventSource class should be sealed|<span title='Warning'>⚠️</span>|❌|✔️|❌|
 |[MA0227](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0227.md)|Performance|Avoid using 'Enumerable.Contains' on a set|<span title='Warning'>⚠️</span>|❌|❌|❌|
-|[MA0228](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0228.md)|Usage|Invalid EventSource implementation|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0228](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0228.md)|Usage|The event id of an EventSource must be greater than zero|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0229](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0229.md)|Usage|The event id of an EventSource is already used by another event|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0230](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0230.md)|Usage|The event name of an EventSource is already used by another event|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0231](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0231.md)|Usage|An EventSource event method must not be static|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0232](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0232.md)|Usage|An EventSource event method must not be an explicit interface implementation|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0233](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0233.md)|Usage|An abstract EventSource must not declare event methods|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0234](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0234.md)|Usage|The event id written by an EventSource event method must match its \[Event\] attribute|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0235](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0235.md)|Usage|The payload written by an EventSource event method must match its parameters|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0236](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0236.md)|Usage|The payload written by an EventSource event method must use the order of its parameters|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0237](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0237.md)|Usage|An EventSource event method writing a related activity id must declare it as its first parameter|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0238](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0238.md)|Usage|The parameter type of an EventSource event method is not supported|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|

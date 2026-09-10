@@ -3,19 +3,85 @@ using System.Globalization;
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
-public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyzer
+public sealed class EventSourceImplementationAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor Rule = new(
-        RuleIdentifiers.InvalidEventSourceImplementation,
-        title: "Invalid EventSource implementation",
-        messageFormat: "{0}",
+    private static readonly DiagnosticDescriptor EventIdMustBePositiveRule = CreateRule(
+        RuleIdentifiers.EventSourceEventIdMustBePositive,
+        title: "The event id of an EventSource must be greater than zero",
+        messageFormat: "The event id must be greater than zero");
+
+    private static readonly DiagnosticDescriptor DuplicateEventIdRule = CreateRule(
+        RuleIdentifiers.EventSourceDuplicateEventId,
+        title: "The event id of an EventSource is already used by another event",
+        messageFormat: "The event id '{0}' is already used by the event '{1}'");
+
+    private static readonly DiagnosticDescriptor DuplicateEventNameRule = CreateRule(
+        RuleIdentifiers.EventSourceDuplicateEventName,
+        title: "The event name of an EventSource is already used by another event",
+        messageFormat: "The event name '{0}' is already used by another event");
+
+    private static readonly DiagnosticDescriptor EventMethodMustNotBeStaticRule = CreateRule(
+        RuleIdentifiers.EventSourceEventMethodMustNotBeStatic,
+        title: "An EventSource event method must not be static",
+        messageFormat: "An event method must not be static");
+
+    private static readonly DiagnosticDescriptor EventMethodMustNotBeAnExplicitInterfaceImplementationRule = CreateRule(
+        RuleIdentifiers.EventSourceEventMethodMustNotBeAnExplicitInterfaceImplementation,
+        title: "An EventSource event method must not be an explicit interface implementation",
+        messageFormat: "An event method must not be an explicit interface implementation");
+
+    private static readonly DiagnosticDescriptor AbstractTypeMustNotDeclareEventMethodsRule = CreateRule(
+        RuleIdentifiers.EventSourceAbstractTypeMustNotDeclareEventMethods,
+        title: "An abstract EventSource must not declare event methods",
+        messageFormat: "An abstract EventSource must not declare event methods");
+
+    private static readonly DiagnosticDescriptor MismatchedEventIdRule = CreateRule(
+        RuleIdentifiers.EventSourceMismatchedEventId,
+        title: "The event id written by an EventSource event method must match its [Event] attribute",
+        messageFormat: "'{0}' is called with the event id '{1}' but the method declares the event id '{2}'");
+
+    private static readonly DiagnosticDescriptor MismatchedPayloadRule = CreateRule(
+        RuleIdentifiers.EventSourceMismatchedPayload,
+        title: "The payload written by an EventSource event method must match its parameters",
+        messageFormat: "'{0}' writes {1} payload item(s) but the event method declares {2} payload parameter(s)");
+
+    private static readonly DiagnosticDescriptor MismatchedPayloadOrderRule = CreateRule(
+        RuleIdentifiers.EventSourceMismatchedPayloadOrder,
+        title: "The payload written by an EventSource event method must use the order of its parameters",
+        messageFormat: "'{0}' must write the payload parameters of the event method in the order they are declared");
+
+    private static readonly DiagnosticDescriptor MissingRelatedActivityIdParameterRule = CreateRule(
+        RuleIdentifiers.EventSourceMissingRelatedActivityIdParameter,
+        title: "An EventSource event method writing a related activity id must declare it as its first parameter",
+        messageFormat: "The first parameter of an event method calling '{0}' must be a 'Guid' named 'relatedActivityId'");
+
+    private static readonly DiagnosticDescriptor UnsupportedParameterTypeRule = CreateRule(
+        RuleIdentifiers.EventSourceUnsupportedParameterType,
+        title: "The parameter type of an EventSource event method is not supported",
+        messageFormat: "The type '{0}' is not supported by EventSource");
+
+    private static DiagnosticDescriptor CreateRule(string ruleIdentifier, string title, string messageFormat) => new(
+        ruleIdentifier,
+        title: title,
+        messageFormat: messageFormat,
         RuleCategories.Usage,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InvalidEventSourceImplementation));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(ruleIdentifier));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+        EventIdMustBePositiveRule,
+        DuplicateEventIdRule,
+        DuplicateEventNameRule,
+        EventMethodMustNotBeStaticRule,
+        EventMethodMustNotBeAnExplicitInterfaceImplementationRule,
+        AbstractTypeMustNotDeclareEventMethodsRule,
+        MismatchedEventIdRule,
+        MismatchedPayloadRule,
+        MismatchedPayloadOrderRule,
+        MissingRelatedActivityIdParameterRule,
+        UnsupportedParameterTypeRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -130,7 +196,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
                 return false;
 
             // Without the [Event] attribute, the runtime ignores the methods that do not return void and the virtual methods.
-            // Non-public methods are only ignored by this rule, as reporting them would be too noisy.
+            // Non-public methods are only ignored by these rules, as reporting them would be too noisy.
             return method is { IsStatic: false, ReturnsVoid: true, IsVirtual: false, IsOverride: false, IsAbstract: false, DeclaredAccessibility: Accessibility.Public };
         }
 
@@ -226,7 +292,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
             if (TryGetEventId(eventAttribute, out var declaredEventId) && declaredEventId > 0 &&
                 arguments[0].ConstantValue is { HasValue: true, Value: int writtenEventId } && writtenEventId != declaredEventId)
             {
-                context.ReportDiagnostic(Rule, arguments[0], $"'{targetMethod.Name}' is called with the event id '{writtenEventId.ToString(CultureInfo.InvariantCulture)}' but the method declares the event id '{declaredEventId.ToString(CultureInfo.InvariantCulture)}'");
+                context.ReportDiagnostic(MismatchedEventIdRule, arguments[0], targetMethod.Name, writtenEventId.ToString(CultureInfo.InvariantCulture), declaredEventId.ToString(CultureInfo.InvariantCulture));
             }
 
             // The runtime removes the first parameter from the payload when it is the related activity id
@@ -239,7 +305,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
 
             if (targetMethod.Name is "WriteEventWithRelatedActivityId" or "WriteEventWithRelatedActivityIdCore" && !hasRelatedActivityIdParameter)
             {
-                context.ReportDiagnostic(Rule, invocation, $"The first parameter of an event method calling '{targetMethod.Name}' must be a 'Guid' named 'relatedActivityId'");
+                context.ReportDiagnostic(MissingRelatedActivityIdParameterRule, invocation, targetMethod.Name);
                 return;
             }
 
@@ -249,7 +315,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
                 return;
             }
 
-            AnalyzePayloadArguments(context, invocation, arguments, payloadParameters, hasRelatedActivityIdParameter);
+            AnalyzePayloadArguments(context, invocation, arguments, payloadParameters);
         }
 
         private static void AnalyzeEventDataCount(OperationBlockAnalysisContext context, IInvocationOperation invocation, int payloadParameterCount)
@@ -261,14 +327,14 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
 
                 if (argument.Value.ConstantValue is { HasValue: true, Value: int eventDataCount } && eventDataCount != payloadParameterCount)
                 {
-                    context.ReportDiagnostic(Rule, argument, $"'{invocation.TargetMethod.Name}' is called with an event data count of '{eventDataCount.ToString(CultureInfo.InvariantCulture)}' but the method declares {payloadParameterCount.ToString(CultureInfo.InvariantCulture)} payload parameter(s)");
+                    context.ReportDiagnostic(MismatchedPayloadRule, argument, invocation.TargetMethod.Name, eventDataCount.ToString(CultureInfo.InvariantCulture), payloadParameterCount.ToString(CultureInfo.InvariantCulture));
                 }
 
                 return;
             }
         }
 
-        private static void AnalyzePayloadArguments(OperationBlockAnalysisContext context, IInvocationOperation invocation, List<IOperation> arguments, ImmutableArray<IParameterSymbol> payloadParameters, bool hasRelatedActivityIdParameter)
+        private static void AnalyzePayloadArguments(OperationBlockAnalysisContext context, IInvocationOperation invocation, List<IOperation> arguments, ImmutableArray<IParameterSymbol> payloadParameters)
         {
             // Skip the event id, and the related activity id which is not part of the payload
             var firstPayloadArgument = string.Equals(invocation.TargetMethod.Name, "WriteEventWithRelatedActivityId", StringComparison.Ordinal) ? 2 : 1;
@@ -278,11 +344,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
 
             if (payloadArgumentCount != payloadParameters.Length)
             {
-                var message = hasRelatedActivityIdParameter
-                    ? $"'{invocation.TargetMethod.Name}' is called with {payloadArgumentCount.ToString(CultureInfo.InvariantCulture)} payload argument(s) but the method declares {payloadParameters.Length.ToString(CultureInfo.InvariantCulture)} payload parameter(s), excluding the related activity id"
-                    : $"'{invocation.TargetMethod.Name}' is called with {payloadArgumentCount.ToString(CultureInfo.InvariantCulture)} payload argument(s) but the method declares {payloadParameters.Length.ToString(CultureInfo.InvariantCulture)} payload parameter(s)";
-
-                context.ReportDiagnostic(Rule, invocation, message);
+                context.ReportDiagnostic(MismatchedPayloadRule, invocation, invocation.TargetMethod.Name, payloadArgumentCount.ToString(CultureInfo.InvariantCulture), payloadParameters.Length.ToString(CultureInfo.InvariantCulture));
                 return;
             }
 
@@ -299,7 +361,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
 
             if (!isSameOrder)
             {
-                context.ReportDiagnostic(Rule, invocation, $"'{invocation.TargetMethod.Name}' must be called with the payload parameters of the method in the order they are declared");
+                context.ReportDiagnostic(MismatchedPayloadOrderRule, invocation, invocation.TargetMethod.Name);
             }
         }
 
@@ -362,7 +424,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
                     // The events must be declared by the derived types, as the runtime only looks at the methods declared by the type itself
                     if (eventAttribute is not null)
                     {
-                        context.ReportDiagnostic(Rule, GetLocation(eventAttribute, method, context.CancellationToken), "An abstract EventSource must not declare event methods");
+                        context.ReportDiagnostic(AbstractTypeMustNotDeclareEventMethodsRule, GetLocation(eventAttribute, method, context.CancellationToken));
                     }
 
                     continue;
@@ -372,26 +434,26 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
                 {
                     if (method.IsStatic)
                     {
-                        context.ReportDiagnostic(Rule, method, "An event method must not be static");
+                        context.ReportDiagnostic(EventMethodMustNotBeStaticRule, method);
                         continue;
                     }
 
                     if (method.MethodKind is MethodKind.ExplicitInterfaceImplementation)
                     {
-                        context.ReportDiagnostic(Rule, method, "An event method must not be an explicit interface implementation");
+                        context.ReportDiagnostic(EventMethodMustNotBeAnExplicitInterfaceImplementationRule, method);
                     }
 
                     if (TryGetEventId(eventAttribute, out var eventId))
                     {
                         if (eventId <= 0)
                         {
-                            context.ReportDiagnostic(Rule, GetLocation(eventAttribute, method, context.CancellationToken), "The event id must be greater than 0");
+                            context.ReportDiagnostic(EventIdMustBePositiveRule, GetLocation(eventAttribute, method, context.CancellationToken));
                             continue;
                         }
 
                         if (eventIds.TryGetValue(eventId, out var otherEventName))
                         {
-                            context.ReportDiagnostic(Rule, GetLocation(eventAttribute, method, context.CancellationToken), $"The event id '{eventId.ToString(CultureInfo.InvariantCulture)}' is already used by the event '{otherEventName}'");
+                            context.ReportDiagnostic(DuplicateEventIdRule, GetLocation(eventAttribute, method, context.CancellationToken), eventId.ToString(CultureInfo.InvariantCulture), otherEventName);
                         }
                         else
                         {
@@ -402,7 +464,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
 
                 if (!eventNames.Add(method.Name))
                 {
-                    context.ReportDiagnostic(Rule, method, $"The event name '{method.Name}' is already used by another event");
+                    context.ReportDiagnostic(DuplicateEventNameRule, method, method.Name);
                 }
 
                 if (validateParameterTypes)
@@ -411,7 +473,7 @@ public sealed class InvalidEventSourceImplementationAnalyzer : DiagnosticAnalyze
                     {
                         if (!analyzerContext.IsSupportedParameterType(parameter.Type))
                         {
-                            context.ReportDiagnostic(Rule, parameter, $"The type '{parameter.Type.ToDisplayString()}' is not supported by EventSource");
+                            context.ReportDiagnostic(UnsupportedParameterTypeRule, parameter, parameter.Type.ToDisplayString());
                         }
                     }
                 }
