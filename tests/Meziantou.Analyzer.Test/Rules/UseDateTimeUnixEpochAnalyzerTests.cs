@@ -10,12 +10,10 @@ public class UseDateTimeUnixEpochAnalyzerTests
     private static CodeFixTest CreateTest() => new();
 
     [Theory]
-    [InlineData("new DateTime(1970, 1, 1)")]
-    [InlineData("new DateTime(1970, 1, 1, 0,0,0)")]
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc)")]
-    [InlineData("new DateTime(621355968000000000)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0, 0, DateTimeKind.Utc)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Utc)")]
-    [InlineData("new DateTime(day: 1, month: 1, year: 1970)")]
     [InlineData("new DateTime(kind: DateTimeKind.Utc, year: 1970, month: 1, day: 1, hour: 0, minute: 0, second: 0)")]
     public Task UnixEpoch_DateTime(string code)
     {
@@ -84,13 +82,24 @@ public class UseDateTimeUnixEpochAnalyzerTests
 
     [Theory]
     [InlineData("new DateTime(1971, 1, 1)")]
-    [InlineData("new DateTime(1970, 1, 1, 0, 0, 1)")]
+    [InlineData("new DateTime(1970, 1, 1)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 1, DateTimeKind.Utc)")]
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Local)")]
-    [InlineData("new DateTime(621355968000000001)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Unspecified)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 1, DateTimeKind.Utc)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Local)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0, 1, DateTimeKind.Utc)")]
+    [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, 0, new System.Globalization.GregorianCalendar(), DateTimeKind.Utc)")]
+    [InlineData("new DateTime(621355968000000000)")]
+    [InlineData("new DateTime(621355968000000001, DateTimeKind.Utc)")]
     [InlineData("new DateTime(621355968000000000, DateTimeKind.Local)")]
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, null)")]
     [InlineData("new DateTime(1970, 1, 1, 0, 0, 0, new System.Globalization.GregorianCalendar())")]
+    [InlineData("new DateTime(day: 1, month: 1, year: 1970)")]
     [InlineData("new DateTime(day: 1, month: 1, year: 1971)")]
+    [InlineData("new DateTime(1970, 1, 1).Kind")]
     public Task NonUnixEpoch_DateTime(string code)
     {
         var test = CreateTest();
@@ -147,7 +156,7 @@ public class UseDateTimeUnixEpochAnalyzerTests
             {
                void Test()
                {
-                   _ = new DateTime(1970, 1, 1);
+                   _ = new DateTime(1970, 1, 1, 0, 0, 0, DateTimeKind.Utc);
                }
             }
             """;

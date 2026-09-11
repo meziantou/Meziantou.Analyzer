@@ -125,38 +125,23 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        /// <summary>
+        /// Determines whether the operation creates a <see cref="DateTime"/> equal to <c>DateTime.UnixEpoch</c>, including its <see cref="DateTimeKind.Utc"/> kind.
+        /// The constructors that do not take a <see cref="DateTimeKind"/> create a <see cref="DateTimeKind.Unspecified"/> value, so replacing them would change the behavior.
+        /// </summary>
         private bool IsDateTimeUnixEpoch(IObjectCreationOperation operation, CancellationToken cancellationToken)
         {
             if (!operation.Type.IsEqualTo(_dateTimeSymbol))
                 return false;
 
-            if (operation.Arguments.Length == 1)
+            return operation.Arguments.Length switch
             {
-                if (ArgumentsEquals(operation, [621355968000000000L], cancellationToken))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 2)
-            {
-                if (ArgumentsEquals(operation, [621355968000000000L], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 1), cancellationToken))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 3)
-            {
-                if (ArgumentsEquals(operation, [1970, 1, 1], cancellationToken))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 6)
-            {
-                if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], cancellationToken))
-                    return true;
-            }
-            else if (operation.Arguments.Length == 7)
-            {
-                if (ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 6), cancellationToken))
-                    return true;
-            }
-
-            return false;
+                2 => ArgumentsEquals(operation, [621355968000000000L], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 1), cancellationToken),
+                7 => ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 6), cancellationToken),
+                8 => ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 7), cancellationToken),
+                9 => ArgumentsEquals(operation, [1970, 1, 1, 0, 0, 0, 0, 0], cancellationToken) && IsDateTimeKindUtc(GetArgument(operation, 8), cancellationToken),
+                _ => false,
+            };
         }
 
         private bool IsDateTimeKindUtc(IArgumentOperation? argument, CancellationToken cancellationToken)
