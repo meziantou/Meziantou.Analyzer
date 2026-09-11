@@ -48,7 +48,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     }
 
     [Fact]
-    public Task EnumMemberWithAliasToString()
+    public Task EnumMemberWithAlias_UseFirstDeclaredMember()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -56,11 +56,28 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 void A()
                 {
-                    _ = MyEnum.A.ToString();
-                    _ = MyEnum.B.ToString();
-                    _ = MyEnum.C.ToString("G");
-                    _ = $"{MyEnum.A}";
-                    _ = $"{MyEnum.B:G}";
+                    _ = {|MA0052:MyEnum.B.ToString()|};
+                    _ = {|MA0052:MyEnum.D.ToString("G")|};
+                    _ = $"{|MA0052:{MyEnum.B}|}";
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+                C = 1,
+                D = C,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = nameof(MyEnum.A);
+                    _ = nameof(MyEnum.C);
+                    _ = $"{nameof(MyEnum.A)}";
                 }
             }
 
@@ -77,16 +94,17 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     }
 
     [Fact]
-    public Task EnumMemberWithoutAliasToString()
+    public Task EnumMemberWithAlias_UseOtherMember()
     {
         var test = CreateTest();
+        test.CodeActionIndex = 1;
+        test.CodeActionEquivalenceKey = "Use nameof(MyEnum.B)";
         test.TestCode = """
             class Test
             {
                 void A()
                 {
-                    _ = {|MA0052:MyEnum.C.ToString()|};
-                    _ = $"{|MA0052:{MyEnum.C}|}";
+                    _ = {|MA0052:MyEnum.A.ToString()|};
                 }
             }
 
@@ -94,7 +112,6 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 A = 0,
                 B = 0,
-                C = 1,
             }
             """;
         test.FixedCode = """
@@ -102,8 +119,7 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 void A()
                 {
-                    _ = nameof(MyEnum.C);
-                    _ = $"{nameof(MyEnum.C)}";
+                    _ = nameof(MyEnum.B);
                 }
             }
 
@@ -111,7 +127,86 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
             {
                 A = 0,
                 B = 0,
-                C = 1,
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumMemberWithAlias_UsingStatic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using static MyEnum;
+
+            class Test
+            {
+                void M()
+                {
+                    _ = {|MA0052:B.ToString()|};
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+            }
+            """;
+        test.FixedCode = """
+            using static MyEnum;
+
+            class Test
+            {
+                void M()
+                {
+                    _ = nameof(A);
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumMemberWithAlias_KeywordName()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0052:MyEnum.B.ToString()|};
+                }
+            }
+
+            enum MyEnum
+            {
+                @class = 0,
+                B = 0,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = nameof(MyEnum.@class);
+                }
+            }
+
+            enum MyEnum
+            {
+                @class = 0,
+                B = 0,
             }
             """;
 

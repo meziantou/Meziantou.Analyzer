@@ -33,7 +33,10 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         if (!operation.TargetMethod.ContainingType.IsEqualTo(context.Compilation.GetSpecialType(SpecialType.System_Enum)))
             return;
 
-        if (!IsUniquelyNamedEnumMember(operation.Instance))
+        if (operation.Instance is not IMemberReferenceOperation expression)
+            return;
+
+        if (expression.Member.ContainingType.EnumUnderlyingType is null)
             return;
 
         if (operation.Arguments.Length > 0)
@@ -56,7 +59,10 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeInterpolation(OperationAnalysisContext context)
     {
         var operation = (IInterpolationOperation)context.Operation;
-        if (!IsUniquelyNamedEnumMember(operation.Expression))
+        if (operation.Expression is not IMemberReferenceOperation expression)
+            return;
+
+        if (expression.Member.ContainingType.EnumUnderlyingType is null)
             return;
 
         if (operation.FormatString is ILiteralOperation { ConstantValue: { HasValue: true, Value: var format } })
@@ -66,26 +72,6 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzer : DiagnosticAnalyzer
         }
 
         context.ReportDiagnostic(Rule, operation);
-    }
-
-    // Enum.ToString formats the value, so when several members share the same value,
-    // it may return the name of another member than the one referenced in the source code.
-    private static bool IsUniquelyNamedEnumMember(IOperation? operation)
-    {
-        if (operation is not IFieldReferenceOperation { Field: { HasConstantValue: true } field })
-            return false;
-
-        var enumType = field.ContainingType;
-        if (enumType.EnumUnderlyingType is null)
-            return false;
-
-        foreach (var member in enumType.GetMembers())
-        {
-            if (member is IFieldSymbol { HasConstantValue: true } otherField && !otherField.IsEqualTo(field) && Equals(otherField.ConstantValue, field.ConstantValue))
-                return false;
-        }
-
-        return true;
     }
 
     private static bool IsNameFormat(object? format)
