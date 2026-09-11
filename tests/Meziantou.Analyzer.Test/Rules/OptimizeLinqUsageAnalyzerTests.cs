@@ -1535,6 +1535,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("source.{|MA0078:Select<DerivedType, object>|}(i => i)",
                 "source.Cast<object>()",
                 true)]
+    [InlineData("source.{|MA0078:Select|}(dt => { return (BaseType)dt; })",
+                "source.Cast<BaseType>()")]
     public Task OptimizeLinq_WhenSelectorReturnsCastElement_ReplacesSelectByCast(
         string selectInvocation,
         string expectedReplacement,
@@ -1585,21 +1587,29 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("source.Select(dt => dt as BaseType)")]     // 'as' operator should not be replaced by Cast<>
     [InlineData("source.Select(dt => (BaseType)other)")]    // Cast of a captured parameter, not of the element itself
     [InlineData("source.Select((dt, index) => (object)index)")] // Cast of the index, not of the element itself
+    [InlineData("source.Select(dt => { count++; return (BaseType)dt; })")] // Cast<T> would remove the side effect
+    [InlineData("source.Select(dt => { if (dt.Name is not null) return (BaseType)dt; return null; })")] // Multiple return paths
+    [InlineData("source.Select(Wrap(dt => (BaseType)dt))")] // The cast is in a lambda which is not the selector
     public Task OptimizeLinq_WhenSelectorDoesNotReturnCastElement_NoDiagnosticReported(string selectInvocation)
     {
         var test = new CodeFixTest();
         test.TestCode = $$"""
+            using System;
             using System.Linq;
             class Test
             {
                 class BaseType { public string Name { get; set; } }
                 class DerivedType : BaseType {}
 
+                static int count;
+
                 public Test(object other)
                 {
                     var source = System.Linq.Enumerable.Empty<DerivedType>();
                     {{selectInvocation}};
                 }
+
+                static Func<DerivedType, BaseType> Wrap(Func<DerivedType, BaseType> selector) => selector;
             }
             """;
 
