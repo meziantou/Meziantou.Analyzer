@@ -48,6 +48,77 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
     }
 
     [Fact]
+    public Task EnumMemberWithAliasToString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = MyEnum.A.ToString();
+                    _ = MyEnum.B.ToString();
+                    _ = MyEnum.C.ToString("G");
+                    _ = $"{MyEnum.A}";
+                    _ = $"{MyEnum.B:G}";
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+                C = 1,
+                D = C,
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumMemberWithoutAliasToString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0052:MyEnum.C.ToString()|};
+                    _ = $"{|MA0052:{MyEnum.C}|}";
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+                C = 1,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = nameof(MyEnum.C);
+                    _ = $"{nameof(MyEnum.C)}";
+                }
+            }
+
+            enum MyEnum
+            {
+                A = 0,
+                B = 0,
+                C = 1,
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task EnumVariableToString()
     {
         var test = CreateTest();
