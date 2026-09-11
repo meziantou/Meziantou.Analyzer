@@ -83,7 +83,7 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
         return (operation.Syntax, false);
     }
 
-    private static IsPatternExpressionSyntax MakeIsNotNull(ExpressionSyntax instance, bool negate)
+    private static ExpressionSyntax MakeIsNotNull(ExpressionSyntax instance, bool negate)
     {
         PatternSyntax constantExpression = ConstantPattern(LiteralExpression(SyntaxKind.NullLiteralExpression));
         if (!negate)
@@ -91,6 +91,6 @@ public sealed class UsePatternMatchingInsteadOfHasvalueFixer : CodeFixProvider
             constantExpression = UnaryPattern(constantExpression);
         }
 
-        return IsPatternExpression(instance.Parenthesize(), constantExpression);
+        return IsPatternExpression(instance.Parenthesize(), constantExpression).Parenthesize();
     }
 }
