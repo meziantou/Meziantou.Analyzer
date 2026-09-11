@@ -78,38 +78,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         if (operation.ArgumentKind is ArgumentKind.ParamArray)
             return false;
 
-        if (HasNonIdentityConversion(operation.Value))
-            return false;
-
-        return IsVariableReference(operation.Value);
-    }
-
-    private static bool HasNonIdentityConversion(IOperation operation)
-    {
-        while (operation is IConversionOperation conversion)
-        {
-            if (!conversion.Conversion.IsIdentity)
-                return true;
-
-            operation = conversion.Operand;
-        }
-
-        return false;
-    }
-
-    private static bool IsVariableReference(IOperation operation)
-    {
-        operation = operation.UnwrapConversions();
-
-        return operation.Kind switch
-        {
-            OperationKind.LocalReference => true,
-            OperationKind.ParameterReference => true,
-            OperationKind.FieldReference => true,
-            OperationKind.ArrayElementReference => true,
-            OperationKind.InstanceReference => true,
-            _ => false,
-        };
+        return UseInKeywordForInParameterCommon.CanBePassedByReference(operation.Value);
     }
 
     private static bool TryGetInvocationAndArgumentIndex(IArgumentOperation operation, out IInvocationOperation invocationOperation, out int argumentIndex)
