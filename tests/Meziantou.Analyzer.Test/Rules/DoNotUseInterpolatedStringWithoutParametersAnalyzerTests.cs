@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersAnalyzer,
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersFixer>;
@@ -300,6 +301,91 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
                     _ = """
                         Sample
                         """;
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RawInterpolatedStringWithMultipleDollarsAndBraces_ShouldRemoveAllDollars()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0184:$$"""{unknown}"""|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = """{unknown}""";
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultiLineRawInterpolatedStringWithThreeDollarsAndBraces_ShouldRemoveAllDollars()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0184:$$$"""
+                        {{unknown}}
+                        """|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = """
+                        {{unknown}}
+                        """;
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RawInterpolatedStringWithDollarInLeadingTrivia_ShouldPreserveTrivia()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = /* $ */ {|MA0184:$$"""{unknown}"""|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = /* $ */ """{unknown}""";
                 }
             }
             """";
