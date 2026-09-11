@@ -38,10 +38,13 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
             var newExpression = generator.NameOfExpression(invocation.Instance.Syntax);
             editor.ReplaceNode(nodeToFix, newExpression);
         }
-        else if (operation is IInterpolationOperation interpolation)
+        else if (operation is IInterpolationOperation { Syntax: InterpolationSyntax interpolationSyntax } interpolation)
         {
-            var newExpression = SyntaxFactory.Interpolation((ExpressionSyntax)generator.NameOfExpression(interpolation.Expression.Syntax));
-            editor.ReplaceNode(nodeToFix, newExpression);
+            // Keep the alignment clause as it pads the value. The format clause is removed as the reported formats (G, F) already produce the name of the value.
+            var newExpression = interpolationSyntax
+                .WithExpression((ExpressionSyntax)generator.NameOfExpression(interpolation.Expression.Syntax))
+                .WithFormatClause(null);
+            editor.ReplaceNode(interpolationSyntax, newExpression);
         }
 
         return editor.GetChangedDocument();
