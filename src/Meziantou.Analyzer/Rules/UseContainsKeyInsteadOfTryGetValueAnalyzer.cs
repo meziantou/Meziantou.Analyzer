@@ -48,7 +48,7 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzer : DiagnosticAnaly
                             if (iface.GetMembers("TryGetValue").FirstOrDefault() is IMethodSymbol member)
                             {
                                 var implementation = operation.TargetMethod.IsEqualTo(member) ? member : operation.TargetMethod.ContainingType.FindImplementationForInterfaceMember(member);
-                                if (SymbolEqualityComparer.Default.Equals(operation.TargetMethod, implementation))
+                                if (SymbolEqualityComparer.Default.Equals(operation.TargetMethod, implementation) && !IsContainsKeyExplicitlyImplemented(operation.Instance?.Type, iface))
                                 {
                                     context.ReportDiagnostic(Rule, operation);
                                     return;
@@ -58,6 +58,15 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzer : DiagnosticAnaly
                     }
                 }
             }
+        }
+
+        // A member implemented explicitly is not meant to be called on the type
+        private static bool IsContainsKeyExplicitlyImplemented(ITypeSymbol? instanceType, INamedTypeSymbol iface)
+        {
+            if (instanceType is null || iface.GetMembers("ContainsKey").FirstOrDefault() is not IMethodSymbol containsKey)
+                return false;
+
+            return instanceType.FindImplementationForInterfaceMember(containsKey) is IMethodSymbol { MethodKind: MethodKind.ExplicitInterfaceImplementation };
         }
     }
 }
