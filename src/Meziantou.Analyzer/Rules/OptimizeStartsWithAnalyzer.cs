@@ -178,165 +178,53 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
             {
                 if (operation.TargetMethod.Name is "StartsWith")
                 {
-                    if (StartsWith_Char is null || operation.TargetMethod.IsEqualTo(StartsWith_Char))
+                    if (StartsWith_Char is null)
                         return;
 
-                    if (operation.Arguments is [
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } value },
-                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } },
-                        ])
+                    // string.StartsWith(string, StringComparison)
+                    if (IsStringSearchWithStringComparison(operation.TargetMethod, int32ParameterCount: 0) &&
+                        IsOrdinalArgument(operation, parameterOrdinal: 1) &&
+                        GetSingleCharStringArgument(operation, parameterOrdinal: 0) is { } value)
                     {
                         context.ReportDiagnostic(Rule, value);
                     }
                 }
                 else if (operation.TargetMethod.Name is "EndsWith")
                 {
-                    if (EndsWith_Char is null || operation.TargetMethod.IsEqualTo(EndsWith_Char))
+                    if (EndsWith_Char is null)
                         return;
 
-                    if (operation.Arguments is [
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } value },
-                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } },
-                        ])
+                    // string.EndsWith(string, StringComparison)
+                    if (IsStringSearchWithStringComparison(operation.TargetMethod, int32ParameterCount: 0) &&
+                        IsOrdinalArgument(operation, parameterOrdinal: 1) &&
+                        GetSingleCharStringArgument(operation, parameterOrdinal: 0) is { } value)
                     {
                         context.ReportDiagnostic(Rule, value);
                     }
                 }
                 else if (operation.TargetMethod.Name is "Replace")
                 {
-                    if (Replace_Char_Char is null || operation.TargetMethod.IsEqualTo(Replace_Char_Char))
+                    if (Replace_Char_Char is null)
                         return;
 
-                    if (operation.Arguments is [
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                        ])
+                    if (GetSingleCharStringArgument(operation, parameterOrdinal: 0) is null || GetSingleCharStringArgument(operation, parameterOrdinal: 1) is null)
+                        return;
+
+                    // string.Replace(string, string) or string.Replace(string, string, StringComparison)
+                    if (operation.TargetMethod.Parameters.Length == 2 ||
+                        (operation.TargetMethod.Parameters.Length == 3 && IsOrdinalArgument(operation, parameterOrdinal: 2)))
                     {
                         // Improve the error message as the rule is reported on the method
-                        context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
-                    }
-                    else if (operation.Arguments is [
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                        { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                        { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                        ])
-                    {
                         context.ReportDiagnostic(Rule, ImmutableDictionary<string, string?>.Empty, operation, DiagnosticInvocationReportOptions.ReportOnMember);
                     }
                 }
                 else if (operation.TargetMethod.Name is "IndexOf")
                 {
-                    if (operation.Arguments.Length == 2)
-                    {
-                        if (IndexOf_Char is not null)
-                        {
-                            if (operation.Arguments is [
-                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                                { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                                ])
-                            {
-                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                                return;
-                            }
-                        }
-
-                        if (IndexOf_Char_StringComparison is not null)
-                        {
-                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } &&
-                                operation.Arguments[1].Value.Type.IsEqualTo(StringComparisonSymbol))
-                            {
-                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                                return;
-                            }
-                        }
-                    }
-                    else if (operation.Arguments.Length == 3)
-                    {
-                        if (IndexOf_Char_Int32 is null)
-                            return;
-
-                        if (operation.Arguments is [
-                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                            ])
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
-                    }
-                    else if (operation.Arguments.Length == 4)
-                    {
-                        if (IndexOf_Char_Int32_Int32 is null)
-                            return;
-
-                        if (operation.Arguments is [
-                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                            ])
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
-                    }
+                    AnalyzeIndexOf(context, operation, IndexOf_Char, IndexOf_Char_Int32, IndexOf_Char_Int32_Int32, IndexOf_Char_StringComparison);
                 }
                 else if (operation.TargetMethod.Name is "LastIndexOf")
                 {
-                    if (operation.Arguments.Length == 2)
-                    {
-                        if (LastIndexOf_Char is not null)
-                        {
-                            if (operation.Arguments is [
-                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                                { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                                ])
-                            {
-                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                                return;
-                            }
-                        }
-
-                        if (LastIndexOf_Char_StringComparison is not null)
-                        {
-                            if (operation.Arguments is [
-                                { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                                { Value: { Type.SpecialType: SpecialType.System_Int32 } }
-                                ])
-                            {
-                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                                return;
-                            }
-                        }
-                    }
-                    else if (operation.Arguments.Length == 3)
-                    {
-                        if (LastIndexOf_Char_Int32 is null)
-                            return;
-
-                        if (operation.Arguments is [
-                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                            ])
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
-                    }
-                    else if (operation.Arguments.Length == 4)
-                    {
-                        if (LastIndexOf_Char_Int32_Int32 is null)
-                            return;
-
-                        if (operation.Arguments is [
-                            { Value: { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { Type.SpecialType: SpecialType.System_Int32 } },
-                            { Value: { ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } } }
-                            ])
-                        {
-                            context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                        }
-                    }
+                    AnalyzeIndexOf(context, operation, LastIndexOf_Char, LastIndexOf_Char_Int32, LastIndexOf_Char_Int32_Int32, LastIndexOf_Char_StringComparison);
                 }
                 else if (operation.TargetMethod.Name is "Join" && operation.TargetMethod.IsStatic)
                 {
@@ -392,6 +280,78 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
+        }
+
+        private void AnalyzeIndexOf(OperationAnalysisContext context, IInvocationOperation operation, IMethodSymbol? charOverload, IMethodSymbol? charInt32Overload, IMethodSymbol? charInt32Int32Overload, IMethodSymbol? charStringComparisonOverload)
+        {
+            if (GetSingleCharStringArgument(operation, parameterOrdinal: 0) is not { } value)
+                return;
+
+            // The overloads without a StringComparison parameter are culture-sensitive, so they cannot be replaced
+            // with the char overloads, which are ordinal. e.g. IndexOf(string, int) or IndexOf(string, int, int)
+            var method = operation.TargetMethod;
+            var shouldReport = method.Parameters.Length switch
+            {
+                // (string, StringComparison)
+                2 when IsStringSearchWithStringComparison(method, int32ParameterCount: 0) => charStringComparisonOverload is not null || (charOverload is not null && IsOrdinalArgument(operation, parameterOrdinal: 1)),
+
+                // (string, int, StringComparison)
+                3 when IsStringSearchWithStringComparison(method, int32ParameterCount: 1) => charInt32Overload is not null && IsOrdinalArgument(operation, parameterOrdinal: 2),
+
+                // (string, int, int, StringComparison)
+                4 when IsStringSearchWithStringComparison(method, int32ParameterCount: 2) => charInt32Int32Overload is not null && IsOrdinalArgument(operation, parameterOrdinal: 3),
+
+                _ => false,
+            };
+
+            if (shouldReport)
+            {
+                context.ReportDiagnostic(Rule, value);
+            }
+        }
+
+        // Match (string, int32 x int32ParameterCount, StringComparison)
+        private bool IsStringSearchWithStringComparison(IMethodSymbol method, int int32ParameterCount)
+        {
+            var parameters = method.Parameters;
+            if (parameters.Length != int32ParameterCount + 2)
+                return false;
+
+            if (!parameters[0].Type.IsString())
+                return false;
+
+            for (var i = 1; i <= int32ParameterCount; i++)
+            {
+                if (!parameters[i].Type.IsInt32())
+                    return false;
+            }
+
+            return parameters[parameters.Length - 1].Type.IsEqualTo(StringComparisonSymbol);
+        }
+
+        private bool IsOrdinalArgument(IInvocationOperation operation, int parameterOrdinal)
+        {
+            return GetArgument(operation, parameterOrdinal) is { Parameter: { } parameter, Value.ConstantValue: { HasValue: true, Value: (int)StringComparison.Ordinal } }
+                && parameter.Type.IsEqualTo(StringComparisonSymbol);
+        }
+
+        private static IOperation? GetSingleCharStringArgument(IInvocationOperation operation, int parameterOrdinal)
+        {
+            if (GetArgument(operation, parameterOrdinal) is { Parameter.Type.SpecialType: SpecialType.System_String, Value: { ConstantValue: { HasValue: true, Value: string { Length: 1 } } } value })
+                return value;
+
+            return null;
+        }
+
+        private static IArgumentOperation? GetArgument(IInvocationOperation operation, int parameterOrdinal)
+        {
+            foreach (var argument in operation.Arguments)
+            {
+                if (argument.Parameter?.Ordinal == parameterOrdinal)
+                    return argument;
+            }
+
+            return null;
         }
     }
 }

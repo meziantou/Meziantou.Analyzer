@@ -42,6 +42,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
 
     [Theory]
     [InlineData("""{|MA0089:"a"|}, StringComparison.Ordinal""", """'a'""")]
+    [InlineData("""comparisonType: StringComparison.Ordinal, value: {|MA0089:"a"|}""", """value: 'a'""")]
     public Task StartsWith_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -132,6 +133,9 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"{|MA0089:""a""|}, StringComparison.CurrentCulture", @"'a', StringComparison.CurrentCulture")]
     [InlineData(@"{|MA0089:""a""|}, 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
     [InlineData(@"{|MA0089:""a""|}, 1, StringComparison.Ordinal", @"'a', 1")]
+    [InlineData(@"{|MA0089:""a""|}, 4, StringComparison.Ordinal", @"'a', 4")]
+    [InlineData(@"{|MA0089:""a""|}, 4, 4, StringComparison.Ordinal", @"'a', 4, 4")]
+    [InlineData(@"comparisonType: StringComparison.Ordinal, value: {|MA0089:""a""|}", @"comparisonType: StringComparison.Ordinal, value: 'a'")]
     public Task IndexOf_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -169,6 +173,12 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", 1, 2")]
     [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
     [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""\0"", 4")]
+    [InlineData(@"""a"", (int)StringComparison.Ordinal")]
+    [InlineData(@"""a"", 1, 4")]
+    [InlineData(@"""a"", 4, 4")]
+    [InlineData(@"""a"", 1, (int)StringComparison.Ordinal")]
+    [InlineData(@"""a"", startIndex: 1, count: 4")]
     public Task IndexOf_NoReport(string method)
     {
         var test = CreateTest();
@@ -188,6 +198,9 @@ public sealed class OptimizeStartsWithAnalyzerTests
 
     [Theory]
     [InlineData(@"""a"", StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""a"", StringComparison.CurrentCulture")]
+    [InlineData(@"""\0"", 4")]
+    [InlineData(@"""a"", 1, 4")]
     public Task IndexOf_NoReport_Netstandard2_0(string method)
     {
         var test = CreateTest();
@@ -208,8 +221,42 @@ public sealed class OptimizeStartsWithAnalyzerTests
 
     [Theory]
     [InlineData(@"{|MA0089:""a""|}, StringComparison.Ordinal", @"'a'")]
+    [InlineData(@"{|MA0089:""a""|}, 1, StringComparison.Ordinal", @"'a', 1")]
+    public Task IndexOf_Report_Netstandard2_0(string method, string fix)
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf({{method}});
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            class Test
+            {
+                void A(string str)
+                {
+                    _ = str.IndexOf({{fix}});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(@"{|MA0089:""a""|}, StringComparison.Ordinal", @"'a'")]
     [InlineData(@"{|MA0089:""a""|}, 1, 2, StringComparison.Ordinal", @"'a', 1, 2")]
     [InlineData(@"{|MA0089:""a""|}, 1, StringComparison.Ordinal", @"'a', 1")]
+    [InlineData(@"{|MA0089:""a""|}, 4, StringComparison.Ordinal", @"'a', 4")]
+    [InlineData(@"{|MA0089:""a""|}, 4, 4, StringComparison.Ordinal", @"'a', 4, 4")]
+    [InlineData(@"{|MA0089:""a""|}, comparisonType: StringComparison.Ordinal, startIndex: 1", @"'a', startIndex: 1")]
     public Task LastIndexOf_Report(string method, string fix)
     {
         var test = CreateTest();
@@ -248,6 +295,11 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [InlineData(@"""a"", StringComparison.CurrentCulture")]
     [InlineData(@"""a"", 1, 2, StringComparison.OrdinalIgnoreCase")]
     [InlineData(@"""a"", 1, StringComparison.OrdinalIgnoreCase")]
+    [InlineData(@"""\0"", 4")]
+    [InlineData(@"""a"", (int)StringComparison.Ordinal")]
+    [InlineData(@"""a"", 5, 4")]
+    [InlineData(@"""a"", 4, 4")]
+    [InlineData(@"""a"", 5, (int)StringComparison.Ordinal")]
     public Task LastIndexOf_NoReport(string method)
     {
         var test = CreateTest();
@@ -313,6 +365,7 @@ public sealed class OptimizeStartsWithAnalyzerTests
     [Theory]
     [InlineData(@"""a"", ""b""", @"'a', 'b'")]
     [InlineData(@"""a"", ""b"", StringComparison.Ordinal", @"'a', 'b'")]
+    [InlineData(@"""a"", ""b"", comparisonType: StringComparison.Ordinal", @"'a', 'b'")]
     public Task Replace_Report(string method, string fix)
     {
         var test = CreateTest();

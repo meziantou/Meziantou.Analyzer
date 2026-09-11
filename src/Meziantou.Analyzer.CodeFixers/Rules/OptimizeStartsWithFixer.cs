@@ -54,13 +54,14 @@ public class OptimizeStartsWithFixer : CodeFixProvider
         {
             editor.ReplaceNode(literalOperation.Syntax, editor.Generator.LiteralExpression(literalValue[0]));
 
-            if (invocation?.TargetMethod.Name is "StartsWith" or "EndsWith" or "LastIndexOf")
+            if (invocation?.TargetMethod.Name is "StartsWith" or "EndsWith")
             {
                 RemoveStringComparisonArgument(editor, invocation);
             }
-            else if (invocation?.TargetMethod.Name is "IndexOf")
+            else if (invocation?.TargetMethod.Name is "IndexOf" or "LastIndexOf")
             {
-                if (invocation.TargetMethod.Parameters.Length > 1 && invocation.TargetMethod.Parameters[1].Type.IsInt32())
+                // Keep the StringComparison argument when there is a (char, StringComparison) overload, as the comparison may not be ordinal
+                if (invocation.TargetMethod.Parameters.Length != 2 || !HasCharStringComparisonOverload(invocation.TargetMethod, editor.SemanticModel.Compilation))
                 {
                     RemoveStringComparisonArgument(editor, invocation);
                 }
@@ -84,6 +85,18 @@ public class OptimizeStartsWithFixer : CodeFixProvider
         }
 
         return editor.GetChangedDocument();
+    }
+
+    private static bool HasCharStringComparisonOverload(IMethodSymbol method, Compilation compilation)
+    {
+        var stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
+        foreach (var member in method.ContainingType.GetMembers(method.Name))
+        {
+            if (member is IMethodSymbol { IsStatic: false, Parameters: [var valueParameter, var comparisonParameter] } && valueParameter.Type.IsChar() && comparisonParameter.Type.IsEqualTo(stringComparisonSymbol))
+                return true;
+        }
+
+        return false;
     }
 
     private static void RemoveStringComparisonArgument(DocumentEditor editor, IInvocationOperation invocation)
