@@ -2081,6 +2081,87 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Fact]
+    public Task Last_List_CSharp7_3_Field()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp7_3;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                List<int> values;
+
+                void A() => _ = values.{|MA0098:Last|}();
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                List<int> values;
+
+                void A() => _ = values[values.Count - 1];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Values()")]
+    [InlineData("ValuesProperty")]
+    public Task Last_List_CSharp7_3_ReceiverWithSideEffects_NoCodeFix(string receiver)
+    {
+        var code = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                static List<int> Values() => new List<int> { 1 };
+                static List<int> ValuesProperty => new List<int> { 1 };
+
+                void A() => _ = {{receiver}}.{|MA0098:Last|}();
+            }
+            """;
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp7_3;
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Last_List_CSharp8_ReceiverWithSideEffects()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                static List<int> Values() => new List<int> { 1 };
+
+                void A() => _ = Values().{|MA0098:Last|}();
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                static List<int> Values() => new List<int> { 1 };
+
+                void A() => _ = Values()[^1];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ElementAt_VariableTypedAsEnumerableAssignedToList()
     {
         var test = new CodeFixTest();
