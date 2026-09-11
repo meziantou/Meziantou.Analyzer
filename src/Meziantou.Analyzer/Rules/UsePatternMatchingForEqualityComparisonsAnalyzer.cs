@@ -88,8 +88,9 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
                     var rightIsConstant = UsePatternMatchingForEqualityComparisonsCommon.IsConstantLiteral(operation.RightOperand);
                     if (leftIsConstant ^ rightIsConstant)
                     {
+                        var constantOperation = leftIsConstant ? operation.LeftOperand : operation.RightOperand;
                         var expressionOperation = leftIsConstant ? operation.RightOperand : operation.LeftOperand;
-                        if (UsePatternMatchingForEqualityComparisonsCommon.HasImplicitUserDefinedConversion(expressionOperation))
+                        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation, context.CancellationToken))
                             return;
 
                         if (_operationUtilities.IsInExpressionContext(operation))
