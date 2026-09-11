@@ -79,8 +79,8 @@ internal static class UseTypeofInsteadOfGetTypeOnSealedTypeCommon
         ILiteralOperation => true,
         IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance } => true,
         IFieldReferenceOperation { Instance: var fieldInstance } => fieldInstance is null || IsSideEffectFree(fieldInstance),
-        // Indexers are excluded as they can throw, unlike the properties without arguments
-        IPropertyReferenceOperation { Arguments.IsEmpty: true, Instance: var propertyInstance } => propertyInstance is null || IsSideEffectFree(propertyInstance),
+        // The properties and the indexers are excluded as their getter can execute any code, such as modifying a
+        // state or throwing an exception
         _ => false,
     };
 }

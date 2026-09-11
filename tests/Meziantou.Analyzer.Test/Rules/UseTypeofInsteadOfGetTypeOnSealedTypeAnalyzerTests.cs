@@ -354,24 +354,70 @@ public sealed class UseTypeofInsteadOfGetTypeOnSealedTypeAnalyzerTests
     }
 
     [Fact]
-    public Task Property()
+    public Task PropertyGetterModifyingState_NoDiagnostic()
     {
         return new CodeFixTest
         {
             TestCode = """
-                sealed class Sample
+                class Sample
                 {
-                    private string Value => "";
+                    static int calls;
+                    static string Value { get { calls++; return ""; } }
 
-                    System.Type Test() => [|Value.GetType()|];
+                    System.Type Test() => Value.GetType();
                 }
                 """,
-            FixedCode = """
-                sealed class Sample
-                {
-                    private string Value => "";
+        }.RunAsync();
+    }
 
-                    System.Type Test() => typeof(string);
+    [Fact]
+    public Task PropertyGetterThrowing_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    string Value => throw new System.InvalidOperationException();
+
+                    System.Type Test() => Value.GetType();
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task AutoProperty_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Sample
+                {
+                    string Value { get; set; }
+
+                    System.Type Test() => Value.GetType();
+                }
+                """,
+        }.RunAsync();
+    }
+
+    [Fact]
+    public Task FieldOfProperty_NoDiagnostic()
+    {
+        return new CodeFixTest
+        {
+            TestCode = """
+                class Item
+                {
+                    public string Field;
+                }
+
+                class Sample
+                {
+                    Item Value => throw new System.InvalidOperationException();
+
+                    System.Type Test() => Value.Field.GetType();
                 }
                 """,
         }.RunAsync();
