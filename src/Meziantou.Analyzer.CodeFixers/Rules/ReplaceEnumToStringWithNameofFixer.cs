@@ -82,9 +82,10 @@ public sealed class ReplaceEnumToStringWithNameofFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var newExpression = (ExpressionSyntax)editor.Generator.NameOfExpression(enumMemberSyntax);
-        if (nodeToFix is InterpolationSyntax)
+        if (nodeToFix is InterpolationSyntax interpolationSyntax)
         {
-            editor.ReplaceNode(nodeToFix, SyntaxFactory.Interpolation(newExpression));
+            // Keep the alignment clause as it pads the value. The format clause is removed as the reported formats (G, F) already produce the name of the value.
+            editor.ReplaceNode(interpolationSyntax, interpolationSyntax.WithExpression(newExpression).WithFormatClause(null));
         }
         else
         {

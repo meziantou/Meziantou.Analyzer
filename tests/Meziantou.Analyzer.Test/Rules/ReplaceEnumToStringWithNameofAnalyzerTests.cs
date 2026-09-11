@@ -371,4 +371,48 @@ public sealed class ReplaceEnumToStringWithNameofAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task InterpolatedString_Alignment()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = $"[{|MA0052:{MyEnum.A,10}|}]";
+                    _ = $"[{|MA0052:{MyEnum.A,-10}|}]";
+                    _ = $"[{|MA0052:{MyEnum.A,10:G}|}]";
+                    _ = $"[{|MA0052:{MyEnum.A,-10:f}|}]";
+                    _ = $"[{MyEnum.A,10:D}]";
+                }
+            }
+
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = $"[{nameof(MyEnum.A),10}]";
+                    _ = $"[{nameof(MyEnum.A),-10}]";
+                    _ = $"[{nameof(MyEnum.A),10}]";
+                    _ = $"[{nameof(MyEnum.A),-10}]";
+                    _ = $"[{MyEnum.A,10:D}]";
+                }
+            }
+
+            enum MyEnum
+            {
+                A,
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
