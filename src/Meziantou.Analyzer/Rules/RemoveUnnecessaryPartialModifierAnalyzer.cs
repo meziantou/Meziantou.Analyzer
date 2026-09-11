@@ -50,12 +50,15 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
                 context.Compilation.GetBestTypeByMetadataName("WinRT.GeneratedBindableCustomPropertyAttribute") is not null &&
                 context.Compilation.GetBestTypeByMetadataName("WinRT.GeneratedWinRTExposedTypeAttribute") is not null &&
                 context.Compilation.GetBestTypeByMetadataName("WinRT.WinRTExposedTypeAttribute") is not null;
+            var isMauiCompilation =
+                context.Compilation.GetBestTypeByMetadataName("Microsoft.Maui.Controls.Application") is not null &&
+                context.Compilation.GetBestTypeByMetadataName("Microsoft.Maui.Controls.BindableObject") is not null;
 
-            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, excludedBaseTypes, csWinRTCustomMappedInterfaces, hasCsWinRTAotSupport), SymbolKind.NamedType);
+            context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, excludedBaseTypes, csWinRTCustomMappedInterfaces, hasCsWinRTAotSupport, isMauiCompilation), SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes, ImmutableArray<INamedTypeSymbol?> csWinRTCustomMappedInterfaces, bool hasCsWinRTAotSupport)
+    private static void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes, ImmutableArray<INamedTypeSymbol?> csWinRTCustomMappedInterfaces, bool hasCsWinRTAotSupport, bool isMauiCompilation)
     {
         var symbol = (INamedTypeSymbol)context.Symbol;
         if (symbol.TypeKind is not (TypeKind.Class or TypeKind.Struct or TypeKind.Interface))
@@ -75,7 +78,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (InheritsFromExcludedType(symbol, excludedBaseTypes))
             return;
 
-        if (RequiresPartialForCsWinRT(symbol, context.Options, csWinRTCustomMappedInterfaces, hasCsWinRTAotSupport))
+        if (RequiresPartialForCsWinRT(symbol, csWinRTCustomMappedInterfaces, hasCsWinRTAotSupport, isMauiCompilation))
             return;
 
         context.ReportDiagnostic(Rule, partialToken.GetLocation());
@@ -92,59 +95,12 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         return false;
     }
 
-    private static bool RequiresPartialForCsWinRT(INamedTypeSymbol symbol, AnalyzerOptions options, ImmutableArray<INamedTypeSymbol?> csWinRTCustomMappedInterfaces, bool hasCsWinRTAotSupport)
+    private static bool RequiresPartialForCsWinRT(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> csWinRTCustomMappedInterfaces, bool hasCsWinRTAotSupport, bool isMauiCompilation)
     {
-        if (!hasCsWinRTAotSupport && !TargetsWindows(symbol, options))
+        if (!hasCsWinRTAotSupport && !isMauiCompilation)
             return false;
 
         return ContainsTypeRequiringCsWinRTPartial(symbol, csWinRTCustomMappedInterfaces);
-    }
-
-    private static bool TargetsWindows(INamedTypeSymbol symbol, AnalyzerOptions options)
-    {
-        if (options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue("build_property.TargetFramework", out var globalTargetFramework) &&
-            IsWindowsTargetFramework(globalTargetFramework))
-        {
-            return true;
-        }
-
-        if (options.AnalyzerConfigOptionsProvider.GlobalOptions.TryGetValue("build_property.TargetFrameworks", out var globalTargetFrameworks) &&
-            IsWindowsTargetFramework(globalTargetFrameworks))
-        {
-            return true;
-        }
-
-        foreach (var location in symbol.Locations)
-        {
-            if (location.SourceTree is not { } syntaxTree)
-                continue;
-
-            var analyzerConfigOptions = options.AnalyzerConfigOptionsProvider.GetOptions(syntaxTree);
-            if (analyzerConfigOptions.TryGetValue("build_property.TargetFramework", out var targetFramework) &&
-                IsWindowsTargetFramework(targetFramework))
-            {
-                return true;
-            }
-
-            if (analyzerConfigOptions.TryGetValue("build_property.TargetFrameworks", out var targetFrameworks) &&
-                IsWindowsTargetFramework(targetFrameworks))
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool IsWindowsTargetFramework(string targetFrameworks)
-    {
-        foreach (var targetFramework in targetFrameworks.Split(';', StringSplitOptions.RemoveEmptyEntries))
-        {
-            if (targetFramework.Trim().Contains("-windows", StringComparison.OrdinalIgnoreCase))
-                return true;
-        }
-
-        return false;
     }
 
     private static bool ContainsTypeRequiringCsWinRTPartial(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> csWinRTCustomMappedInterfaces)

@@ -197,7 +197,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     }
 
     [Fact]
-    public Task PartialClass_ImplementingDisposable_InWindowsTargetFrameworks_NoDiagnostic()
+    public Task PartialClass_ImplementingDisposable_WithCsWinRTSupport_NoDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -234,7 +234,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     }
 
     [Fact]
-    public Task PartialClass_ImplementingDisposable_WithoutWindowsTargetFramework_ReportsDiagnostic()
+    public Task PartialClass_ImplementingDisposable_WithoutCsWinRTOrMauiSupport_ReportsDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -261,27 +261,19 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     }
 
     [Fact]
-    public Task PartialContainingClass_WithNestedDisposableType_InWindowsTargetFrameworks_NoDiagnostic()
+    public Task PartialContainingClass_WithNestedDisposableType_InMauiCompilation_NoDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
             using System;
 
-            namespace WinRT
+            namespace Microsoft.Maui.Controls
             {
-                sealed class WindowsRuntimeTypeAttribute : Attribute
+                class BindableObject
                 {
                 }
 
-                sealed class GeneratedBindableCustomPropertyAttribute : Attribute
-                {
-                }
-
-                sealed class GeneratedWinRTExposedTypeAttribute : Attribute
-                {
-                }
-
-                sealed class WinRTExposedTypeAttribute : Attribute
+                class Application : BindableObject
                 {
                 }
             }
