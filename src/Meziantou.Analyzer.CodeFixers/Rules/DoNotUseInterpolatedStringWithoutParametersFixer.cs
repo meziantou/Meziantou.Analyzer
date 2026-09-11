@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
@@ -17,22 +19,22 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
         if (nodeToFix is not InterpolatedStringExpressionSyntax interpolatedString)
             return;
 
+        var regularString = await CreateRegularStringAsync(context.Document, interpolatedString, context.CancellationToken).ConfigureAwait(false);
+        if (regularString is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Convert to regular string",
-                ct => ConvertToRegularString(context.Document, interpolatedString, ct),
+                ct => ConvertToRegularString(context.Document, interpolatedString, regularString, ct),
                 equivalenceKey: "Convert to regular string"),
             context.Diagnostics);
     }
 
-    private static async Task<Document> ConvertToRegularString(Document document, InterpolatedStringExpressionSyntax interpolatedString, CancellationToken cancellationToken)
+    private static async Task<ExpressionSyntax?> CreateRegularStringAsync(Document document, InterpolatedStringExpressionSyntax interpolatedString, CancellationToken cancellationToken)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
         // Check if this is a raw string literal (C# 11+)
-        var isRawString = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken) ||
-                          interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedSingleLineRawStringStartToken);
-        if (isRawString)
+        if (interpolatedString.StringStartToken.Kind() is SyntaxKind.InterpolatedMultiLineRawStringStartToken or SyntaxKind.InterpolatedSingleLineRawStringStartToken)
         {
             // For raw strings, simply remove the $ prefix from the start token
             // $""" text """ -> """ text """
@@ -40,35 +42,36 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
 
             // Find the position of $ in the start token and remove it
             var dollarIndex = originalText.IndexOf('$', StringComparison.Ordinal);
-            if (dollarIndex >= 0)
-            {
-                var newText = originalText.Remove(dollarIndex, 1);
-                var newNode = SyntaxFactory.ParseExpression(newText);
+            if (dollarIndex < 0)
+                return null;
 
-                editor.ReplaceNode(interpolatedString, newNode.WithTriviaFrom(interpolatedString));
-            }
+            return SyntaxFactory.ParseExpression(originalText.Remove(dollarIndex, 1));
         }
-        else
+
+        // The text of the tokens still contains the escaped braces ("{{" and "}}"),
+        // so use the value computed by the compiler
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel?.GetOperation(interpolatedString, cancellationToken) is not IInterpolatedStringOperation operation)
+            return null;
+
+        var stringContent = new StringBuilder();
+        foreach (var part in operation.Parts)
         {
-            // Extract the string content from the interpolated string
-            var stringContent = string.Empty;
-            foreach (var content in interpolatedString.Contents)
-            {
-                if (content is InterpolatedStringTextSyntax textSyntax)
-                {
-                    // Use the ValueText which contains the actual string value (not escaped)
-                    stringContent += textSyntax.TextToken.ValueText;
-                }
-            }
+            if (part is not IInterpolatedStringTextOperation { Text.ConstantValue: { HasValue: true, Value: string text } })
+                return null;
 
-            // Create a regular string literal with the same content
-            var regularString = SyntaxFactory.LiteralExpression(
-                SyntaxKind.StringLiteralExpression,
-                SyntaxFactory.Literal(stringContent));
-
-            editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
+            stringContent.Append(text);
         }
 
+        return SyntaxFactory.LiteralExpression(
+            SyntaxKind.StringLiteralExpression,
+            SyntaxFactory.Literal(stringContent.ToString()));
+    }
+
+    private static async Task<Document> ConvertToRegularString(Document document, InterpolatedStringExpressionSyntax interpolatedString, ExpressionSyntax regularString, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
         return editor.GetChangedDocument();
     }
 }
