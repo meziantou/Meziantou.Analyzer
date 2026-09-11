@@ -271,7 +271,7 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         arguments.Add(typeSyntax);
 
         // Find inherit argument
-        SyntaxNode? inheritSyntax = null;
+        IArgumentOperation? inheritArgument = null;
         foreach (var arg in invocation.Arguments)
         {
             // Skip instance argument for extension methods
@@ -284,19 +284,30 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
             if (arg.Parameter?.Type.SpecialType == SpecialType.System_Boolean && arg.Parameter.Name == "inherit")
             {
-                inheritSyntax = arg.Syntax;
+                inheritArgument = arg;
                 break;
             }
         }
 
-        if (inheritSyntax is not null)
+        SyntaxNode isDefinedInvocation;
+        if (instanceSyntax is not null && inheritArgument is not null && MustUseInstanceIsDefined(semanticModel.Compilation, invocation, inheritArgument))
         {
-            arguments.Add(inheritSyntax);
+            isDefinedInvocation = generator.InvocationExpression(
+                generator.MemberAccessExpression(instanceSyntax, "IsDefined"),
+                typeSyntax,
+                inheritArgument.Syntax);
         }
+        else
+        {
+            if (inheritArgument is not null)
+            {
+                arguments.Add(inheritArgument.Syntax);
+            }
 
-        var isDefinedInvocation = generator.InvocationExpression(
-            generator.MemberAccessExpression(attributeTypeSyntax, "IsDefined"),
-            arguments);
+            isDefinedInvocation = generator.InvocationExpression(
+                generator.MemberAccessExpression(attributeTypeSyntax, "IsDefined"),
+                arguments);
+        }
 
         if (negate)
         {
@@ -304,5 +315,25 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         }
 
         return isDefinedInvocation;
+    }
+
+    // The instance methods, such as MemberInfo.GetCustomAttributes(Type, bool), ignore 'inherit' for properties and events,
+    // while Attribute.IsDefined(MemberInfo, Type, bool) walks the chain of the overridden properties and events.
+    // MemberInfo.IsDefined(Type, bool) behaves like the instance methods, so it is used when the results could differ.
+    private static bool MustUseInstanceIsDefined(Compilation compilation, IInvocationOperation invocation, IArgumentOperation inheritArgument)
+    {
+        if (invocation.Instance?.Type is not { } instanceType)
+            return false;
+
+        if (inheritArgument.Value.ConstantValue is { HasValue: true, Value: false })
+            return false;
+
+        return CanBeInstanceOf(instanceType, compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo")) ||
+               CanBeInstanceOf(instanceType, compilation.GetBestTypeByMetadataName("System.Reflection.EventInfo"));
+
+        static bool CanBeInstanceOf(ITypeSymbol type, INamedTypeSymbol? expectedType)
+        {
+            return expectedType is not null && (type.IsOrInheritsFrom(expectedType) || expectedType.IsOrInheritsFrom(type));
+        }
     }
 }
