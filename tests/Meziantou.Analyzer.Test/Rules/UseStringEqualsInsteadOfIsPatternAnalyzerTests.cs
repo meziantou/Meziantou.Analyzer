@@ -133,6 +133,188 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzerTests
     }
 
     [Fact]
+    public Task PatternMatching_Object_CodeFix_Ordinal()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(object value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(object value) => string.Equals(value as string, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_Object_CodeFix_OrdinalIgnoreCase()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(object value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(object value) => string.Equals(value as string, "hello", System.StringComparison.OrdinalIgnoreCase);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_ObjectExpression_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(object a, object b) => (a ?? b) is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(object a, object b) => string.Equals((a ?? b) as string, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_Dynamic_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(dynamic value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(dynamic value) => string.Equals(value as string, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_Interface_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(System.IComparable value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(System.IComparable value) => string.Equals(value as string, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_TypeParameter_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test<T>(T value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test<T>(T value) => string.Equals(value as string, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_ReadOnlySpan_CodeFix_Ordinal()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(System.ReadOnlySpan<char> value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(System.ReadOnlySpan<char> value) => System.MemoryExtensions.Equals(value, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_ReadOnlySpan_CodeFix_OrdinalIgnoreCase()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(System.ReadOnlySpan<char> value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(System.ReadOnlySpan<char> value) => System.MemoryExtensions.Equals(value, "hello", System.StringComparison.OrdinalIgnoreCase);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PatternMatching_Span_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public bool Test(System.Span<char> value) => value is {|MA0127:"hello"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public bool Test(System.Span<char> value) => System.MemoryExtensions.Equals(value, "hello", System.StringComparison.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task PatternMatching_Complex1()
     {
         var test = CreateTest();
