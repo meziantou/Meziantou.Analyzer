@@ -634,4 +634,132 @@ public sealed class UseStringComparisonAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task IndexOf_ReorderedNamedArguments_ShouldAddNamedArgument()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0074:"abc".IndexOf(startIndex: 0, value: "a")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf(startIndex: 0, value: "a", comparisonType: System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IndexOf_NamedArgumentsInOrder_ShouldAddNamedArgument()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0074:"abc".IndexOf(value: "a", startIndex: 0)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = "abc".IndexOf(value: "a", startIndex: 0, comparisonType: System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringComparisonParameterIsNotLast_ShouldInsertArgumentAtParameterIndex()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|MA0074:Sample.Method("x", "y")|};
+                }
+            }
+
+            static class Sample
+            {
+                public static void Method(string a, string b) => throw null;
+                public static void Method(string a, System.StringComparison comparisonType, string b) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    Sample.Method("x", System.StringComparison.Ordinal, "y");
+                }
+            }
+
+            static class Sample
+            {
+                public static void Method(string a, string b) => throw null;
+                public static void Method(string a, System.StringComparison comparisonType, string b) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringComparisonParameterIsNotLast_ReorderedNamedArguments_ShouldAddNamedArgument()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|MA0074:Sample.Method(b: "y", a: "x")|};
+                }
+            }
+
+            static class Sample
+            {
+                public static void Method(string a, string b) => throw null;
+                public static void Method(string a, System.StringComparison comparisonType, string b) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    Sample.Method(b: "y", a: "x", comparisonType: System.StringComparison.Ordinal);
+                }
+            }
+
+            static class Sample
+            {
+                public static void Method(string a, string b) => throw null;
+                public static void Method(string a, System.StringComparison comparisonType, string b) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
