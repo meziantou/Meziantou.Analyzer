@@ -134,30 +134,63 @@ public sealed class JsonSerializerOptionsAnalyzer : DiagnosticAnalyzer
         /// <summary>
         /// Indicates whether the created instance is stored in a local that a following statement configures,
         /// such as <c>var options = new JsonSerializerOptions(); options.RespectNullableAnnotations = true;</c>.
+        /// Only the statements that run before another instance is assigned to the local are considered, as the
+        /// following ones configure that other instance.
         /// </summary>
         private static bool IsSetOnLocal(IObjectCreationOperation operation, string propertyName)
         {
             if (GetAssignedLocal(operation) is not { } local)
                 return false;
 
-            IOperation root = operation;
-            while (root.Parent is not null)
+            foreach (var statement in GetFollowingStatements(operation))
             {
-                root = root.Parent;
-            }
-
-            foreach (var descendant in root.Descendants())
-            {
-                if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: ILocalReferenceOperation localReference } property }
-                    && IsProperty(property, propertyName)
-                    && local.IsEqualTo(localReference.Local))
+                foreach (var descendant in statement.DescendantsAndSelf())
                 {
-                    return true;
+                    if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: ILocalReferenceOperation localReference } property }
+                        && IsProperty(property, propertyName)
+                        && local.IsEqualTo(localReference.Local))
+                    {
+                        return true;
+                    }
+
+                    if (IsAssignedTo(descendant, local))
+                        return false;
                 }
             }
 
             return false;
         }
+
+        /// <summary>
+        /// Gets the statements that run after the statement containing the operation, in the order they run.
+        /// </summary>
+        private static IEnumerable<IOperation> GetFollowingStatements(IOperation operation)
+        {
+            for (var current = operation; current.Parent is { } parent; current = parent)
+            {
+                var statements = parent switch
+                {
+                    IBlockOperation block => block.Operations,
+                    ISwitchCaseOperation switchCase => switchCase.Body,
+                    _ => ImmutableArray<IOperation>.Empty,
+                };
+
+                for (var i = statements.IndexOf(current) + 1; i < statements.Length; i++)
+                {
+                    yield return statements[i];
+                }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the operation assigns another value to the local.
+        /// </summary>
+        private static bool IsAssignedTo(IOperation operation, ILocalSymbol local) => operation switch
+        {
+            IAssignmentOperation { Target: ILocalReferenceOperation localReference } => local.IsEqualTo(localReference.Local),
+            IArgumentOperation { Parameter.RefKind: RefKind.Ref or RefKind.Out, Value: ILocalReferenceOperation localReference } => local.IsEqualTo(localReference.Local),
+            _ => false,
+        };
 
         private static bool IsProperty(IPropertyReferenceOperation operation, string propertyName)
             => string.Equals(operation.Property.Name, propertyName, StringComparison.Ordinal);

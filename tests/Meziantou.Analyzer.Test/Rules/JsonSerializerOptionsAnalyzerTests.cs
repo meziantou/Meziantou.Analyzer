@@ -143,6 +143,112 @@ public sealed class JsonSerializerOptionsAnalyzerTests
     }
 
     [Fact]
+    public Task OptionsSetOnTheLocalBeforeItIsAssignedANewInstance()
+    {
+        // The first statement configures the first instance, not the one created afterwards
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Text.Json;
+
+            class Sample
+            {
+                void A()
+                {
+                    var options = {|MA0225:new JsonSerializerOptions()|};
+                    options.RespectNullableAnnotations = true;
+                    options = {|MA0224:{|MA0225:new JsonSerializerOptions()|}|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionsSetOnTheLocalAfterItIsAssignedANewInstance()
+    {
+        // The last statements configure the last instance, not the one created before
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Text.Json;
+
+            class Sample
+            {
+                void A()
+                {
+                    var options = {|MA0224:{|MA0225:new JsonSerializerOptions()|}|};
+                    options = new JsonSerializerOptions();
+                    options.RespectNullableAnnotations = true;
+                    options.RespectRequiredConstructorParameters = true;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionsSetOnTheLocalInAnEnclosingBlock()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Text.Json;
+
+            class Sample
+            {
+                void A(bool condition)
+                {
+                    JsonSerializerOptions options;
+                    if (condition)
+                    {
+                        options = new JsonSerializerOptions();
+                    }
+                    else
+                    {
+                        options = new JsonSerializerOptions(JsonSerializerDefaults.Web);
+                    }
+
+                    options.RespectNullableAnnotations = true;
+                    options.RespectRequiredConstructorParameters = true;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionsSetOnTheLocalInTheSameSwitchSection()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Text.Json;
+
+            class Sample
+            {
+                void A(int value)
+                {
+                    JsonSerializerOptions options;
+                    switch (value)
+                    {
+                        case 0:
+                            options = new JsonSerializerOptions();
+                            options.RespectNullableAnnotations = true;
+                            options.RespectRequiredConstructorParameters = true;
+                            break;
+
+                        default:
+                            options = {|MA0224:{|MA0225:new JsonSerializerOptions()|}|};
+                            break;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task OptionsSetOnAnotherLocal()
     {
         var test = new AnalyzerTest();
