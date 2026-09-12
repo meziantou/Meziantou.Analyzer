@@ -615,7 +615,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             if (!HasTake(operation, ExtensionMethodOwnerTypes))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
-                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                                    .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                             }
                         }
 
@@ -640,7 +641,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             if (!HasTake(operation, ExtensionMethodOwnerTypes))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
-                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                                    .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                             }
                         }
 
@@ -737,54 +739,50 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         break;
                 }
             }
-            else
+            else if (!HasTake(operation, ExtensionMethodOwnerTypes) && CanBeEvaluatedTwice(otherOperand))
             {
+                // The value of the operand is unknown, so it may be negative. Rewriting to 'Skip(n).Any()' is not
+                // valid in that case: 'Skip' ignores a negative count, whereas comparing a count, which is never
+                // negative, with a negative value yields a constant result. Keeping the comparison and bounding the
+                // count with 'Take' is valid on the whole range of 'int', as 'Take(n).Count()' is
+                // 'Min(Count(), Max(n, 0))'. The operand is duplicated by the fix, hence the check that it can be
+                // evaluated twice.
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
-                        // expr.Count() == 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
-                        {
-                            message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
-                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
-                        }
-
+                        // expr.Count() == n
+                        message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: true);
                         break;
 
                     case BinaryOperatorKind.NotEquals:
-                        // expr.Count() != 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
-                        {
-                            message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
-                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
-                        }
-
+                        // expr.Count() != n
+                        message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: true);
                         break;
 
                     case BinaryOperatorKind.LessThan:
-                        // expr.Count() < 10
-                        message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
+                        // expr.Count() < n
+                        message = "Replace 'Count() < n' with 'Take(n).Count() < n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: false);
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
-                        // expr.Count() <= 10
-                        message = "Replace 'Count() <= n' with 'Skip(n).Any() == false'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
+                        // expr.Count() <= n
+                        message = "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: true);
                         break;
 
                     case BinaryOperatorKind.GreaterThan:
-                        // expr.Count() > 1
-                        message = "Replace 'Count() > n' with 'Skip(n).Any()'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
+                        // expr.Count() > n
+                        message = "Replace 'Count() > n' with 'Take(n + 1).Count() > n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: true);
                         break;
 
                     case BinaryOperatorKind.GreaterThanOrEqual:
-                        // expr.Count() >= 2
-                        message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
+                        // expr.Count() >= n
+                        message = "Replace 'Count() >= n' with 'Take(n).Count() >= n'";
+                        properties = CreateTakeAndCountProperties(takePlusOne: false);
                         break;
                 }
             }
@@ -837,6 +835,25 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                 return op.TargetMethod.Name == nameof(Enumerable.Take) && extensionMethodOwnerTypes.Contains(op.TargetMethod.ContainingType, SymbolEqualityComparer.Default);
             }
+
+            static ImmutableDictionary<string, string?> CreateTakeAndCountProperties(bool takePlusOne)
+            {
+                var properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
+                return takePlusOne ? properties.Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "") : properties;
+            }
+
+            // The fix keeps the operand in the comparison and also uses it as the argument of 'Take', so it must be
+            // possible to evaluate it twice without changing the behavior of the expression.
+            static bool CanBeEvaluatedTwice(IOperation operation) => operation switch
+            {
+                _ when operation.ConstantValue.HasValue => true,
+                ILiteralOperation or IParameterReferenceOperation or ILocalReferenceOperation or IInstanceReferenceOperation => true,
+                IFieldReferenceOperation fieldReference => fieldReference.Instance is null || CanBeEvaluatedTwice(fieldReference.Instance),
+                IConversionOperation conversion => conversion.OperatorMethod is null && CanBeEvaluatedTwice(conversion.Operand),
+                IUnaryOperation unary => unary.OperatorMethod is null && CanBeEvaluatedTwice(unary.Operand),
+                IBinaryOperation binary => binary.OperatorMethod is null && CanBeEvaluatedTwice(binary.LeftOperand) && CanBeEvaluatedTwice(binary.RightOperand),
+                _ => false,
+            };
         }
 
         private static void UseCastInsteadOfSelect(OperationAnalysisContext context, IInvocationOperation operation)

@@ -724,6 +724,12 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
     [InlineData("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
     [InlineData("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+    [InlineData("Count() == n", "Take(n + 1).Count() == n", "Replace 'Count() == n' with 'Take(n + 1).Count() == n'")]
+    [InlineData("Count() < n", "Take(n).Count() < n", "Replace 'Count() < n' with 'Take(n).Count() < n'")]
+    [InlineData("Count() <= n", "Take(n + 1).Count() <= n", "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'")]
+    [InlineData("Count() > n", "Take(n + 1).Count() > n", "Replace 'Count() > n' with 'Take(n + 1).Count() > n'")]
+    [InlineData("Count() >= n", "Take(n).Count() >= n", "Replace 'Count() >= n' with 'Take(n).Count() >= n'")]
+    [InlineData("Count(x => true) <= n", "Where(x => true).Take(n + 1).Count() <= n", "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'")]
     public Task Count_TakeAndCount(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -761,9 +767,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [Theory]
     [InlineData("Count() > 1", "Skip(1).Any()", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
     [InlineData("Count() > 2", "Skip(2).Any()", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
-    [InlineData("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
     [InlineData("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
-    [InlineData("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
     public Task Count_SkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -773,8 +777,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
             {
                 public Test()
                 {
-                    int n = 10;
-                    var enumerable = Enumerable.Empty<int>();
+                        var enumerable = Enumerable.Empty<int>();
                     _ = {|#0:enumerable.{{text}}|};
                 }
             }
@@ -787,8 +790,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
             {
                 public Test()
                 {
-                    int n = 10;
-                    var enumerable = Enumerable.Empty<int>();
+                        var enumerable = Enumerable.Empty<int>();
                     _ = enumerable.{{fix}};
                 }
             }
@@ -800,11 +802,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
     [Theory]
     [InlineData("Count() < 2", "Skip(1).Any()", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
-    [InlineData("Count() < n", "Skip(n - 1).Any()", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
     [InlineData("Count() <= 1", "Skip(1).Any()", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
     [InlineData("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
-    [InlineData("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
-    [InlineData("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
     public Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -814,8 +813,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
             {
                 public Test()
                 {
-                    int n = 10;
-                    var enumerable = Enumerable.Empty<int>();
+                        var enumerable = Enumerable.Empty<int>();
                     _ = {|#0:enumerable.{{text}}|};
                 }
             }
@@ -828,10 +826,42 @@ public sealed class OptimizeLinqUsageAnalyzerTests
             {
                 public Test()
                 {
-                    int n = 10;
-                    var enumerable = Enumerable.Empty<int>();
+                        var enumerable = Enumerable.Empty<int>();
                     _ = !enumerable.{{fix}};
                 }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Count() == GetLimit()")]
+    [InlineData("Count() != GetLimit()")]
+    [InlineData("Count() < GetLimit()")]
+    [InlineData("Count() <= GetLimit()")]
+    [InlineData("Count() > GetLimit()")]
+    [InlineData("Count() >= GetLimit()")]
+    [InlineData("Take(10).Count() < n")]
+    [InlineData("Take(10).Count() <= n")]
+    [InlineData("Take(10).Count() > n")]
+    [InlineData("Take(10).Count() >= n")]
+    public Task Count_NonConstantOperand_NotReported(string text)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    int n = 10;
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    _ = enumerable.{{text}};
+                }
+
+                static int GetLimit() => 10;
             }
 
             """;
