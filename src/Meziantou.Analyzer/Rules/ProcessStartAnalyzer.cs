@@ -55,46 +55,74 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
 
     }
 
-    private enum PropertyValue
+    /// <summary>
+    /// The values a property can have when the process is started. It can have multiple values when it is
+    /// assigned by an operation that may not be executed, such as the body of an <c>if</c> statement.
+    /// </summary>
+    [Flags]
+    private enum PropertyValues
     {
-        NotSet,
-        False,
-        True,
-        Unknown,
+        None = 0x0,
+        NotSet = 0x1,
+        False = 0x2,
+        True = 0x4,
+        Unknown = 0x8,
     }
 
     // The property names cannot use nameof as System.Diagnostics.ProcessStartInfo is banned in analyzers (RS1035)
     [StructLayout(LayoutKind.Auto)]
-    private struct ProcessStartInfoProperties
+    private struct ProcessStartInfoProperties()
     {
-        public PropertyValue UseShellExecute { get; private set; }
-        private PropertyValue RedirectStandardError { get; set; }
-        private PropertyValue RedirectStandardInput { get; set; }
-        private PropertyValue RedirectStandardOutput { get; set; }
+        private PropertyValues UseShellExecute { get; set; } = PropertyValues.NotSet;
+        private PropertyValues RedirectStandardError { get; set; } = PropertyValues.NotSet;
+        private PropertyValues RedirectStandardInput { get; set; } = PropertyValues.NotSet;
+        private PropertyValues RedirectStandardOutput { get; set; } = PropertyValues.NotSet;
 
         public readonly bool IsRedirecting
-            => RedirectStandardError is PropertyValue.True || RedirectStandardInput is PropertyValue.True || RedirectStandardOutput is PropertyValue.True;
+            => ((RedirectStandardError | RedirectStandardInput | RedirectStandardOutput) & PropertyValues.True) is not PropertyValues.None;
 
-        public void Set(string propertyName, PropertyValue value)
+        /// <summary>
+        /// The shell can be used to start the process, either because UseShellExecute can be true or because
+        /// it can keep its default value, which is true on .NET Framework.
+        /// </summary>
+        public readonly bool CanUseShellExecute
+            => (UseShellExecute & (PropertyValues.NotSet | PropertyValues.True)) is not PropertyValues.None;
+
+        public readonly bool IsUseShellExecuteNotSet => UseShellExecute is PropertyValues.NotSet;
+
+        /// <summary>
+        /// Replaces the values the property can have, for an assignment that is always executed.
+        /// </summary>
+        public void Set(string propertyName, PropertyValues values) => Update(propertyName, values, replaceExistingValues: true);
+
+        /// <summary>
+        /// Adds a value the property can have, for an assignment that may not be executed.
+        /// </summary>
+        public void AddPossibleValues(string propertyName, PropertyValues values) => Update(propertyName, values, replaceExistingValues: false);
+
+        private void Update(string propertyName, PropertyValues values, bool replaceExistingValues)
         {
             switch (propertyName)
             {
                 case "UseShellExecute":
-                    UseShellExecute = value;
+                    UseShellExecute = Merge(UseShellExecute, values, replaceExistingValues);
                     break;
 
                 case "RedirectStandardError":
-                    RedirectStandardError = value;
+                    RedirectStandardError = Merge(RedirectStandardError, values, replaceExistingValues);
                     break;
 
                 case "RedirectStandardInput":
-                    RedirectStandardInput = value;
+                    RedirectStandardInput = Merge(RedirectStandardInput, values, replaceExistingValues);
                     break;
 
                 case "RedirectStandardOutput":
-                    RedirectStandardOutput = value;
+                    RedirectStandardOutput = Merge(RedirectStandardOutput, values, replaceExistingValues);
                     break;
             }
+
+            static PropertyValues Merge(PropertyValues currentValues, PropertyValues newValues, bool replaceExistingValues)
+                => replaceExistingValues ? newValues : currentValues | newValues;
         }
     }
 
@@ -128,13 +156,13 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             var properties = GetProperties(operation);
             if (properties.IsRedirecting)
             {
-                if (properties.UseShellExecute is PropertyValue.NotSet or PropertyValue.True)
+                if (properties.CanUseShellExecute)
                 {
                     // Redirecting standard input or output while UseShellExecute is not explicitly set to false
                     context.ReportDiagnostic(SetToFalseWhenRedirectingOutput, operation);
                 }
             }
-            else if (properties.UseShellExecute is PropertyValue.NotSet)
+            else if (properties.IsUseShellExecuteNotSet)
             {
                 // Constructing ProcessStartInfo without setting UseShellExecute
                 context.ReportDiagnostic(UseShellExecuteMustBeExplicitlySet, operation);
@@ -143,7 +171,7 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
 
         private ProcessStartInfoProperties GetProperties(IObjectCreationOperation operation)
         {
-            var result = default(ProcessStartInfoProperties);
+            var result = new ProcessStartInfoProperties();
             if (operation.Initializer is not null)
             {
                 foreach (var assignment in operation.Initializer.Initializers.OfType<ISimpleAssignmentOperation>())
@@ -161,15 +189,34 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             var target = GetAssignmentTargetSymbol(operation);
             if (target is not null)
             {
-                foreach (var descendant in GetRootOperation(operation).Descendants())
+                var root = GetRootOperation(operation);
+                var assignments = GetPropertyAssignments(root, operation, target);
+
+                // The configuration that matters is the one the instance has when the process is started
+                var startOperation = FindProcessStart(root, operation, target);
+
+                // The assignments of a nested function are executed when the function is invoked, so they cannot
+                // be ordered with the start of the process
+                if (startOperation is not null && assignments.Any(item => IsInNestedFunction(item.Assignment, operation)))
                 {
-                    // Only the assignments that follow the creation apply to the created instance
-                    if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: { } instance } propertyReference } assignment
-                        && descendant.Syntax.SpanStart > operation.Syntax.SpanStart
-                        && propertyReference.Property.ContainingType.IsEqualTo(_processStartInfoSymbol)
-                        && target.IsEqualTo(GetReferencedSymbol(instance)))
+                    startOperation = null;
+                }
+
+                foreach (var (propertyReference, assignment) in assignments)
+                {
+                    // The assignments that follow the start of the process cannot change its configuration
+                    if (startOperation is not null && assignment.Syntax.SpanStart > startOperation.Syntax.SpanStart)
+                        continue;
+
+                    var value = GetAssignedValue(assignment.Value);
+                    if (startOperation is null || IsAlwaysExecutedBefore(assignment, startOperation))
                     {
-                        result.Set(propertyReference.Property.Name, GetAssignedValue(assignment.Value));
+                        result.Set(propertyReference.Property.Name, value);
+                    }
+                    else
+                    {
+                        // The assignment may not be executed, so the property can also keep its previous values
+                        result.AddPossibleValues(propertyReference.Property.Name, value);
                     }
                 }
             }
@@ -177,11 +224,113 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             return result;
         }
 
-        private static PropertyValue GetAssignedValue(IOperation operation) => operation.ConstantValue switch
+        private List<(IPropertyReferenceOperation PropertyReference, ISimpleAssignmentOperation Assignment)> GetPropertyAssignments(IOperation root, IObjectCreationOperation operation, ISymbol target)
         {
-            { HasValue: true, Value: true } => PropertyValue.True,
-            { HasValue: true, Value: false } => PropertyValue.False,
-            _ => PropertyValue.Unknown,
+            var result = new List<(IPropertyReferenceOperation, ISimpleAssignmentOperation)>();
+            foreach (var descendant in root.Descendants())
+            {
+                // Only the assignments that follow the creation apply to the created instance
+                if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: { } instance } propertyReference } assignment
+                    && descendant.Syntax.SpanStart > operation.Syntax.SpanStart
+                    && propertyReference.Property.ContainingType.IsEqualTo(_processStartInfoSymbol)
+                    && target.IsEqualTo(GetReferencedSymbol(instance)))
+                {
+                    result.Add((propertyReference, assignment));
+                }
+            }
+
+            return result;
+        }
+
+        /// <summary>
+        /// Finds the first call to Process.Start that uses the created instance, as this is where its
+        /// configuration is used.
+        /// </summary>
+        private IOperation? FindProcessStart(IOperation root, IObjectCreationOperation operation, ISymbol target)
+        {
+            foreach (var descendant in root.Descendants())
+            {
+                if (descendant.Syntax.SpanStart <= operation.Syntax.SpanStart)
+                    continue;
+
+                if (descendant is not IInvocationOperation invocation || !IsProcessStartInvocation(invocation))
+                    continue;
+
+                if (!invocation.Arguments.Any(argument => target.IsEqualTo(GetReferencedSymbol(argument.Value))))
+                    continue;
+
+                // A nested function is invoked at an unknown time, which can be before the operations that precede it
+                if (IsInNestedFunction(invocation, operation))
+                    continue;
+
+                // The descendants are enumerated in source order, so this is the first start of the process
+                return invocation;
+            }
+
+            return null;
+        }
+
+        /// <summary>
+        /// Indicates whether the operation is executed every time the process is started. This is an approximation
+        /// as it only relies on the position of the operations and on the operations that can skip them.
+        /// </summary>
+        private static bool IsAlwaysExecutedBefore(IOperation operation, IOperation use)
+        {
+            if (operation.Syntax.SpanStart > use.Syntax.SpanStart)
+                return false;
+
+            var child = operation;
+            foreach (var ancestor in operation.Ancestors())
+            {
+                if (ancestor.Syntax.Span.Contains(use.Syntax.Span))
+                {
+                    // The operations are in the same branch when the branch that contains the operation also contains the use
+                    return !CanBeSkipped(ancestor) || child.Syntax.Span.Contains(use.Syntax.Span);
+                }
+
+                if (CanBeSkipped(ancestor))
+                    return false;
+
+                child = ancestor;
+            }
+
+            return true;
+        }
+
+        private static bool IsInNestedFunction(IOperation operation, IObjectCreationOperation creation)
+        {
+            foreach (var ancestor in operation.Ancestors())
+            {
+                if (ancestor.Syntax.Span.Contains(creation.Syntax.Span))
+                    return false;
+
+                if (ancestor is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool CanBeSkipped(IOperation operation) => operation is
+            IConditionalOperation or
+            ILoopOperation or
+            ISwitchOperation or
+            ISwitchCaseOperation or
+            ISwitchExpressionOperation or
+            ISwitchExpressionArmOperation or
+            ICatchClauseOperation or
+            IConditionalAccessOperation or
+            ICoalesceOperation or
+            ICoalesceAssignmentOperation or
+            IAnonymousFunctionOperation or
+            ILocalFunctionOperation or
+            IBinaryOperation { OperatorKind: BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr };
+
+        private static PropertyValues GetAssignedValue(IOperation operation) => operation.ConstantValue switch
+        {
+            { HasValue: true, Value: true } => PropertyValues.True,
+            { HasValue: true, Value: false } => PropertyValues.False,
+            _ => PropertyValues.Unknown,
         };
 
         private static ISymbol? GetAssignmentTargetSymbol(IObjectCreationOperation operation) => operation.Parent switch
