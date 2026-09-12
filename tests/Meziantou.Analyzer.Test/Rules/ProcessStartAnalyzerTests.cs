@@ -478,6 +478,221 @@ public sealed class ProcessStartAnalyzerTests
     }
 
     [Fact]
+    public Task Process_start_should_report_when_use_shell_execute_is_set_to_false_after_the_process_is_started()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()
+                    {
+                        RedirectStandardOutput = true,
+                        UseShellExecute = true,
+                    }|};
+                    Process.Start(processStartInfo);
+                    processStartInfo.UseShellExecute = false;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_report_when_the_redirection_is_disabled_after_the_process_is_started()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo() { RedirectStandardOutput = true, UseShellExecute = true }|};
+                    Process.Start(processStartInfo);
+                    processStartInfo.RedirectStandardOutput = false;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_report_when_the_redirection_is_enabled_after_the_process_is_started()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo()|};
+                    Process.Start(processStartInfo);
+                    processStartInfo.RedirectStandardOutput = true;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0161", DiagnosticSeverity.Info).WithLocation(0).WithMessage("UseShellExecute must be explicitly set when initializing a ProcessStartInfo"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_report_when_use_shell_execute_is_only_set_to_false_in_a_conditional_branch()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test(bool condition)
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo() { RedirectStandardOutput = true, UseShellExecute = true }|};
+                    if (condition)
+                    {
+                        processStartInfo.UseShellExecute = false;
+                    }
+
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_report_when_the_redirection_is_enabled_in_a_conditional_branch()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test(bool condition)
+                {
+                    var processStartInfo = {|#0:new ProcessStartInfo() { UseShellExecute = true }|};
+                    if (condition)
+                    {
+                        processStartInfo.RedirectStandardOutput = true;
+                    }
+
+                    Process.Start(processStartInfo);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0163", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("Set UseShellExecute to false when redirecting standard input or output"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_not_report_when_the_process_is_started_in_the_branch_that_sets_use_shell_execute()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test(bool condition)
+                {
+                    var processStartInfo = new ProcessStartInfo() { RedirectStandardOutput = true };
+                    if (condition)
+                    {
+                        processStartInfo.UseShellExecute = false;
+                        Process.Start(processStartInfo);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_not_report_when_the_process_is_started_in_a_loop_after_use_shell_execute_is_set()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test(bool condition)
+                {
+                    var processStartInfo = new ProcessStartInfo() { RedirectStandardOutput = true };
+                    while (condition)
+                    {
+                        processStartInfo.UseShellExecute = false;
+                        Process.Start(processStartInfo);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_not_report_when_use_shell_execute_is_set_in_a_local_function()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = new ProcessStartInfo() { RedirectStandardOutput = true };
+                    Configure();
+                    Process.Start(processStartInfo);
+
+                    void Configure() => processStartInfo.UseShellExecute = false;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Process_start_should_not_report_when_use_shell_execute_is_set_after_the_start_info_is_assigned_to_a_process()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Diagnostics;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    var processStartInfo = new ProcessStartInfo() { RedirectStandardOutput = true };
+                    using var process = new Process() { StartInfo = processStartInfo };
+                    processStartInfo.UseShellExecute = false;
+                    process.Start();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Process_start_should_report_when_use_shell_execute_is_not_set_2()
     {
         var test = new CodeFixTest();
