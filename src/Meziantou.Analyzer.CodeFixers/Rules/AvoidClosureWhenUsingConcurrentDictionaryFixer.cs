@@ -39,12 +39,15 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
                 context.Diagnostics);
         }
 
-        if (context.Diagnostics.Any(d => d.Id == RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg))
+        if (context.Diagnostics.Any(d => d.Id == RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg)
+            && invocationOperation.Syntax is InvocationExpressionSyntax invocationSyntax
+            && GetFactoriesToUpdate(invocationOperation) is { } factories
+            && TryGetFactoryArgumentSymbol(semanticModel, factories, lambdaOperation, out var capturedSymbol))
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Use factoryArgument overload",
-                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationOperation, lambdaOperation, ct),
+                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationSyntax, factories, capturedSymbol, ct),
                     equivalenceKey: "Use factoryArgument overload"),
                 context.Diagnostics);
         }
@@ -67,86 +70,70 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, CancellationToken cancellationToken)
+    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, InvocationExpressionSyntax invocationSyntax, List<IAnonymousFunctionOperation> factories, ISymbol capturedSymbol, CancellationToken cancellationToken)
     {
-        if (invocationOperation.Syntax is not InvocationExpressionSyntax invocationSyntax)
-            return document;
+        var parameterName = GetUniqueParameterName(factories.SelectMany(factory => factory.Symbol.Parameters).Select(p => p.Name), "arg");
 
-        var capturedSymbol = GetCapturedSymbols(semanticModel, lambdaOperation).FirstOrDefault();
-        if (capturedSymbol is not ILocalSymbol and not IParameterSymbol)
-            return document;
-
-        var newInvocation = invocationOperation.TargetMethod.Name switch
+        var arguments = invocationSyntax.ArgumentList.Arguments;
+        for (var i = 0; i < factories.Count; i++)
         {
-            "GetOrAdd" => CreateGetOrAddInvocationWithFactoryArg(invocationOperation, invocationSyntax, lambdaOperation, capturedSymbol, semanticModel),
-            "AddOrUpdate" => CreateAddOrUpdateInvocationWithFactoryArg(invocationOperation, invocationSyntax, capturedSymbol, semanticModel),
-            _ => null,
-        };
+            var updatedLambda = ReplaceSymbolReferences((AnonymousFunctionExpressionSyntax)factories[i].Syntax, semanticModel, capturedSymbol, parameterName);
+            var lambdaWithParameter = AddParameterToLambda(updatedLambda, parameterName);
 
-        if (newInvocation is null)
-            return document;
+            // The factories are the arguments following the key
+            var argumentIndex = i + 1;
+            arguments = arguments.Replace(arguments[argumentIndex], arguments[argumentIndex].WithExpression(lambdaWithParameter));
+        }
+
+        arguments = arguments.Add(Argument(IdentifierName(capturedSymbol.Name)));
+        var newInvocation = invocationSyntax.WithArgumentList(invocationSyntax.ArgumentList.WithArguments(arguments));
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(invocationSyntax, newInvocation.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
     }
 
-    private static InvocationExpressionSyntax? CreateGetOrAddInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, IAnonymousFunctionOperation lambdaOperation, ISymbol capturedSymbol, SemanticModel semanticModel)
+    /// <summary>
+    /// Gets the factories the code fix must rewrite to use the 'factoryArgument' parameter, in the order of the arguments following the key.
+    /// </summary>
+    private static List<IAnonymousFunctionOperation>? GetFactoriesToUpdate(IInvocationOperation invocationOperation)
     {
-        if (invocationOperation.Arguments.Length != 2)
-            return null;
+        if (invocationOperation.TargetMethod.Name is "GetOrAdd" && invocationOperation.Arguments.Length == 2)
+        {
+            if (TryGetAnonymousFunctionOperation(invocationOperation.Arguments[1].Value, out var valueFactory))
+                return [valueFactory];
+        }
+        else if (invocationOperation.TargetMethod.Name is "AddOrUpdate" && invocationOperation.Arguments.Length == 3)
+        {
+            if (TryGetAnonymousFunctionOperation(invocationOperation.Arguments[1].Value, out var addValueFactory) &&
+                TryGetAnonymousFunctionOperation(invocationOperation.Arguments[2].Value, out var updateValueFactory))
+            {
+                return [addValueFactory, updateValueFactory];
+            }
+        }
 
-        var lambda = lambdaOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        if (lambda is null)
-            return null;
-
-        var parameterName = GetUniqueParameterName(lambdaOperation.Symbol.Parameters.Select(p => p.Name), "arg");
-        var updatedLambda = ReplaceSymbolReferences(lambda, semanticModel, capturedSymbol, parameterName);
-        updatedLambda = AddParameterToLambda(updatedLambda, parameterName);
-        if (updatedLambda is null)
-            return null;
-
-        var arguments = invocationSyntax.ArgumentList.Arguments;
-        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(updatedLambda));
-        arguments = arguments.Add(Argument(IdentifierName(capturedSymbol.Name)));
-        return invocationSyntax.WithArgumentList(invocationSyntax.ArgumentList.WithArguments(arguments));
+        return null;
     }
 
-    private static InvocationExpressionSyntax? CreateAddOrUpdateInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, ISymbol capturedSymbol, SemanticModel semanticModel)
+    private static bool TryGetFactoryArgumentSymbol(SemanticModel semanticModel, List<IAnonymousFunctionOperation> factories, IAnonymousFunctionOperation lambdaOperation, [NotNullWhen(true)] out ISymbol? capturedSymbol)
     {
-        if (invocationOperation.Arguments.Length != 3)
-            return null;
+        capturedSymbol = null;
 
-        if (!TryGetAnonymousFunctionOperation(invocationOperation.Arguments[1].Value, out var addValueFactoryOperation))
-            return null;
+        // The code fix adds a parameter to every rewritten factory
+        if (factories.Any(factory => factory.Syntax is not (ParenthesizedLambdaExpressionSyntax or SimpleLambdaExpressionSyntax)))
+            return false;
 
-        if (!TryGetAnonymousFunctionOperation(invocationOperation.Arguments[2].Value, out var updateValueFactoryOperation))
-            return null;
+        var symbol = GetCapturedSymbols(semanticModel, lambdaOperation).FirstOrDefault();
+        if (symbol is not ILocalSymbol and not IParameterSymbol)
+            return false;
 
-        var addValueFactory = addValueFactoryOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        var updateValueFactory = updateValueFactoryOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        if (addValueFactory is null || updateValueFactory is null)
-            return null;
+        // The captured variable is a shared storage, whereas the 'factoryArgument' parameter is a copy of its value.
+        // Replacing the references to the variable by the parameter would drop the writes made by the factories.
+        if (factories.Any(factory => IsWrittenInside(semanticModel, factory, symbol)))
+            return false;
 
-        var parameterName = GetUniqueParameterName(
-            addValueFactoryOperation.Symbol.Parameters.Select(p => p.Name).Concat(updateValueFactoryOperation.Symbol.Parameters.Select(p => p.Name)),
-            "arg");
-
-        addValueFactory = ReplaceSymbolReferences(addValueFactory, semanticModel, capturedSymbol, parameterName);
-        addValueFactory = AddParameterToLambda(addValueFactory, parameterName);
-        if (addValueFactory is null)
-            return null;
-
-        updateValueFactory = ReplaceSymbolReferences(updateValueFactory, semanticModel, capturedSymbol, parameterName);
-        updateValueFactory = AddParameterToLambda(updateValueFactory, parameterName);
-        if (updateValueFactory is null)
-            return null;
-
-        var arguments = invocationSyntax.ArgumentList.Arguments;
-        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(addValueFactory));
-        arguments = arguments.Replace(arguments[2], arguments[2].WithExpression(updateValueFactory));
-        arguments = arguments.Add(Argument(IdentifierName(capturedSymbol.Name)));
-        return invocationSyntax.WithArgumentList(invocationSyntax.ArgumentList.WithArguments(arguments));
+        capturedSymbol = symbol;
+        return true;
     }
 
     private static List<(ISymbol Symbol, string ParameterName)> GetReplacementMappings(IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, IArgumentOperation lambdaArgument)
@@ -210,11 +197,21 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
 
         foreach (var symbol in dataFlow.CapturedInside)
         {
-            if (!parameters.Contains(symbol, SymbolEqualityComparer.Default))
+            if (!parameters.Contains(symbol, SymbolEqualityComparer.Default) && !dataFlow.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default))
             {
                 yield return symbol;
             }
         }
+    }
+
+    private static bool IsWrittenInside(SemanticModel semanticModel, IAnonymousFunctionOperation lambdaOperation, ISymbol symbol)
+    {
+        var dataFlowNode = GetDataFlowArgument(lambdaOperation.Syntax);
+        if (dataFlowNode is null)
+            return false;
+
+        var dataFlow = semanticModel.AnalyzeDataFlow(dataFlowNode);
+        return dataFlow.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default);
     }
 
     private static AnonymousFunctionExpressionSyntax ReplaceSymbolReferences(AnonymousFunctionExpressionSyntax lambda, SemanticModel semanticModel, ISymbol symbolToReplace, string replacementParameterName)
@@ -223,7 +220,7 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda);
     }
 
-    private static ParenthesizedLambdaExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
+    private static ParenthesizedLambdaExpressionSyntax AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
     {
         var parameter = Parameter(Identifier(parameterName));
 
@@ -232,28 +229,13 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
             return parenthesizedLambda.WithParameterList(parenthesizedLambda.ParameterList.WithParameters(parenthesizedLambda.ParameterList.Parameters.Add(parameter)));
         }
 
-        if (lambda is SimpleLambdaExpressionSyntax simpleLambda)
-        {
-            var parameters = SeparatedList(new[] { simpleLambda.Parameter, parameter });
+        var simpleLambda = (SimpleLambdaExpressionSyntax)lambda;
+        var parameters = SeparatedList(new[] { simpleLambda.Parameter, parameter });
+        var updatedLambda = simpleLambda.Block is not null
+            ? ParenthesizedLambdaExpression(ParameterList(parameters), simpleLambda.Block)
+            : ParenthesizedLambdaExpression(ParameterList(parameters), simpleLambda.ExpressionBody!);
 
-            ParenthesizedLambdaExpressionSyntax updatedLambda;
-            if (simpleLambda.Block is not null)
-            {
-                updatedLambda = ParenthesizedLambdaExpression(ParameterList(parameters), simpleLambda.Block);
-            }
-            else if (simpleLambda.ExpressionBody is not null)
-            {
-                updatedLambda = ParenthesizedLambdaExpression(ParameterList(parameters), simpleLambda.ExpressionBody);
-            }
-            else
-            {
-                return null;
-            }
-
-            return updatedLambda.WithAsyncKeyword(simpleLambda.AsyncKeyword);
-        }
-
-        return null;
+        return updatedLambda.WithAsyncKeyword(simpleLambda.AsyncKeyword);
     }
 
     private static string GetUniqueParameterName(IEnumerable<string> existingParameterNames, string baseName)
