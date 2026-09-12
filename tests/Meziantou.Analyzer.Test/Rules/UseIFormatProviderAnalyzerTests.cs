@@ -1079,4 +1079,71 @@ public sealed class UseIFormatProviderAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = new Sample().Format(1.5);
+
+            public class Sample
+            {
+                public string Format(double value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static string Format(this Sample sample, double value, System.IFormatProvider formatProvider) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0011.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            _ = {|MA0011:new Sample().Format(1.5)|};
+
+            public class Sample
+            {
+                public string Format(double value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static string Format(this Sample sample, double value, System.IFormatProvider formatProvider) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            _ = new Sample().Format(1.5, System.Globalization.CultureInfo.InvariantCulture);
+
+            public class Sample
+            {
+                public string Format(double value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static string Format(this Sample sample, double value, System.IFormatProvider formatProvider) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

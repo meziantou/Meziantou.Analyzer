@@ -1,3 +1,4 @@
+using Meziantou.Analyzer.Configurations;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
@@ -25,6 +26,8 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: false,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseInKeywordToSelectInOverload));
+
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseInKeywordToSelectInOverload + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleUseInForInParameter, RuleUseInToSelectInOverload);
 
@@ -68,9 +71,16 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
             return;
 
         // The arguments are in source order, which differs from the parameter order when named arguments are reordered
-        if (HasInOverloadWithEquivalentParameters(invocationOperation, operation.Parameter.Ordinal, overloadFinder))
+        var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+        if (FindInOverloadWithEquivalentParameters(invocationOperation, operation.Parameter.Ordinal, overloadFinder, includeExtensionMethodsFromNotImportedNamespaces) is { } overload)
         {
-            context.ReportDiagnostic(RuleUseInToSelectInOverload, argumentSyntax);
+            var properties = ImmutableDictionary<string, string?>.Empty;
+            if (includeExtensionMethodsFromNotImportedNamespaces && overloadFinder.GetNamespaceToImport(overload, invocationOperation.Syntax) is { } namespaceToImport)
+            {
+                properties = properties.Add(OverloadFinder.NamespaceToImportPropertyName, namespaceToImport);
+            }
+
+            context.ReportDiagnostic(RuleUseInToSelectInOverload, properties, argumentSyntax);
         }
     }
 
@@ -82,18 +92,18 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         return UseInKeywordForInParameterCommon.CanBePassedByReference(operation.Value);
     }
 
-    private static bool HasInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int parameterIndex, OverloadFinder overloadFinder)
+    private static IMethodSymbol? FindInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int parameterIndex, OverloadFinder overloadFinder, bool includeExtensionMethodsFromNotImportedNamespaces)
     {
         var targetMethod = invocationOperation.TargetMethod;
         if (targetMethod.ContainingType is null)
-            return false;
+            return null;
 
         if (parameterIndex >= targetMethod.Parameters.Length)
-            return false;
+            return null;
 
         var currentParameter = targetMethod.Parameters[parameterIndex];
         if (currentParameter.RefKind is not RefKind.None)
-            return false;
+            return null;
 
         // Named arguments are bound by name, so the overload must use the same names to bind the arguments to the same parameters
         var compareParameterNames = HasNamedArguments(invocationOperation);
@@ -107,6 +117,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
             AllowParamsToNonParamsCompatibility: false,
             AllowInModifierCompatibility: true,
             AllowInterfaceConversions: false,
+            IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces,
             ShouldCheckMethod: method =>
             {
                 if (method.Parameters.Length != targetMethod.Parameters.Length)
@@ -118,7 +129,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
                 return HasEquivalentParameterList(targetMethod.Parameters, method.Parameters, parameterIndex, compareParameterNames);
             });
 
-        return overloadFinder.FindFirstSimilarMethod(targetMethod, options, targetMethod.Name, additionalParameterTypes: default) is not null;
+        return overloadFinder.FindFirstSimilarMethod(targetMethod, options, targetMethod.Name, additionalParameterTypes: default);
     }
 
     private static bool HasNamedArguments(IInvocationOperation invocationOperation)

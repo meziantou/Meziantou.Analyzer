@@ -15,6 +15,7 @@ internal static class ArgumentListHelper
     /// <param name="argumentExpression">The expression of the argument to add.</param>
     /// <param name="isExpectedParameter">Validates the parameter the new argument is bound to.</param>
     /// <param name="overload">The overload the invocation must be bound to after the fix, when it is known. It is used to rename the existing named arguments when the overload declares the parameters with other names.</param>
+    /// <param name="namespaceToImport">The namespace the fix imports to call the overload, when it is an extension method declared in a namespace that is not imported. The new invocation is bound as if the namespace was imported.</param>
     public static InvocationExpressionSyntax? AddArgument(
         SemanticModel semanticModel,
         SyntaxGenerator generator,
@@ -24,11 +25,13 @@ internal static class ArgumentListHelper
         SyntaxNode argumentExpression,
         Func<IParameterSymbol, bool> isExpectedParameter,
         IMethodSymbol? overload = null,
+        string? namespaceToImport = null,
         CancellationToken cancellationToken = default)
     {
         if (parameterIndex < 0)
             return null;
 
+        var bindingContext = new BindingContext(semanticModel, invocationExpression, namespaceToImport, cancellationToken);
         var arguments = invocationExpression.ArgumentList.Arguments;
 
         // A positional argument can only be added at the index of the parameter when all the arguments written before it are positional.
@@ -37,7 +40,7 @@ internal static class ArgumentListHelper
         {
             var positionalArgument = (ArgumentSyntax)generator.Argument(argumentExpression);
             var candidate = WithArguments(invocationExpression, arguments.Insert(parameterIndex, positionalArgument));
-            if (GetBoundParameter(semanticModel, invocationExpression, candidate, parameterIndex) is { } parameter && isExpectedParameter(parameter))
+            if (GetBoundParameter(bindingContext, candidate, parameterIndex) is { } parameter && isExpectedParameter(parameter))
                 return candidate;
         }
 
@@ -53,14 +56,14 @@ internal static class ArgumentListHelper
 
         // A named argument added at the end of the list is valid whatever the order of the existing arguments, and keeps their evaluation order
         var namedCandidate = WithArguments(invocationExpression, arguments.Add(namedArgument));
-        if (GetBoundParameter(semanticModel, invocationExpression, namedCandidate, parameterName) is { } namedParameter && isExpectedParameter(namedParameter))
+        if (GetBoundParameter(bindingContext, namedCandidate, parameterName) is { } namedParameter && isExpectedParameter(namedParameter))
             return namedCandidate;
 
         // The overload can declare the parameters with other names, in which case the existing named arguments must be renamed
         if (overload is not null && RenameArguments(semanticModel, invocationExpression, parameterIndex, overload, cancellationToken) is { } renamedArguments)
         {
             var renamedCandidate = WithArguments(invocationExpression, renamedArguments.Add(namedArgument));
-            if (GetBoundParameter(semanticModel, invocationExpression, renamedCandidate, parameterName) is { } renamedParameter && isExpectedParameter(renamedParameter))
+            if (GetBoundParameter(bindingContext, renamedCandidate, parameterName) is { } renamedParameter && isExpectedParameter(renamedParameter))
                 return renamedCandidate;
         }
 
@@ -79,24 +82,56 @@ internal static class ArgumentListHelper
     /// Gets the method <paramref name="newInvocation"/> would be bound to at the position of <paramref name="invocationExpression"/>,
     /// so a code fix is only offered when the new invocation compiles and its arguments are bound to the expected parameters.
     /// </summary>
-    public static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation)
+    /// <param name="namespaceToImport">The namespace the fix imports, if any. The new invocation is bound as if the namespace was imported.</param>
+    public static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, string? namespaceToImport = null, CancellationToken cancellationToken = default)
     {
-        return semanticModel.GetSpeculativeSymbolInfo(invocationExpression.SpanStart, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
+        return new BindingContext(semanticModel, invocationExpression, namespaceToImport, cancellationToken).GetTargetMethod(newInvocation);
     }
 
-    private static IParameterSymbol? GetBoundParameter(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, int parameterIndex)
+    private static IParameterSymbol? GetBoundParameter(BindingContext bindingContext, InvocationExpressionSyntax newInvocation, int parameterIndex)
     {
-        var method = GetTargetMethod(semanticModel, invocationExpression, newInvocation);
+        var method = bindingContext.GetTargetMethod(newInvocation);
         if (method is null || parameterIndex >= method.Parameters.Length)
             return null;
 
         return method.Parameters[parameterIndex];
     }
 
-    private static IParameterSymbol? GetBoundParameter(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, string parameterName)
+    private static IParameterSymbol? GetBoundParameter(BindingContext bindingContext, InvocationExpressionSyntax newInvocation, string parameterName)
     {
-        var method = GetTargetMethod(semanticModel, invocationExpression, newInvocation);
+        var method = bindingContext.GetTargetMethod(newInvocation);
         return method?.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, parameterName, StringComparison.Ordinal));
+    }
+
+    /// <summary>
+    /// Binds the new invocations at the position of the original invocation. When the fix imports a namespace, the invocations are
+    /// bound in a copy of the compilation where the document imports the namespace, as the new overload is not in scope otherwise.
+    /// The copy is only created when an invocation is bound, and is shared by the invocations bound with the same context.
+    /// </summary>
+    private sealed class BindingContext(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, string? namespaceToImport, CancellationToken cancellationToken)
+    {
+        private (SemanticModel SemanticModel, int Position)? _bindingLocation;
+
+        public IMethodSymbol? GetTargetMethod(InvocationExpressionSyntax newInvocation)
+        {
+            var (bindingSemanticModel, position) = _bindingLocation ??= CreateBindingLocation();
+            return bindingSemanticModel.GetSpeculativeSymbolInfo(position, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
+        }
+
+        private (SemanticModel SemanticModel, int Position) CreateBindingLocation()
+        {
+            if (namespaceToImport is null)
+                return (semanticModel, invocationExpression.SpanStart);
+
+            var syntaxTree = invocationExpression.SyntaxTree;
+            var annotation = new SyntaxAnnotation();
+            var root = syntaxTree.GetRoot(cancellationToken).ReplaceNode(invocationExpression, invocationExpression.WithAdditionalAnnotations(annotation));
+            root = UsingDirectiveHelper.AddUsingDirective(root, root.GetAnnotatedNodes(annotation).First(), namespaceToImport);
+
+            var newSyntaxTree = syntaxTree.WithRootAndOptions(root, syntaxTree.Options);
+            var newSemanticModel = semanticModel.Compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree).GetSemanticModel(newSyntaxTree);
+            return (newSemanticModel, newSyntaxTree.GetRoot(cancellationToken).GetAnnotatedNodes(annotation).First().SpanStart);
+        }
     }
 
     /// <summary>

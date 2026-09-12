@@ -31,6 +31,7 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
         if (timeProviderSymbol is null)
             return;
 
+        var namespaceToImport = context.Diagnostics[0].Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName);
         var generator = SyntaxGenerator.GetGenerator(context.Document);
         foreach (var path in paths.Split(','))
         {
@@ -42,6 +43,7 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
                 parameterName,
                 SyntaxFactory.ParseExpression(path),
                 parameter => parameter.Type.IsEqualTo(timeProviderSymbol),
+                namespaceToImport: namespaceToImport,
                 cancellationToken: context.CancellationToken);
 
             if (newInvocation is null)
@@ -50,17 +52,22 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
             var title = "Use TimeProvider:  " + path;
             var codeAction = CodeAction.Create(
                 title,
-                ct => FixInvocation(context.Document, invocationExpression, newInvocation, ct),
+                ct => FixInvocation(context.Document, invocationExpression, newInvocation, namespaceToImport, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
     }
 
-    private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
+    private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(nodeToFix, newInvocation);
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, nodeToFix, namespaceToImport);
+        }
+
         return editor.GetChangedDocument();
     }
 }

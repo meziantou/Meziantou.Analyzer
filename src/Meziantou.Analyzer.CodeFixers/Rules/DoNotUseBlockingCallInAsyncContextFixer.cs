@@ -64,12 +64,13 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
             case DoNotUseBlockingCallInAsyncContextData.Overload:
                 {
-                    if (!properties.TryGetValue("MethodName", out var methodName) || methodName is null)
+                    if (!properties.TryGetValue(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.MethodNameKey, out var methodName) || methodName is null)
                         return;
 
+                    properties.TryGetValue(OverloadFinder.NamespaceToImportPropertyName, out var namespaceToImport);
                     var codeAction = CodeAction.Create(
                         $"Use '{methodName}'",
-                        ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, ct),
+                        ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, namespaceToImport, ct),
                         equivalenceKey: "Overload");
 
                     context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -116,7 +117,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         return SyntaxFactory.Token(usingKeyword.LeadingTrivia, SyntaxKind.AwaitKeyword, SyntaxFactory.TriviaList(SyntaxFactory.Space));
     }
 
-    private static async Task<Document> ReplaceWithMethodName(Document document, SyntaxNode nodeToFix, string methodName, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceWithMethodName(Document document, SyntaxNode nodeToFix, string methodName, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -138,8 +139,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             _ => generator.IdentifierName(methodName),
         };
         var newNode = nodeToFix.ReplaceNode(nodeToReplace, newMethodName);
+
+        // An extension method cannot be called with a simple name, so the implicit receiver must be explicit: Do() => this.DoAsync()
+        if (nodeToReplace == invocation.Expression && !editor.SemanticModel.LookupSymbols(invocation.SpanStart, name: methodName).OfType<IMethodSymbol>().Any())
+        {
+            newNode = invocation.WithExpression((ExpressionSyntax)generator.MemberAccessExpression(generator.ThisExpression(), newMethodName));
+        }
+
         var newExpression = generator.AwaitExpression(newNode).Parenthesize();
         editor.ReplaceNode(nodeToFix, newExpression);
+
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, nodeToFix, namespaceToImport);
+        }
 
         return editor.GetChangedDocument();
     }

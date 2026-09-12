@@ -2,10 +2,17 @@ namespace Meziantou.Analyzer.Internals;
 
 internal sealed class OverloadFinder(Compilation compilation)
 {
+    /// <summary>
+    /// The name of the diagnostic property containing the namespace the code fix must import to call the overload, when the
+    /// overload is an extension method declared in a namespace that is not imported. See <see cref="GetNamespaceToImport"/>.
+    /// </summary>
+    public const string NamespaceToImportPropertyName = "NamespaceToImport";
+
     private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
     private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
     private readonly INamedTypeSymbol? _halfSymbol = compilation.GetBestTypeByMetadataName("System.Half");
+    private readonly Lazy<Dictionary<string, List<IMethodSymbol>>> _extensionMethodsByName = new(() => CreateExtensionMethodsByName(compilation));
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
     {
@@ -666,6 +673,11 @@ internal sealed class OverloadFinder(Compilation compilation)
                 AddSymbols(semanticModel.LookupSymbols(position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
                 AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
             }
+
+            if (options.IncludeExtensionMethodsFromNotImportedNamespaces)
+            {
+                AddExtensionMethodsFromNotImportedNamespaces(methodSymbol, methodName, semanticModel, position, results);
+            }
         }
         else
         {
@@ -677,6 +689,102 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
 
         return results;
+    }
+
+    /// <summary>
+    /// Adds the extension methods that apply to the receiver of <paramref name="methodSymbol"/>, are accessible at
+    /// <paramref name="position"/>, and are not in scope because their namespace is not imported. They are added after the
+    /// symbols in scope, so a method in scope is found first.
+    /// </summary>
+    private void AddExtensionMethodsFromNotImportedNamespaces(IMethodSymbol methodSymbol, string methodName, SemanticModel semanticModel, int position, List<ISymbol> results)
+    {
+        // An extension method applies to the receiver of an instance method, or to the receiver of an extension method
+        var receiverType = GetReducedReceiverType(methodSymbol) ?? (methodSymbol.IsStatic ? null : methodSymbol.ContainingType);
+        if (receiverType is null || !_extensionMethodsByName.Value.TryGetValue(methodName, out var extensionMethods))
+            return;
+
+        HashSet<IMethodSymbol>? extensionMethodsInScope = null;
+        foreach (var result in results)
+        {
+            if (result is IMethodSymbol { ReducedFrom: { } reducedFrom })
+            {
+                extensionMethodsInScope ??= new(SymbolEqualityComparer.Default);
+                extensionMethodsInScope.Add(reducedFrom.OriginalDefinition);
+            }
+        }
+
+        foreach (var extensionMethod in extensionMethods)
+        {
+            if (extensionMethodsInScope is not null && extensionMethodsInScope.Contains(extensionMethod.OriginalDefinition))
+                continue;
+
+            if (!semanticModel.IsAccessible(position, extensionMethod))
+                continue;
+
+            if (extensionMethod.ReduceExtensionMethod(receiverType) is { } reducedMethod)
+            {
+                results.Add(reducedMethod);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Gets the namespace to import at <paramref name="syntaxNode"/> to call <paramref name="methodSymbol"/>, when it is an extension method
+    /// declared in a namespace that is not imported, as returned when <see cref="OverloadOptions.IncludeExtensionMethodsFromNotImportedNamespaces"/>
+    /// is set. Returns <see langword="null"/> when the method can be called without a new using directive.
+    /// </summary>
+    public string? GetNamespaceToImport(IMethodSymbol methodSymbol, SyntaxNode syntaxNode)
+    {
+        if (methodSymbol is not { MethodKind: MethodKind.ReducedExtension, ReducedFrom: { } reducedFrom, ReceiverType: { } receiverType })
+            return null;
+
+        var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
+        var position = syntaxNode.GetLocation().SourceSpan.End;
+        foreach (var symbol in semanticModel.LookupSymbols(position, receiverType, methodSymbol.Name, includeReducedExtensionMethods: true))
+        {
+            if (symbol is IMethodSymbol { ReducedFrom: { } symbolReducedFrom } && symbolReducedFrom.OriginalDefinition.IsEqualTo(reducedFrom.OriginalDefinition))
+                return null;
+        }
+
+        return methodSymbol.ContainingNamespace.ToDisplayString();
+    }
+
+    /// <summary>
+    /// Indexes the extension methods of the compilation and of its references by name. The extension methods declared in
+    /// the global namespace are always in scope, so they are not indexed.
+    /// </summary>
+    private static Dictionary<string, List<IMethodSymbol>> CreateExtensionMethodsByName(Compilation compilation)
+    {
+        var result = new Dictionary<string, List<IMethodSymbol>>(StringComparer.Ordinal);
+        var namespaces = new Stack<INamespaceSymbol>(compilation.GlobalNamespace.GetNamespaceMembers());
+        while (namespaces.Count > 0)
+        {
+            foreach (var member in namespaces.Pop().GetMembers())
+            {
+                if (member is INamespaceSymbol childNamespace)
+                {
+                    namespaces.Push(childNamespace);
+                }
+                else if (member is INamedTypeSymbol { IsStatic: true, MightContainExtensionMethods: true } type)
+                {
+                    foreach (var typeMember in type.GetMembers())
+                    {
+                        if (typeMember is not IMethodSymbol { IsExtensionMethod: true } method)
+                            continue;
+
+                        if (!result.TryGetValue(method.Name, out var methods))
+                        {
+                            methods = [];
+                            result.Add(method.Name, methods);
+                        }
+
+                        methods.Add(method);
+                    }
+                }
+            }
+        }
+
+        return result;
     }
 
     private static ITypeSymbol? GetReducedReceiverType(IMethodSymbol methodSymbol)

@@ -31,7 +31,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 
 |Id|Category|Description|Severity|Is enabled|Code fix|Configurable|
 |--|--------|-----------|:------:|:--------:|:------:|:----------:|
-|[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|ℹ️|✔️|✔️|❌|
+|[MA0001](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0001.md)|Usage|StringComparison is missing|ℹ️|✔️|✔️|✔️|
 |[MA0002](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0002.md)|Usage|IEqualityComparer\<string\> or IComparer\<string\> is missing|⚠️|✔️|✔️|✔️|
 |[MA0003](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0003.md)|Style|Add parameter name to improve readability|ℹ️|✔️|✔️|✔️|
 |[MA0004](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0004.md)|Usage|Use Task.ConfigureAwait|⚠️|✔️|✔️|✔️|
@@ -69,7 +69,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0037](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0037.md)|Usage|Remove empty statement|❌|✔️|✔️|❌|
 |[MA0038](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0038.md)|Design|Make method static (deprecated, use CA1822 instead)|ℹ️|✔️|✔️|❌|
 |[MA0039](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0039.md)|Security|Do not write your own certificate validation method|❌|✔️|❌|❌|
-|[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|ℹ️|✔️|✔️|❌|
+|[MA0040](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0040.md)|Usage|Forward the CancellationToken parameter to methods that take one|ℹ️|✔️|✔️|✔️|
 |[MA0041](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0041.md)|Design|Make property static (deprecated, use CA1822 instead)|ℹ️|✔️|✔️|❌|
 |[MA0042](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0042.md)|Design|Do not use blocking calls when the calling method is async|ℹ️|✔️|✔️|✔️|
 |[MA0043](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0043.md)|Usage|Use nameof operator in ArgumentException|ℹ️|✔️|✔️|❌|
@@ -103,7 +103,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0071](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0071.md)|Style|Avoid using redundant else|ℹ️|✔️|✔️|❌|
 |[MA0072](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0072.md)|Design|Do not throw from a finally block|⚠️|✔️|❌|❌|
 |[MA0073](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0073.md)|Style|Avoid comparison with bool constant|ℹ️|✔️|✔️|❌|
-|[MA0074](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0074.md)|Usage|Avoid implicit culture-sensitive methods|⚠️|✔️|✔️|❌|
+|[MA0074](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0074.md)|Usage|Avoid implicit culture-sensitive methods|⚠️|✔️|✔️|✔️|
 |[MA0075](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0075.md)|Design|Do not use implicit culture-sensitive ToString|ℹ️|✔️|❌|✔️|
 |[MA0076](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0076.md)|Design|Do not use implicit culture-sensitive ToString in interpolated strings|ℹ️|✔️|✔️|✔️|
 |[MA0077](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0077.md)|Design|A class that provides Equals(T) should implement IEquatable\<T\>|⚠️|✔️|✔️|❌|
@@ -194,8 +194,8 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0162](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0162.md)|Usage|Use Process.Start overload with ProcessStartInfo|ℹ️|❌|❌|❌|
 |[MA0163](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0163.md)|Usage|UseShellExecute must be false when redirecting standard input or output|⚠️|✔️|❌|❌|
 |[MA0164](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0164.md)|Style|Use parentheses to make not pattern clearer|⚠️|✔️|✔️|❌|
-|[MA0166](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0166.md)|Usage|Forward the TimeProvider to methods that take one|ℹ️|✔️|✔️|❌|
-|[MA0167](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0167.md)|Usage|Use an overload with a TimeProvider argument|ℹ️|❌|❌|❌|
+|[MA0166](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0166.md)|Usage|Forward the TimeProvider to methods that take one|ℹ️|✔️|✔️|✔️|
+|[MA0167](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0167.md)|Usage|Use an overload with a TimeProvider argument|ℹ️|❌|❌|✔️|
 |[MA0168](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0168.md)|Performance|Use readonly struct for in or ref readonly parameter|ℹ️|❌|❌|❌|
 |[MA0169](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0169.md)|Design|Use Equals method instead of operator|⚠️|✔️|✔️|❌|
 |[MA0170](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0170.md)|Design|Type cannot be used as an attribute argument|⚠️|❌|❌|❌|
@@ -238,7 +238,7 @@ If you are already using other analyzers, you can check [which rules are duplica
 |[MA0207](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0207.md)|Usage|\[FixedAddressValueType\] fields must be static|⚠️|✔️|❌|❌|
 |[MA0208](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0208.md)|Usage|\[FixedAddressValueType\] fields must be value types|⚠️|✔️|❌|❌|
 |[MA0209](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0209.md)|Performance|Use in keyword for in parameter|ℹ️|❌|✔️|❌|
-|[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|ℹ️|❌|✔️|❌|
+|[MA0210](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0210.md)|Performance|Use in keyword to call the in overload|ℹ️|❌|✔️|✔️|
 |[MA0211](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0211.md)|Style|Use multi-line syntax for XML summary comments|ℹ️|❌|✔️|❌|
 |[MA0212](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0212.md)|Usage|Use MemoryMarshal.GetReference instead of indexing at 0|⚠️|❌|✔️|❌|
 |[MA0213](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0213.md)|Style|Simplify negated boolean expression|ℹ️|❌|✔️|❌|

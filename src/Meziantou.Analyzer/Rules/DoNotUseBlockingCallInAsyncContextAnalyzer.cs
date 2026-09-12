@@ -33,6 +33,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
     private static readonly ConfigurationDefinition<bool> EnableSqliteSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_sqlite_special_cases", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".enable_db_special_cases", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue: true);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
 
@@ -205,11 +207,16 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (methodsWithNoAsyncOverload is not null && methodsWithNoAsyncOverload.Contains(targetMethod))
                 return;
 
+            // The options are the same for all the call sites of a file, so they can be used to search the async equivalent
+            // cached per scope. Whether the rule reported at the call site includes the extension methods from not imported
+            // namespaces is checked once the async equivalent is found.
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, context.CancellationToken, out var diagnosticMessage);
+            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration)
+                || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+            var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, includeExtensionMethodsFromNotImportedNamespaces, context.CancellationToken, out var diagnosticMessage);
             if (diagnosticMessage is not null)
             {
-                ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
+                ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage, requiresNamespaceImport: diagnosticMessage.NamespaceToImport is not null);
             }
             else if (result is AsyncEquivalentSearchResult.NotFound)
             {
@@ -222,7 +229,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         /// Searches for an async equivalent of the called method, visible from the call site. <paramref name="data"/>
         /// is set when the result is <see cref="AsyncEquivalentSearchResult.Found"/>.
         /// </summary>
-        private AsyncEquivalentSearchResult FindAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, CancellationToken cancellationToken, out DiagnosticData? data)
+        private AsyncEquivalentSearchResult FindAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, bool includeExtensionMethodsFromNotImportedNamespaces, CancellationToken cancellationToken, out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
@@ -327,21 +334,29 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // Search async equivalent: sample.Write() => sample.WriteAsync()
             if (!targetMethod.ReturnType.OriginalDefinition.IsEqualToAny(TaskSymbol, TaskOfTSymbol))
             {
-                var asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name);
-                if (asyncEquivalentMethod is not null)
+                // The extension methods declared in a namespace that is not imported are only used when no method is in scope,
+                // as the code fix must add a using directive to call them
+                IMethodSymbol? notImportedAsyncEquivalentMethod = null;
+                string? namespaceToImport = null;
+                var asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name, includeExtensionMethodsFromNotImportedNamespaces, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
+                if (asyncEquivalentMethod is null && !targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
-                    data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
-                    return AsyncEquivalentSearchResult.Found;
+                    asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name + "Async", includeExtensionMethodsFromNotImportedNamespaces, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
                 }
 
-                if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
+                if (asyncEquivalentMethod is null)
                 {
-                    asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name + "Async");
-                    if (asyncEquivalentMethod is not null)
-                    {
-                        data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
-                        return AsyncEquivalentSearchResult.Found;
-                    }
+                    asyncEquivalentMethod = notImportedAsyncEquivalentMethod;
+                }
+                else
+                {
+                    namespaceToImport = null;
+                }
+
+                if (asyncEquivalentMethod is not null)
+                {
+                    data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name, namespaceToImport);
+                    return AsyncEquivalentSearchResult.Found;
                 }
             }
 
@@ -465,12 +480,18 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return instance.GetActualType(cancellationToken) is INamedTypeSymbol type && IsSqliteSpecialCaseType(type);
         }
 
-        private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName)
+        /// <summary>
+        /// Searches for an async equivalent in scope at the call site. When <paramref name="includeExtensionMethodsFromNotImportedNamespaces"/>
+        /// is set, the first async equivalent that requires to import its namespace is set to <paramref name="notImportedMethod"/>, and its
+        /// namespace to <paramref name="namespaceToImport"/>, if they are not already set.
+        /// </summary>
+        private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName, bool includeExtensionMethodsFromNotImportedNamespaces, ref IMethodSymbol? notImportedMethod, ref string? namespaceToImport)
         {
             var options = new OverloadOptions(
                 AllowOptionalParameters: false,
                 IncludeExtensionsMethods: true,
-                SyntaxNode: operation.Syntax);
+                SyntaxNode: operation.Syntax,
+                IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces);
 
             // When the method name is the same as the original method, and the original is non-generic
             // while a candidate is generic, the compiler will always prefer the non-generic original
@@ -480,10 +501,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, default))
             {
-                if (sameNameSearch && !targetMethod.IsGenericMethod && candidateMethod.IsGenericMethod)
-                    continue;
-
-                if (IsPotentialAsyncEquivalent(operation, candidateMethod))
+                if (IsPotentialAsyncEquivalent(operation, targetMethod, candidateMethod, sameNameSearch, includeExtensionMethodsFromNotImportedNamespaces, ref notImportedMethod, ref namespaceToImport))
                     return candidateMethod;
             }
 
@@ -491,15 +509,34 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 foreach (var candidateMethod in _overloadFinder.FindSimilarMethods(targetMethod, options, methodName, [new OverloadParameterType(CancellationTokenSymbol)]))
                 {
-                    if (sameNameSearch && !targetMethod.IsGenericMethod && candidateMethod.IsGenericMethod)
-                        continue;
-
-                    if (IsPotentialAsyncEquivalent(operation, candidateMethod))
+                    if (IsPotentialAsyncEquivalent(operation, targetMethod, candidateMethod, sameNameSearch, includeExtensionMethodsFromNotImportedNamespaces, ref notImportedMethod, ref namespaceToImport))
                         return candidateMethod;
                 }
             }
 
             return null;
+        }
+
+        private bool IsPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, IMethodSymbol candidateMethod, bool sameNameSearch, bool includeExtensionMethodsFromNotImportedNamespaces, ref IMethodSymbol? notImportedMethod, ref string? namespaceToImport)
+        {
+            if (sameNameSearch && !targetMethod.IsGenericMethod && candidateMethod.IsGenericMethod)
+                return false;
+
+            if (!IsPotentialAsyncEquivalent(operation, candidateMethod))
+                return false;
+
+            if (includeExtensionMethodsFromNotImportedNamespaces && _overloadFinder.GetNamespaceToImport(candidateMethod, operation.Syntax) is { } candidateNamespaceToImport)
+            {
+                if (notImportedMethod is null)
+                {
+                    notImportedMethod = candidateMethod;
+                    namespaceToImport = candidateNamespaceToImport;
+                }
+
+                return false;
+            }
+
+            return true;
         }
 
         private bool IsPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol methodSymbol)
@@ -555,17 +592,24 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, ImmutableDictionary<string, string?>? properties, IOperation operation, string message)
+        /// <param name="requiresNamespaceImport">Indicates the fix calls an extension method declared in a namespace that is not imported, so the diagnostic is only reported when the rule is configured to include them.</param>
+        private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, ImmutableDictionary<string, string?>? properties, IOperation operation, string message, bool requiresNamespaceImport = false)
         {
             if (!CanBeAsync(operation))
                 return;
 
             if (IsAsyncContext(operation, context.CancellationToken))
             {
+                if (requiresNamespaceImport && !context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration))
+                    return;
+
                 context.ReportDiagnostic(Rule, properties, operation, message);
             }
             else if (CanChangeParentMethodSignature(operation, context.CancellationToken))
             {
+                if (requiresNamespaceImport && !context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration))
+                    return;
+
                 context.ReportDiagnostic(Rule2, properties, operation, message + " and make method async");
             }
         }
@@ -859,23 +903,36 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         public DoNotUseBlockingCallInAsyncContextData Data { get; }
         public string? AsyncMethodName { get; }
 
+        /// <summary>
+        /// The namespace declaring the async extension method, when it is not imported at the call site.
+        /// </summary>
+        public string? NamespaceToImport { get; }
+
         public DiagnosticData(string diagnosticMessage, DoNotUseBlockingCallInAsyncContextData data)
-            : this(diagnosticMessage, data, asyncMethodName: null)
+            : this(diagnosticMessage, data, asyncMethodName: null, namespaceToImport: null)
         {
         }
 
-        public DiagnosticData(string diagnosticMessage, DoNotUseBlockingCallInAsyncContextData data, string? asyncMethodName)
+        public DiagnosticData(string diagnosticMessage, DoNotUseBlockingCallInAsyncContextData data, string? asyncMethodName, string? namespaceToImport)
         {
             DiagnosticMessage = diagnosticMessage ?? throw new ArgumentNullException(nameof(diagnosticMessage));
             Data = data;
             AsyncMethodName = asyncMethodName;
+            NamespaceToImport = namespaceToImport;
         }
 
         public ImmutableDictionary<string, string?> CreateProperties()
         {
-            return ImmutableDictionary<string, string?>.Empty
+            var properties = ImmutableDictionary<string, string?>.Empty
                 .Add(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.DataKey, Data.ToString())
                 .Add(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.MethodNameKey, AsyncMethodName);
+
+            if (NamespaceToImport is not null)
+            {
+                properties = properties.Add(OverloadFinder.NamespaceToImportPropertyName, NamespaceToImport);
+            }
+
+            return properties;
         }
     }
 }

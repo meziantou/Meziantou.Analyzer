@@ -1764,4 +1764,125 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample.Run();
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_EnabledForAnotherRule()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestState.SetConfiguration("MA0032.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample.Run();
+                }
+
+                public void B(Sample sample)
+                {
+                    {|MA0032:sample.Run()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestState.SetConfiguration("MA0040.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    {|MA0040:sample.Run()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample.Run(cancellationToken);
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

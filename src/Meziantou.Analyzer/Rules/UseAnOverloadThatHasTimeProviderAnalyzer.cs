@@ -1,5 +1,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
+using Meziantou.Analyzer.Configurations;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -25,6 +26,9 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseAnOverloadThatHasTimeProviderWhenAvailable));
+
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasTimeProvider + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasTimeProviderWhenAvailable + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasTimeProviderRule, UseAnOverloadThatHasTimeProviderWhenAvailable);
 
@@ -62,22 +66,26 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             return false;
         }
 
-        private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name);
+        /// <param name="NamespaceToImport">The namespace to import to call the overload, when it is an extension method declared in a namespace that is not imported.</param>
+        private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, string? NamespaceToImport = null);
 
-        private bool HasAnOverloadWithTimeProvider(IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
+        private bool HasAnOverloadWithTimeProvider(OperationAnalysisContext context, IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
             if (IsArgumentImplicitlyDeclared(operation, TimeProviderSymbol, out parameterInfo))
                 return true;
 
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true), [TimeProviderSymbol]);
+            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
+                || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [TimeProviderSymbol]);
             if (overload is not null)
             {
+                var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;
                 parameterInfo = null;
                 for (var i = 0; i < overload.Parameters.Length; i++)
                 {
                     if (overload.Parameters[i].Type.IsEqualTo(TimeProviderSymbol))
                     {
-                        parameterInfo = new AdditionalParameterInfo(i, overload.Parameters[i].Name);
+                        parameterInfo = new AdditionalParameterInfo(i, overload.Parameters[i].Name, namespaceToImport);
                         break;
                     }
                 }
@@ -109,10 +117,18 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             if (HasExplicitTimeProviderArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithTimeProvider(operation, out var parameterInfo))
+            if (!HasAnOverloadWithTimeProvider(context, operation, out var parameterInfo))
                 return;
 
             var availableTimeProviders = FindTimeProviders(operation, context.CancellationToken);
+
+            // An extension method declared in a namespace that is not imported is only included when the reported rule is configured to
+            if (parameterInfo.NamespaceToImport is not null)
+            {
+                var configuration = availableTimeProviders.Length > 0 ? IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration : IncludeExtensionMethodsFromNotImportedNamespacesConfiguration;
+                if (!context.Options.GetConfigurationValue(operation, configuration))
+                    return;
+            }
             if (availableTimeProviders.Length > 0)
             {
                 context.ReportDiagnostic(UseAnOverloadThatHasTimeProviderWhenAvailable, CreateProperties(availableTimeProviders, parameterInfo), operation, string.Join(", ", availableTimeProviders));
@@ -129,10 +145,17 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
         private static ImmutableDictionary<string, string?> CreateProperties(string[] timeProviders, AdditionalParameterInfo parameterInfo)
         {
-            return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
+            var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
                 .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
                 .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
                 .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.PathsKey, string.Join(',', timeProviders));
+
+            if (parameterInfo.NamespaceToImport is not null)
+            {
+                properties = properties.Add(OverloadFinder.NamespaceToImportPropertyName, parameterInfo.NamespaceToImport);
+            }
+
+            return properties;
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)

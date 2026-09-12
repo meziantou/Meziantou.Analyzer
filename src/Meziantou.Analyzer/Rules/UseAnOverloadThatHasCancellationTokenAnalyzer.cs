@@ -48,6 +48,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FlowCancellationTokenInAwaitForEachWhenACancellationTokenIsAvailable));
 
     private static readonly ConfigurationDefinition<bool> AllowOverloadsWithOptionalParametersConfiguration = new(["MA0032.allow_overloads_with_optional_parameters", "MA0032.allowOverloadsWithOptionalParameters"], defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasCancellationToken + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
@@ -119,7 +121,8 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return false;
         }
 
-        private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, bool HasEnumeratorCancellationAttribute);
+        /// <param name="NamespaceToImport">The namespace to import to call the overload, when it is an extension method declared in a namespace that is not imported.</param>
+        private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, bool HasEnumeratorCancellationAttribute, string? NamespaceToImport = null);
 
         private bool HasAnOverloadWithCancellationToken(OperationAnalysisContext context, IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
@@ -132,15 +135,18 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return true;
 
             var allowOptionalParameters = context.Options.GetConfigurationValue(operation, AllowOverloadsWithOptionalParametersConfiguration);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters), [CancellationTokenSymbol]);
+            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
+                || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [CancellationTokenSymbol]);
             if (overload is not null)
             {
+                var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;
                 parameterInfo = null;
                 for (var i = 0; i < overload.Parameters.Length; i++)
                 {
                     if (overload.Parameters[i].Type.IsEqualTo(CancellationTokenSymbol))
                     {
-                        parameterInfo = new AdditionalParameterInfo(i, overload.Parameters[i].Name, HasEnumerableCancellationAttribute(overload.Parameters[i]));
+                        parameterInfo = new AdditionalParameterInfo(i, overload.Parameters[i].Name, HasEnumerableCancellationAttribute(overload.Parameters[i]), namespaceToImport);
                         break;
                     }
                 }
@@ -187,6 +193,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 return;
 
             var availableCancellationTokens = FindCancellationTokens(operation, context.CancellationToken);
+            if (!IsOverloadIncluded(context, operation, parameterInfo, hasAvailableCancellationTokens: availableCancellationTokens.Length > 0))
+                return;
+
             if (availableCancellationTokens.Length > 0)
             {
                 context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
@@ -199,6 +208,19 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
                 context.ReportDiagnostic(UseAnOverloadThatHasCancellationTokenRule, CreateProperties(availableCancellationTokens, parameterInfo), operation);
             }
+        }
+
+        /// <summary>
+        /// Indicates whether the rule reported for the invocation, which depends on the availability of a cancellation token, includes
+        /// the overload. An extension method declared in a namespace that is not imported is only included when the rule is configured to.
+        /// </summary>
+        private static bool IsOverloadIncluded(OperationAnalysisContext context, IOperation operation, AdditionalParameterInfo parameterInfo, bool hasAvailableCancellationTokens)
+        {
+            if (parameterInfo.NamespaceToImport is null)
+                return true;
+
+            var configuration = hasAvailableCancellationTokens ? IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration : IncludeExtensionMethodsFromNotImportedNamespacesConfiguration;
+            return context.Options.GetConfigurationValue(operation, configuration);
         }
 
         public void AnalyzeLoop(OperationAnalysisContext context)
@@ -231,8 +253,11 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return;
 
                 // Already handled by AnalyzeInvocation
-                if (HasAnOverloadWithCancellationToken(context, invocation, out _))
+                if (HasAnOverloadWithCancellationToken(context, invocation, out var invocationParameterInfo) &&
+                    (invocationParameterInfo.NamespaceToImport is null || IsOverloadIncluded(context, invocation, invocationParameterInfo, hasAvailableCancellationTokens: FindCancellationTokens(invocation, context.CancellationToken).Length > 0)))
+                {
                     return;
+                }
 
                 collection = invocation.GetChildOperations().FirstOrDefault();
                 if (collection is IArgumentOperation argOperation)
@@ -259,11 +284,18 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
 
         private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
         {
-            return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
+            var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
                 .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
                 .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
                 .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.ParameterIsEnumeratorCancellationKey, parameterInfo.HasEnumeratorCancellationAttribute.ToString())
                 .Add(UseAnOverloadThatHasCancellationTokenAnalyzerCommon.CancellationTokensKey, string.Join(',', cancellationTokens));
+
+            if (parameterInfo.NamespaceToImport is not null)
+            {
+                properties = properties.Add(OverloadFinder.NamespaceToImportPropertyName, parameterInfo.NamespaceToImport);
+            }
+
+            return properties;
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)

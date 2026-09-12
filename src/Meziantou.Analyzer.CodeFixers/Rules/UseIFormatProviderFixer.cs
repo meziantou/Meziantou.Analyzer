@@ -27,11 +27,13 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         if (formatProviderSymbol is null || stringSymbol is null)
             return;
 
+        // The fix only searches the extension methods declared in a namespace that is not imported when the analyzer selected one of them
+        var namespaceToImport = context.Diagnostics[0].Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName);
         var generator = SyntaxGenerator.GetGenerator(context.Document);
         var overloadFinder = new OverloadFinder(semanticModel.Compilation);
         var overload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
             invocationOperation,
-            new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true),
+            new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: namespaceToImport is not null),
             [new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
         if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var parameterIndex, out var parameterName))
@@ -46,7 +48,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         {
             overload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
                 invocationOperation,
-                new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false),
+                new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: namespaceToImport is not null),
                 [new OverloadParameterType(stringSymbol), new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
             if (overload is not null && CanFixToStringOverload(overload, formatProviderSymbol))
@@ -66,6 +68,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
                 parameterName,
                 SyntaxFactory.ParseExpression(formatProviderExpression),
                 parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol),
+                namespaceToImport: namespaceToImport,
                 cancellationToken: context.CancellationToken);
 
             if (newInvocation is null)
@@ -74,7 +77,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
-                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, ct),
+                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, namespaceToImport, ct),
                     equivalenceKey: title),
                 context.Diagnostics);
             return true;
@@ -82,20 +85,20 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
         void RegisterToStringCodeFix(string formatProviderExpression, string title)
         {
-            var newInvocation = CreateToStringInvocation(semanticModel, invocationExpression, overload!, formatProviderSymbol, formatProviderExpression);
+            var newInvocation = CreateToStringInvocation(semanticModel, invocationExpression, overload!, formatProviderSymbol, formatProviderExpression, namespaceToImport, context.CancellationToken);
             if (newInvocation is null)
                 return;
 
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
-                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, ct),
+                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, namespaceToImport, ct),
                     equivalenceKey: title),
                 context.Diagnostics);
         }
     }
 
-    private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression)
+    private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var arguments = new List<ArgumentSyntax>(capacity: overload.Parameters.Length);
         foreach (var parameter in overload.Parameters)
@@ -118,16 +121,21 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         }
 
         var candidate = ArgumentListHelper.WithArguments(invocationExpression, SyntaxFactory.SeparatedList(arguments));
-        if (ArgumentListHelper.GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
+        if (ArgumentListHelper.GetTargetMethod(semanticModel, invocationExpression, candidate, namespaceToImport, cancellationToken) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
             return candidate;
 
         return null;
     }
 
-    private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
+    private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(invocationExpression, newInvocation);
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, invocationExpression, namespaceToImport);
+        }
+
         return editor.GetChangedDocument();
     }
 

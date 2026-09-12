@@ -91,6 +91,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> ExcludeQueryOperatorSyntaxesConfiguration = new(Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> ReportOnlyNonOrdinalConfiguration = new(Rule.Id + ".report_only_non_ordinal", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(Rule.Id + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 #if ROSLYN_4_14_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ReportCollectionExpressionsConfiguration = new(Rule.Id + ".report_collection_expressions", defaultValue: false);
 #endif
@@ -196,13 +197,16 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (QueryableType is not null && method.ContainingType.IsEqualTo(QueryableType))
                 return;
 
-            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType])) ||
-                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [ComparerStringType])))
+            if (HasOverloadWithComparer(ctx, operation, out var namespaceToImport))
             {
                 if (IsInvocationReportSuppressedByOrdinalOption(ctx, operation, method))
                     return;
 
-                ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
+                var properties = namespaceToImport is null
+                    ? ImmutableDictionary<string, string?>.Empty
+                    : ImmutableDictionary<string, string?>.Empty.Add(OverloadFinder.NamespaceToImportPropertyName, namespaceToImport);
+
+                ctx.ReportDiagnostic(Rule, properties, operation, DefaultDiagnosticInvocationReportOptions);
                 return;
             }
 
@@ -242,6 +246,44 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                     ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 }
             }
+        }
+
+        /// <summary>
+        /// Indicates whether the invoked method has an overload with an <c>IEqualityComparer&lt;string&gt;</c> or an <c>IComparer&lt;string&gt;</c>
+        /// parameter. An overload that does not require a new using directive is preferred. <paramref name="namespaceToImport"/> is set when the
+        /// overload is an extension method declared in a namespace that is not imported.
+        /// </summary>
+        private bool HasOverloadWithComparer(OperationAnalysisContext context, IInvocationOperation operation, out string? namespaceToImport)
+        {
+            namespaceToImport = null;
+            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+            var options = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces };
+
+            var found = false;
+            foreach (var comparerType in (ReadOnlySpan<INamedTypeSymbol?>)[EqualityComparerStringType, ComparerStringType])
+            {
+                if (comparerType is null)
+                    continue;
+
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, options, [comparerType]);
+                if (overload is null)
+                    continue;
+
+                var overloadNamespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;
+                if (overloadNamespaceToImport is null)
+                {
+                    namespaceToImport = null;
+                    return true;
+                }
+
+                if (!found)
+                {
+                    found = true;
+                    namespaceToImport = overloadNamespaceToImport;
+                }
+            }
+
+            return found;
         }
 
 #if ROSLYN_4_14_OR_GREATER
