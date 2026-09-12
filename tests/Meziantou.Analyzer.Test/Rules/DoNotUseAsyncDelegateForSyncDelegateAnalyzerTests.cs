@@ -130,6 +130,66 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzerTests
     }
 
     [Fact]
+    public Task Action_SyncMethodGroup()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A(Handler);
+
+            void A(System.Action a) => throw null;
+            void Handler() { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Action_AsyncVoidMethodGroup()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A({|MA0147:Handler|});
+
+            void A(System.Action a) => throw null;
+            async void Handler() { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FuncTask_AsyncMethodGroup()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A(Handler);
+
+            void A(System.Func<System.Threading.Tasks.Task> a) => throw null;
+            async System.Threading.Tasks.Task Handler() { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Event_AsyncVoidMethodGroup()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.A += Sample.Handler;
+            Sample.A -= Sample.Handler;
+
+            class Sample
+            {
+                public static event System.EventHandler A;
+                public static async void Handler(object sender, System.EventArgs e) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Event_AsyncVoid()
     {
         var test = CreateTest();
