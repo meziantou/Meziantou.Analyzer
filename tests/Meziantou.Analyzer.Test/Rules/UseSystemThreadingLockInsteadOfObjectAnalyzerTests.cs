@@ -91,6 +91,71 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("null")]
+    [InlineData("default")]
+    [InlineData("new System.Threading.Lock()")]
+    public Task Field_OnlyLockUsage_InitializerCompatibleWithLock(string value)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TypeName
+            {
+                object {|MA0158:_lock|} = {{value}};
+
+                void A() { lock(_lock) { } }
+            }
+            """;
+        test.FixedCode = $$"""
+            class TypeName
+            {
+                System.Threading.Lock _lock = {{value}};
+
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("CreateGate()")]
+    [InlineData("default(object)")]
+    [InlineData("(object)null")]
+    [InlineData("new object[0]")]
+    public Task Field_OnlyLockUsage_InitializerNotCompatibleWithLock(string value)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class TypeName
+            {
+                object _lock = {{value}};
+
+                static object CreateGate() => new object();
+                void A() { lock(_lock) { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_OnlyLockUsage_OneInitializerNotCompatibleWithLock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                object _lock1 = CreateGate(), {|MA0158:_lock2|} = new object();
+
+                static object CreateGate() => new object();
+                void A() { lock(_lock1) { } lock(_lock2) { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Field_OnlyLockUsage_NET8()
     {
@@ -222,6 +287,83 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
     }
 
     [Fact]
+    public Task LocalVariable_InitializerNotCompatibleWithLock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A(object value)
+                {
+                    var o = value;
+                    lock(o) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalVariable_AssignmentNotCompatibleWithLock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A(object value)
+                {
+                    object o = null;
+                    o = value;
+                    lock(o) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalVariable_ForEach()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A(object[] values)
+                {
+                    foreach (var o in values)
+                    {
+                        lock(o) { }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalVariable_Pattern()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                void A(object value)
+                {
+                    if (value is object o)
+                    {
+                        lock(o) { }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task LocalVariable_LockAndOtherUsages()
     {
         var test = CreateTest();
@@ -336,6 +478,84 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
                 {
                     lock (_lock) { }
                     _lock.ToString();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_InitializedInConstructorFromParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class A
+            {
+                private readonly object _lock;
+
+                public A(object gate)
+                {
+                    _lock = gate;
+                }
+
+                public void Run()
+                {
+                    lock (_lock) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_InitializedWithCoalesceAssignment()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class A
+            {
+                private object {|MA0158:_lock|};
+
+                public void Run()
+                {
+                    _lock ??= new object();
+                    lock (_lock) { }
+                }
+            }
+            """;
+        test.FixedCode = """
+            public sealed class A
+            {
+                private System.Threading.Lock _lock;
+
+                public void Run()
+                {
+                    _lock ??= new();
+                    lock (_lock) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_InitializedWithObjectInitializer()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public sealed class A
+            {
+                private object _lock;
+
+                public static A Create() => new A { _lock = CreateGate() };
+                static object CreateGate() => new object();
+
+                public void Run()
+                {
+                    lock (_lock) { }
                 }
             }
             """;
