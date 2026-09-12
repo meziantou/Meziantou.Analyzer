@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Formatting;
+
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
@@ -115,7 +117,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                         .WithDeclaration(null)
                         .WithExpression(AppendConfigureAwait(SyntaxFactory.IdentifierName(usingBlock.Declaration.Variables[0].Identifier)));
 
-                    if (TryInsertVariableStatementBeforeUsing(variablesStatement.WithLeadingTrivia(usingBlock.GetLeadingTrivia()), usingBlock))
+                    if (TryInsertVariableStatementBeforeUsing(variablesStatement.WithLeadingTrivia(usingBlock.GetLeadingTrivia()), usingBlock, usingBlock.Declaration.Variables[0].Identifier.ValueText))
                     {
                         editor.ReplaceNode(usingBlock, newUsingBlock);
                     }
@@ -123,7 +125,8 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                     {
                         var newBlock = SyntaxFactory.Block(variablesStatement, newUsingBlock.WithoutLeadingTrivia())
                             .WithLeadingTrivia(usingBlock.GetLeadingTrivia())
-                            .WithTrailingTrivia(usingBlock.GetTrailingTrivia());
+                            .WithTrailingTrivia(usingBlock.GetTrailingTrivia())
+                            .WithAdditionalAnnotations(Formatter.Annotation);
                         editor.ReplaceNode(usingBlock, newBlock);
                     }
 
@@ -203,7 +206,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
         return context.Document;
 
-        bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement)
+        bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement, string variableName)
         {
             var insertionTarget = usingStatement;
             while (insertionTarget.Parent is UsingStatementSyntax parentUsing &&
@@ -212,6 +215,11 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             {
                 insertionTarget = parentUsing;
             }
+
+            // Moving the declaration out of the using statement widens the scope of the variable.
+            // When the name is already used elsewhere, keep the original scope by wrapping the statements in a block.
+            if (IsNameUsedOutsideOfUsingStatement(insertionTarget, usingStatement, variableName))
+                return false;
 
             if (insertionTarget.Parent is BlockSyntax or SwitchSectionSyntax)
             {
@@ -223,6 +231,22 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             {
                 editor.InsertBefore(globalStatement, SyntaxFactory.GlobalStatement(variableStatement));
                 return true;
+            }
+
+            return false;
+        }
+
+        static bool IsNameUsedOutsideOfUsingStatement(SyntaxNode insertionTarget, UsingStatementSyntax usingStatement, string variableName)
+        {
+            // The variable is moved to the declaration space of the enclosing function, so the name must not be used anywhere in it
+            var scope = insertionTarget.FirstAncestorOrSelf<SyntaxNode>(node => node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or CompilationUnitSyntax);
+            if (scope is null)
+                return true;
+
+            foreach (var token in scope.DescendantTokens())
+            {
+                if (token.IsKind(SyntaxKind.IdentifierToken) && string.Equals(token.ValueText, variableName, StringComparison.Ordinal) && !usingStatement.Span.Contains(token.Span))
+                    return true;
             }
 
             return false;

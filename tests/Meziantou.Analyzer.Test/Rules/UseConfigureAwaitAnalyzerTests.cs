@@ -378,6 +378,113 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task MissingConfigureAwait_AwaitDispose_Block_SameVariableNameInSiblingUsing_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await using (var {|MA0004:a = new AsyncDisposable()|})
+                    {
+                    }
+                    await using (var {|MA0004:a = new AsyncDisposable()|})
+                    {
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    {
+                        var a = new AsyncDisposable();
+                        await using (a.ConfigureAwait(false))
+                        {
+                        }
+                    }
+                    {
+                        var a = new AsyncDisposable();
+                        await using (a.ConfigureAwait(false))
+                        {
+                        }
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingConfigureAwait_AwaitDispose_Block_SameVariableNameInSiblingScope_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await using (var {|MA0004:a = new AsyncDisposable()|})
+                    {
+                    }
+                    {
+                        var a = 0;
+                        _ = a;
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    {
+                        var a = new AsyncDisposable();
+                        await using (a.ConfigureAwait(false))
+                        {
+                        }
+                    }
+                    {
+                        var a = 0;
+                        _ = a;
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MissingConfigureAwait_AwaitDispose_BlockWithoutVariable()
     {
         var test = CreateTest();
