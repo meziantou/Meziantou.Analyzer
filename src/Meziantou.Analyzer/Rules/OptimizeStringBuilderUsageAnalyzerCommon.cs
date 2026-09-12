@@ -68,50 +68,45 @@ internal static class OptimizeStringBuilderUsageAnalyzerCommon
         return false;
     }
 
-    public static bool HasFormatPlaceholders(string formatString)
+    /// <summary>
+    /// Gets the text produced by a composite format string that contains no format item, such as <c>"{{text}}"</c> which produces <c>"{text}"</c>.
+    /// Returns <see langword="false"/> when the format string contains a format item, or when it is invalid, as the formatting methods throw a <see cref="FormatException"/> in this case.
+    /// </summary>
+    public static bool TryGetCompositeFormatLiteralText(string formatString, [NotNullWhen(true)] out string? text)
     {
-        var i = 0;
-        while (i < formatString.Length)
+        if (formatString.IndexOfAny(['{', '}']) < 0)
         {
-            var braceIndex = formatString.IndexOf('{', i, StringComparison.Ordinal);
-            if (braceIndex == -1)
-                return false;
-
-            i = braceIndex;
-
-            // Escaped opening brace
-            if (i + 1 < formatString.Length && formatString[i + 1] == '{')
-            {
-                i += 2;
-                continue;
-            }
-
-            // Check for {digit...}
-            var j = i + 1;
-            var hasDigit = false;
-            while (j < formatString.Length && formatString[j] is >= '0' and <= '9')
-            {
-                hasDigit = true;
-                j++;
-            }
-
-            if (hasDigit)
-            {
-                while (j < formatString.Length)
-                {
-                    if (formatString[j] == '}')
-                        return true;
-
-                    if (formatString[j] == '{')
-                        break;
-
-                    j++;
-                }
-            }
-
-            i++;
+            text = formatString;
+            return true;
         }
 
-        return false;
+        var sb = ObjectPool.SharedStringBuilderPool.Get();
+        try
+        {
+            for (var i = 0; i < formatString.Length; i++)
+            {
+                var c = formatString[i];
+                if (c is '{' or '}')
+                {
+                    // A brace that is not doubled starts a format item, or is invalid
+                    if (i + 1 >= formatString.Length || formatString[i + 1] != c)
+                    {
+                        text = null;
+                        return false;
+                    }
+
+                    i++;
+                }
+
+                sb.Append(c);
+            }
+
+            text = sb.ToString();
+            return true;
+        }
+        finally
+        {
+            ObjectPool.SharedStringBuilderPool.Return(sb);
+        }
     }
 }

@@ -917,4 +917,161 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_None_IsStripped()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    {|MA0215:await Inner().ConfigureAwait(ConfigureAwaitOptions.None)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                Task A()
+                {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_ContinueOnCapturedContext_IsStripped()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    {|MA0215:await Inner().ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                Task A()
+                {
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_SuppressThrowing_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    await Inner().ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_SuppressThrowingCombined_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    await Inner().ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ContinueOnCapturedContext);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_ForceYielding_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                async Task A()
+                {
+                    await Inner().ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitOptions_NotConstant_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task Inner() => throw null;
+                ConfigureAwaitOptions Options() => throw null;
+                async Task A()
+                {
+                    await Inner().ConfigureAwait(Options());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConfigureAwaitBool_NotConstant_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> Inner() => throw null;
+                bool ContinueOnCapturedContext() => throw null;
+                async Task<int> A()
+                {
+                    return await Inner().ConfigureAwait(ContinueOnCapturedContext());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -35,7 +35,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
         private readonly ITypeSymbol? _stringBuilderSymbol;
         private readonly ITypeSymbol? _formatProviderSymbol;
         private readonly HashSet<ISymbol> _appendOverloadTypes = new(SymbolEqualityComparer.Default);
-        private readonly bool _hasAppendJoin;
+        private readonly IMethodSymbol[] _appendJoinMethods = [];
 
         public AnalyzerContext(Compilation compilation)
         {
@@ -44,7 +44,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (_stringBuilderSymbol is null)
                 return;
 
-            _hasAppendJoin = _stringBuilderSymbol.GetMembers("AppendJoin").Length > 0;
+            _appendJoinMethods = [.. _stringBuilderSymbol.GetMembers("AppendJoin").OfType<IMethodSymbol>().Where(static method => !method.IsStatic && method.DeclaredAccessibility == Accessibility.Public)];
 
             _appendOverloadTypes.AddIfNotNull(_stringBuilderSymbol);
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Int16));
@@ -127,7 +127,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (!TryGetConstStringValue(formatArg.Value, out var formatString))
                 return;
 
-            if (!OptimizeStringBuilderUsageAnalyzerCommon.HasFormatPlaceholders(formatString))
+            if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetCompositeFormatLiteralText(formatString, out _))
             {
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceAppendFormatWithAppend);
                 context.ReportDiagnostic(Rule, properties, operation, "Replace AppendFormat with Append as the format string has no placeholders");
@@ -267,8 +267,10 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 }
                 else if (methodName != "Insert" && string.Equals(targetMethod.Name, nameof(string.Join), System.StringComparison.Ordinal) && targetMethod.ContainingType.IsString() && targetMethod.IsStatic)
                 {
-                    // Check if StringBuilder.AppendJoin exists
-                    if (_hasAppendJoin)
+                    // The arguments are moved to AppendJoin as-is, so it needs an overload with the same parameters.
+                    // Join(string, string[], int, int) has no counterpart, and AppendJoin(string, params object[])
+                    // would append the array and the range as three separate values.
+                    if (HasEquivalentAppendJoinOverload(targetMethod))
                     {
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceStringJoinWithAppendJoin);
                         if (string.Equals(methodName, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
@@ -292,6 +294,65 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             }
 
             return false;
+        }
+
+        private bool HasEquivalentAppendJoinOverload(IMethodSymbol joinMethod)
+        {
+            foreach (var appendJoinMethod in _appendJoinMethods)
+            {
+                if (IsEquivalentAppendJoinOverload(joinMethod, appendJoinMethod))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private static bool IsEquivalentAppendJoinOverload(IMethodSymbol joinMethod, IMethodSymbol appendJoinMethod)
+        {
+            if (joinMethod.Parameters.Length != appendJoinMethod.Parameters.Length)
+                return false;
+
+            // AppendJoin<T>(string, IEnumerable<T>) is the counterpart of Join<T>(string, IEnumerable<T>) and of Join(string, IEnumerable<string>)
+            if (appendJoinMethod.IsGenericMethod)
+            {
+                if (appendJoinMethod.TypeParameters is not [var typeParameter])
+                    return false;
+
+                var typeArgument = InferTypeArgument(joinMethod, appendJoinMethod, typeParameter);
+                if (typeArgument is null)
+                    return false;
+
+                appendJoinMethod = appendJoinMethod.Construct(typeArgument);
+            }
+
+            for (var i = 0; i < joinMethod.Parameters.Length; i++)
+            {
+                var joinParameter = joinMethod.Parameters[i];
+                var appendJoinParameter = appendJoinMethod.Parameters[i];
+                if (joinParameter.RefKind != appendJoinParameter.RefKind || joinParameter.IsParams != appendJoinParameter.IsParams)
+                    return false;
+
+                if (!joinParameter.Type.IsEqualTo(appendJoinParameter.Type))
+                    return false;
+            }
+
+            return true;
+        }
+
+        private static ITypeSymbol? InferTypeArgument(IMethodSymbol joinMethod, IMethodSymbol appendJoinMethod, ITypeParameterSymbol typeParameter)
+        {
+            for (var i = 0; i < appendJoinMethod.Parameters.Length; i++)
+            {
+                if (appendJoinMethod.Parameters[i].Type is INamedTypeSymbol { TypeArguments: [var appendJoinTypeArgument] } appendJoinParameterType &&
+                    appendJoinTypeArgument.IsEqualTo(typeParameter) &&
+                    joinMethod.Parameters[i].Type is INamedTypeSymbol { TypeArguments: [var joinTypeArgument] } joinParameterType &&
+                    joinParameterType.OriginalDefinition.IsEqualTo(appendJoinParameterType.OriginalDefinition))
+                {
+                    return joinTypeArgument;
+                }
+            }
+
+            return null;
         }
 
         private static bool IsConstString(IOperation operation)

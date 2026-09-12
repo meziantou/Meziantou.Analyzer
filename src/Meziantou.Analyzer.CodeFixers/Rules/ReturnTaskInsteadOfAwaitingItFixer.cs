@@ -13,38 +13,43 @@ public sealed class ReturnTaskInsteadOfAwaitingItFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix?.FirstAncestorOrSelf<SyntaxNode>(IsFunction) is null)
+        var function = root?.FindNode(context.Span, getInnermostNodeForTie: true).FirstAncestorOrSelf<SyntaxNode>(IsFunction);
+        if (function is null)
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        var replacements = GetReplacements(semanticModel, function, context.CancellationToken);
+        if (replacements is null)
             return;
 
         const string Title = "Return the task directly";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => FixAsync(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => FixAsync(context.Document, function, replacements, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    // Computes how every await of the function (excluding the nested functions) is rewritten,
+    // or null when one of them cannot be removed
+    private static Dictionary<SyntaxNode, SyntaxNode>? GetReplacements(SemanticModel semanticModel, SyntaxNode function, CancellationToken cancellationToken)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
-
-        var function = nodeToFix.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
-        if (function is null)
-            return document;
-
-        // Every await in the function (excluding nested functions) can be removed
+        var configureAwaitOptionsSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
         var awaitExpressions = function
             .DescendantNodesAndSelf(descendIntoChildren: node => node == function || !IsFunction(node))
-            .OfType<AwaitExpressionSyntax>()
-            .ToList();
+            .OfType<AwaitExpressionSyntax>();
 
         var replacements = new Dictionary<SyntaxNode, SyntaxNode>();
         foreach (var awaitExpression in awaitExpressions)
         {
             var innerExpression = awaitExpression.Expression;
-            if (semanticModel.GetOperation(awaitExpression, cancellationToken) is IAwaitOperation { Operation: IInvocationOperation { Instance: { } instance, TargetMethod.Name: "ConfigureAwait" } } &&
+            if (semanticModel.GetOperation(awaitExpression, cancellationToken) is IAwaitOperation { Operation: IInvocationOperation { Instance: { } instance, TargetMethod.Name: "ConfigureAwait" } invocation } &&
                 instance.Syntax is ExpressionSyntax instanceExpression)
             {
+                if (!ReturnTaskInsteadOfAwaitingItCommon.CanRemoveConfigureAwait(invocation, configureAwaitOptionsSymbol))
+                    return null;
+
                 innerExpression = instanceExpression;
             }
 
@@ -59,8 +64,12 @@ public sealed class ReturnTaskInsteadOfAwaitingItFixer : CodeFixProvider
             }
         }
 
-        if (replacements.Count == 0)
-            return document;
+        return replacements.Count > 0 ? replacements : null;
+    }
+
+    private static async Task<Document> FixAsync(Document document, SyntaxNode function, Dictionary<SyntaxNode, SyntaxNode> replacements, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
         var newFunction = function.ReplaceNodes(replacements.Keys, (original, _) => replacements[original]);
         newFunction = RemoveAsyncModifier(newFunction, editor.Generator);

@@ -78,6 +78,118 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
     }
 
     [Fact]
+    public Task MathRoundWithReorderedNamedArguments_CodeFix_UsesNamedArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.Math.Round(digits: 2, value: 1.25)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = 0;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = System.Math.Round(digits: 2, value: 1.25, mode: System.MidpointRounding.ToEven);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MathRoundWithNamedArgumentRenamedInOverload_CodeFix_UsesOverloadParameterName()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.Math.Round(a: 2.5)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = 0;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = System.Math.Round(value: 2.5, mode: System.MidpointRounding.ToEven);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MathRoundWithTrailingNamedArgument_CodeFix_UsesNamedArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0193:System.Math.Round(2.5, digits: 2)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = 0;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = System.Math.Round(2.5, digits: 2, mode: System.MidpointRounding.ToEven);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IFloatingPointRoundWithReorderedNamedArguments_CodeFix_UsesNamedArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Numerics;
+
+            class Test
+            {
+                static T Round<T>(T value) where T : IFloatingPoint<T>
+                {
+                    return {|MA0193:T.Round(digits: 2, x: value)|};
+                }
+            }
+            """;
+        test.CodeActionIndex = 0;
+        test.FixedCode = """
+            using System.Numerics;
+
+            class Test
+            {
+                static T Round<T>(T value) where T : IFloatingPoint<T>
+                {
+                    return T.Round(digits: 2, x: value, mode: System.MidpointRounding.ToEven);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MathFRoundWithoutMode_ReportDiagnostic()
     {
         var test = CreateTest();

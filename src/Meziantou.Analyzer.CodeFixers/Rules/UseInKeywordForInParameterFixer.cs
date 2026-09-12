@@ -26,7 +26,7 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
         if (semanticModel?.GetOperation(argument, context.CancellationToken) is not IArgumentOperation operation)
             return;
 
-        if (!IsVariableReference(operation.Value))
+        if (!UseInKeywordForInParameterCommon.CanBePassedByReference(operation.Value))
             return;
 
         var title = "Add in keyword";
@@ -36,30 +36,6 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
                 cancellationToken => AddInKeywordAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
                 equivalenceKey: title),
             context.Diagnostics);
-    }
-
-    private static bool IsVariableReference(IOperation operation)
-    {
-        while (true)
-        {
-            switch (operation)
-            {
-                case IConversionOperation conversionOperation:
-                    if (!conversionOperation.Conversion.IsIdentity)
-                        return false;
-
-                    operation = conversionOperation.Operand;
-                    continue;
-                case ILocalReferenceOperation:
-                case IParameterReferenceOperation:
-                case IFieldReferenceOperation:
-                case IArrayElementReferenceOperation:
-                case IInstanceReferenceOperation:
-                    return true;
-                default:
-                    return false;
-            }
-        }
     }
 
     private static async Task<Document> AddInKeywordAsync(Document document, TextSpan argumentSpan, CancellationToken cancellationToken)

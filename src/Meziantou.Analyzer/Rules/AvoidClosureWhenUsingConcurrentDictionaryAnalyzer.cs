@@ -187,9 +187,16 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
             {
                 // A parameter can be captured inside (by another lambda)
                 var parameters = GetParameters(argumentOperation);
-                if (dataFlow.CapturedInside.Any(s => !parameters.Contains(s, SymbolEqualityComparer.Default)))
+
+                // A variable written inside the lambda must keep its shared storage. The 'factoryArgument' parameter is a copy,
+                // so the writes would not be visible outside of the lambda.
+                var capturedSymbols = dataFlow.CapturedInside
+                    .Where(symbol => !parameters.Contains(symbol, SymbolEqualityComparer.Default) && !dataFlow.WrittenInside.Contains(symbol, SymbolEqualityComparer.Default))
+                    .ToArray();
+
+                if (capturedSymbols.Length > 0)
                 {
-                    context.ReportDiagnostic(RuleFactoryArg, argumentOperation, string.Join(", ", dataFlow.Captured.Select(symbol => symbol.Name)));
+                    context.ReportDiagnostic(RuleFactoryArg, argumentOperation, string.Join(", ", capturedSymbols.Select(symbol => symbol.Name)));
                 }
             }
         }

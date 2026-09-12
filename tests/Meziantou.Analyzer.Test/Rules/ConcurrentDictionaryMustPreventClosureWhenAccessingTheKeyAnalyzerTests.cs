@@ -21,11 +21,11 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
             var a = new ConcurrentDictionary<int, int>();
             a.GetOrAdd(key, (k) => k + 1);
             a.GetOrAdd(key, (k, v) => k + v, factoryArg);
-            a.GetOrAdd(key, {|MA0106:(k, v) =>
+            a.GetOrAdd(key, (k, v) =>
             {
                 key = 2; // ok to write a value
                 return key + v; // ok to use the value if it is written
-            }|}, factoryArg);
+            }, factoryArg);
             """;
 
         return test.RunAsync();
@@ -487,6 +487,64 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
             var value = 1;
             var a = new ConcurrentDictionary<int, int>();
             a.GetOrAdd(key, (_, arg) => arg, value);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_CapturedVariableIsWritten_IsValid()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var counter = 0;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(1, _ => ++counter);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_CapturedVariableIsWrittenInANestedLambda_IsValid()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System;
+            using System.Collections.Concurrent;
+
+            var counter = 0;
+            var a = new ConcurrentDictionary<int, int>();
+            a.GetOrAdd(1, _ => new Func<int>(() => ++counter)());
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_CapturedVariableIsWrittenByTheUpdateValueFactory_NoCodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            var counter = 0;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(1, {|MA0106:k => counter|}, (k, v) => ++counter);
+            """;
+
+        // The update value factory writes 'counter', so it cannot use the 'factoryArgument' parameter
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            var counter = 0;
+            var a = new ConcurrentDictionary<int, int>();
+            a.AddOrUpdate(1, {|MA0106:k => counter|}, (k, v) => ++counter);
             """;
 
         return test.RunAsync();

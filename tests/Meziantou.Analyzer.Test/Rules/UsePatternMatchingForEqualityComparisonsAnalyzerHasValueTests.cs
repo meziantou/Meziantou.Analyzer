@@ -125,4 +125,52 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task HasValue_MemberAccessReceiver()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = {|MA0171:value.HasValue|}.ToString();
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = (value is not null).ToString();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValueEqualsFalse_MemberAccessReceiver()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = ({|MA0171:value.HasValue|} == false).ToString();
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = (value is null).ToString();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValue_Cast()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = default(int?);
+            _ = (object){|MA0171:value.HasValue|};
+            """;
+        test.FixedCode = """
+            var value = default(int?);
+            _ = (object)(value is not null);
+            """;
+
+        return test.RunAsync();
+    }
 }

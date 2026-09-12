@@ -133,6 +133,130 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     }
 
     [Theory]
+    [InlineData(@"""{{text}}""", @"""{text}""")]
+    [InlineData(@"""{{0}}""", @"""{0}""")]
+    [InlineData(@"""a {{{{ b }}}} c""", @"""a {{ b }} c""")]
+    [InlineData(@"@""{{""""text""""}}""", @"""{\""text\""}""")]
+    [InlineData(@"""""""{{text}}""""""", @"""{text}""")]
+    public Task AppendFormat_NoPlaceholders_EscapedBraces_FixUnescapesBraces(string format, string expectedArgument)
+    {
+        var test = CreateTest();
+        test.TestCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat({{format}}, 1)|};
+                }
+            }
+            """";
+        test.FixedCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append({{expectedArgument}});
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendFormat_NoPlaceholders_ConstantWithEscapedBraces_FixUnescapesBraces()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "{{text}}";
+
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat(Format, 1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "{{text}}";
+
+                void A()
+                {
+                    new StringBuilder().Append("{text}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendFormat_NoPlaceholders_ConstantWithoutBraces_FixKeepsConstant()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "text";
+
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat(Format, 1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "text";
+
+                void A()
+                {
+                    new StringBuilder().Append(Format);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(@"""{text}""")]
+    [InlineData(@"""{""")]
+    [InlineData(@"""}""")]
+    [InlineData(@"""text}""")]
+    [InlineData(@"""{0""")]
+    [InlineData(@"""{ 0}""")]
+    [InlineData(@"""{{{text}}""")]
+    [InlineData(@"""{{0}}}""")]
+    [InlineData(@"$""{{text}}""")]
+    public Task AppendFormat_InvalidFormat_NoDiagnostic(string format)
+    {
+        var test = CreateTest();
+        test.TestCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat({{format}}, 1);
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("10")]
     [InlineData("10 + 20")]
     [InlineData(@"""abc""")]
@@ -1010,6 +1134,68 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
                 void A()
                 {
                     new StringBuilder().AppendJoin(", ", new[] { 1, 2, 3 }).AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringJoin_Range_NoDiagnostic()
+    {
+        // AppendJoin has no overload with a range, so AppendJoin(",", array, 1, 2) would append "System.String[],1,2"
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string[] values)
+                {
+                    new StringBuilder().Append(string.Join(",", values, 1, 2));
+                    new StringBuilder().AppendLine(string.Join(',', values, 1, 2));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringJoin_AppendJoin_AllOverloads()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Text;
+            class Test
+            {
+                void A(string[] strings, object[] objects, IEnumerable<string> stringEnumerable, List<int> ints, string a, object b)
+                {
+                    {|MA0028:new StringBuilder().Append(string.Join(",", strings))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', strings))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", objects))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", stringEnumerable))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', ints))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", a, a))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', a, b))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Text;
+            class Test
+            {
+                void A(string[] strings, object[] objects, IEnumerable<string> stringEnumerable, List<int> ints, string a, object b)
+                {
+                    new StringBuilder().AppendJoin(",", strings);
+                    new StringBuilder().AppendJoin(',', strings);
+                    new StringBuilder().AppendJoin(",", objects);
+                    new StringBuilder().AppendJoin(",", stringEnumerable);
+                    new StringBuilder().AppendJoin(',', ints);
+                    new StringBuilder().AppendJoin(",", a, a);
+                    new StringBuilder().AppendJoin(',', a, b);
                 }
             }
             """;

@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis;
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersAnalyzer,
     Meziantou.Analyzer.Rules.DoNotUseInterpolatedStringWithoutParametersFixer>;
@@ -97,6 +98,139 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
                 {
                     Test($"Required attribute 'output' not found.");
                 }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ReturnedAsIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public static System.IFormattable Run() => $"text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_AssignedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private System.IFormattable _value;
+
+                public void Run()
+                {
+                    System.IFormattable local = $"text";
+                    _value = $"text";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConvertedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public void Test(System.IFormattable value)
+                {
+                }
+
+                public void Run()
+                {
+                    Test($"text");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_CastToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public object Run() => (System.IFormattable)$"text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConditionalConvertedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public System.IFormattable Run(bool condition) => condition ? $"a" : (System.IFormattable)$"b";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConvertedToObject_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public object Run() => [|$"text"|];
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                public object Run() => "text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ArgumentOfMethodReturningFormattableString_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public void Run()
+                {
+                    System.FormattableString value = Create([|$"text"|]);
+                }
+
+                private static System.FormattableString Create(string value) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                public void Run()
+                {
+                    System.FormattableString value = Create("text");
+                }
+
+                private static System.FormattableString Create(string value) => throw null;
             }
             """;
 
@@ -278,6 +412,66 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     }
 
     [Fact]
+    public Task CodeFix_ShouldUnescapeBraces()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$"{{text}}"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "{text}";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_Verbatim_ShouldUnescapeBracesAndQuotes()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$@"{{""text"": ""\""}}"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "{\"text\": \"\\\"}";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_EmptyString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$""|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
     {
         var test = CreateTest();
@@ -300,6 +494,91 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
                     _ = """
                         Sample
                         """;
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RawInterpolatedStringWithMultipleDollarsAndBraces_ShouldRemoveAllDollars()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0184:$$"""{unknown}"""|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = """{unknown}""";
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultiLineRawInterpolatedStringWithThreeDollarsAndBraces_ShouldRemoveAllDollars()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = {|MA0184:$$$"""
+                        {{unknown}}
+                        """|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = """
+                        {{unknown}}
+                        """;
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RawInterpolatedStringWithDollarInLeadingTrivia_ShouldPreserveTrivia()
+    {
+        var test = CreateTest();
+        test.MarkupOptions = MarkupOptions.TreatPositionIndicatorsAsCode;
+        test.TestCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = /* $ */ {|MA0184:$$"""{unknown}"""|};
+                }
+            }
+            """";
+        test.FixedCode = """"
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = /* $ */ """{unknown}""";
                 }
             }
             """";

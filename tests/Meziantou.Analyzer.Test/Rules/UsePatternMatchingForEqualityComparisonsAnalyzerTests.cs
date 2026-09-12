@@ -274,6 +274,104 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     }
 
     [Fact]
+    public Task EqualityComparison_MethodCall_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Next() == 0|} || {|MA0148:Next() == 2|};
+
+            static int Next() => 0;
+            """;
+        test.FixedCode = """
+            _ = Next() is 0 || Next() is 2;
+
+            static int Next() => 0;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InequalityComparison_MethodCall_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0149:Next() != 0|} && {|MA0149:Next() != 2|};
+
+            static int Next() => 0;
+            """;
+        test.FixedCode = """
+            _ = Next() is not 0 && Next() is not 2;
+
+            static int Next() => 0;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_Property_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:args.Length == 0|} || {|MA0148:args.Length == 1|};
+            """;
+        test.FixedCode = """
+            _ = args.Length is 0 || args.Length is 1;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_Field_MergeConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Sample.Value == 0|} || {|MA0148:Sample.Value == 1|};
+
+            static class Sample
+            {
+                public static int Value;
+            }
+            """;
+        test.FixedCode = """
+            _ = Sample.Value is 0 or 1;
+
+            static class Sample
+            {
+                public static int Value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_VolatileField_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Sample.Value == 0|} || {|MA0148:Sample.Value == 1|};
+
+            static class Sample
+            {
+                public static volatile int Value;
+            }
+            """;
+        test.FixedCode = """
+            _ = Sample.Value is 0 || Sample.Value is 1;
+
+            static class Sample
+            {
+                public static volatile int Value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task BatchFix_MergeConditions()
     {
         var test = CreateTest();
@@ -365,6 +463,96 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
             {
                 public static implicit operator int(Sample value) => 0;
             }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("int", "1L")]
+    [InlineData("int", "1.0")]
+    [InlineData("int", "1m")]
+    [InlineData("int?", "1L")]
+    [InlineData("float", "0.1")]
+    [InlineData("byte", "300")]
+    [InlineData("char", "65")]
+    public async Task EqualityComparison_NumericPromotion_ConstantNotConvertibleToOperandType_NoDiagnostic(string type, string constant)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{type}} value = default;
+            _ = value == {{constant}};
+            _ = {{constant}} != value;
+            """;
+
+        await test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("byte", "1")]
+    [InlineData("short", "1")]
+    [InlineData("ushort", "1")]
+    [InlineData("byte?", "1")]
+    public async Task EqualityComparison_NumericPromotion_ConstantConvertibleToOperandType(string type, string constant)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{type}} value = default;
+            _ = {|MA0148:value == {{constant}}|};
+            _ = {|MA0149:{{constant}} != value|};
+            """;
+        test.FixedCode = $$"""
+            {{type}} value = default;
+            _ = value is {{constant}};
+            _ = value is not {{constant}};
+            """;
+
+        await test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_MixedWithNumericPromotion_OnlyFixValidExpression()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            int value = 0;
+            _ = {|MA0148:value == 1|} || value == 2L;
+            """;
+        test.FixedCode = """
+            int value = 0;
+            _ = value is 1 || value == 2L;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InequalityComparison_MixedWithNumericPromotion_OnlyFixValidExpression()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            int value = 0;
+            _ = value != 1L && {|MA0149:value != 2|};
+            """;
+        test.FixedCode = """
+            int value = 0;
+            _ = value != 1L && value is not 2;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_MergeWithNumericPromotion()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            byte value = 0;
+            _ = {|MA0148:value == 1|} || {|MA0148:value == 2|};
+            """;
+        test.FixedCode = """
+            byte value = 0;
+            _ = value is 1 or 2;
             """;
 
         return test.RunAsync();
