@@ -31,6 +31,10 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
         context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.MethodDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.LocalFunctionStatement);
         context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.PropertyDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.IndexerDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.EventDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.OperatorDeclaration);
+        context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.ConversionOperatorDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.ConstructorDeclaration);
         context.RegisterSyntaxNodeAction(AnalyzeMethod, SyntaxKind.DestructorDeclaration);
     }
@@ -50,15 +54,27 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
                 break;
 
             case PropertyDeclarationSyntax node:
-                if (node.AccessorList is not null)
-                {
-                    foreach (var accessor in node.AccessorList.Accessors)
-                    {
-                        AnalyzeNode(context, accessor.Body, accessor.Keyword);
-                        AnalyzeNode(context, accessor.ExpressionBody, accessor.Keyword);
-                    }
-                }
+                AnalyzeNode(context, node.ExpressionBody, node.Identifier);
+                AnalyzeAccessors(context, node.AccessorList);
+                break;
 
+            case IndexerDeclarationSyntax node:
+                AnalyzeNode(context, node.ExpressionBody, node.ThisKeyword);
+                AnalyzeAccessors(context, node.AccessorList);
+                break;
+
+            case EventDeclarationSyntax node:
+                AnalyzeAccessors(context, node.AccessorList);
+                break;
+
+            case OperatorDeclarationSyntax node:
+                AnalyzeNode(context, node.Body, node.OperatorToken);
+                AnalyzeNode(context, node.ExpressionBody, node.OperatorToken);
+                break;
+
+            case ConversionOperatorDeclarationSyntax node:
+                AnalyzeNode(context, node.Body, node.ImplicitOrExplicitKeyword);
+                AnalyzeNode(context, node.ExpressionBody, node.ImplicitOrExplicitKeyword);
                 break;
 
             case ConstructorDeclarationSyntax node:
@@ -70,6 +86,18 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
                 AnalyzeNode(context, node.Body, node.Identifier);
                 AnalyzeNode(context, node.ExpressionBody, node.Identifier);
                 break;
+        }
+    }
+
+    private static void AnalyzeAccessors(SyntaxNodeAnalysisContext context, AccessorListSyntax? accessorList)
+    {
+        if (accessorList is null)
+            return;
+
+        foreach (var accessor in accessorList.Accessors)
+        {
+            AnalyzeNode(context, accessor.Body, accessor.Keyword);
+            AnalyzeNode(context, accessor.ExpressionBody, accessor.Keyword);
         }
     }
 
