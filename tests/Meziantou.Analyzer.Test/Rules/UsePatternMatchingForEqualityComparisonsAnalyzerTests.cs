@@ -274,6 +274,104 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
     }
 
     [Fact]
+    public Task EqualityComparison_MethodCall_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Next() == 0|} || {|MA0148:Next() == 2|};
+
+            static int Next() => 0;
+            """;
+        test.FixedCode = """
+            _ = Next() is 0 || Next() is 2;
+
+            static int Next() => 0;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InequalityComparison_MethodCall_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0149:Next() != 0|} && {|MA0149:Next() != 2|};
+
+            static int Next() => 0;
+            """;
+        test.FixedCode = """
+            _ = Next() is not 0 && Next() is not 2;
+
+            static int Next() => 0;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_Property_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:args.Length == 0|} || {|MA0148:args.Length == 1|};
+            """;
+        test.FixedCode = """
+            _ = args.Length is 0 || args.Length is 1;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_Field_MergeConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Sample.Value == 0|} || {|MA0148:Sample.Value == 1|};
+
+            static class Sample
+            {
+                public static int Value;
+            }
+            """;
+        test.FixedCode = """
+            _ = Sample.Value is 0 or 1;
+
+            static class Sample
+            {
+                public static int Value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EqualityComparison_VolatileField_DoNotMerge()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0148:Sample.Value == 0|} || {|MA0148:Sample.Value == 1|};
+
+            static class Sample
+            {
+                public static volatile int Value;
+            }
+            """;
+        test.FixedCode = """
+            _ = Sample.Value is 0 || Sample.Value is 1;
+
+            static class Sample
+            {
+                public static volatile int Value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task BatchFix_MergeConditions()
     {
         var test = CreateTest();

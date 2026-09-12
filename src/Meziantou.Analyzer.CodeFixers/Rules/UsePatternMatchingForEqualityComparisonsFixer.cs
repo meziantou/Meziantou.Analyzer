@@ -121,7 +121,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
         {
             if (TryCreateDiscreteComparisonCandidate(term, expectedComparisonOperatorKind, semanticModel, cancellationToken, out var candidate))
             {
-                if (mergeCandidates.Count > 0 && !SyntaxFactory.AreEquivalent(mergeCandidates[0].Expression, candidate.Expression))
+                if (mergeCandidates.Count > 0 && !CanMerge(mergeCandidates[0], candidate))
                 {
                     updatedTerms.Add(CreatePatternExpressionFromCandidates(mergeCandidates, expectedComparisonOperatorKind));
                     mergeCandidates.Clear();
@@ -216,8 +216,38 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
         if (expressionOperation.Syntax is not ExpressionSyntax valueExpression || constantOperation.Syntax is not ExpressionSyntax constantExpression)
             return false;
 
-        candidate = new(valueExpression, ConstantPattern(constantExpression));
+        candidate = new(valueExpression, ConstantPattern(constantExpression), IsStableValue(expressionOperation));
         return true;
+    }
+
+    /// <summary>
+    /// Merging the comparisons into a single pattern evaluates the operand once instead of once per comparison,
+    /// so it is only valid when the operands are the same and evaluating them again cannot have a side effect or return another value.
+    /// </summary>
+    private static bool CanMerge(DiscreteComparisonCandidate first, DiscreteComparisonCandidate candidate)
+    {
+        return first.HasStableValue && candidate.HasStableValue && SyntaxFactory.AreEquivalent(first.Expression, candidate.Expression);
+    }
+
+    /// <summary>
+    /// Determines if evaluating the operation has no side effect and returns the same value as the previous evaluation.
+    /// The properties, the indexers and the methods are excluded as they can execute any code.
+    /// </summary>
+    private static bool IsStableValue(IOperation? operation)
+    {
+        if (operation is null)
+            return false;
+
+        if (operation.ConstantValue.HasValue)
+            return true;
+
+        return operation switch
+        {
+            ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation => true,
+            IFieldReferenceOperation fieldReference => !fieldReference.Field.IsVolatile && (fieldReference.Field.IsStatic || IsStableValue(fieldReference.Instance)),
+            IConversionOperation conversion => conversion.OperatorMethod is null && IsStableValue(conversion.Operand),
+            _ => false,
+        };
     }
 
     private static bool TryCreatePatternExpression(BinaryExpressionSyntax binaryExpression, SemanticModel semanticModel, CancellationToken cancellationToken, out IsPatternExpressionSyntax updatedExpression)
@@ -280,5 +310,5 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
 
     private static bool IsLogicalBinary(SyntaxKind kind) => kind is SyntaxKind.LogicalAndExpression or SyntaxKind.LogicalOrExpression;
 
-    private readonly record struct DiscreteComparisonCandidate(ExpressionSyntax Expression, PatternSyntax Pattern);
+    private readonly record struct DiscreteComparisonCandidate(ExpressionSyntax Expression, PatternSyntax Pattern, bool HasStableValue);
 }
