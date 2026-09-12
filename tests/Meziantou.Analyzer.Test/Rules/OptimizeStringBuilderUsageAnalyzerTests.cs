@@ -133,6 +133,130 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     }
 
     [Theory]
+    [InlineData(@"""{{text}}""", @"""{text}""")]
+    [InlineData(@"""{{0}}""", @"""{0}""")]
+    [InlineData(@"""a {{{{ b }}}} c""", @"""a {{ b }} c""")]
+    [InlineData(@"@""{{""""text""""}}""", @"""{\""text\""}""")]
+    [InlineData(@"""""""{{text}}""""""", @"""{text}""")]
+    public Task AppendFormat_NoPlaceholders_EscapedBraces_FixUnescapesBraces(string format, string expectedArgument)
+    {
+        var test = CreateTest();
+        test.TestCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat({{format}}, 1)|};
+                }
+            }
+            """";
+        test.FixedCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().Append({{expectedArgument}});
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendFormat_NoPlaceholders_ConstantWithEscapedBraces_FixUnescapesBraces()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "{{text}}";
+
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat(Format, 1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "{{text}}";
+
+                void A()
+                {
+                    new StringBuilder().Append("{text}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AppendFormat_NoPlaceholders_ConstantWithoutBraces_FixKeepsConstant()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "text";
+
+                void A()
+                {
+                    {|MA0028:new StringBuilder().AppendFormat(Format, 1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                const string Format = "text";
+
+                void A()
+                {
+                    new StringBuilder().Append(Format);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(@"""{text}""")]
+    [InlineData(@"""{""")]
+    [InlineData(@"""}""")]
+    [InlineData(@"""text}""")]
+    [InlineData(@"""{0""")]
+    [InlineData(@"""{ 0}""")]
+    [InlineData(@"""{{{text}}""")]
+    [InlineData(@"""{{0}}}""")]
+    [InlineData(@"$""{{text}}""")]
+    public Task AppendFormat_InvalidFormat_NoDiagnostic(string format)
+    {
+        var test = CreateTest();
+        test.TestCode = $$""""
+            using System.Text;
+            class Test
+            {
+                void A()
+                {
+                    new StringBuilder().AppendFormat({{format}}, 1);
+                }
+            }
+            """";
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("10")]
     [InlineData("10 + 20")]
     [InlineData(@"""abc""")]

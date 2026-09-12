@@ -55,6 +55,52 @@ public sealed class UseArrayEmptyAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("new int*[0]")]
+    [InlineData("new int*[] { }")]
+    [InlineData("new delegate*<void>[0]")]
+    public Task EmptyPointerArray_ShouldNotReportError(string code)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            unsafe class TestClass
+            {
+                void Test()
+                {
+                    var a = {{code}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyArrayOfPointerArrays_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            unsafe class TestClass
+            {
+                void Test()
+                {
+                    var a = {|MA0005:new int*[0][]|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            unsafe class TestClass
+            {
+                void Test()
+                {
+                    var a = System.Array.Empty<int*[]>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Length_FlowedFromLocal_ShouldReportError()
     {

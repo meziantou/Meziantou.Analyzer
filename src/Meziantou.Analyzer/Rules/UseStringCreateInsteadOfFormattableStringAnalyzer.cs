@@ -37,6 +37,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
             if (stringCreateSymbol is null || formatProviderSymbol is null)
                 return;
 
+            var operationUtilities = new OperationUtilities(ctx.Compilation);
             ctx.RegisterOperationAction(AnalyzeSymbol, OperationKind.Invocation);
 
             void AnalyzeSymbol(OperationAnalysisContext context)
@@ -49,6 +50,10 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
 
                 if (method.Name is "Invariant" or "CurrentCulture" && method.Parameters.Length == 1 && operation.Arguments[0].Value.UnwrapImplicitConversions() is IInterpolatedStringOperation)
                 {
+                    // Expression trees cannot contain interpolated string handler conversions (CS8952)
+                    if (operationUtilities.IsInExpressionContext(operation))
+                        return;
+
                     context.ReportDiagnostic(Rule, operation);
                     return;
                 }

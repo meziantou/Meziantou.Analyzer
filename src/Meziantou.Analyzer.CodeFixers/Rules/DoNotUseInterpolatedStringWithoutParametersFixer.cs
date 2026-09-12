@@ -36,16 +36,20 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
         // Check if this is a raw string literal (C# 11+)
         if (interpolatedString.StringStartToken.Kind() is SyntaxKind.InterpolatedMultiLineRawStringStartToken or SyntaxKind.InterpolatedSingleLineRawStringStartToken)
         {
-            // For raw strings, simply remove the $ prefix from the start token
-            // $""" text """ -> """ text """
-            var originalText = interpolatedString.ToFullString();
-
-            // Find the position of $ in the start token and remove it
-            var dollarIndex = originalText.IndexOf('$', StringComparison.Ordinal);
-            if (dollarIndex < 0)
+            // For raw strings, remove the whole $ prefix from the start token, as the number of $ determines
+            // the number of braces that start an interpolation: $$"""{text}""" -> """{text}"""
+            var startTokenText = interpolatedString.StringStartToken.Text;
+            var dollarCount = startTokenText.Length - startTokenText.TrimStart('$').Length;
+            if (dollarCount is 0)
                 return null;
 
-            return SyntaxFactory.ParseExpression(originalText.Remove(dollarIndex, 1));
+            // The text of the node starts with the start token and does not include the trivia
+            var newText = interpolatedString.ToString().Substring(dollarCount);
+            var newNode = SyntaxFactory.ParseExpression(newText, options: interpolatedString.SyntaxTree.Options);
+            if (!newNode.IsKind(SyntaxKind.StringLiteralExpression) || newNode.ContainsDiagnostics)
+                return null;
+
+            return newNode;
         }
 
         // The text of the tokens still contains the escaped braces ("{{" and "}}"),

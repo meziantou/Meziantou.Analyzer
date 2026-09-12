@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
@@ -29,7 +30,7 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
         if (variableDeclarator is null)
             return;
 
-        if (semanticModel.GetDeclaredSymbol(variableDeclarator, context.CancellationToken) is null)
+        if (semanticModel.GetDeclaredSymbol(variableDeclarator, context.CancellationToken) is not { } symbol)
             return;
 
         if (variableDeclarator.Parent is not VariableDeclarationSyntax { } declaration || declaration.Variables.Count != 1)
@@ -37,49 +38,53 @@ public sealed class UseSystemThreadingLockInsteadOfObjectFixer : CodeFixProvider
 
         const string Title = "Use System.Threading.Lock";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => UseLockType(context.Document, nodeToFix, lockType, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => UseLockType(context.Document, declaration, symbol, lockType, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> UseLockType(Document document, SyntaxNode nodeToFix, INamedTypeSymbol lockType, CancellationToken cancellationToken)
+    private static async Task<Solution> UseLockType(Document document, VariableDeclarationSyntax declaration, ISymbol symbol, INamedTypeSymbol lockType, CancellationToken cancellationToken)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
-        var variableDeclarator = nodeToFix.FirstAncestorOrSelf<VariableDeclaratorSyntax>();
-        if (variableDeclarator is null)
-            return document;
-
-        if (editor.SemanticModel.GetDeclaredSymbol(variableDeclarator, cancellationToken) is not ISymbol symbol)
-            return document;
-
-        if (variableDeclarator.Parent is not VariableDeclarationSyntax declaration || declaration.Variables.Count != 1)
-            return document;
+        var solution = document.Project.Solution;
+        var solutionEditor = new SolutionEditor(solution);
+        var editor = await solutionEditor.GetDocumentEditorAsync(document.Id, cancellationToken).ConfigureAwait(false);
 
         editor.ReplaceNode(
             declaration.Type,
             ((TypeSyntax)editor.Generator.TypeExpression(lockType)).WithTriviaFrom(declaration.Type).WithAdditionalAnnotations(Formatter.Annotation));
 
+        var variableDeclarator = declaration.Variables[0];
         if (variableDeclarator.Initializer is not null && IsObjectCreation(editor.SemanticModel, variableDeclarator.Initializer.Value, cancellationToken))
         {
             editor.ReplaceNode(variableDeclarator.Initializer.Value, ImplicitObjectCreationExpression().WithTriviaFrom(variableDeclarator.Initializer.Value));
         }
 
-        foreach (var assignment in editor.OriginalRoot.DescendantNodes().OfType<AssignmentExpressionSyntax>())
+        // The field can be assigned in another document, such as another part of a partial class or a derived class
+        var references = await SymbolFinder.FindReferencesAsync(symbol, solution, cancellationToken).ConfigureAwait(false);
+        foreach (var location in references.SelectMany(reference => reference.Locations))
         {
-            var leftSymbol = editor.SemanticModel.GetSymbolInfo(assignment.Left, cancellationToken).Symbol;
-            if (!SymbolEqualityComparer.Default.Equals(leftSymbol, symbol))
+            // Source generated documents cannot be edited
+            if (solution.GetDocument(location.Document.Id) is null)
                 continue;
 
-            if (!IsObjectCreation(editor.SemanticModel, assignment.Right, cancellationToken))
+            var referenceEditor = await solutionEditor.GetDocumentEditorAsync(location.Document.Id, cancellationToken).ConfigureAwait(false);
+            var reference = referenceEditor.OriginalRoot.FindNode(location.Location.SourceSpan, getInnermostNodeForTie: true);
+            if (reference.Parent is MemberAccessExpressionSyntax memberAccess && memberAccess.Name == reference)
+            {
+                reference = memberAccess;
+            }
+
+            if (reference.Parent is not AssignmentExpressionSyntax assignment || assignment.Left != reference)
                 continue;
 
-            editor.ReplaceNode(assignment.Right, ImplicitObjectCreationExpression().WithTriviaFrom(assignment.Right));
+            if (!IsObjectCreation(referenceEditor.SemanticModel, assignment.Right, cancellationToken))
+                continue;
+
+            referenceEditor.ReplaceNode(assignment.Right, ImplicitObjectCreationExpression().WithTriviaFrom(assignment.Right));
         }
 
-        return editor.GetChangedDocument();
+        return solutionEditor.GetChangedSolution();
 
         static bool IsObjectCreation(SemanticModel semanticModel, ExpressionSyntax expression, CancellationToken cancellationToken)
             => semanticModel.GetOperation(expression, cancellationToken) is IObjectCreationOperation { Type.SpecialType: SpecialType.System_Object };
-
     }
 }

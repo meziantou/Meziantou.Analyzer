@@ -42,6 +42,10 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
         var operation = (IArrayCreationOperation)context.Operation;
         if (IsZeroLengthArrayCreation(operation, context.CancellationToken))
         {
+            // Pointer types cannot be used as generic type arguments (CS0306)
+            if (operation.Type is IArrayTypeSymbol { ElementType.TypeKind: TypeKind.Pointer or TypeKind.FunctionPointer })
+                return;
+
             // Cannot use Array.Empty<T>() as an attribute parameter
             if (IsInAttribute(operation))
                 return;

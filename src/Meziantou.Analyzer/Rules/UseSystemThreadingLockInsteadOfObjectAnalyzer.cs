@@ -26,7 +26,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
 
         context.RegisterCompilationStartAction(context =>
         {
-            if (context.Compilation.GetBestTypeByMetadataName("System.Threading.Lock") is null)
+            var lockType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Lock");
+            if (lockType is null)
                 return;
 
             if (!context.Compilation.GetCSharpLanguageVersion().IsCSharp13OrGreater())
@@ -38,20 +39,22 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
                 {
                     if (block.Syntax is StatementSyntax or ExpressionSyntax)
                     {
-                        var symbols = new SymbolLockContext();
+                        var symbols = new SymbolLockContext(lockType);
                         context.RegisterOperationAction(context => symbols.HandleOperation((ILocalReferenceOperation)context.Operation), OperationKind.LocalReference);
+                        context.RegisterOperationAction(context => symbols.HandleOperation((IVariableDeclaratorOperation)context.Operation), OperationKind.VariableDeclarator);
                         context.RegisterOperationBlockEndAction(context => symbols.ReportSymbols(context, Rule));
                     }
                 }
             });
 
-            var symbols = new SymbolLockContext();
+            var symbols = new SymbolLockContext(lockType);
             context.RegisterOperationAction(context => symbols.HandleOperation((IFieldReferenceOperation)context.Operation), OperationKind.FieldReference);
+            context.RegisterOperationAction(context => symbols.HandleOperation((IFieldInitializerOperation)context.Operation), OperationKind.FieldInitializer);
             context.RegisterCompilationEndAction(context => symbols.ReportSymbols(context, Rule));
         });
     }
 
-    private sealed class SymbolLockContext
+    private sealed class SymbolLockContext(INamedTypeSymbol lockType)
     {
         private readonly ConcurrentDictionary<ISymbol, bool> _symbols = new(SymbolEqualityComparer.Default);
 
@@ -71,10 +74,45 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             if (symbol is IFieldSymbol { Type.SpecialType: SpecialType.System_Object } && !symbol.IsVisibleOutsideOfAssembly())
                 return true;
 
-            if (symbol is ILocalSymbol { Type.SpecialType: SpecialType.System_Object })
+            // Only the locals declared by a variable declaration can be declared with a different type.
+            // For instance, the type of a foreach variable or of a pattern variable is tied to the value it gets.
+            if (symbol is ILocalSymbol { Type.SpecialType: SpecialType.System_Object, DeclaringSyntaxReferences: [var syntaxReference] } && syntaxReference.GetSyntax() is VariableDeclaratorSyntax)
                 return true;
 
             return false;
+        }
+
+        // The value must still be valid once the type of the symbol is System.Threading.Lock.
+        // The code fixer replaces the creation of an object with `new()`, the other values are kept as-is.
+        private bool IsSupportedValue(IOperation value)
+        {
+            return value.UnwrapImplicitConversions() switch
+            {
+                IObjectCreationOperation { Type.SpecialType: SpecialType.System_Object } => true,
+                ILiteralOperation operation when operation.IsNull() => true,
+                IDefaultValueOperation { Syntax: LiteralExpressionSyntax } => true,
+                var operation => operation.Type.IsEqualTo(lockType),
+            };
+        }
+
+        public void HandleOperation(IFieldInitializerOperation operation)
+        {
+            foreach (var field in operation.InitializedFields)
+            {
+                if (IsPotentialSymbol(field) && !IsSupportedValue(operation.Value))
+                {
+                    ExcludeSymbol(field);
+                }
+            }
+        }
+
+        public void HandleOperation(IVariableDeclaratorOperation operation)
+        {
+            var symbol = operation.Symbol;
+            if (IsPotentialSymbol(symbol) && operation.GetVariableInitializer() is { } initializer && !IsSupportedValue(initializer.Value))
+            {
+                ExcludeSymbol(symbol);
+            }
         }
 
         public void HandleOperation(ILocalReferenceOperation operation)
@@ -94,9 +132,16 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             if (!IsPotentialSymbol(symbol))
                 return;
 
-            // Assignment targets (e.g., initializations in constructors) are not usages
-            if (operation.Parent is IAssignmentOperation { Target: var assignTarget } && assignTarget == operation)
+            // Assignment targets (e.g., initializations in constructors) are not usages, but the assigned value must be compatible with the new type
+            if (operation.Parent is IAssignmentOperation assignment && assignment.Target == operation)
+            {
+                if (assignment is not (ISimpleAssignmentOperation or ICoalesceAssignmentOperation) || !IsSupportedValue(assignment.Value))
+                {
+                    ExcludeSymbol(symbol);
+                }
+
                 return;
+            }
 
             if (operation.Parent is not ILockOperation)
             {
