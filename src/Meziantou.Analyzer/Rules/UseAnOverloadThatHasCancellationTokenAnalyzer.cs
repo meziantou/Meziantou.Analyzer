@@ -253,7 +253,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(FlowCancellationTokenInAwaitForEachRule, op.Collection, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(FlowCancellationTokenInAwaitForEachRule, op.Collection);
             }
         }
 
