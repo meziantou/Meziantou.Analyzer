@@ -1,6 +1,4 @@
-﻿using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
-
-namespace Meziantou.Analyzer.Rules;
+﻿namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
@@ -16,57 +14,24 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
         if (nodeToFix is not XmlElementSyntax elementSyntax)
             return;
 
-        // The fix rebuilds the element from its text content, so it would drop any other node
-        foreach (var content in elementSyntax.Content)
-        {
-            if (content is not XmlTextSyntax)
-                return;
-        }
+        var inlineElement = UseInlineXmlCommentSyntaxWhenPossibleCommon.CreateInlineElement(elementSyntax);
+        if (inlineElement is null)
+            return;
 
         var title = "Use single-line XML comment syntax";
         var codeAction = CodeAction.Create(
             title,
-            cancellationToken => Fix(context.Document, elementSyntax, cancellationToken),
+            cancellationToken => Fix(context.Document, elementSyntax, inlineElement, cancellationToken),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Fix(Document document, XmlElementSyntax elementSyntax, CancellationToken cancellationToken)
+    private static async Task<Document> Fix(Document document, XmlElementSyntax elementSyntax, XmlElementSyntax inlineElement, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        // Extract the text content
-        var contentText = new StringBuilder();
-        foreach (var content in elementSyntax.Content)
-        {
-            if (content is XmlTextSyntax textSyntax)
-            {
-                foreach (var token in textSyntax.TextTokens)
-                {
-                    // Skip newline tokens
-                    if (token.IsKind(SyntaxKind.XmlTextLiteralNewLineToken))
-                        continue;
-
-                    var text = token.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        if (contentText.Length > 0)
-                            contentText.Append(' ');
-                        contentText.Append(text);
-                    }
-                }
-            }
-        }
-
-        // Create single-line syntax
-        var elementName = elementSyntax.StartTag.Name;
-        var attributes = elementSyntax.StartTag.Attributes;
-
-        var newNode = XmlElement(
-            XmlElementStartTag(elementName, attributes),
-            SingletonList<XmlNodeSyntax>(XmlText(contentText.ToString())),
-            XmlElementEndTag(elementName))
+        var newNode = inlineElement
             .WithLeadingTrivia(elementSyntax.GetLeadingTrivia())
             .WithTrailingTrivia(elementSyntax.GetTrailingTrivia());
 

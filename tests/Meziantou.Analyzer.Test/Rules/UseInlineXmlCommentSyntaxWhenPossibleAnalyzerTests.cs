@@ -207,7 +207,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     }
 
     [Fact]
-    public Task InnerXmlElements_ShouldNotReportDiagnostic()
+    public Task InnerXmlElementSpanningMultipleLines_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -223,9 +223,88 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     }
 
     [Fact]
-    public Task InnerXmlEmptyElement_See_ShouldNotReportDiagnostic()
+    public Task InnerXmlEmptyElement_See_ShouldBePreserved()
     {
         var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0177:<summary>
+            /// <see cref="System.String"/>
+            /// </summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary><see cref="System.String"/></summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlEmptyElement_ParamRef_ShouldBePreserved()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0177:<param name="value">
+                /// <paramref name="value"/>
+                /// </param>|}
+                public void Method(int value) { }
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <param name="value"><paramref name="value"/></param>
+                public void Method(int value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlEmptyElementSurroundedByText_ShouldBePreserved()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0177:<summary>
+            /// Uses <see cref="System.String"/> internally
+            /// </summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>Uses <see cref="System.String"/> internally</summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlElementOnSingleLine_ShouldBePreserved()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0177:<summary>
+            /// Uses <c>value</c> internally
+            /// </summary>|}
+            class Sample { }
+            """;
+        test.FixedCode = """
+            /// <summary>Uses <c>value</c> internally</summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlEmptyElement_ExceedingMaxLineLength_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("max_line_length", "40");
         test.TestCode = """
             /// <summary>
             /// <see cref="System.String"/>
@@ -237,30 +316,17 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     }
 
     [Fact]
-    public Task InnerXmlEmptyElement_ParamRef_ShouldNotReportDiagnostic()
+    public Task SingleLineCData_ShouldBePreserved()
     {
         var test = CreateTest();
         test.TestCode = """
-            class Sample
-            {
-                /// <param name="value">
-                /// <paramref name="value"/>
-                /// </param>
-                public void Method(int value) { }
-            }
+            /// {|MA0177:<summary>
+            /// <![CDATA[Sample <markup>]]>
+            /// </summary>|}
+            class Sample { }
             """;
-
-        return test.RunAsync();
-    }
-
-    [Fact]
-    public Task InnerXmlEmptyElementWithText_ShouldNotReportDiagnostic()
-    {
-        var test = CreateTest();
-        test.TestCode = """
-            /// <summary>
-            /// Uses <see cref="System.String"/> internally
-            /// </summary>
+        test.FixedCode = """
+            /// <summary><![CDATA[Sample <markup>]]></summary>
             class Sample { }
             """;
 
