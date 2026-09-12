@@ -10,6 +10,14 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
 {
     private static CodeFixTest CreateTest() => new();
 
+    private static CodeFixTest CreateUnsafeTest()
+    {
+        var test = CreateTest();
+        test.SolutionTransforms.Add(static (solution, projectId) =>
+            solution.WithProjectCompilationOptions(projectId, ((CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!).WithAllowUnsafe(true)));
+        return test;
+    }
+
     [Fact]
     public void Rule_IsDisabledByDefault()
     {
@@ -995,6 +1003,292 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
             {
                 static Task CompletedTask => throw null;
                 async Task A() => await CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(ref int value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OutParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(out int value)
+                {
+                    value = 0;
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(in int value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefReadonlyParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(ref readonly int value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefParameter_LocalFunction_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                void A()
+                {
+                    _ = (Del)Local;
+                    static Task<int> Local(ref int value) => Inner();
+                }
+
+                delegate Task<int> Del(ref int value);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefParameter_Lambda_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                void A()
+                {
+                    Del d = (ref int value) => Inner();
+                }
+
+                delegate Task<int> Del(ref int value);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PointerParameter_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static unsafe Task<int> A(int* value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FunctionPointerParameter_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static unsafe Task<int> A(delegate*<void> value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefStructParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(Span<int> value) => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP13_OR_GREATER
+    [Fact]
+    public Task AllowsRefStructTypeParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A<T>(T value) where T : allows ref struct => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
+
+    [Fact]
+    public Task RefStructInstanceMethod_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            ref struct Test
+            {
+                int _field;
+                static Task<int> Inner() => throw null;
+                Task<int> A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefStructStaticMethod_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            ref struct Test
+            {
+                int _field;
+                static Task<int> Inner() => throw null;
+                static Task<int> A() => {|MA0214:Inner()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            ref struct Test
+            {
+                int _field;
+                static Task<int> Inner() => throw null;
+                static async Task<int> A() => await Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefReturn_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> _field;
+                static ref Task<int> A() => ref _field;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MethodImplSynchronized_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+
+                [MethodImpl(MethodImplOptions.Synchronized)]
+                static Task<int> A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MethodImplAggressiveInlining_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                static Task<int> A() => {|MA0214:Inner()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+
+                [MethodImpl(MethodImplOptions.AggressiveInlining)]
+                static async Task<int> A() => await Inner();
             }
             """;
 
