@@ -6,6 +6,9 @@ namespace Meziantou.Analyzer.Rules;
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProvider
 {
+    private static readonly SymbolDisplayFormat TypeDisplayFormat = SymbolDisplayFormat.MinimallyQualifiedFormat
+        .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary,
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg);
@@ -31,30 +34,47 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
 
         if (context.Diagnostics.Any(d => d.Id == RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary))
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Use lambda parameters",
-                    ct => UseLambdaParameters(context.Document, semanticModel, invocationOperation, lambdaOperation, lambdaArgument, ct),
-                    equivalenceKey: "Use lambda parameters"),
-                context.Diagnostics);
+            var updatedLambda = CreateLambdaUsingParameters(semanticModel, invocationOperation, lambdaOperation, lambdaArgument);
+            if (updatedLambda is not null)
+            {
+                var title = "Use lambda parameters";
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title,
+                        ct => ReplaceNode(context.Document, lambdaOperation.Syntax, updatedLambda, ct),
+                        equivalenceKey: title),
+                    context.Diagnostics);
+            }
         }
 
         if (context.Diagnostics.Any(d => d.Id == RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg))
         {
-            context.RegisterCodeFix(
-                CodeAction.Create(
-                    "Use factoryArgument overload",
-                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationOperation, lambdaOperation, ct),
-                    equivalenceKey: "Use factoryArgument overload"),
-                context.Diagnostics);
+            var newInvocation = CreateInvocationWithFactoryArg(semanticModel, invocationOperation, lambdaOperation);
+            if (newInvocation is not null)
+            {
+                var title = "Use factoryArgument overload";
+                context.RegisterCodeFix(
+                    CodeAction.Create(
+                        title,
+                        ct => ReplaceNode(context.Document, invocationOperation.Syntax, newInvocation, ct),
+                        equivalenceKey: title),
+                    context.Diagnostics);
+            }
         }
     }
 
-    private static async Task<Document> UseLambdaParameters(Document document, SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, IArgumentOperation lambdaArgument, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceNode(Document document, SyntaxNode nodeToReplace, SyntaxNode newNode, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(nodeToReplace, newNode.WithAdditionalAnnotations(Formatter.Annotation));
+        return editor.GetChangedDocument();
+    }
+
+    private static AnonymousFunctionExpressionSyntax? CreateLambdaUsingParameters(SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, IArgumentOperation lambdaArgument)
     {
         var mappings = GetReplacementMappings(invocationOperation, lambdaOperation, lambdaArgument);
         if (mappings.Count == 0)
-            return document;
+            return null;
 
         var updatedLambda = (AnonymousFunctionExpressionSyntax)lambdaOperation.Syntax;
         foreach (var (symbol, parameterName) in mappings)
@@ -62,57 +82,62 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
             updatedLambda = ReplaceSymbolReferences(updatedLambda, semanticModel, symbol, parameterName);
         }
 
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.ReplaceNode(lambdaOperation.Syntax, updatedLambda.WithAdditionalAnnotations(Formatter.Annotation));
-        return editor.GetChangedDocument();
+        return updatedLambda;
     }
 
-    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, CancellationToken cancellationToken)
+    private static InvocationExpressionSyntax? CreateInvocationWithFactoryArg(SemanticModel semanticModel, IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation)
     {
         if (invocationOperation.Syntax is not InvocationExpressionSyntax invocationSyntax)
-            return document;
+            return null;
 
-        var capturedSymbol = GetCapturedSymbols(semanticModel, lambdaOperation).FirstOrDefault();
-        if (capturedSymbol is not ILocalSymbol and not IParameterSymbol)
-            return document;
+        if (GetCapturedSymbolToReplace(semanticModel, lambdaOperation) is not { } captured)
+            return null;
 
-        var newInvocation = invocationOperation.TargetMethod.Name switch
+        var (capturedSymbol, capturedSymbolType) = captured;
+
+        return invocationOperation.TargetMethod.Name switch
         {
-            "GetOrAdd" => CreateGetOrAddInvocationWithFactoryArg(invocationOperation, invocationSyntax, lambdaOperation, capturedSymbol, semanticModel),
-            "AddOrUpdate" => CreateAddOrUpdateInvocationWithFactoryArg(invocationOperation, invocationSyntax, capturedSymbol, semanticModel),
+            "GetOrAdd" => CreateGetOrAddInvocationWithFactoryArg(invocationOperation, invocationSyntax, lambdaOperation, capturedSymbol, capturedSymbolType, semanticModel),
+            "AddOrUpdate" => CreateAddOrUpdateInvocationWithFactoryArg(invocationOperation, invocationSyntax, capturedSymbol, capturedSymbolType, semanticModel),
             _ => null,
         };
-
-        if (newInvocation is null)
-            return document;
-
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.ReplaceNode(invocationSyntax, newInvocation.WithAdditionalAnnotations(Formatter.Annotation));
-        return editor.GetChangedDocument();
     }
 
-    private static InvocationExpressionSyntax? CreateGetOrAddInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, IAnonymousFunctionOperation lambdaOperation, ISymbol capturedSymbol, SemanticModel semanticModel)
+    private static (ISymbol Symbol, ITypeSymbol Type)? GetCapturedSymbolToReplace(SemanticModel semanticModel, IAnonymousFunctionOperation lambdaOperation)
+    {
+        return GetCapturedSymbols(semanticModel, lambdaOperation).FirstOrDefault() switch
+        {
+            ILocalSymbol local => (local, local.Type),
+            IParameterSymbol parameter => (parameter, parameter.Type),
+            _ => null,
+        };
+    }
+
+    private static InvocationExpressionSyntax? CreateGetOrAddInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, IAnonymousFunctionOperation lambdaOperation, ISymbol capturedSymbol, ITypeSymbol capturedSymbolType, SemanticModel semanticModel)
     {
         if (invocationOperation.Arguments.Length != 2)
             return null;
 
-        var lambda = lambdaOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        if (lambda is null)
+        if (lambdaOperation.Syntax is not AnonymousFunctionExpressionSyntax lambda)
             return null;
 
         var parameterName = GetUniqueParameterName(lambdaOperation.Symbol.Parameters.Select(p => p.Name), "arg");
+        var parameter = CreateFactoryArgumentParameter(lambda, parameterName, capturedSymbolType, semanticModel);
+        if (parameter is null)
+            return null;
+
         var updatedLambda = ReplaceSymbolReferences(lambda, semanticModel, capturedSymbol, parameterName);
-        updatedLambda = AddParameterToLambda(updatedLambda, parameterName);
-        if (updatedLambda is null)
+        var lambdaWithParameter = AddParameterToLambda(updatedLambda, parameter);
+        if (lambdaWithParameter is null)
             return null;
 
         var arguments = invocationSyntax.ArgumentList.Arguments;
-        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(updatedLambda));
+        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(lambdaWithParameter));
         arguments = arguments.Add(Argument(IdentifierName(capturedSymbol.Name)));
         return invocationSyntax.WithArgumentList(invocationSyntax.ArgumentList.WithArguments(arguments));
     }
 
-    private static InvocationExpressionSyntax? CreateAddOrUpdateInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, ISymbol capturedSymbol, SemanticModel semanticModel)
+    private static InvocationExpressionSyntax? CreateAddOrUpdateInvocationWithFactoryArg(IInvocationOperation invocationOperation, InvocationExpressionSyntax invocationSyntax, ISymbol capturedSymbol, ITypeSymbol capturedSymbolType, SemanticModel semanticModel)
     {
         if (invocationOperation.Arguments.Length != 3)
             return null;
@@ -123,28 +148,33 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         if (!TryGetAnonymousFunctionOperation(invocationOperation.Arguments[2].Value, out var updateValueFactoryOperation))
             return null;
 
-        var addValueFactory = addValueFactoryOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        var updateValueFactory = updateValueFactoryOperation.Syntax as AnonymousFunctionExpressionSyntax;
-        if (addValueFactory is null || updateValueFactory is null)
+        if (addValueFactoryOperation.Syntax is not AnonymousFunctionExpressionSyntax addValueFactory)
+            return null;
+
+        if (updateValueFactoryOperation.Syntax is not AnonymousFunctionExpressionSyntax updateValueFactory)
             return null;
 
         var parameterName = GetUniqueParameterName(
             addValueFactoryOperation.Symbol.Parameters.Select(p => p.Name).Concat(updateValueFactoryOperation.Symbol.Parameters.Select(p => p.Name)),
             "arg");
 
-        addValueFactory = ReplaceSymbolReferences(addValueFactory, semanticModel, capturedSymbol, parameterName);
-        addValueFactory = AddParameterToLambda(addValueFactory, parameterName);
-        if (addValueFactory is null)
+        // Both lambdas get their own parameter, as one can be explicitly typed while the other is not
+        var addValueFactoryParameter = CreateFactoryArgumentParameter(addValueFactory, parameterName, capturedSymbolType, semanticModel);
+        var updateValueFactoryParameter = CreateFactoryArgumentParameter(updateValueFactory, parameterName, capturedSymbolType, semanticModel);
+        if (addValueFactoryParameter is null || updateValueFactoryParameter is null)
             return null;
 
-        updateValueFactory = ReplaceSymbolReferences(updateValueFactory, semanticModel, capturedSymbol, parameterName);
-        updateValueFactory = AddParameterToLambda(updateValueFactory, parameterName);
-        if (updateValueFactory is null)
+        var newAddValueFactory = AddParameterToLambda(ReplaceSymbolReferences(addValueFactory, semanticModel, capturedSymbol, parameterName), addValueFactoryParameter);
+        if (newAddValueFactory is null)
+            return null;
+
+        var newUpdateValueFactory = AddParameterToLambda(ReplaceSymbolReferences(updateValueFactory, semanticModel, capturedSymbol, parameterName), updateValueFactoryParameter);
+        if (newUpdateValueFactory is null)
             return null;
 
         var arguments = invocationSyntax.ArgumentList.Arguments;
-        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(addValueFactory));
-        arguments = arguments.Replace(arguments[2], arguments[2].WithExpression(updateValueFactory));
+        arguments = arguments.Replace(arguments[1], arguments[1].WithExpression(newAddValueFactory));
+        arguments = arguments.Replace(arguments[2], arguments[2].WithExpression(newUpdateValueFactory));
         arguments = arguments.Add(Argument(IdentifierName(capturedSymbol.Name)));
         return invocationSyntax.WithArgumentList(invocationSyntax.ArgumentList.WithArguments(arguments));
     }
@@ -223,10 +253,45 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda);
     }
 
-    private static ParenthesizedLambdaExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
+    /// <summary>
+    /// Creates the parameter receiving the <c>factoryArgument</c> in <paramref name="lambda"/>. The parameter must be
+    /// explicitly typed when the existing parameters are, as C# requires the parameters of a lambda to be either all
+    /// explicitly typed or all implicitly typed (CS0748).
+    /// </summary>
+    private static ParameterSyntax? CreateFactoryArgumentParameter(AnonymousFunctionExpressionSyntax lambda, string parameterName, ITypeSymbol parameterType, SemanticModel semanticModel)
     {
         var parameter = Parameter(Identifier(parameterName));
+        if (lambda is not ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
+            return parameter; // The single parameter of a simple lambda is always implicitly typed
 
+        var parameters = parenthesizedLambda.ParameterList.Parameters;
+
+        // No parameter can be added after a parameter with a default value or a 'params' parameter
+        if (parameters.Any(p => p.Default is not null || p.Modifiers.Any(SyntaxKind.ParamsKeyword)))
+            return null;
+
+        if (!parameters.Any(p => p.Type is not null))
+            return parameter;
+
+        var typeSyntax = CreateTypeSyntax(parameterType, semanticModel, lambda.SpanStart);
+        if (typeSyntax is null)
+            return null;
+
+        return parameter.WithType(typeSyntax);
+    }
+
+    private static TypeSyntax? CreateTypeSyntax(ITypeSymbol type, SemanticModel semanticModel, int position)
+    {
+        if (type.TypeKind is TypeKind.Error || type.IsAnonymousType)
+            return null;
+
+        // The type may still not be expressible, such as when it contains an anonymous type
+        var typeSyntax = ParseTypeName(type.ToMinimalDisplayString(semanticModel, position, TypeDisplayFormat), options: semanticModel.SyntaxTree.Options);
+        return typeSyntax.ContainsDiagnostics ? null : typeSyntax;
+    }
+
+    private static ParenthesizedLambdaExpressionSyntax? AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, ParameterSyntax parameter)
+    {
         if (lambda is ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
         {
             return parenthesizedLambda.WithParameterList(parenthesizedLambda.ParameterList.WithParameters(parenthesizedLambda.ParameterList.Parameters.Add(parameter)));
