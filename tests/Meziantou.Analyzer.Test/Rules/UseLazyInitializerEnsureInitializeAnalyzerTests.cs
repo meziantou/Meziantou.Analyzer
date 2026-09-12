@@ -146,4 +146,171 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
 
         return test.RunAsync();
     }
+    [Fact]
+    public Task Parameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.Run(0);
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run(int value)
+                {
+                    {|MA0173:System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(value), null)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            Sample.Run(0);
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run(int value)
+                {
+                    System.Threading.LazyInitializer.EnsureInitialized(ref s_target, () => new System.Text.StringBuilder(value));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            Sample.Run(ref value);
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run(ref int value)
+                {
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OutParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.Run(out _);
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run(out int value)
+                {
+                    value = 0;
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            Sample.Run(in value);
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run(in int value)
+                {
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefLocal()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.Run();
+
+            class Sample
+            {
+                private static object? s_target;
+                private static int s_value;
+
+                public static void Run()
+                {
+                    ref var value = ref s_value;
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefStructLocal()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.Run();
+
+            class Sample
+            {
+                private static object? s_target;
+
+                public static void Run()
+                {
+                    System.Span<char> value = stackalloc char[1];
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new string(value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StructThis()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            default(Sample).Run();
+
+            struct Sample
+            {
+                private static object? s_target;
+                private int _value;
+
+                public void Run()
+                {
+                    System.Threading.Interlocked.CompareExchange(ref s_target, new System.Text.StringBuilder(_value), null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
 }
