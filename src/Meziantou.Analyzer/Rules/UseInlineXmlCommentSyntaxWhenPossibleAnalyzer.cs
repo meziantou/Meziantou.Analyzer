@@ -69,44 +69,15 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
                         if (endLine == startLine)
                             continue; // Single line, no issue
 
-                        // Check if content is single-line (ignoring whitespace)
-                        // Skip if content contains CDATA sections or other non-text elements
-                        var hasCDataOrOtherElements = false;
-                        var meaningfulTextTokenCount = 0;
-                        foreach (var content in elementSyntax.Content)
-                        {
-                            if (content is XmlTextSyntax textSyntax)
-                            {
-                                foreach (var token in textSyntax.TextTokens)
-                                {
-                                    // Skip whitespace-only tokens and newline tokens
-                                    if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.XmlTextLiteralNewLineToken))
-                                        continue;
+                        // The content must fit on a single line, and the code fixer must be able to rewrite it
+                        var inlineElement = UseInlineXmlCommentSyntaxWhenPossibleCommon.CreateInlineElement(elementSyntax);
+                        if (inlineElement is null)
+                            continue;
 
-                                    var text = token.Text.Trim();
-                                    if (!string.IsNullOrWhiteSpace(text))
-                                    {
-                                        meaningfulTextTokenCount++;
-                                    }
-                                }
-                            }
-                            else if (content is XmlCDataSectionSyntax || content is XmlElementSyntax)
-                            {
-                                // Skip elements with CDATA sections or nested elements
-                                hasCDataOrOtherElements = true;
-                                break;
-                            }
-                        }
-
-                        // Report diagnostic if content is effectively single-line (0 or 1 meaningful text tokens)
-                        // and doesn't contain CDATA or other nested elements
-                        if (!hasCDataOrOtherElements && meaningfulTextTokenCount <= 1)
+                        // Check if the single-line version would fit within max_line_length
+                        if (WouldFitInMaxLineLength(context, elementSyntax, inlineElement))
                         {
-                            // Check if the single-line version would fit within max_line_length
-                            if (WouldFitInMaxLineLength(context, elementSyntax))
-                            {
-                                context.ReportDiagnostic(Rule, elementSyntax.GetLocation());
-                            }
+                            context.ReportDiagnostic(Rule, elementSyntax.GetLocation());
                         }
                     }
                 }
@@ -114,7 +85,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
         }
     }
 
-    private static bool WouldFitInMaxLineLength(SymbolAnalysisContext context, XmlElementSyntax elementSyntax)
+    private static bool WouldFitInMaxLineLength(SymbolAnalysisContext context, XmlElementSyntax elementSyntax, XmlElementSyntax inlineElement)
     {
         // Get max_line_length from .editorconfig
         if (!context.Options.TryGetConfigurationValue(elementSyntax.SyntaxTree, MaxLineLengthConfiguration, out var maxLineLengthValue))
@@ -130,51 +101,7 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
         var lineText = line.ToString();
         var indentation = lineText.Length - lineText.TrimStart().Length;
 
-        // Build the single-line content
-        var contentLength = indentation;
-        var elementName = elementSyntax.StartTag.Name.LocalName.Text;
-        var attributes = elementSyntax.StartTag.Attributes;
-
-        // Calculate: "/// <elementName" + attributes + ">" + content + "</elementName>"
-        contentLength += 4; // "/// "
-        contentLength += 1; // "<"
-        contentLength += elementName.Length;
-
-        // Add attribute lengths
-        foreach (var attribute in attributes)
-        {
-            contentLength += attribute.Span.Length + 1; // +1 for space before attribute
-        }
-
-        contentLength += 1; // ">"
-
-        // Add text content
-        var hasContent = false;
-        foreach (var content in elementSyntax.Content)
-        {
-            if (content is XmlTextSyntax textSyntax)
-            {
-                foreach (var token in textSyntax.TextTokens)
-                {
-                    if (token.IsKind(Microsoft.CodeAnalysis.CSharp.SyntaxKind.XmlTextLiteralNewLineToken))
-                        continue;
-
-                    var text = token.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(text))
-                    {
-                        if (hasContent)
-                            contentLength += 1; // space separator between multiple text tokens
-                        contentLength += text.Length;
-                        hasContent = true;
-                    }
-                }
-            }
-        }
-
-        contentLength += 2; // "</"
-        contentLength += elementName.Length;
-        contentLength += 1; // ">"
-
-        return contentLength <= maxLineLength;
+        // The resulting line is the indentation, the "/// " prefix, and the element written on a single line
+        return indentation + 4 + inlineElement.ToFullString().Length <= maxLineLength;
     }
 }
