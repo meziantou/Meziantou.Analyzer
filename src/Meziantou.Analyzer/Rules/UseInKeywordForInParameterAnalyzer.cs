@@ -64,10 +64,11 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         if (operation.Parameter.RefKind is not RefKind.None)
             return;
 
-        if (!TryGetInvocationAndArgumentIndex(operation, out var invocationOperation, out var argumentIndex))
+        if (operation.Parent is not IInvocationOperation invocationOperation)
             return;
 
-        if (HasInOverloadWithEquivalentParameters(invocationOperation, argumentIndex, overloadFinder))
+        // The arguments are in source order, which differs from the parameter order when named arguments are reordered
+        if (HasInOverloadWithEquivalentParameters(invocationOperation, operation.Parameter.Ordinal, overloadFinder))
         {
             context.ReportDiagnostic(RuleUseInToSelectInOverload, argumentSyntax);
         }
@@ -81,36 +82,21 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         return UseInKeywordForInParameterCommon.CanBePassedByReference(operation.Value);
     }
 
-    private static bool TryGetInvocationAndArgumentIndex(IArgumentOperation operation, out IInvocationOperation invocationOperation, out int argumentIndex)
-    {
-        invocationOperation = null!;
-        argumentIndex = -1;
-
-        if (operation.Parent is not IInvocationOperation invocation)
-            return false;
-
-        for (var i = 0; i < invocation.Arguments.Length; i++)
-        {
-            if (invocation.Arguments[i] == operation)
-            {
-                invocationOperation = invocation;
-                argumentIndex = i;
-                return true;
-            }
-        }
-
-        return false;
-    }
-
-    private static bool HasInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int argumentIndex, OverloadFinder overloadFinder)
+    private static bool HasInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int parameterIndex, OverloadFinder overloadFinder)
     {
         var targetMethod = invocationOperation.TargetMethod;
         if (targetMethod.ContainingType is null)
             return false;
 
-        var currentParameter = targetMethod.Parameters[argumentIndex];
+        if (parameterIndex >= targetMethod.Parameters.Length)
+            return false;
+
+        var currentParameter = targetMethod.Parameters[parameterIndex];
         if (currentParameter.RefKind is not RefKind.None)
             return false;
+
+        // Named arguments are bound by name, so the overload must use the same names to bind the arguments to the same parameters
+        var compareParameterNames = HasNamedArguments(invocationOperation);
 
         var options = new OverloadOptions(
             IncludeObsoleteMembers: false,
@@ -126,16 +112,27 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
                 if (method.Parameters.Length != targetMethod.Parameters.Length)
                     return false;
 
-                if (method.Parameters[argumentIndex].RefKind is not RefKind.In)
+                if (method.Parameters[parameterIndex].RefKind is not RefKind.In)
                     return false;
 
-                return HasEquivalentParameterList(targetMethod.Parameters, method.Parameters, argumentIndex);
+                return HasEquivalentParameterList(targetMethod.Parameters, method.Parameters, parameterIndex, compareParameterNames);
             });
 
         return overloadFinder.FindFirstSimilarMethod(targetMethod, options, targetMethod.Name, additionalParameterTypes: default) is not null;
     }
 
-    private static bool HasEquivalentParameterList(ImmutableArray<IParameterSymbol> currentParameters, ImmutableArray<IParameterSymbol> candidateParameters, int argumentIndex)
+    private static bool HasNamedArguments(IInvocationOperation invocationOperation)
+    {
+        foreach (var argument in invocationOperation.Arguments)
+        {
+            if (argument.Syntax is ArgumentSyntax { NameColon: not null })
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasEquivalentParameterList(ImmutableArray<IParameterSymbol> currentParameters, ImmutableArray<IParameterSymbol> candidateParameters, int parameterIndex, bool compareParameterNames)
     {
         if (currentParameters.Length != candidateParameters.Length)
             return false;
@@ -144,7 +141,10 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         {
             var current = currentParameters[i];
             var candidate = candidateParameters[i];
-            if (i == argumentIndex)
+            if (compareParameterNames && !string.Equals(current.Name, candidate.Name, StringComparison.Ordinal))
+                return false;
+
+            if (i == parameterIndex)
             {
                 if (current.RefKind is not (RefKind.None or RefKind.In))
                     return false;

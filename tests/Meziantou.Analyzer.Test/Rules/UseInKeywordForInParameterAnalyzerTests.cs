@@ -529,4 +529,93 @@ public sealed class UseInKeywordForInParameterAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task OverloadRule_ReorderedNamedArguments_ShouldReportDiagnosticOnMatchingParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    int a = 1, b = 2;
+                    M(y: b, {|MA0210:x: a|});
+                }
+
+                private static void M(int x, int y) { }
+                private static void M(in int x, int y) { }
+            }
+            """;
+        test.FixedCode = """
+            class C
+            {
+                public void Test()
+                {
+                    int a = 1, b = 2;
+                    M(y: b, x: in a);
+                }
+
+                private static void M(int x, int y) { }
+                private static void M(in int x, int y) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OverloadRule_NamedArgumentsWithDifferentParameterNames_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    int a = 1, b = 2;
+                    M(x: a, y: b);
+                }
+
+                private static void M(int x, int y) { }
+                private static void M(in int y, int x) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OverloadRule_PositionalArgumentsWithDifferentParameterNames_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test()
+                {
+                    int a = 1, b = 2;
+                    M({|MA0210:a|}, b);
+                }
+
+                private static void M(int x, int y) { }
+                private static void M(in int y, int x) { }
+            }
+            """;
+        test.FixedCode = """
+            class C
+            {
+                public void Test()
+                {
+                    int a = 1, b = 2;
+                    M(in a, b);
+                }
+
+                private static void M(int x, int y) { }
+                private static void M(in int y, int x) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

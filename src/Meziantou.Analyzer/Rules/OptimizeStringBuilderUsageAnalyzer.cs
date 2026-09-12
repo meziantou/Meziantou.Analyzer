@@ -127,7 +127,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             if (!TryGetConstStringValue(formatArg.Value, out var formatString))
                 return;
 
-            if (!OptimizeStringBuilderUsageAnalyzerCommon.HasFormatPlaceholders(formatString))
+            if (OptimizeStringBuilderUsageAnalyzerCommon.TryGetCompositeFormatLiteralText(formatString, out _))
             {
                 var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceAppendFormatWithAppend);
                 context.ReportDiagnostic(Rule, properties, operation, "Replace AppendFormat with Append as the format string has no placeholders");

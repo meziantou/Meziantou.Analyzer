@@ -130,4 +130,58 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExpressionTree_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using System.Linq.Expressions;
+
+            class TypeName
+            {
+                public void Test(IQueryable<int> query)
+                {
+                    Expression<Func<int, string>> invariant = x => FormattableString.Invariant($"{x}");
+                    Expression<Func<int, string>> currentCulture = x => FormattableString.CurrentCulture($"{x}");
+                    query.Select(x => FormattableString.Invariant($"{x}"));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Lambda_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    Func<int, string> func = x => {|MA0111:FormattableString.Invariant($"{x}")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    Func<int, string> func = x => string.Create(CultureInfo.InvariantCulture, $"{x}");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

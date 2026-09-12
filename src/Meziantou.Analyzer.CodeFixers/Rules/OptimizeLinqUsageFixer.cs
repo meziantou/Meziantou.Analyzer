@@ -97,6 +97,9 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseIndexerLast:
+                if (!await CanUseIndexerLast(context.Document, nodeToFix, context.CancellationToken).ConfigureAwait(false))
+                    return;
+
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseIndexerLast(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
@@ -550,6 +553,38 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
+    private static async Task<bool> CanUseIndexerLast(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    {
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return false;
+
+        if (CanUseIndexFromEnd(nodeToFix, semanticModel.Compilation))
+            return true;
+
+        // 'source[source.Count - 1]' evaluates the source twice, while 'source.Last()' evaluates it once
+        return semanticModel.GetOperation(nodeToFix, cancellationToken) is IInvocationOperation { Arguments: [var source] }
+            && CanBeEvaluatedTwice(source.Value.UnwrapImplicitConversions());
+    }
+
+    private static bool CanUseIndexFromEnd(SyntaxNode node, Compilation compilation)
+    {
+        return node.SyntaxTree.GetCSharpLanguageVersion() >= LanguageVersion.CSharp8 && compilation.GetBestTypeByMetadataName("System.Index") is not null;
+    }
+
+    private static bool CanBeEvaluatedTwice(IOperation operation)
+    {
+        return operation switch
+        {
+            ILocalReferenceOperation or IParameterReferenceOperation => true,
+            IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance } => true,
+            IFieldReferenceOperation { Instance: var instance } => instance is null || CanBeEvaluatedTwice(instance),
+
+            // The properties, indexers, and methods can execute any code, such as modifying a state or creating a new collection
+            _ => false,
+        };
+    }
+
     private static async Task<Document> UseIndexerLast(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         var expression = GetParentMemberExpression(nodeToFix);
@@ -563,7 +598,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             return document;
 
         // if C# 8.0, use ^1
-        if (expression.SyntaxTree.GetCSharpLanguageVersion() >= LanguageVersion.CSharp8 && editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Index") is not null)
+        if (CanUseIndexFromEnd(expression, semanticModel.Compilation))
         {
             var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, PrefixUnaryExpression(SyntaxKind.IndexExpression, LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1))));
             editor.ReplaceNode(nodeToFix, newExpression);
