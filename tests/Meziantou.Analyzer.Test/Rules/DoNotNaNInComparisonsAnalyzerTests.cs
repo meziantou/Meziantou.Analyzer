@@ -23,6 +23,11 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                     _ = 0d != {|MA0082:double.NaN|};
                     _ = {|MA0082:double.NaN|} == 0d;
                     _ = {|MA0082:double.NaN|} != 0d;
+                    _ = 0d < {|MA0082:double.NaN|};
+                    _ = 0d <= {|MA0082:double.NaN|};
+                    _ = 0d > {|MA0082:double.NaN|};
+                    _ = 0d >= {|MA0082:double.NaN|};
+                    _ = {|MA0082:double.NaN|} < 0d;
 
                     _ = 1f == 0f;
                     _ = 1f != 0f;
@@ -42,6 +47,97 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
                 }
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Comparisons_GenericMath_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Numerics;
+            class Test
+            {
+                void A<T>(T value) where T : IFloatingPointIeee754<T>
+                {
+                    _ = value == {|MA0082:T.NaN|};
+                }
+
+                void B<T>(T value) where T : IBinaryFloatingPointIeee754<T>
+                {
+                    _ = {|MA0082:T.NaN|} != value;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Numerics;
+            class Test
+            {
+                void A<T>(T value) where T : IFloatingPointIeee754<T>
+                {
+                    _ = T.IsNaN(value);
+                }
+
+                void B<T>(T value) where T : IBinaryFloatingPointIeee754<T>
+                {
+                    _ = !T.IsNaN(value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Comparisons_GenericMath_BothOperandsAreNaN_NoCodeFix()
+    {
+        const string Source = """
+            using System.Numerics;
+            class Test
+            {
+                void A<T>() where T : IFloatingPointIeee754<T>
+                {
+                    _ = {|MA0082:T.NaN|} == {|MA0082:T.NaN|};
+                }
+            }
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Comparisons_RelationalOperators_NoCodeFix()
+    {
+        const string Source = """
+            using System;
+            class Test
+            {
+                void A(double doubleValue, float floatValue, Half halfValue)
+                {
+                    _ = doubleValue < {|MA0082:double.NaN|};
+                    _ = doubleValue <= {|MA0082:double.NaN|};
+                    _ = doubleValue > {|MA0082:double.NaN|};
+                    _ = doubleValue >= {|MA0082:double.NaN|};
+                    _ = {|MA0082:float.NaN|} < floatValue;
+                    _ = halfValue >= {|MA0082:Half.NaN|};
+                }
+
+                void B<T>(T value) where T : System.Numerics.IFloatingPointIeee754<T>
+                {
+                    _ = value < {|MA0082:T.NaN|};
+                    _ = value >= {|MA0082:T.NaN|};
+                }
+            }
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
 
         return test.RunAsync();
     }
