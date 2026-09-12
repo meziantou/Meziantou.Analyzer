@@ -18,8 +18,6 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var halfTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Half");
-
         var binaryExpression = nodeToFix.FirstAncestorOrSelf<BinaryExpressionSyntax>();
         if (binaryExpression is null)
             return;
@@ -28,8 +26,13 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         if (binaryOperation is null)
             return;
 
-        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, halfTypeSymbol, out _, out var leftSyntax);
-        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, halfTypeSymbol, out _, out var rightSyntax);
+        // Only the equality comparisons can be rewritten to IsNaN.
+        // The relational comparisons are always false, so there is no equivalent expression to suggest.
+        if (binaryOperation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals))
+            return;
+
+        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, semanticModel.Compilation, out _, out var leftSyntax);
+        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, semanticModel.Compilation, out _, out var rightSyntax);
 
         // NaN == NaN is false and NaN != NaN is true, whereas IsNaN(NaN) is true.
         // Replacing the comparison would change the behavior of the code, so there is nothing to fix.
@@ -61,24 +64,17 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
     private static async Task<Document> FixComparison(Document document, IBinaryOperation binaryOperation, IOperation nanOperand, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var halfTypeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Half");
-        if (!TryGetReplacementExpression(editor.Generator, binaryOperation, nanOperand, halfTypeSymbol, out var replacement))
+        if (!TryGetReplacementExpression(editor.Generator, binaryOperation, nanOperand, editor.SemanticModel.Compilation, out var replacement))
             return document;
 
         editor.ReplaceNode(binaryOperation.Syntax, replacement.WithTriviaFrom(binaryOperation.Syntax));
         return editor.GetChangedDocument();
     }
 
-    private static bool TryGetReplacementExpression(SyntaxGenerator generator, IBinaryOperation binaryOperation, IOperation nanOperand, INamedTypeSymbol? halfTypeSymbol, out ExpressionSyntax replacement)
+    private static bool TryGetReplacementExpression(SyntaxGenerator generator, IBinaryOperation binaryOperation, IOperation nanOperand, Compilation compilation, out ExpressionSyntax replacement)
     {
-        if (binaryOperation.OperatorKind is not (BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals))
-        {
-            replacement = null!;
-            return false;
-        }
-
-        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, halfTypeSymbol, out var leftType, out _);
-        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, halfTypeSymbol, out var rightType, out _);
+        var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, compilation, out var leftType, out _);
+        var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, compilation, out var rightType, out _);
         if (!leftIsNaN && !rightIsNaN)
         {
             replacement = null!;
@@ -118,7 +114,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
         return true;
     }
 
-    private static bool TryGetNaNType(IOperation operation, INamedTypeSymbol? halfTypeSymbol, out ITypeSymbol? typeSymbol, out ExpressionSyntax? expression)
+    private static bool TryGetNaNType(IOperation operation, Compilation compilation, out ITypeSymbol? typeSymbol, out ExpressionSyntax? expression)
     {
         while (operation is IConversionOperation conversionOperation)
         {
@@ -135,9 +131,19 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
                 return true;
             }
 
-            if (halfTypeSymbol is not null && containingType.IsEqualTo(halfTypeSymbol))
+            if (compilation.GetBestTypeByMetadataName("System.Half") is { } halfTypeSymbol && containingType.IsEqualTo(halfTypeSymbol))
             {
                 typeSymbol = containingType;
+                expression = memberReference.Syntax as ExpressionSyntax;
+                return true;
+            }
+
+            // Generic math: T.NaN where T is constrained to IFloatingPointIeee754<T>. The member is the one of the
+            // interface, so the type to call IsNaN on is its type argument, which is the type written in the code.
+            if (containingType is { TypeArguments: [{ } selfType] } &&
+                containingType.OriginalDefinition.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Numerics.IFloatingPointIeee754`1")))
+            {
+                typeSymbol = selfType;
                 expression = memberReference.Syntax as ExpressionSyntax;
                 return true;
             }
