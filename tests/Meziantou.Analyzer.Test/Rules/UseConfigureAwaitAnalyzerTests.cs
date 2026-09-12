@@ -220,6 +220,127 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_WithConfigureAwaitOnConcreteType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await foreach(var item in Enumerable().ConfigureAwait(false))
+                    {
+                    }
+                }
+
+                static AsyncEnumerable Enumerable() => throw null;
+            }
+
+            class AsyncEnumerable : IAsyncEnumerable<int>
+            {
+                public IAsyncEnumerator<int> GetAsyncEnumerator(CancellationToken cancellationToken = default) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_WithCancellationAndConfigureAwait()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<int> Enumerable() => throw null;
+
+                    CancellationToken ct = default;
+                    await foreach(var item in Enumerable().WithCancellation(ct).ConfigureAwait(false))
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_ConfigureAwaitThenWithCancellation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<int> Enumerable() => throw null;
+
+                    CancellationToken ct = default;
+                    await foreach(var item in Enumerable().ConfigureAwait(false).WithCancellation(ct))
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_ConfigureAwaitOnTaskOnly_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Task<ConfiguredCancelableAsyncEnumerable<int>> Enumerable() => throw null;
+
+                    // The ConfigureAwait call configures the Task, not the async enumerable
+                    await foreach(var item in {|MA0004:await Enumerable().ConfigureAwait(false)|})
+                    {
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Task<ConfiguredCancelableAsyncEnumerable<int>> Enumerable() => throw null;
+
+                    // The ConfigureAwait call configures the Task, not the async enumerable
+                    await foreach(var item in (await Enumerable().ConfigureAwait(false)).ConfigureAwait(false))
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MissingConfigureAwait_AwaitDispose_ShouldReportError()
     {
         var test = CreateTest();

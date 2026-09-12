@@ -38,7 +38,6 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
     {
         private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
 
-        private INamedTypeSymbol? IAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
         private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
         private INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
         private INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
@@ -85,8 +84,6 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
         public bool IsConfiguredAsyncDisposable(ITypeSymbol type) => type.IsEqualTo(ConfiguredAsyncDisposableSymbol);
 
         public bool IsConfiguredCancelableAsyncEnumerable(ITypeSymbol type) => type.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol);
-
-        public bool IsAsyncEnumerable(ITypeSymbol? type) => type.IsEqualTo(IAsyncEnumerableSymbol);
 
         public bool IsConfiguredTaskAwaitable(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
         {
@@ -139,8 +136,8 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             if (analyzerContext.IsConfiguredCancelableAsyncEnumerable(collectionType))
             {
-                // Enumerable().WithCancellation(ct) or Enumerable().ConfigureAwait(false)
-                if (HasConfigureAwait(operation.Collection) && HasPartOfTypeIAsyncEnumerable(operation.Collection))
+                // Enumerable().ConfigureAwait(false) or Enumerable().ConfigureAwait(false).WithCancellation(ct)
+                if (HasConfigureAwaitOnAsyncEnumerable(operation.Collection))
                     return;
 
                 // Check if it's a variable reference that is already configured
@@ -159,31 +156,20 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Rule, data, operation.Collection);
             }
 
-            static bool HasConfigureAwait(IOperation operation)
+            bool HasConfigureAwaitOnAsyncEnumerable(IOperation operation)
             {
-                if (operation is IInvocationOperation invocation)
+                // Only the ConfigureAwait calls returning a ConfiguredCancelableAsyncEnumerable<T> configure the
+                // enumeration. For instance, the ConfigureAwait of "await GetEnumerableAsync().ConfigureAwait(false)"
+                // configures the task, not the async enumerable the task returns.
+                if (operation is IInvocationOperation { TargetMethod.Name: "ConfigureAwait", Type: { } returnType } &&
+                    analyzerContext.IsConfiguredCancelableAsyncEnumerable(returnType))
                 {
-                    if (invocation.TargetMethod.Name == "ConfigureAwait")
-                        return true;
-                }
-
-                foreach (var child in operation.GetChildOperations())
-                {
-                    if (HasConfigureAwait(child))
-                        return true;
-                }
-
-                return false;
-            }
-
-            bool HasPartOfTypeIAsyncEnumerable(IOperation operation)
-            {
-                if (analyzerContext.IsAsyncEnumerable(operation.Type))
                     return true;
+                }
 
                 foreach (var child in operation.GetChildOperations())
                 {
-                    if (HasConfigureAwait(child))
+                    if (HasConfigureAwaitOnAsyncEnumerable(child))
                         return true;
                 }
 
