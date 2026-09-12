@@ -90,7 +90,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
                     {
                         var constantOperation = leftIsConstant ? operation.LeftOperand : operation.RightOperand;
                         var expressionOperation = leftIsConstant ? operation.RightOperand : operation.LeftOperand;
-                        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation, context.CancellationToken))
+                        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation))
                             return;
 
                         if (_operationUtilities.IsInExpressionContext(operation))

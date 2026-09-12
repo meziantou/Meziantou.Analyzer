@@ -210,7 +210,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
             return false;
 
         var expressionOperation = leftIsConstant ? operation.RightOperand : operation.LeftOperand;
-        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation, cancellationToken))
+        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation))
             return false;
 
         if (expressionOperation.Syntax is not ExpressionSyntax valueExpression || constantOperation.Syntax is not ExpressionSyntax constantExpression)
@@ -246,7 +246,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsFixer : CodeFixProvi
 
         var constantOperation = leftIsConstant ? operation.LeftOperand : operation.RightOperand;
         var expressionOperation = leftIsConstant ? operation.RightOperand : operation.LeftOperand;
-        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation, cancellationToken))
+        if (!UsePatternMatchingForEqualityComparisonsCommon.CanUseConstantPattern(expressionOperation, constantOperation))
             return false;
 
         if (constantOperation.Syntax is not ExpressionSyntax constantExpression || expressionOperation.Syntax is not ExpressionSyntax valueExpression)

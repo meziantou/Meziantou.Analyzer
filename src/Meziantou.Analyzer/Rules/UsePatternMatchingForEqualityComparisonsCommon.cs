@@ -27,20 +27,19 @@ internal static class UsePatternMatchingForEqualityComparisonsCommon
     // The equality operator may implicitly convert the operand (numeric promotion, user-defined conversion, etc.),
     // while the pattern is matched against the type of the operand itself. For instance, 'intValue == 1L' is valid
     // but 'intValue is 1L' is not. The constant pattern is valid only if the constant implicitly converts to the operand type.
-    public static bool CanUseConstantPattern(IOperation expressionOperation, IOperation constantOperation, CancellationToken cancellationToken)
+    public static bool CanUseConstantPattern(IOperation expressionOperation, IOperation constantOperation)
     {
-        if (expressionOperation is not IConversionOperation { IsImplicit: true })
+        if (expressionOperation is not IConversionOperation { IsImplicit: true } conversionOperation)
             return true;
 
         var semanticModel = expressionOperation.SemanticModel;
-        if (semanticModel is null || expressionOperation.Syntax is not ExpressionSyntax expression || constantOperation.Syntax is not ExpressionSyntax constantExpression)
+        var operandType = conversionOperation.Operand.Type?.GetUnderlyingNullableTypeOrSelf();
+        if (semanticModel is null || operandType is null || constantOperation.Syntax is not ExpressionSyntax constantExpression)
             return false;
 
-        var operandType = semanticModel.GetTypeInfo(expression, cancellationToken).Type;
-        if (operandType is null)
-            return false;
-
-        var conversion = semanticModel.ClassifyConversion(constantExpression, operandType.GetUnderlyingNullableTypeOrSelf());
+        // The conversion depends on the value of the constant ('byteValue == 1' is valid, whereas 'byteValue == 300' is not),
+        // so it must be classified from the expression instead of the type of the constant
+        var conversion = semanticModel.ClassifyConversion(constantExpression, operandType);
         return conversion is { IsImplicit: true, IsUserDefined: false };
     }
 }
