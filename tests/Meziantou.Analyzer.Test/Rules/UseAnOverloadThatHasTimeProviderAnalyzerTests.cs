@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderAnalyzer,
     Meziantou.Analyzer.Rules.UseAnOverloadThatHasTimeProviderFixer>;
@@ -426,6 +427,39 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
                 static void B(System.TimeProvider foo) => {|MA0166:"".A(0)|};
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportsTheAvailableTimeProvidersInTheMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(System.TimeProvider timeProvider)
+                {
+                    {|#0:Delay()|};
+                }
+
+                static void Delay() { }
+                static void Delay(System.TimeProvider timeProvider) { }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(System.TimeProvider timeProvider)
+                {
+                    Delay(timeProvider);
+                }
+
+                static void Delay() { }
+                static void Delay(System.TimeProvider timeProvider) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0166", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a TimeProvider, available time providers: timeProvider"));
 
         return test.RunAsync();
     }
