@@ -19,7 +19,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
     private static readonly DiagnosticDescriptor UseAnOverloadThatHasTimeProviderWhenAvailable = new(
         RuleIdentifiers.UseAnOverloadThatHasTimeProviderWhenAvailable,
         title: "Forward the TimeProvider to methods that take one",
-        messageFormat: "Use an overload with a TimeProvider, available tokens: {0}",
+        messageFormat: "Use an overload with a TimeProvider, available time providers: {0}",
         RuleCategories.Usage,
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
@@ -87,11 +87,11 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             return false;
 
-            static bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol cancellationTokenSymbol, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
+            static bool IsArgumentImplicitlyDeclared(IInvocationOperation invocationOperation, INamedTypeSymbol timeProviderSymbol, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
             {
                 foreach (var arg in invocationOperation.Arguments)
                 {
-                    if (arg.ArgumentKind is ArgumentKind.DefaultValue && arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(cancellationTokenSymbol))
+                    if (arg.ArgumentKind is ArgumentKind.DefaultValue && arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(timeProviderSymbol))
                     {
                         parameterInfo = new AdditionalParameterInfo(invocationOperation.TargetMethod.Parameters.IndexOf(arg.Parameter), arg.Parameter.Name);
                         return true;
@@ -112,10 +112,10 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             if (!HasAnOverloadWithTimeProvider(operation, out var parameterInfo))
                 return;
 
-            var availableCancellationTokens = FindTimeProviders(operation, context.CancellationToken);
-            if (availableCancellationTokens.Length > 0)
+            var availableTimeProviders = FindTimeProviders(operation, context.CancellationToken);
+            if (availableTimeProviders.Length > 0)
             {
-                context.ReportDiagnostic(UseAnOverloadThatHasTimeProviderWhenAvailable, CreateProperties(availableCancellationTokens, parameterInfo), operation, string.Join(", ", availableCancellationTokens));
+                context.ReportDiagnostic(UseAnOverloadThatHasTimeProviderWhenAvailable, CreateProperties(availableTimeProviders, parameterInfo), operation, string.Join(", ", availableTimeProviders));
             }
             else
             {
@@ -123,16 +123,16 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                 if (parentMethod is not null && parentMethod.IsOverrideOrInterfaceImplementation())
                     return;
 
-                context.ReportDiagnostic(UseAnOverloadThatHasTimeProviderRule, CreateProperties(availableCancellationTokens, parameterInfo), operation);
+                context.ReportDiagnostic(UseAnOverloadThatHasTimeProviderRule, CreateProperties(availableTimeProviders, parameterInfo), operation);
             }
         }
 
-        private static ImmutableDictionary<string, string?> CreateProperties(string[] cancellationTokens, AdditionalParameterInfo parameterInfo)
+        private static ImmutableDictionary<string, string?> CreateProperties(string[] timeProviders, AdditionalParameterInfo parameterInfo)
         {
             return ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
                 .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterIndexKey, parameterInfo.ParameterIndex.ToString(CultureInfo.InvariantCulture))
                 .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.ParameterNameKey, parameterInfo.Name)
-                .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.PathsKey, string.Join(',', cancellationTokens));
+                .Add(UseAnOverloadThatHasTimeProviderAnalyzerCommon.PathsKey, string.Join(',', timeProviders));
         }
 
         private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)
@@ -144,7 +144,9 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                 if (maxDepth < 0)
                     return null;
 
-                // quickly skips some basic types that are known to not contain TimeProvider
+                // Quickly skips the types that Roslyn marks as special (System.Object, the primitives, System.String, the collection
+                // interfaces, ...) as none of them can contain a TimeProvider. The upper bound is the highest SpecialType value defined by
+                // the oldest supported Roslyn version; special types added by newer versions are simply not skipped.
                 if ((int)symbol.SpecialType is >= 1 and <= 45)
                     return null;
 
