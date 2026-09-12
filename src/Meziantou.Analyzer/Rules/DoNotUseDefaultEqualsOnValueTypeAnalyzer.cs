@@ -82,24 +82,19 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         {
             var operation = (IInvocationOperation)context.Operation;
 
-            if (operation.TargetMethod.Name == nameof(ValueType.GetHashCode))
+            if (operation.TargetMethod.Name is nameof(ValueType.GetHashCode) or nameof(ValueType.Equals))
             {
+                // The invoked method is the default implementation only when the type does not override it.
+                // An override, an overload such as Equals(T), or a method hiding the default implementation is invoked instead.
+                var defaultImplementation = operation.TargetMethod.Name is nameof(ValueType.GetHashCode) ? ValueTypeGetHashCodeSymbol : ValueTypeEqualsSymbol;
+                if (!operation.TargetMethod.IsEqualTo(defaultImplementation))
+                    return;
+
                 var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
                 if (actualType is null)
                     return;
 
-                if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
-                {
-                    context.ReportDiagnostic(Rule, operation);
-                }
-            }
-            else if (operation.TargetMethod.Name == nameof(ValueType.Equals))
-            {
-                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
-                if (actualType is null)
-                    return;
-
-                if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
+                if (IsStruct(actualType))
                 {
                     context.ReportDiagnostic(Rule, operation);
                 }
@@ -195,13 +190,18 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
         private bool HasDefaultEqualsOrHashCodeImplementations(ITypeSymbol typeSymbol)
         {
-            if (ValueTypeEqualsSymbol is not null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.IsEqualTo(member.OverriddenMethod)) is null)
+            if (ValueTypeEqualsSymbol is not null && !HasOverride(typeSymbol, ValueTypeEqualsSymbol))
                 return true;
 
-            if (ValueTypeGetHashCodeSymbol is not null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.IsEqualTo(member.OverriddenMethod)) is null)
+            if (ValueTypeGetHashCodeSymbol is not null && !HasOverride(typeSymbol, ValueTypeGetHashCodeSymbol))
                 return true;
 
             return false;
+        }
+
+        private static bool HasOverride(ITypeSymbol typeSymbol, IMethodSymbol overriddenMethod)
+        {
+            return typeSymbol.GetMembers(overriddenMethod.Name).OfType<IMethodSymbol>().Any(member => member.IsOverride && overriddenMethod.IsEqualTo(member.OverriddenMethod));
         }
     }
 }
