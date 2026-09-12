@@ -11,4 +11,5 @@ internal record struct OverloadOptions(
     bool AllowInModifierCompatibility = true,
     bool AllowInterfaceConversions = true,
     bool AllowBaseTypeConversions = true,
-    Func<IMethodSymbol, bool>? ShouldCheckMethod = null);
+    Func<IMethodSymbol, bool>? ShouldCheckMethod = null,
+    bool IncludeExtensionMethodsFromNotImportedNamespaces = false);
