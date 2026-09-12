@@ -54,6 +54,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
         private readonly Compilation _compilation;
         private readonly AwaitableTypes _awaitableTypes;
         private readonly ITypeSymbol?[] _configuredAwaitableSymbols;
+        private readonly ITypeSymbol? _configureAwaitOptionsSymbol;
 
         public AnalyzerContext(Compilation compilation)
         {
@@ -66,6 +67,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
                 compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable"),
                 compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1"),
             ];
+            _configureAwaitOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
         }
 
         public bool IsValid => _awaitableTypes.TaskSymbol is not null;
@@ -187,9 +189,12 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
         private bool IsDirectlyReturnable(IAwaitOperation awaitOperation, ITypeSymbol returnType)
         {
             var taskOperation = awaitOperation.Operation;
-            if (taskOperation is IInvocationOperation { Instance: { } instance, Type: { } configuredType } &&
+            if (taskOperation is IInvocationOperation { Instance: { } instance, Type: { } configuredType } invocation &&
                 configuredType.OriginalDefinition.IsEqualToAny(_configuredAwaitableSymbols))
             {
+                if (!ReturnTaskInsteadOfAwaitingItCommon.CanRemoveConfigureAwait(invocation, _configureAwaitOptionsSymbol))
+                    return false;
+
                 taskOperation = instance;
             }
 

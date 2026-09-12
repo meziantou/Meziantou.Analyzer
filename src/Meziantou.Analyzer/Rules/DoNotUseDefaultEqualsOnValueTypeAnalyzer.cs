@@ -43,11 +43,9 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
     {
         public Compilation Compilation { get; }
         private INamedTypeSymbol? IEqualityComparerSymbol { get; }
-        private INamedTypeSymbol? IComparerSymbol { get; }
         private ITypeSymbol? ValueTypeSymbol { get; }
         private ITypeSymbol? ImmutableDictionarySymbol { get; }
         private ITypeSymbol? ImmutableHashSetSymbol { get; }
-        private ITypeSymbol? ImmutableSortedDictionarySymbol { get; }
         private IMethodSymbol? ValueTypeEqualsSymbol { get; }
         private IMethodSymbol? ValueTypeGetHashCodeSymbol { get; }
         private ITypeSymbol[] HashSetSymbols { get; }
@@ -55,7 +53,6 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         public Context(Compilation compilation)
         {
             IEqualityComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-            IComparerSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
             ValueTypeSymbol = compilation.GetBestTypeByMetadataName("System.ValueType");
             if (ValueTypeSymbol is not null)
             {
@@ -65,7 +62,6 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
             ImmutableDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary");
             ImmutableHashSetSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet");
-            ImmutableSortedDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableSortedDictionary");
 
             var types = new List<ITypeSymbol>();
             types.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1"));
@@ -73,7 +69,6 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
             types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));
-            types.AddIfNotNull(compilation.GetTypesByMetadataName("System.Collections.Immutable.ImmutableSortedDictionary`2"));
             HashSetSymbols = [.. types];
             Compilation = compilation;
         }
@@ -82,24 +77,19 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         {
             var operation = (IInvocationOperation)context.Operation;
 
-            if (operation.TargetMethod.Name == nameof(ValueType.GetHashCode))
+            if (operation.TargetMethod.Name is nameof(ValueType.GetHashCode) or nameof(ValueType.Equals))
             {
+                // The invoked method is the default implementation only when the type does not override it.
+                // An override, an overload such as Equals(T), or a method hiding the default implementation is invoked instead.
+                var defaultImplementation = operation.TargetMethod.Name is nameof(ValueType.GetHashCode) ? ValueTypeGetHashCodeSymbol : ValueTypeEqualsSymbol;
+                if (!operation.TargetMethod.IsEqualTo(defaultImplementation))
+                    return;
+
                 var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
                 if (actualType is null)
                     return;
 
-                if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
-                {
-                    context.ReportDiagnostic(Rule, operation);
-                }
-            }
-            else if (operation.TargetMethod.Name == nameof(ValueType.Equals))
-            {
-                var actualType = operation.GetChildOperations().FirstOrDefault()?.GetActualType(context.CancellationToken);
-                if (actualType is null)
-                    return;
-
-                if (IsStruct(actualType) && HasDefaultEqualsOrHashCodeImplementations(actualType))
+                if (IsStruct(actualType))
                 {
                     context.ReportDiagnostic(Rule, operation);
                 }
@@ -109,16 +99,8 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                 var type = operation.TargetMethod.TypeArguments[0];
                 if (IsStruct(type) && HasDefaultEqualsOrHashCodeImplementations(type))
                 {
-                    if (operation.TargetMethod.ContainingType.IsEqualTo(ImmutableSortedDictionarySymbol))
-                    {
-                        if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IComparerSymbol?.Construct(type))))
-                            return;
-                    }
-                    else
-                    {
-                        if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type))))
-                            return;
-                    }
+                    if (operation.TargetMethod.Parameters.Any(arg => arg.Type.IsEqualTo(IEqualityComparerSymbol?.Construct(type))))
+                        return;
 
                     context.ReportDiagnostic(Rule2, operation);
                 }
@@ -137,7 +119,6 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                 {
                         ImmutableDictionarySymbol,
                         ImmutableHashSetSymbol,
-                        ImmutableSortedDictionarySymbol,
                     };
 
                 return methodSymbol.Arity >= 1 && names.Contains(methodSymbol.Name, StringComparer.Ordinal) && builderTypes.Any(type => type.IsEqualTo(methodSymbol.ContainingType.OriginalDefinition));
@@ -195,13 +176,18 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
 
         private bool HasDefaultEqualsOrHashCodeImplementations(ITypeSymbol typeSymbol)
         {
-            if (ValueTypeEqualsSymbol is not null && typeSymbol.GetMembers(ValueTypeEqualsSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeEqualsSymbol.IsEqualTo(member.OverriddenMethod)) is null)
+            if (ValueTypeEqualsSymbol is not null && !HasOverride(typeSymbol, ValueTypeEqualsSymbol))
                 return true;
 
-            if (ValueTypeGetHashCodeSymbol is not null && typeSymbol.GetMembers(ValueTypeGetHashCodeSymbol.Name).OfType<IMethodSymbol>().FirstOrDefault(member => member.IsOverride && ValueTypeGetHashCodeSymbol.IsEqualTo(member.OverriddenMethod)) is null)
+            if (ValueTypeGetHashCodeSymbol is not null && !HasOverride(typeSymbol, ValueTypeGetHashCodeSymbol))
                 return true;
 
             return false;
+        }
+
+        private static bool HasOverride(ITypeSymbol typeSymbol, IMethodSymbol overriddenMethod)
+        {
+            return typeSymbol.GetMembers(overriddenMethod.Name).OfType<IMethodSymbol>().Any(member => member.IsOverride && overriddenMethod.IsEqualTo(member.OverriddenMethod));
         }
     }
 }

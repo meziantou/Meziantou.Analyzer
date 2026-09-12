@@ -86,7 +86,26 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceAppendFormatWithAppend:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceAppendFormatWithAppend(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                var appendFormatSemanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                if (appendFormatSemanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation appendFormatOperation)
+                    return;
+
+                var formatProviderType = appendFormatSemanticModel.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+                var parameters = appendFormatOperation.TargetMethod.Parameters;
+                var formatArgIndex = parameters.Length > 0 && parameters[0].Type.IsEqualTo(formatProviderType) ? 1 : 0;
+                if (formatArgIndex >= appendFormatOperation.Arguments.Length)
+                    return;
+
+                // AppendFormat unescapes the doubled braces ("{{" and "}}"), whereas Append appends the string as-is
+                var formatArg = appendFormatOperation.Arguments[formatArgIndex].Value;
+                if (OptimizeStringBuilderUsageAnalyzerCommon.GetConstStringValue(formatArg) is not { } formatString ||
+                    !OptimizeStringBuilderUsageAnalyzerCommon.TryGetCompositeFormatLiteralText(formatString, out var literalText))
+                {
+                    return;
+                }
+
+                var formatArgReplacement = string.Equals(formatString, literalText, StringComparison.Ordinal) ? null : literalText;
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceAppendFormatWithAppend(context.Document, appendFormatOperation, formatArg, formatArgReplacement, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
     }
@@ -380,24 +399,16 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> ReplaceAppendFormatWithAppend(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceAppendFormatWithAppend(Document document, IInvocationOperation operation, IOperation formatArg, string? formatArgReplacement, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-        var operation = (IInvocationOperation?)editor.SemanticModel.GetOperation(nodeToFix, cancellationToken);
-        if (operation is null)
-            return document;
 
-        var formatProviderType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-        var parameters = operation.TargetMethod.Parameters;
-        var formatArgIndex = parameters.Length > 0 && parameters[0].Type.IsEqualTo(formatProviderType) ? 1 : 0;
-
-        var formatArg = operation.Arguments[formatArgIndex];
         var newExpression = generator.InvocationExpression(
             generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "Append"),
-            formatArg.Value.Syntax);
+            formatArgReplacement is null ? formatArg.Syntax : generator.LiteralExpression(formatArgReplacement));
 
-        editor.ReplaceNode(nodeToFix, newExpression);
+        editor.ReplaceNode(operation.Syntax, newExpression);
         return editor.GetChangedDocument();
     }
 }

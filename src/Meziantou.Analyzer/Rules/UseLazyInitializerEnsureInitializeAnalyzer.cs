@@ -38,6 +38,11 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
                     if (operation.Arguments[0].Value.Type is not { IsReferenceType: true })
                         return;
 
+                    // Interlocked.CompareExchange returns the previous value of the target, whereas
+                    // LazyInitializer.EnsureInitialized returns the initialized value
+                    if (IsReturnValueUsed(operation))
+                        return;
+
                     var value = operation.Arguments[1].Value.UnwrapImplicitConversions();
                     if (value is IObjectCreationOperation or ILocalReferenceOperation)
                     {
@@ -48,4 +53,12 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
         });
     }
 
+    private static bool IsReturnValueUsed(IInvocationOperation operation)
+    {
+        var parent = operation.Parent;
+        if (parent is ISimpleAssignmentOperation { Target: IDiscardOperation })
+            return false;
+
+        return parent is not (null or IBlockOperation or IExpressionStatementOperation);
+    }
 }
