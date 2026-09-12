@@ -1056,6 +1056,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_ImplicitReceiver()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             using System.Threading.Tasks;
 
@@ -1104,9 +1105,80 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    sample.Do();
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_EnabledForAnotherRule()
+    {
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0045.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    sample.Do();
+                }
+
+                private void B(Sample sample)
+                {
+                    {|MA0045:sample.Do()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             using System.Threading.Tasks;
 
@@ -1164,6 +1236,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_NamespaceNotImported_NoUsingDirectives()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             // File header
             class Test
@@ -1220,6 +1293,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_NamespaceNotImported_UsingDirectivesInNamespace()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             namespace App
             {
@@ -1283,6 +1357,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_NamespaceNotImported_FixAll()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             using System.Threading.Tasks;
 
@@ -1342,6 +1417,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_NamespaceImportedInAnotherFile()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             using System.Threading.Tasks;
 
@@ -1387,6 +1463,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     public Task ExtensionMethod_NamespaceNotImported_NotAsyncEquivalent_NoDiagnostic()
     {
         var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.include_extension_methods_from_not_imported_namespaces", "true");
         test.TestCode = """
             using System.Threading.Tasks;
 

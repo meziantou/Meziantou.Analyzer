@@ -1939,4 +1939,89 @@ public sealed class UseStringComparerAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a");
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0002.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.{|MA0002:Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", System.StringComparer.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

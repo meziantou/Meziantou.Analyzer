@@ -34,6 +34,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
         if (cancellationTokenSymbol is null)
             return;
 
+        var namespaceToImport = context.Diagnostics[0].Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName);
         var generator = SyntaxGenerator.GetGenerator(context.Document);
         foreach (var cancellationToken in cancellationTokens.Split(','))
         {
@@ -46,6 +47,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
                 parameterName,
                 cancellationTokenExpression,
                 parameter => parameter.Type.IsEqualTo(cancellationTokenSymbol),
+                namespaceToImport: namespaceToImport,
                 cancellationToken: context.CancellationToken);
 
             if (newInvocation is null)
@@ -58,7 +60,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
             var title = "Use CancellationToken:  " + cancellationToken;
             var codeAction = CodeAction.Create(
                 title,
-                ct => FixInvocation(context.Document, nodeToReplace, newInvocation, ct),
+                ct => FixInvocation(context.Document, nodeToReplace, newInvocation, namespaceToImport, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -82,10 +84,15 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
         return parent.Syntax;
     }
 
-    private static async Task<Document> FixInvocation(Document document, SyntaxNode nodeToReplace, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
+    private static async Task<Document> FixInvocation(Document document, SyntaxNode nodeToReplace, InvocationExpressionSyntax newInvocation, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(nodeToReplace, newInvocation);
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, nodeToReplace, namespaceToImport);
+        }
+
         return editor.GetChangedDocument();
     }
 }

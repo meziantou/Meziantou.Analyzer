@@ -618,4 +618,98 @@ public sealed class UseInKeywordForInParameterAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task OverloadRule_ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public void Test(Sample sample)
+                {
+                    var value = new S();
+                    sample.Run(value);
+                }
+            }
+
+            public class Sample
+            {
+                public void Run(S value) => throw null;
+            }
+
+            public struct S { }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, in S value) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OverloadRule_ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0210.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class C
+            {
+                public void Test(Sample sample)
+                {
+                    var value = new S();
+                    sample.Run({|MA0210:value|});
+                }
+            }
+
+            public class Sample
+            {
+                public void Run(S value) => throw null;
+            }
+
+            public struct S { }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, in S value) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class C
+            {
+                public void Test(Sample sample)
+                {
+                    var value = new S();
+                    sample.Run(in value);
+                }
+            }
+
+            public class Sample
+            {
+                public void Run(S value) => throw null;
+            }
+
+            public struct S { }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, in S value) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

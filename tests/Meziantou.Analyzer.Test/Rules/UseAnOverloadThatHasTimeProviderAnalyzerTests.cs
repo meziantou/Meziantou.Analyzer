@@ -463,4 +463,125 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_DisabledByDefault()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample sample, System.TimeProvider timeProvider)
+                {
+                    sample.Run();
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.TimeProvider timeProvider) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_EnabledForAnotherRule()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0167.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample sample, System.TimeProvider timeProvider)
+                {
+                    sample.Run();
+                }
+
+                void B(Sample sample)
+                {
+                    {|MA0167:sample.Run()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.TimeProvider timeProvider) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0166.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample sample, System.TimeProvider timeProvider)
+                {
+                    {|MA0166:sample.Run()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.TimeProvider timeProvider) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class Test
+            {
+                void A(Sample sample, System.TimeProvider timeProvider)
+                {
+                    sample.Run(timeProvider);
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.TimeProvider timeProvider) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

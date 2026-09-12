@@ -1,3 +1,5 @@
+using Meziantou.Analyzer.Configurations;
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -22,6 +24,9 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringComparison));
+
+    private static readonly ConfigurationDefinition<bool> AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.AvoidCultureSensitiveMethod + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseStringComparison + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
 
@@ -110,16 +115,26 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                     return;
 
                 // Check if there is an overload with a StringComparison
-                if (_overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [_stringComparisonSymbol]))
+                var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
+                    || context.Options.GetConfigurationValue(operation, AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces }, [_stringComparisonSymbol]);
+                if (overload is not null)
                 {
-                    if (IsNonCultureSensitiveMethod(operation))
+                    var (rule, configuration) = IsNonCultureSensitiveMethod(operation)
+                        ? (UseStringComparisonRule, UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
+                        : (AvoidCultureSensitiveMethodRule, AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+
+                    // An extension method declared in a namespace that is not imported is only included when the reported rule is configured to
+                    var properties = ImmutableDictionary<string, string?>.Empty;
+                    if (includeExtensionMethodsFromNotImportedNamespaces && _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) is { } namespaceToImport)
                     {
-                        context.ReportDiagnostic(UseStringComparisonRule, operation, operation.TargetMethod.Name);
+                        if (!context.Options.GetConfigurationValue(operation, configuration))
+                            return;
+
+                        properties = properties.Add(OverloadFinder.NamespaceToImportPropertyName, namespaceToImport);
                     }
-                    else
-                    {
-                        context.ReportDiagnostic(AvoidCultureSensitiveMethodRule, operation, operation.TargetMethod.Name);
-                    }
+
+                    context.ReportDiagnostic(rule, properties, operation, operation.TargetMethod.Name);
                 }
             }
         }

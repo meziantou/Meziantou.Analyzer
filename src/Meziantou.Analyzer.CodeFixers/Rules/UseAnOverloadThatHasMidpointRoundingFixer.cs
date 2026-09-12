@@ -57,7 +57,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingFixer : CodeFixProvider
                 generator.TypeMemberAccessExpression(midpointRoundingSymbol, midpointRoundingMemberName, addImport: true),
                 parameter => parameter.Type.IsEqualTo(midpointRoundingSymbol),
                 overload,
-                context.CancellationToken);
+                cancellationToken: context.CancellationToken);
 
             if (newInvocation is null)
                 continue;

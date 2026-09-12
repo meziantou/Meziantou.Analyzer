@@ -2,6 +2,12 @@ namespace Meziantou.Analyzer.Internals;
 
 internal sealed class OverloadFinder(Compilation compilation)
 {
+    /// <summary>
+    /// The name of the diagnostic property containing the namespace the code fix must import to call the overload, when the
+    /// overload is an extension method declared in a namespace that is not imported. See <see cref="GetNamespaceToImport"/>.
+    /// </summary>
+    public const string NamespaceToImportPropertyName = "NamespaceToImport";
+
     private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
     private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
@@ -723,23 +729,24 @@ internal sealed class OverloadFinder(Compilation compilation)
     }
 
     /// <summary>
-    /// Indicates whether <paramref name="methodSymbol"/>, returned when <see cref="OverloadOptions.IncludeExtensionMethodsFromNotImportedNamespaces"/>
-    /// is set, is an extension method whose namespace is not imported at <paramref name="syntaxNode"/>, so calling it requires a using directive.
+    /// Gets the namespace to import at <paramref name="syntaxNode"/> to call <paramref name="methodSymbol"/>, when it is an extension method
+    /// declared in a namespace that is not imported, as returned when <see cref="OverloadOptions.IncludeExtensionMethodsFromNotImportedNamespaces"/>
+    /// is set. Returns <see langword="null"/> when the method can be called without a new using directive.
     /// </summary>
-    public bool IsExtensionMethodFromNotImportedNamespace(IMethodSymbol methodSymbol, SyntaxNode syntaxNode)
+    public string? GetNamespaceToImport(IMethodSymbol methodSymbol, SyntaxNode syntaxNode)
     {
         if (methodSymbol is not { MethodKind: MethodKind.ReducedExtension, ReducedFrom: { } reducedFrom, ReceiverType: { } receiverType })
-            return false;
+            return null;
 
         var semanticModel = compilation.GetSemanticModel(syntaxNode.SyntaxTree);
         var position = syntaxNode.GetLocation().SourceSpan.End;
         foreach (var symbol in semanticModel.LookupSymbols(position, receiverType, methodSymbol.Name, includeReducedExtensionMethods: true))
         {
             if (symbol is IMethodSymbol { ReducedFrom: { } symbolReducedFrom } && symbolReducedFrom.OriginalDefinition.IsEqualTo(reducedFrom.OriginalDefinition))
-                return false;
+                return null;
         }
 
-        return true;
+        return methodSymbol.ContainingNamespace.ToDisplayString();
     }
 
     /// <summary>

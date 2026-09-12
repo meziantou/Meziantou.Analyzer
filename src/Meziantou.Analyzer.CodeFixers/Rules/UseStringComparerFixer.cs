@@ -41,23 +41,25 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             _ => null,
         };
 
+        // The analyzer prefers an overload that does not require a using directive, so the fix only searches the extension methods
+        // declared in a namespace that is not imported when the analyzer selected one of them
+        var namespaceToImport = context.Diagnostics[0].Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName);
         if (currentMethod is not null && (equalityComparerOpenType is not null || comparerOpenType is not null))
         {
             var overloadFinder = new OverloadFinder(semanticModel.Compilation);
             var equalityComparerStringType = GetIEqualityComparerString(semanticModel.Compilation);
             var comparerStringType = GetIComparerString(semanticModel.Compilation);
+            var overloadOptions = new OverloadOptions { SyntaxNode = nodeToFix, IncludeExtensionMethodsFromNotImportedNamespaces = namespaceToImport is not null };
 
             IMethodSymbol? targetOverload = null;
             if (equalityComparerStringType is not null)
             {
-                targetOverload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
-                    currentMethod, new OverloadOptions { SyntaxNode = nodeToFix }, [equalityComparerStringType]);
+                targetOverload = overloadFinder.FindOverloadWithAdditionalParameterOfType(currentMethod, overloadOptions, [equalityComparerStringType]);
             }
 
             if (targetOverload is null && comparerStringType is not null)
             {
-                targetOverload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
-                    currentMethod, new OverloadOptions { SyntaxNode = nodeToFix }, [comparerStringType]);
+                targetOverload = overloadFinder.FindOverloadWithAdditionalParameterOfType(currentMethod, overloadOptions, [comparerStringType]);
             }
 
             if (targetOverload is not null)
@@ -79,7 +81,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             var title = "Add StringComparer." + comparerName;
             var codeAction = CodeAction.Create(
                 title,
-                ct => AddStringComparer(context.Document, nodeToFix, comparerName, stringComparerSymbol, insertionIndex, parameterName, ct),
+                ct => AddStringComparer(context.Document, nodeToFix, comparerName, stringComparerSymbol, insertionIndex, parameterName, namespaceToImport, ct),
                 equivalenceKey: title);
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -158,7 +160,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         return openType.Construct(compilation.GetSpecialType(SpecialType.System_String));
     }
 
-    private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, string comparerName, INamedTypeSymbol stringComparer, int insertionIndex, string parameterName, CancellationToken cancellationToken)
+    private static async Task<Document> AddStringComparer(Document document, SyntaxNode nodeToFix, string comparerName, INamedTypeSymbol stringComparer, int insertionIndex, string parameterName, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -182,6 +184,11 @@ public sealed class UseStringComparerFixer : CodeFixProvider
             {
                 var newArguments = AddArgument(invocationExpression.ArgumentList.Arguments, comparerExpression, insertionIndex, parameterName, generator);
                 editor.ReplaceNode(invocationExpression, invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(newArguments)));
+                if (namespaceToImport is not null)
+                {
+                    UsingDirectiveHelper.AddUsingDirective(editor, invocationExpression, namespaceToImport);
+                }
+
                 break;
             }
 

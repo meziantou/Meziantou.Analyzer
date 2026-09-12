@@ -33,12 +33,12 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
         context.RegisterCodeFix(
             CodeAction.Create(
                 title,
-                cancellationToken => AddInKeywordAsync(context.Document, diagnostic.Location.SourceSpan, cancellationToken),
+                cancellationToken => AddInKeywordAsync(context.Document, diagnostic.Location.SourceSpan, diagnostic.Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName), cancellationToken),
                 equivalenceKey: title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> AddInKeywordAsync(Document document, TextSpan argumentSpan, CancellationToken cancellationToken)
+    private static async Task<Document> AddInKeywordAsync(Document document, TextSpan argumentSpan, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         if (root is null)
@@ -52,6 +52,11 @@ public sealed class UseInKeywordForInParameterFixer : CodeFixProvider
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         editor.ReplaceNode(argument, argument.WithRefKindKeyword(SyntaxFactory.Token(SyntaxKind.InKeyword).WithTrailingTrivia(SyntaxFactory.Space)));
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, argument, namespaceToImport);
+        }
+
         return editor.GetChangedDocument();
     }
 }
