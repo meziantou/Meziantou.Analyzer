@@ -564,6 +564,96 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzerTests
     }
 
     [Fact]
+    public Task Field_PartialClass_InitializedInConstructorInAnotherDocument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class A
+            {
+                private readonly object {|MA0158:_lock|};
+
+                public void Run()
+                {
+                    lock (_lock) { }
+                }
+            }
+            """;
+        test.TestState.Sources.Add("""
+            partial class A
+            {
+                public A()
+                {
+                    _lock = new object();
+                }
+            }
+            """);
+        test.FixedCode = """
+            partial class A
+            {
+                private readonly System.Threading.Lock _lock;
+
+                public void Run()
+                {
+                    lock (_lock) { }
+                }
+            }
+            """;
+        test.FixedState.Sources.Add("""
+            partial class A
+            {
+                public A()
+                {
+                    _lock = new();
+                }
+            }
+            """);
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_AssignedInDerivedClassInAnotherDocument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class BaseClass
+            {
+                private protected object {|MA0158:_lock|} = new object();
+
+                void A() { lock(_lock) { } }
+            }
+            """;
+        test.TestState.Sources.Add("""
+            class ChildClass : BaseClass
+            {
+                public ChildClass()
+                {
+                    this._lock = new object();
+                }
+            }
+            """);
+        test.FixedCode = """
+            class BaseClass
+            {
+                private protected System.Threading.Lock _lock = new();
+
+                void A() { lock(_lock) { } }
+            }
+            """;
+        test.FixedState.Sources.Add("""
+            class ChildClass : BaseClass
+            {
+                public ChildClass()
+                {
+                    this._lock = new();
+                }
+            }
+            """);
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task StaticField_InitializedInStaticConstructor_OnlyLockUsage()
     {
         var test = CreateTest();
