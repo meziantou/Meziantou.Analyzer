@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Formatting;
+
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
@@ -123,7 +125,8 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                     {
                         var newBlock = SyntaxFactory.Block(variablesStatement, newUsingBlock.WithoutLeadingTrivia())
                             .WithLeadingTrivia(usingBlock.GetLeadingTrivia())
-                            .WithTrailingTrivia(usingBlock.GetTrailingTrivia());
+                            .WithTrailingTrivia(usingBlock.GetTrailingTrivia())
+                            .WithAdditionalAnnotations(Formatter.Annotation);
                         editor.ReplaceNode(usingBlock, newBlock);
                     }
 
@@ -205,21 +208,16 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
         bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement)
         {
-            var insertionTarget = usingStatement;
-            while (insertionTarget.Parent is UsingStatementSyntax parentUsing &&
-                   parentUsing.Statement == insertionTarget &&
-                   parentUsing.Declaration is null)
+            // The declaration can only be extracted where a statement can be inserted just before the using statement.
+            // Moving it before an enclosing statement would evaluate the initializer before that statement,
+            // so the caller wraps the declaration and the using statement in a block instead.
+            if (usingStatement.Parent is BlockSyntax or SwitchSectionSyntax)
             {
-                insertionTarget = parentUsing;
-            }
-
-            if (insertionTarget.Parent is BlockSyntax or SwitchSectionSyntax)
-            {
-                editor.InsertBefore(insertionTarget, variableStatement);
+                editor.InsertBefore(usingStatement, variableStatement);
                 return true;
             }
 
-            if (insertionTarget.Parent is GlobalStatementSyntax { Parent: CompilationUnitSyntax } globalStatement)
+            if (usingStatement.Parent is GlobalStatementSyntax { Parent: CompilationUnitSyntax } globalStatement)
             {
                 editor.InsertBefore(globalStatement, SyntaxFactory.GlobalStatement(variableStatement));
                 return true;
