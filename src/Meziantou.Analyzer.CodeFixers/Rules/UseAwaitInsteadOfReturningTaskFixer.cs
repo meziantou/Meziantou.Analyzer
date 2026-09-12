@@ -14,29 +14,41 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is not ExpressionSyntax)
+        if (nodeToFix is not ExpressionSyntax value)
             return;
 
-        if (nodeToFix.FirstAncestorOrSelf<SyntaxNode>(IsFunction) is null)
+        var function = value.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
+        if (function is null)
+            return;
+
+        if (GetBody(function) is (null, null))
+            return;
+
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return;
+
+        // The fix adds the 'async' modifier, which the signature of the function must support
+        if (GetFunctionSymbol(semanticModel, function, context.CancellationToken) is not { } method || !UseAwaitInsteadOfReturningTaskCommon.CanBeMadeAsync(method, semanticModel.Compilation))
             return;
 
         const string Title = "Use await";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => FixAsync(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => FixAsync(context.Document, value, function, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static IMethodSymbol? GetFunctionSymbol(SemanticModel semanticModel, SyntaxNode function, CancellationToken cancellationToken)
+    {
+        return function is MethodDeclarationSyntax or LocalFunctionStatementSyntax
+            ? semanticModel.GetDeclaredSymbol(function, cancellationToken) as IMethodSymbol
+            : semanticModel.GetSymbolInfo(function, cancellationToken).Symbol as IMethodSymbol;
+    }
+
+    private static async Task<Document> FixAsync(Document document, ExpressionSyntax value, SyntaxNode function, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var semanticModel = editor.SemanticModel;
-
-        if (nodeToFix is not ExpressionSyntax value)
-            return document;
-
-        var function = value.FirstAncestorOrSelf<SyntaxNode>(IsFunction);
-        if (function is null)
-            return document;
 
         var isGeneric = IsGenericTaskLike(semanticModel.Compilation, semanticModel.GetTypeInfo(value, cancellationToken).ConvertedType);
 
