@@ -117,7 +117,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                         .WithDeclaration(null)
                         .WithExpression(AppendConfigureAwait(SyntaxFactory.IdentifierName(usingBlock.Declaration.Variables[0].Identifier)));
 
-                    if (TryInsertVariableStatementBeforeUsing(variablesStatement.WithLeadingTrivia(usingBlock.GetLeadingTrivia()), usingBlock))
+                    if (TryInsertVariableStatementBeforeUsing(variablesStatement.WithLeadingTrivia(usingBlock.GetLeadingTrivia()), usingBlock, usingBlock.Declaration.Variables[0].Identifier.ValueText))
                     {
                         editor.ReplaceNode(usingBlock, newUsingBlock);
                     }
@@ -206,8 +206,13 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
         return context.Document;
 
-        bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement)
+        bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement, string variableName)
         {
+            // Moving the declaration out of the using statement widens the scope of the variable.
+            // When the name is already used elsewhere, keep the original scope by wrapping the statements in a block.
+            if (IsNameUsedOutsideOfUsingStatement(usingStatement, variableName))
+                return false;
+
             // The declaration can only be extracted where a statement can be inserted just before the using statement.
             // Moving it before an enclosing statement would evaluate the initializer before that statement,
             // so the caller wraps the declaration and the using statement in a block instead.
@@ -221,6 +226,22 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             {
                 editor.InsertBefore(globalStatement, SyntaxFactory.GlobalStatement(variableStatement));
                 return true;
+            }
+
+            return false;
+        }
+
+        static bool IsNameUsedOutsideOfUsingStatement(UsingStatementSyntax usingStatement, string variableName)
+        {
+            // The variable is moved to the declaration space of the enclosing function, so the name must not be used anywhere in it
+            var scope = usingStatement.FirstAncestorOrSelf<SyntaxNode>(node => node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or CompilationUnitSyntax);
+            if (scope is null)
+                return true;
+
+            foreach (var token in scope.DescendantTokens())
+            {
+                if (token.IsKind(SyntaxKind.IdentifierToken) && string.Equals(token.ValueText, variableName, StringComparison.Ordinal) && !usingStatement.Span.Contains(token.Span))
+                    return true;
             }
 
             return false;
