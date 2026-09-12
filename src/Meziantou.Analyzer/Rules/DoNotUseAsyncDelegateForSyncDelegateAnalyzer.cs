@@ -40,7 +40,14 @@ public sealed class DoNotUseAsyncDelegateForSyncDelegateAnalyzer : DiagnosticAna
             return;
         }
 
-        if (operation.Target is IAnonymousFunctionOperation { Symbol.IsAsync: true })
+        var isAsyncVoid = operation.Target switch
+        {
+            IAnonymousFunctionOperation { Symbol.IsAsync: true } => true,
+            IMethodReferenceOperation { Method: { IsAsync: true, ReturnsVoid: true } } => true,
+            _ => false,
+        };
+
+        if (isAsyncVoid)
         {
             context.ReportDiagnostic(Rule, operation);
         }
