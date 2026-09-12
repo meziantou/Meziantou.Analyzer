@@ -40,6 +40,9 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
             ConfiguredTaskAwaitableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
             ConfiguredTaskAwaitableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
 
+            ConfigureAwaitOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
+            SuppressThrowingValue = ConfigureAwaitOptionsSymbol?.GetMembers("SuppressThrowing").OfType<IFieldSymbol>().FirstOrDefault()?.ConstantValue as int?;
+
             if (TaskSymbol is not null && TaskOfTSymbol is not null)
             {
                 TaskOfTaskSymbol = TaskOfTSymbol.Construct(TaskSymbol);
@@ -54,6 +57,9 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
 
         public INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; }
         public INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; }
+
+        public INamedTypeSymbol? ConfigureAwaitOptionsSymbol { get; }
+        public int? SuppressThrowingValue { get; }
 
         public bool IsValid => TaskOfTaskSymbol is not null || TaskOfTaskOfTSymbol is not null;
 
@@ -77,8 +83,13 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
                     context.ReportDiagnostic(Rule, operation);
                 }
             }
-            else if (operation.Operation is IInvocationOperation { Instance: IAwaitOperation { Operation.Type: INamedTypeSymbol childAwaitOperationType }, Type: var invocationType } && invocationType.IsEqualToAny(ConfiguredTaskAwaitableSymbol, ConfiguredTaskAwaitableOfTSymbol))
+            else if (operation.Operation is IInvocationOperation { Instance: IAwaitOperation { Operation.Type: INamedTypeSymbol childAwaitOperationType } } invocation && invocation.Type.IsEqualToAny(ConfiguredTaskAwaitableSymbol, ConfiguredTaskAwaitableOfTSymbol))
             {
+                // The inner task is the only one configured with SuppressThrowing, whereas Unwrap() would also
+                // suppress the exceptions of the outer task, which the outer await currently propagates
+                if (MaySuppressThrowing(invocation))
+                    return;
+
                 // Task<Task>
                 if (childAwaitOperationType.IsEqualTo(TaskOfTaskSymbol))
                 {
@@ -90,6 +101,23 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
                     context.ReportDiagnostic(Rule, operation);
                 }
             }
+        }
+
+        private bool MaySuppressThrowing(IInvocationOperation operation)
+        {
+            if (SuppressThrowingValue is not { } suppressThrowing)
+                return false;
+
+            foreach (var argument in operation.Arguments)
+            {
+                if (!argument.Parameter!.Type.IsEqualTo(ConfigureAwaitOptionsSymbol))
+                    continue;
+
+                // The options are only known not to suppress the exceptions when they are a constant
+                return argument.Value.ConstantValue is not { HasValue: true, Value: int options } || (options & suppressThrowing) is not 0;
+            }
+
+            return false;
         }
     }
 }
