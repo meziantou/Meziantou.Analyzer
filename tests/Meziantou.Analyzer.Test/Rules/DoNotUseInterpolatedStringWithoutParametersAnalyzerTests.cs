@@ -105,6 +105,139 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     }
 
     [Fact]
+    public Task InterpolatedStringWithoutParameters_ReturnedAsIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public static System.IFormattable Run() => $"text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_AssignedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                private System.IFormattable _value;
+
+                public void Run()
+                {
+                    System.IFormattable local = $"text";
+                    _value = $"text";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConvertedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public void Test(System.IFormattable value)
+                {
+                }
+
+                public void Run()
+                {
+                    Test($"text");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_CastToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public object Run() => (System.IFormattable)$"text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConditionalConvertedToIFormattable_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public System.IFormattable Run(bool condition) => condition ? $"a" : (System.IFormattable)$"b";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ConvertedToObject_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public object Run() => [|$"text"|];
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                public object Run() => "text";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterpolatedStringWithoutParameters_ArgumentOfMethodReturningFormattableString_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                public void Run()
+                {
+                    System.FormattableString value = Create([|$"text"|]);
+                }
+
+                private static System.FormattableString Create(string value) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                public void Run()
+                {
+                    System.FormattableString value = Create("text");
+                }
+
+                private static System.FormattableString Create(string value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InterpolatedStringWithoutParameters_CustomInterpolatedStringHandler_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
