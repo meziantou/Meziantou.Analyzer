@@ -875,6 +875,24 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public Task ImmutableArrayBuilder_LastIndexOf_ReturnValueNotUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Immutable;
+            class Test
+            {
+                void A(ImmutableArray<int>.Builder builder)
+                {
+                    {|MA0060:builder.LastIndexOf(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task HResult_ReturnValueNotUsed()
     {
         var test = CreateTest();

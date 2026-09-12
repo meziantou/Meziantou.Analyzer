@@ -176,6 +176,33 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
+    public Task XunitAssert_ShouldNotReportCultureSensitiveDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|MA0001:Xunit.Assert.Contains("a", "abc")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    Xunit.Assert.Contains("a", "abc", System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task IndexOf_Char_ShouldNotReportCultureSensitiveDiagnostic()
     {
         var test = new CodeFixTest();
