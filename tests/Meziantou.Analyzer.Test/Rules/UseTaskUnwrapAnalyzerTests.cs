@@ -1,4 +1,4 @@
-using Microsoft.CodeAnalysis;
+﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseTaskUnwrapAnalyzer,
@@ -153,6 +153,70 @@ public sealed class UseTaskUnwrapAnalyzerTests
 
             System.Threading.Tasks.Task<System.Threading.Tasks.Task> a = null;
             await a.Unwrap().ConfigureAwait(false);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskOfTask_ConfigureAwaitOptions_Root()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            Task<Task> a = null;
+            {|MA0152:await (await a).ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.ContinueOnCapturedContext)|};
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+
+            Task<Task> a = null;
+            await a.Unwrap().ConfigureAwait(ConfigureAwaitOptions.ForceYielding | ConfigureAwaitOptions.ContinueOnCapturedContext);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskOfTask_ConfigureAwaitOptions_SuppressThrowing_Root()
+    {
+        // Unwrap() would also suppress the exceptions of the outer task
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            Task<Task> a = null;
+            await (await a).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskOfTask_ConfigureAwaitOptions_SuppressThrowing_Combined_Root()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            Task<Task> a = null;
+            await (await a).ConfigureAwait(ConfigureAwaitOptions.SuppressThrowing | ConfigureAwaitOptions.ForceYielding);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TaskOfTask_ConfigureAwaitOptions_NotConstant_Root()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            Task<Task> a = null;
+            ConfigureAwaitOptions options = default;
+            await (await a).ConfigureAwait(options);
             """;
 
         return test.RunAsync();
