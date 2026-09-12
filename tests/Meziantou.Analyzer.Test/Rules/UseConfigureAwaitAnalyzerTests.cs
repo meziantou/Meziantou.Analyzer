@@ -897,15 +897,70 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 async Task Test()
                 {
                     Stream stream = OpenWrite();
-                    var streamWriter = new StreamWriter(stream);
                     await using (stream.ConfigureAwait(false))
-                    await using (streamWriter.ConfigureAwait(false))
                     {
-                        await streamWriter.WriteAsync("test-data").ConfigureAwait(false);
+                        var streamWriter = new StreamWriter(stream);
+                        await using (streamWriter.ConfigureAwait(false))
+                        {
+                            await streamWriter.WriteAsync("test-data").ConfigureAwait(false);
+                        }
                     }
                 }
 
                 Stream OpenWrite() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsing_UnderUsingWithSideEffect_KeepsEvaluationOrder()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    using (Create("outer"))
+                    await using (var {|MA0004:resource = Create("inner")|})
+                    {
+                    }
+                }
+
+                static Resource Create(string text) => throw null;
+            }
+            class Resource : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() => throw null;
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    using (Create("outer"))
+                    {
+                        var resource = Create("inner");
+                        await using (resource.ConfigureAwait(false))
+                        {
+                        }
+                    }
+                }
+
+                static Resource Create(string text) => throw null;
+            }
+            class Resource : IDisposable, IAsyncDisposable
+            {
+                public void Dispose() => throw null;
+                public ValueTask DisposeAsync() => throw null;
             }
             """;
 

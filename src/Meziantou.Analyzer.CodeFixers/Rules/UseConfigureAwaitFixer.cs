@@ -208,26 +208,21 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
         bool TryInsertVariableStatementBeforeUsing(LocalDeclarationStatementSyntax variableStatement, UsingStatementSyntax usingStatement, string variableName)
         {
-            var insertionTarget = usingStatement;
-            while (insertionTarget.Parent is UsingStatementSyntax parentUsing &&
-                   parentUsing.Statement == insertionTarget &&
-                   parentUsing.Declaration is null)
-            {
-                insertionTarget = parentUsing;
-            }
-
             // Moving the declaration out of the using statement widens the scope of the variable.
             // When the name is already used elsewhere, keep the original scope by wrapping the statements in a block.
-            if (IsNameUsedOutsideOfUsingStatement(insertionTarget, usingStatement, variableName))
+            if (IsNameUsedOutsideOfUsingStatement(usingStatement, variableName))
                 return false;
 
-            if (insertionTarget.Parent is BlockSyntax or SwitchSectionSyntax)
+            // The declaration can only be extracted where a statement can be inserted just before the using statement.
+            // Moving it before an enclosing statement would evaluate the initializer before that statement,
+            // so the caller wraps the declaration and the using statement in a block instead.
+            if (usingStatement.Parent is BlockSyntax or SwitchSectionSyntax)
             {
-                editor.InsertBefore(insertionTarget, variableStatement);
+                editor.InsertBefore(usingStatement, variableStatement);
                 return true;
             }
 
-            if (insertionTarget.Parent is GlobalStatementSyntax { Parent: CompilationUnitSyntax } globalStatement)
+            if (usingStatement.Parent is GlobalStatementSyntax { Parent: CompilationUnitSyntax } globalStatement)
             {
                 editor.InsertBefore(globalStatement, SyntaxFactory.GlobalStatement(variableStatement));
                 return true;
@@ -236,10 +231,10 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             return false;
         }
 
-        static bool IsNameUsedOutsideOfUsingStatement(SyntaxNode insertionTarget, UsingStatementSyntax usingStatement, string variableName)
+        static bool IsNameUsedOutsideOfUsingStatement(UsingStatementSyntax usingStatement, string variableName)
         {
             // The variable is moved to the declaration space of the enclosing function, so the name must not be used anywhere in it
-            var scope = insertionTarget.FirstAncestorOrSelf<SyntaxNode>(node => node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or CompilationUnitSyntax);
+            var scope = usingStatement.FirstAncestorOrSelf<SyntaxNode>(node => node is BaseMethodDeclarationSyntax or AccessorDeclarationSyntax or LocalFunctionStatementSyntax or AnonymousFunctionExpressionSyntax or CompilationUnitSyntax);
             if (scope is null)
                 return true;
 

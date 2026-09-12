@@ -99,6 +99,28 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
     }
 
     [Fact]
+    public Task Comparisons_BothOperandsAreNaN_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                void A()
+                {
+                    _ = {|MA0082:double.NaN|} == {|MA0082:double.NaN|};
+                    _ = {|MA0082:double.NaN|} != {|MA0082:double.NaN|};
+                    _ = (double){|MA0082:float.NaN|} == {|MA0082:double.NaN|};
+                }
+            }
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Comparisons_CodeFix_Half()
     {
         var test = CreateTest();
