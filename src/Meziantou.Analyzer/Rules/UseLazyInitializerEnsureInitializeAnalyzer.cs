@@ -46,6 +46,10 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
                     var value = operation.Arguments[1].Value.UnwrapImplicitConversions();
                     if (value is IObjectCreationOperation or ILocalReferenceOperation)
                     {
+                        // The fix moves the value into a lambda, so it must only use values that a lambda can capture
+                        if (!CanBeCapturedByLambda(value))
+                            return;
+
                         context.ReportDiagnostic(Rule, operation);
                     }
                 }
@@ -60,5 +64,33 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
             return false;
 
         return parent is not (null or IBlockOperation or IExpressionStatementOperation);
+    }
+
+    private static bool CanBeCapturedByLambda(IOperation operation)
+    {
+        foreach (var descendant in operation.DescendantsAndSelf())
+        {
+            if (CannotBeCapturedByLambda(descendant))
+                return false;
+        }
+
+        return true;
+
+        static bool CannotBeCapturedByLambda(IOperation operation) => operation switch
+        {
+            // ref, out and in parameters cannot be used inside a lambda (CS1628)
+            IParameterReferenceOperation { Parameter.RefKind: not RefKind.None } => true,
+
+            // ref locals cannot be used inside a lambda (CS8175)
+            ILocalReferenceOperation { Local.IsRef: true } => true,
+
+            // Locals and parameters of a ref struct type cannot be used inside a lambda (CS8175)
+            IParameterReferenceOperation or ILocalReferenceOperation => operation.Type is { IsRefLikeType: true },
+
+            // The 'this' reference of a struct cannot be captured by a lambda (CS1673)
+            IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance } => operation.Type is { IsValueType: true },
+
+            _ => false,
+        };
     }
 }
