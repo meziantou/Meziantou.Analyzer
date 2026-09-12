@@ -17,58 +17,62 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
         if (nodeToFix is not InterpolatedStringExpressionSyntax interpolatedString)
             return;
 
+        var regularString = CreateRegularString(interpolatedString);
+        if (regularString is null)
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Convert to regular string",
-                ct => ConvertToRegularString(context.Document, interpolatedString, ct),
+                ct => ConvertToRegularString(context.Document, interpolatedString, regularString, ct),
                 equivalenceKey: "Convert to regular string"),
             context.Diagnostics);
     }
 
-    private static async Task<Document> ConvertToRegularString(Document document, InterpolatedStringExpressionSyntax interpolatedString, CancellationToken cancellationToken)
+    private static ExpressionSyntax? CreateRegularString(InterpolatedStringExpressionSyntax interpolatedString)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-
         // Check if this is a raw string literal (C# 11+)
         var isRawString = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken) ||
                           interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedSingleLineRawStringStartToken);
         if (isRawString)
         {
-            // For raw strings, simply remove the $ prefix from the start token
-            // $""" text """ -> """ text """
-            var originalText = interpolatedString.ToFullString();
+            // For raw strings, remove the whole $ prefix from the start token, as the number of $ determines
+            // the number of braces that start an interpolation: $$"""{text}""" -> """{text}"""
+            var startTokenText = interpolatedString.StringStartToken.Text;
+            var dollarCount = startTokenText.Length - startTokenText.TrimStart('$').Length;
+            if (dollarCount is 0)
+                return null;
 
-            // Find the position of $ in the start token and remove it
-            var dollarIndex = originalText.IndexOf('$', StringComparison.Ordinal);
-            if (dollarIndex >= 0)
-            {
-                var newText = originalText.Remove(dollarIndex, 1);
-                var newNode = SyntaxFactory.ParseExpression(newText);
+            // The text of the node starts with the start token and does not include the trivia
+            var newText = interpolatedString.ToString().Substring(dollarCount);
+            var newNode = SyntaxFactory.ParseExpression(newText, options: interpolatedString.SyntaxTree.Options);
+            if (!newNode.IsKind(SyntaxKind.StringLiteralExpression) || newNode.ContainsDiagnostics)
+                return null;
 
-                editor.ReplaceNode(interpolatedString, newNode.WithTriviaFrom(interpolatedString));
-            }
+            return newNode;
         }
-        else
+
+        // Extract the string content from the interpolated string
+        var stringContent = string.Empty;
+        foreach (var content in interpolatedString.Contents)
         {
-            // Extract the string content from the interpolated string
-            var stringContent = string.Empty;
-            foreach (var content in interpolatedString.Contents)
+            if (content is InterpolatedStringTextSyntax textSyntax)
             {
-                if (content is InterpolatedStringTextSyntax textSyntax)
-                {
-                    // Use the ValueText which contains the actual string value (not escaped)
-                    stringContent += textSyntax.TextToken.ValueText;
-                }
+                // Use the ValueText which contains the actual string value (not escaped)
+                stringContent += textSyntax.TextToken.ValueText;
             }
-
-            // Create a regular string literal with the same content
-            var regularString = SyntaxFactory.LiteralExpression(
-                SyntaxKind.StringLiteralExpression,
-                SyntaxFactory.Literal(stringContent));
-
-            editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
         }
 
+        // Create a regular string literal with the same content
+        return SyntaxFactory.LiteralExpression(
+            SyntaxKind.StringLiteralExpression,
+            SyntaxFactory.Literal(stringContent));
+    }
+
+    private static async Task<Document> ConvertToRegularString(Document document, InterpolatedStringExpressionSyntax interpolatedString, ExpressionSyntax regularString, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(interpolatedString, regularString.WithTriviaFrom(interpolatedString));
         return editor.GetChangedDocument();
     }
 }
