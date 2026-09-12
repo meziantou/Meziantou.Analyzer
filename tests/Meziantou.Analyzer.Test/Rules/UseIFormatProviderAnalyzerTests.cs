@@ -1021,4 +1021,62 @@ public sealed class UseIFormatProviderAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Parse_OutOfOrderNamedArguments_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0011:decimal.Parse(style: System.Globalization.NumberStyles.Number, s: "1")|};
+            """;
+        test.FixedCode = """
+            _ = decimal.Parse(style: System.Globalization.NumberStyles.Number, s: "1", provider: System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Parse_InOrderNamedArguments_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0011:decimal.Parse(s: "1", style: System.Globalization.NumberStyles.Number)|};
+            """;
+        test.FixedCode = """
+            _ = decimal.Parse(s: "1", style: System.Globalization.NumberStyles.Number, provider: System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Parse_NamedArgumentAfterInsertionIndex_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            {|MA0011:A.Sample($"{DateTime.Now:D}", value: 1)|};
+
+            class A
+            {
+                public static void Sample(FormattableString arg1, int value) => throw null;
+                public static void Sample(FormattableString arg1, IFormatProvider provider, int value) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+
+            A.Sample($"{DateTime.Now:D}", System.Globalization.CultureInfo.InvariantCulture, value: 1);
+
+            class A
+            {
+                public static void Sample(FormattableString arg1, int value) => throw null;
+                public static void Sample(FormattableString arg1, IFormatProvider provider, int value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

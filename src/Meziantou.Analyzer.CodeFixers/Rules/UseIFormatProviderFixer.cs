@@ -27,17 +27,19 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         if (formatProviderSymbol is null || stringSymbol is null)
             return;
 
+        var generator = SyntaxGenerator.GetGenerator(context.Document);
         var overloadFinder = new OverloadFinder(semanticModel.Compilation);
         var overload = overloadFinder.FindOverloadWithAdditionalParameterOfType(
             invocationOperation,
             new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true),
             [new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
-        if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var insertionIndex, out var parameterName))
+        if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var parameterIndex, out var parameterName))
         {
-            RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
-            RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
-            return;
+            var registered = RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
+            registered |= RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
+            if (registered)
+                return;
         }
 
         if (invocationOperation.TargetMethod.Name == nameof(object.ToString) && invocationOperation.Arguments.IsEmpty)
@@ -54,48 +56,62 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             }
         }
 
-        void RegisterCodeFix(string formatProviderExpression, string title)
+        bool RegisterCodeFix(string formatProviderExpression, string title)
         {
+            var newInvocation = CreateInvocationWithFormatProvider(semanticModel, generator, invocationExpression, parameterIndex, parameterName, formatProviderExpression, formatProviderSymbol);
+            if (newInvocation is null)
+                return false;
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
-                    ct => AddFormatProviderArgument(context.Document, invocationExpression, insertionIndex, parameterName, formatProviderExpression, ct),
+                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, ct),
                     equivalenceKey: title),
                 context.Diagnostics);
+            return true;
         }
 
         void RegisterToStringCodeFix(string formatProviderExpression, string title)
         {
+            var newInvocation = CreateToStringInvocation(semanticModel, invocationExpression, overload!, formatProviderSymbol, formatProviderExpression);
+            if (newInvocation is null)
+                return;
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
-                    ct => AddFormatAndFormatProviderArguments(context.Document, invocationExpression, overload!, formatProviderSymbol, formatProviderExpression, ct),
+                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, ct),
                     equivalenceKey: title),
                 context.Diagnostics);
         }
     }
 
-    private static async Task<Document> AddFormatProviderArgument(Document document, InvocationExpressionSyntax invocationExpression, int insertionIndex, string parameterName, string formatProviderExpression, CancellationToken cancellationToken)
+    private static InvocationExpressionSyntax? CreateInvocationWithFormatProvider(SemanticModel semanticModel, SyntaxGenerator generator, InvocationExpressionSyntax invocationExpression, int parameterIndex, string parameterName, string formatProviderExpression, ITypeSymbol formatProviderSymbol)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
+        var arguments = invocationExpression.ArgumentList.Arguments;
 
-        var formatProviderSyntax = SyntaxFactory.ParseExpression(formatProviderExpression);
-        var currentArguments = invocationExpression.ArgumentList.Arguments;
-        var newArguments = insertionIndex > currentArguments.Count
-            ? currentArguments.Add((ArgumentSyntax)generator.Argument(parameterName, RefKind.None, formatProviderSyntax))
-            : currentArguments.Insert(insertionIndex, (ArgumentSyntax)generator.Argument(formatProviderSyntax));
+        // A positional argument can only be added at the index of the parameter when all the arguments written before it are positional.
+        // Otherwise, C# does not allow it (CS1738, CS1739) or it would be bound to another parameter.
+        if (parameterIndex <= arguments.Count && !arguments.Take(parameterIndex).Any(argument => argument.NameColon is not null))
+        {
+            var positionalArgument = (ArgumentSyntax)generator.Argument(SyntaxFactory.ParseExpression(formatProviderExpression));
+            var candidate = ReplaceArguments(invocationExpression, arguments.Insert(parameterIndex, positionalArgument));
+            if (GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && parameterIndex < method.Parameters.Length && method.Parameters[parameterIndex].Type.IsOrInheritsFrom(formatProviderSymbol))
+                return candidate;
+        }
 
-        editor.ReplaceNode(invocationExpression, invocationExpression.WithArgumentList(SyntaxFactory.ArgumentList(newArguments)));
-        return editor.GetChangedDocument();
+        // A named argument added at the end of the list is valid whatever the order of the existing arguments, and keeps their evaluation order
+        var namedArgument = (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, SyntaxFactory.ParseExpression(formatProviderExpression));
+        var namedCandidate = ReplaceArguments(invocationExpression, arguments.Add(namedArgument));
+        var namedParameter = GetTargetMethod(semanticModel, invocationExpression, namedCandidate)?.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, parameterName, StringComparison.Ordinal));
+        if (namedParameter is not null && namedParameter.Type.IsOrInheritsFrom(formatProviderSymbol))
+            return namedCandidate;
+
+        return null;
     }
 
-    private static async Task<Document> AddFormatAndFormatProviderArguments(Document document, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression, CancellationToken cancellationToken)
+    private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-            return document;
-
         var arguments = new List<ArgumentSyntax>(capacity: overload.Parameters.Length);
         foreach (var parameter in overload.Parameters)
         {
@@ -110,18 +126,41 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             }
             else
             {
-                return document;
+                return null;
             }
 
             arguments.Add(SyntaxFactory.Argument(expression));
         }
 
-        var newInvocation = invocationExpression.WithArgumentList(SyntaxFactory.ArgumentList(SyntaxFactory.SeparatedList(arguments)));
-        var newRoot = root.ReplaceNode(invocationExpression, newInvocation);
-        return document.WithSyntaxRoot(newRoot);
+        var candidate = ReplaceArguments(invocationExpression, SyntaxFactory.SeparatedList(arguments));
+        if (GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
+            return candidate;
+
+        return null;
     }
 
-    private static bool TryGetFormatProviderParameterInfo(IMethodSymbol method, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, out int insertionIndex, out string parameterName)
+    private static InvocationExpressionSyntax ReplaceArguments(InvocationExpressionSyntax invocationExpression, SeparatedSyntaxList<ArgumentSyntax> arguments)
+    {
+        return invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(arguments));
+    }
+
+    /// <summary>
+    /// Gets the method the invocation would be bound to, so the fix is only offered when the new invocation compiles
+    /// and the new argument is bound to the expected parameter.
+    /// </summary>
+    private static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation)
+    {
+        return semanticModel.GetSpeculativeSymbolInfo(invocationExpression.SpanStart, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
+    }
+
+    private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(invocationExpression, newInvocation);
+        return editor.GetChangedDocument();
+    }
+
+    private static bool TryGetFormatProviderParameterInfo(IMethodSymbol method, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, out int parameterIndex, out string parameterName)
     {
         for (var i = 0; i < overload.Parameters.Length; i++)
         {
@@ -131,13 +170,13 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
             if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritsFrom(formatProviderSymbol))
             {
-                insertionIndex = i;
+                parameterIndex = i;
                 parameterName = parameter.Name;
                 return true;
             }
         }
 
-        insertionIndex = -1;
+        parameterIndex = -1;
         parameterName = string.Empty;
         return false;
     }
