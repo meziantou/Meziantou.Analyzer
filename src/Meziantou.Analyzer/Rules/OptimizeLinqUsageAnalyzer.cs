@@ -612,7 +612,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() == 1
-                            if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                            // 'Take(value + 1)' must not overflow, so 'int.MaxValue' is not reported
+                            if (!HasTake(operation, ExtensionMethodOwnerTypes) && OptimizeLinqUsageAnalyzerCommon.CanUseTakeAndCount(otherOperand, operation.Syntax, context.Compilation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -637,7 +638,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() != 1
-                            if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                            // 'Take(value + 1)' must not overflow, so 'int.MaxValue' is not reported
+                            if (!HasTake(operation, ExtensionMethodOwnerTypes) && OptimizeLinqUsageAnalyzerCommon.CanUseTakeAndCount(otherOperand, operation.Syntax, context.Compilation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -743,7 +745,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     case BinaryOperatorKind.Equals:
                         // expr.Count() == 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                        // 'Take(n + 1)' must not throw, so nothing is reported in a checked context where 'n' may be 'int.MaxValue'
+                        if (!HasTake(operation, ExtensionMethodOwnerTypes) && OptimizeLinqUsageAnalyzerCommon.CanUseTakeAndCount(otherOperand, operation.Syntax, context.Compilation))
                         {
                             message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
                             properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -753,7 +756,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                     case BinaryOperatorKind.NotEquals:
                         // expr.Count() != 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                        // 'Take(n + 1)' must not throw, so nothing is reported in a checked context where 'n' may be 'int.MaxValue'
+                        if (!HasTake(operation, ExtensionMethodOwnerTypes) && OptimizeLinqUsageAnalyzerCommon.CanUseTakeAndCount(otherOperand, operation.Syntax, context.Compilation))
                         {
                             message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
                             properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);

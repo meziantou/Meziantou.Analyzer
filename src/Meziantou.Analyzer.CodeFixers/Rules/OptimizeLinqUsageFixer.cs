@@ -149,6 +149,9 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 if (!TryGetCountOperationSpan(diagnostic, out var takeCountSpan) || !TryGetOperandOperationSpan(diagnostic, out var takeOperandSpan))
                     return;
 
+                if (!await CanUseTakeAndCountAsync(context.Document, takeCountSpan, takeOperandSpan, context.CancellationToken).ConfigureAwait(false))
+                    return;
+
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, takeCountSpan, takeOperandSpan, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
@@ -169,6 +172,25 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 context.RegisterCodeFix(CodeAction.Create(title, ct => UseOrderInsteadOfOrderBy(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
+    }
+
+    private static async Task<bool> CanUseTakeAndCountAsync(Document document, TextSpan countOperationSpan, TextSpan operandOperationSpan, CancellationToken cancellationToken)
+    {
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        var countNode = root?.FindNode(countOperationSpan, getInnermostNodeForTie: true);
+        var operandNode = root?.FindNode(operandOperationSpan, getInnermostNodeForTie: true);
+        if (countNode is null || operandNode is null)
+            return false;
+
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel is null)
+            return false;
+
+        var operandOperation = semanticModel.GetOperation(operandNode, cancellationToken);
+        if (operandOperation is null)
+            return false;
+
+        return OptimizeLinqUsageAnalyzerCommon.CanUseTakeAndCount(operandOperation, countNode, semanticModel.Compilation);
     }
 
     private static bool TryGetFirstOperationSpan(Diagnostic diagnostic, out TextSpan span)

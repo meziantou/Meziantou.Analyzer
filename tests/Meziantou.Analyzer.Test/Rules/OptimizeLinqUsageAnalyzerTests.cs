@@ -722,6 +722,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [Theory]
     [InlineData("Count() == 1", "Take(2).Count() == 1", "Replace 'Count() == 1' with 'Take(2).Count() == 1'")]
     [InlineData("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
+    [InlineData("Count() == int.MaxValue - 1", "Take(int.MaxValue).Count() == int.MaxValue - 1", "Replace 'Count() == 2147483646' with 'Take(2147483647).Count() == 2147483646'")]
     [InlineData("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
     [InlineData("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
     public Task Count_TakeAndCount(string text, string fix, string expectedMessage)
@@ -764,6 +765,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
     [InlineData("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
     [InlineData("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
+    [InlineData("Count() > int.MaxValue", "Skip(int.MaxValue).Any()", "Replace 'Count() > 2147483647' with 'Skip(2147483647).Any()'")]
+    [InlineData("Count() >= int.MaxValue", "Skip(2147483646).Any()", "Replace 'Count() >= 2147483647' with 'Skip(2147483646).Any()'")]
     public Task Count_SkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -805,6 +808,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
     [InlineData("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
     [InlineData("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+    [InlineData("Count() < int.MaxValue", "Skip(2147483646).Any()", "Replace 'Count() < 2147483647' with 'Skip(2147483646).Any() == false'")]
+    [InlineData("Count() <= int.MaxValue", "Skip(int.MaxValue).Any()", "Replace 'Count() <= 2147483647' with 'Skip(2147483647).Any() == false'")]
     public Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -841,6 +846,8 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
     [Theory]
     [InlineData("Take(10).Count() == 1")]
+    [InlineData("Count() == int.MaxValue")]
+    [InlineData("Count() == 2147483647")]
     public Task Count_Equals(string text)
     {
         var test = new CodeFixTest();
@@ -862,6 +869,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
     [Theory]
     [InlineData("Take(1).Count() != n")]
+    [InlineData("Count() != int.MaxValue")]
     public Task Count_NotEquals(string text)
     {
         var test = new CodeFixTest();
@@ -874,6 +882,97 @@ public sealed class OptimizeLinqUsageAnalyzerTests
                     int n = 10;
                     var enumerable = System.Linq.Enumerable.Empty<int>();
                     _ = enumerable.{{text}};
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_TakeAndCount_CheckedContext()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    int n = 10;
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    checked
+                    {
+                        _ = enumerable.Count() == n;
+                    }
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_TakeAndCount_CheckOverflowCompilationOption()
+    {
+        var test = new CodeFixTest();
+        test.SolutionTransforms.Add((solution, projectId) =>
+        {
+            var compilationOptions = (CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!;
+            return solution.WithProjectCompilationOptions(projectId, compilationOptions.WithOverflowChecks(true));
+        });
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    int n = 10;
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    _ = enumerable.Count() == n;
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_TakeAndCount_UncheckedContextInsideCheckedContext()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    int n = 10;
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    checked
+                    {
+                        _ = unchecked({|#0:enumerable.Count() == n|});
+                    }
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0031", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Replace 'Count() == n' with 'Take(n + 1).Count() == n'"));
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                public Test()
+                {
+                    int n = 10;
+                    var enumerable = System.Linq.Enumerable.Empty<int>();
+                    checked
+                    {
+                        _ = unchecked(enumerable.Take(n + 1).Count() == n);
+                    }
                 }
             }
 
