@@ -86,6 +86,38 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypesTests
     }
 
     [Fact]
+    public Task StaticMembers_Event()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Test<T>
+            {
+                public static event System.EventHandler {|MA0018:MyEvent|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StaticMembers_EventWithExplicitAccessors()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Test<T>
+            {
+                public static event System.EventHandler {|MA0018:MyEvent|}
+                {
+                    add => throw null;
+                    remove => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task StaticMembers_Operator()
     {
         var test = CreateTest();

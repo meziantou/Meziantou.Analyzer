@@ -36,8 +36,8 @@ public sealed class DoNotDeclareStaticMembersOnGenericTypes : DiagnosticAnalyzer
                 if (member.IsAbstract || member.IsVirtual)
                     continue;
 
-                // skip properties
-                if (member is IMethodSymbol method && (method.MethodKind == MethodKind.PropertyGet || method.MethodKind == MethodKind.PropertySet))
+                // The accessors are reported through the property or event they belong to
+                if (member is IMethodSymbol { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove })
                     continue;
 
                 // skip operators
