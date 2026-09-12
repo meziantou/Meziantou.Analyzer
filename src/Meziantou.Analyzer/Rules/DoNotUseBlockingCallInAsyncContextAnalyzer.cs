@@ -1,5 +1,8 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Meziantou.Analyzer.Configurations;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -60,7 +63,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private readonly INamedTypeSymbol[] _taskAwaiterLikeSymbols;
         private readonly HashSet<ISymbol> _excludedDiagnosticSymbols;
         private readonly HashSet<INamedTypeSymbol> _nonAsyncDisposableTypes;
-        private readonly ConcurrentHashSet<IMethodSymbol> _symbolsWithNoAsyncOverloads = new(SymbolEqualityComparer.Default);
+        private readonly ConcurrentDictionary<LookupScope, ConcurrentHashSet<IMethodSymbol>> _symbolsWithNoAsyncOverloads = new();
 
         public Context(Compilation compilation)
         {
@@ -194,35 +197,44 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
-            // Methods skipped because of the Sqlite special cases are never added to the cache, so a cache hit means
-            // the method has no async equivalent whatever the instance is.
-            if (_symbolsWithNoAsyncOverloads.Contains(targetMethod))
+            // The async equivalent is searched from the call site, so the same method can have an async equivalent in
+            // one scope and none in another one. The cache is therefore per scope, and the results depending on the
+            // instance or on the arguments of the call, such as the Sqlite special cases, are never added to it.
+            var scope = LookupScope.Create(operation.Syntax);
+            _symbolsWithNoAsyncOverloads.TryGetValue(scope, out var methodsWithNoAsyncOverload);
+            if (methodsWithNoAsyncOverload is not null && methodsWithNoAsyncOverload.Contains(targetMethod))
                 return;
 
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
-            if (HasAsyncEquivalent(operation, sqliteSpecialCasesEnabled, context.CancellationToken, out var diagnosticMessage))
+            var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, context.CancellationToken, out var diagnosticMessage);
+            if (diagnosticMessage is not null)
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage);
             }
-            else if (!sqliteSpecialCasesEnabled || !IsSqliteSpecialCaseMethod(operation, context.CancellationToken))
+            else if (result is AsyncEquivalentSearchResult.NotFound)
             {
-                _symbolsWithNoAsyncOverloads.Add(targetMethod);
+                methodsWithNoAsyncOverload ??= _symbolsWithNoAsyncOverloads.GetOrAdd(scope, static _ => new ConcurrentHashSet<IMethodSymbol>(SymbolEqualityComparer.Default));
+                methodsWithNoAsyncOverload.Add(targetMethod);
             }
         }
 
-        private bool HasAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, CancellationToken cancellationToken, [NotNullWhen(true)] out DiagnosticData? data)
+        /// <summary>
+        /// Searches for an async equivalent of the called method, visible from the call site. <paramref name="data"/>
+        /// is set when the result is <see cref="AsyncEquivalentSearchResult.Found"/>.
+        /// </summary>
+        private AsyncEquivalentSearchResult FindAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, CancellationToken cancellationToken, out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
 
             if (_awaitableTypes.IsAwaitable(targetMethod.ReturnType, operation.SemanticModel!, operation.Syntax.SpanStart))
-                return false;
+                return AsyncEquivalentSearchResult.NotFound;
 
             // Process.WaitForExit => Skip because the async method is not equivalent https://github.com/dotnet/runtime/issues/42556
             if (targetMethod.Name == nameof(System.Diagnostics.Process.WaitForExit) && targetMethod.ContainingType.IsEqualTo(ProcessSymbol))
             {
                 if (targetMethod.ContainingType.ContainingAssembly.Identity.Version < Version6)
-                    return false;
+                    return AsyncEquivalentSearchResult.NotFound;
             }
 
             // Task.Wait()
@@ -232,12 +244,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (operation.Arguments.Length == 0)
                 {
                     data = new("Use await instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait);
-                    return true;
+                    return AsyncEquivalentSearchResult.Found;
                 }
                 else
                 {
                     data = new("Use 'WaitAsync' instead of 'Wait()'", DoNotUseBlockingCallInAsyncContextData.Task_Wait_Delay);
-                    return true;
+                    return AsyncEquivalentSearchResult.Found;
                 }
             }
 
@@ -247,7 +259,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(_taskAwaiterLikeSymbols))
                 {
                     data = new("Use await instead of 'GetResult()'", DoNotUseBlockingCallInAsyncContextData.TaskAwaiter_GetResult);
-                    return true;
+                    return AsyncEquivalentSearchResult.Found;
                 }
             }
 
@@ -257,7 +269,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (targetMethod.ContainingType.IsEqualTo(ThreadSymbol))
                 {
                     data = new("Use await and 'Task.Delay()' instead of 'Thread.Sleep()'", DoNotUseBlockingCallInAsyncContextData.Thread_Sleep);
-                    return true;
+                    return AsyncEquivalentSearchResult.Found;
                 }
             }
 
@@ -268,20 +280,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (left is IMemberReferenceOperation memberReference)
                 {
                     if (ConsoleErrorAndOutSymbols.Contains(memberReference.Member, SymbolEqualityComparer.Default))
-                        return false;
+                        return AsyncEquivalentSearchResult.NotFoundForThisCall;
                 }
             }
 
             else if (ServiceProviderServiceExtensions_CreateAsyncScopeSymbol is not null && ServiceProviderServiceExtensions_CreateScopeSymbol is not null && targetMethod.IsEqualTo(ServiceProviderServiceExtensions_CreateScopeSymbol))
             {
                 data = new($"Use 'CreateAsyncScope' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.CreateAsyncScope);
-                return true;
+                return AsyncEquivalentSearchResult.Found;
             }
 
             // https://learn.microsoft.com/en-us/dotnet/api/microsoft.entityframeworkcore.dbcontext.addasync?view=efcore-6.0&WT.mc_id=DT-MVP-5003978#overloads
             else if ((DbContextSymbol is not null || DbSetSymbol is not null) && targetMethod.Name is "Add" or "AddRange" && targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(DbContextSymbol, DbSetSymbol))
             {
-                return false;
+                return AsyncEquivalentSearchResult.NotFound;
             }
 
             // IDbContextFactory<TContext>.CreateDbContext() - CreateDbContextAsync() is only for specific edge-cases
@@ -290,7 +302,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                      (targetMethod.ContainingType.OriginalDefinition.IsEqualTo(DbContextFactorySymbol) ||
                       targetMethod.ContainingType.ImplementsGenericInterface(DbContextFactorySymbol)))
             {
-                return false;
+                return AsyncEquivalentSearchResult.NotFound;
             }
 
             // Async APIs in Microsoft.Data.Sqlite have documented limitations.
@@ -298,18 +310,18 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             // https://learn.microsoft.com/en-us/dotnet/standard/data/sqlite/async
             else if (sqliteSpecialCasesEnabled && IsSqliteSpecialCaseMethod(operation, cancellationToken))
             {
-                return false;
+                return AsyncEquivalentSearchResult.NotFoundForThisCall;
             }
 
             else if (Moq_MockSymbol is not null && targetMethod.Name is "Raise" && targetMethod.ContainingType.OriginalDefinition.IsEqualTo(Moq_MockSymbol))
             {
-                return false;
+                return AsyncEquivalentSearchResult.NotFound;
             }
 
             // SemaphoreSlim.Wait(0) is a non-blocking try-acquire pattern, skip it
             else if (SemaphoreSlimSymbol is not null && targetMethod.Name == "Wait" && targetMethod.ContainingType.IsEqualTo(SemaphoreSlimSymbol) && IsSemaphoreSlimWaitWithZeroTimeout(operation, cancellationToken))
             {
-                return false;
+                return AsyncEquivalentSearchResult.NotFoundForThisCall;
             }
 
             // Search async equivalent: sample.Write() => sample.WriteAsync()
@@ -319,7 +331,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 if (asyncEquivalentMethod is not null)
                 {
                     data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
-                    return true;
+                    return AsyncEquivalentSearchResult.Found;
                 }
 
                 if (!targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
@@ -328,12 +340,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     if (asyncEquivalentMethod is not null)
                     {
                         data = new($"Use '{asyncEquivalentMethod.Name}' instead of '{targetMethod.Name}'", DoNotUseBlockingCallInAsyncContextData.Overload, asyncEquivalentMethod.Name);
-                        return true;
+                        return AsyncEquivalentSearchResult.Found;
                     }
                 }
             }
 
-            return false;
+            return AsyncEquivalentSearchResult.NotFound;
         }
 
         private static bool IsSqliteSpecialCasesEnabled(OperationAnalysisContext context, IOperation operation)
@@ -797,6 +809,48 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var dbSpecialCasesEnabled = IsDbSpecialCasesEnabled(context, operation);
             ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled);
         }
+    }
+
+    /// <summary>
+    /// The scope in which the async equivalent of a call is searched. The members in scope at the call site depend
+    /// on the using directives of the file and of the enclosing namespaces, and their accessibility depends on the
+    /// enclosing type: both are the same for all the positions of a type declaration. The editorconfig options are
+    /// also the same, as they are configured per file.
+    /// </summary>
+    private readonly record struct LookupScope(SyntaxTree SyntaxTree, TextSpan Span)
+    {
+        /// <summary>
+        /// Creates the scope of a node: the type declaration containing it, or the whole file when there is none,
+        /// such as for the top-level statements.
+        /// </summary>
+        public static LookupScope Create(SyntaxNode node)
+        {
+            var current = node;
+            while (current is not TypeDeclarationSyntax && current.Parent is not null)
+            {
+                current = current.Parent;
+            }
+
+            return new LookupScope(current.SyntaxTree, current.Span);
+        }
+    }
+
+    private enum AsyncEquivalentSearchResult
+    {
+        /// <summary>An async equivalent is available at the call site.</summary>
+        Found,
+
+        /// <summary>
+        /// No async equivalent is available. The result only depends on the called method and on the scope of the
+        /// call site, so it can be cached for the other calls to the same method in the same scope.
+        /// </summary>
+        NotFound,
+
+        /// <summary>
+        /// No async equivalent is available for this call. The result depends on the instance or on the arguments
+        /// of the call, so it must not be cached.
+        /// </summary>
+        NotFoundForThisCall,
     }
 
     private sealed class DiagnosticData

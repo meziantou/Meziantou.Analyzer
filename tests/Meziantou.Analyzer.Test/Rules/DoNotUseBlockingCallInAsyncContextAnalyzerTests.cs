@@ -601,6 +601,26 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    public Task Console_DoesNotHideTheOtherTextWriters()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.IO;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A(TextWriter writer)
+                {
+                    System.Console.Out.Write(' ');
+                    {|MA0042:writer.Write(' ')|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ProcessWaitForExit_NET5()
     {
         var test = new CodeFixTest();
@@ -1028,6 +1048,101 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
                 }
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NotInScopeInAnotherFile()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class WithoutUsing
+            {
+                public async Task A(Sample sample)
+                {
+                    sample.Do();
+                }
+            }
+            """;
+        test.TestState.Sources.Add("""
+            using System.Threading.Tasks;
+            using Ext;
+
+            class WithUsing
+            {
+                public async Task A(Sample sample)
+                {
+                    {|MA0042:sample.Do()|};
+                }
+            }
+            """);
+        test.TestState.Sources.Add("""
+            using System.Threading.Tasks;
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """);
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NotInScopeInAnotherNamespaceOfTheSameFile()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class WithoutUsing
+            {
+                public async Task A(Sample sample)
+                {
+                    sample.Do();
+                }
+            }
+
+            namespace Consumer
+            {
+                using Ext;
+
+                class WithUsing
+                {
+                    public async Task A(Sample sample)
+                    {
+                        {|MA0042:sample.Do()|};
+                    }
+                }
+            }
+            """;
+        test.TestState.Sources.Add("""
+            using System.Threading.Tasks;
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """);
 
         return test.RunAsync();
     }
@@ -2685,6 +2800,27 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
                 public async Task A()
                 {
                     var semaphore = new SemaphoreSlim(1);
+                    {|MA0042:semaphore.Wait(100)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SemaphoreSlim_Wait_ZeroDoesNotHideNonZero_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
+                {
+                    var semaphore = new SemaphoreSlim(1);
+                    semaphore.Wait(0);
                     {|MA0042:semaphore.Wait(100)|};
                 }
             }
