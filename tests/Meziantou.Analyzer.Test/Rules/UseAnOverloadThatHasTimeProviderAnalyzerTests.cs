@@ -226,4 +226,207 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
 
         return test.RunAsync();
     }
+    [Fact]
+    public Task NamedArguments_OutOfOrder()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => {|MA0166:System.Threading.Tasks.Task.Delay(cancellationToken: token, delay: System.TimeSpan.Zero)|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.Delay(cancellationToken: token, delay: System.TimeSpan.Zero, timeProvider: foo);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NamedArguments_InOrder()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => {|MA0166:System.Threading.Tasks.Task.Delay(delay: System.TimeSpan.Zero, cancellationToken: token)|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.Delay(delay: System.TimeSpan.Zero, cancellationToken: token, timeProvider: foo);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NamedArgumentAfterTimeProviderParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, cancellationToken: token)|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo, cancellationToken: token);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PositionalArgumentAfterTimeProviderParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, token)|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                System.Threading.Tasks.Task A(System.TimeProvider foo, System.Threading.CancellationToken token)
+                    => System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo, token);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionalParameter_WithNamedArgumentBeforeTimeProvider()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                static void Delay(int a = 0, int b = 0, System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    {|MA0166:Delay(b: 1)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                static void Delay(int a = 0, int b = 0, System.TimeProvider timeProvider = null)
+                {
+                }
+
+                void A(System.TimeProvider foo)
+                {
+                    Delay(b: 1, timeProvider: foo);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+    [Fact]
+    public Task ExtensionMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Test
+            {
+                static void A(this string str, int a) { }
+                static void A(this string str, int a, System.TimeProvider timeProvider) { }
+
+                static void B(System.TimeProvider foo) => {|MA0166:"".A(0)|};
+            }
+            """;
+        test.FixedCode = """
+            static class Test
+            {
+                static void A(this string str, int a) { }
+                static void A(this string str, int a, System.TimeProvider timeProvider) { }
+
+                static void B(System.TimeProvider foo) => "".A(0, timeProvider: foo);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                static void Delay(params int[] values) { }
+                static void Delay(System.TimeProvider timeProvider, params int[] values) { }
+
+                void A(System.TimeProvider foo)
+                {
+                    {|MA0166:Delay(1, 2)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                static void Delay(params int[] values) { }
+                static void Delay(System.TimeProvider timeProvider, params int[] values) { }
+
+                void A(System.TimeProvider foo)
+                {
+                    Delay(foo, 1, 2);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+    [Fact]
+    public Task NoFix_WhenTheProviderCannotBeAddedWithoutReorderingTheArguments()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Test
+            {
+                static void A(this string str, int a) { }
+                static void A(this string str, System.TimeProvider timeProvider, int a) { }
+
+                static void B(System.TimeProvider foo) => {|MA0166:"".A(0)|};
+            }
+            """;
+        test.FixedCode = """
+            static class Test
+            {
+                static void A(this string str, int a) { }
+                static void A(this string str, System.TimeProvider timeProvider, int a) { }
+
+                static void B(System.TimeProvider foo) => {|MA0166:"".A(0)|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
