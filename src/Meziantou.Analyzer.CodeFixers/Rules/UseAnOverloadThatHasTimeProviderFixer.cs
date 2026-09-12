@@ -34,7 +34,16 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
         var generator = SyntaxGenerator.GetGenerator(context.Document);
         foreach (var path in paths.Split(','))
         {
-            var newInvocation = CreateInvocation(semanticModel, generator, invocationExpression, parameterIndex, parameterName, path, timeProviderSymbol);
+            var newInvocation = ArgumentListHelper.AddArgument(
+                semanticModel,
+                generator,
+                invocationExpression,
+                parameterIndex,
+                parameterName,
+                SyntaxFactory.ParseExpression(path),
+                parameter => parameter.Type.IsEqualTo(timeProviderSymbol),
+                cancellationToken: context.CancellationToken);
+
             if (newInvocation is null)
                 continue;
 
@@ -46,45 +55,6 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
-    }
-
-    private static InvocationExpressionSyntax? CreateInvocation(SemanticModel semanticModel, SyntaxGenerator generator, InvocationExpressionSyntax nodeToFix, int parameterIndex, string parameterName, string timeProviderPath, INamedTypeSymbol timeProviderSymbol)
-    {
-        var timeProviderExpression = SyntaxFactory.ParseExpression(timeProviderPath);
-        var arguments = nodeToFix.ArgumentList.Arguments;
-
-        // A positional argument can only be added at the index of the parameter when all the arguments written before it are positional.
-        // Otherwise, C# does not allow it (CS1738, CS1739, CS8323) or it would be bound to the wrong parameter.
-        if (parameterIndex <= arguments.Count && !arguments.Take(parameterIndex).Any(argument => argument.NameColon is not null))
-        {
-            var positionalArgument = (ArgumentSyntax)generator.Argument(timeProviderExpression);
-            var candidate = ReplaceArguments(nodeToFix, arguments.Insert(parameterIndex, positionalArgument));
-            if (GetTargetMethod(semanticModel, nodeToFix, candidate) is { } method && parameterIndex < method.Parameters.Length && method.Parameters[parameterIndex].Type.IsEqualTo(timeProviderSymbol))
-                return candidate;
-        }
-
-        // A named argument added at the end of the list is valid whatever the order of the existing arguments
-        var namedArgument = (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, timeProviderExpression);
-        var namedCandidate = ReplaceArguments(nodeToFix, arguments.Add(namedArgument));
-        var namedParameter = GetTargetMethod(semanticModel, nodeToFix, namedCandidate)?.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, parameterName, StringComparison.Ordinal));
-        if (namedParameter is not null && namedParameter.Type.IsEqualTo(timeProviderSymbol))
-            return namedCandidate;
-
-        return null;
-    }
-
-    private static InvocationExpressionSyntax ReplaceArguments(InvocationExpressionSyntax nodeToFix, SeparatedSyntaxList<ArgumentSyntax> arguments)
-    {
-        return nodeToFix.WithArgumentList(nodeToFix.ArgumentList.WithArguments(arguments));
-    }
-
-    /// <summary>
-    /// Gets the method the invocation would be bound to, so the fix is only offered when the new invocation compiles
-    /// and the new argument is bound to the expected parameter.
-    /// </summary>
-    private static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation)
-    {
-        return semanticModel.GetSpeculativeSymbolInfo(nodeToFix.SpanStart, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
     }
 
     private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
