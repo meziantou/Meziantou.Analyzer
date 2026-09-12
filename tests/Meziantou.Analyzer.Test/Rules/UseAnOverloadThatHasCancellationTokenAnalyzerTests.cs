@@ -1655,4 +1655,113 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+    [Fact]
+    public Task NamedArguments_OutOfOrder()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, int y, CancellationToken token) => x + y;
+
+                public static object A(CancellationToken token) => {|MA0040:M(y: 2, x: 1)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, int y, CancellationToken token) => x + y;
+
+                public static object A(CancellationToken token) => M(y: 2, x: 1, token: token);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NamedArguments_InOrder()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, int y, CancellationToken token) => x + y;
+
+                public static object A(CancellationToken token) => {|MA0040:M(x: 1, y: 2)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, int y, CancellationToken token) => x + y;
+
+                public static object A(CancellationToken token) => M(x: 1, y: 2, token: token);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NamedArgumentAfterCancellationTokenParameter()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, CancellationToken token, int y) => x + y;
+
+                public static object A(CancellationToken token) => {|MA0040:M(1, y: 2)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            class Test
+            {
+                static int M(int x, int y) => x + y;
+                static int M(int x, CancellationToken token, int y) => x + y;
+
+                public static object A(CancellationToken token) => M(1, token, y: 2);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptionalParameter_WithNamedArgumentBeforeCancellationToken()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                static void M(int a = 0, int b = 0, CancellationToken token = default) => throw null;
+
+                public static void A(CancellationToken token) => {|MA0040:M(b: 1)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            class Test
+            {
+                static void M(int a = 0, int b = 0, CancellationToken token = default) => throw null;
+
+                public static void A(CancellationToken token) => M(b: 1, token: token);
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
