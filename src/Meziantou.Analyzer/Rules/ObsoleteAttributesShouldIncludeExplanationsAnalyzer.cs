@@ -1,4 +1,6 @@
-﻿namespace Meziantou.Analyzer.Rules;
+﻿using Microsoft.CodeAnalysis.CSharp.Syntax;
+
+namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : DiagnosticAnalyzer
@@ -26,14 +28,31 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
             if (type is null)
                 return;
 
-            ctx.RegisterSymbolAction(symbolContext => AnalyzeMethod(symbolContext, type), SymbolKind.Method);
+            // ObsoleteAttribute is valid on classes, structs, enums, interfaces, delegates, constructors,
+            // methods, properties, indexers, fields and events, so all those symbol kinds must be analyzed.
+            ctx.RegisterSymbolAction(
+                symbolContext => AnalyzeSymbol(symbolContext, type),
+                SymbolKind.NamedType,
+                SymbolKind.Method,
+                SymbolKind.Property,
+                SymbolKind.Field,
+                SymbolKind.Event);
         });
     }
 
-    private static void AnalyzeMethod(SymbolAnalysisContext context, INamedTypeSymbol obsoleteAttributeTypeSymbol)
+    private static void AnalyzeSymbol(SymbolAnalysisContext context, INamedTypeSymbol obsoleteAttributeTypeSymbol)
     {
-        var method = (IMethodSymbol)context.Symbol;
-        foreach (var attribute in method.GetAttributes())
+        var symbol = context.Symbol;
+
+        // Synthesized symbols such as the backing field of an auto-property cannot carry an attribute of their own
+        if (symbol.IsImplicitlyDeclared)
+            return;
+
+        // All the symbols of "[Obsolete] int a, b;" share the same attribute, so only report it once
+        if (IsSecondaryVariableDeclarator(symbol, context.CancellationToken))
+            return;
+
+        foreach (var attribute in symbol.GetAttributes())
         {
             if (!attribute.AttributeClass.IsEqualTo(obsoleteAttributeTypeSymbol))
                 continue;
@@ -41,15 +60,33 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
             if (attribute.ConstructorArguments.Length == 0)
             {
                 var location = attribute.ApplicationSyntaxReference?.GetSyntax(context.CancellationToken).GetLocation();
-                if (location != null)
+                if (location is not null)
                 {
                     context.ReportDiagnostic(Rule, location);
                 }
                 else
                 {
-                    context.ReportDiagnostic(Rule, method);
+                    context.ReportDiagnostic(Rule, symbol);
                 }
             }
         }
+    }
+
+    private static bool IsSecondaryVariableDeclarator(ISymbol symbol, CancellationToken cancellationToken)
+    {
+        if (symbol.Kind is not (SymbolKind.Field or SymbolKind.Event))
+            return false;
+
+        foreach (var reference in symbol.DeclaringSyntaxReferences)
+        {
+            if (reference.GetSyntax(cancellationToken) is VariableDeclaratorSyntax { Parent: VariableDeclarationSyntax declaration } declarator
+                && declaration.Variables.Count > 1
+                && declaration.Variables[0] != declarator)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
