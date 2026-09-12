@@ -74,23 +74,54 @@ internal static class ConditionalCompilationBranchesAreIdenticalCommon
     private static string ComputeBranchSignature(SourceText sourceText, TextSpan span)
     {
         var text = sourceText.ToString(span);
-        var tokens = SyntaxFactory.ParseTokens(text);
         var builder = new StringBuilder();
-        foreach (var token in tokens)
-        {
-            if (token.RawKind == (int)SyntaxKind.EndOfFileToken)
-                continue;
-
-            builder.Append(token.RawKind);
-            builder.Append(':');
-            builder.Append(token.Text);
-            builder.Append(';');
-        }
-
-        if (builder.Length == 0)
+        if (!AppendTokens(builder, text))
             return text.Trim();
 
         return builder.ToString();
+    }
+
+    private static bool AppendTokens(StringBuilder builder, string text)
+    {
+        var hasToken = false;
+        foreach (var token in SyntaxFactory.ParseTokens(text))
+        {
+            // Preprocessor directives are parsed as trivia, so they must be appended explicitly.
+            // Otherwise, two branches containing different nested directives would have the same signature.
+            AppendPreprocessorTrivia(builder, token.LeadingTrivia);
+            if (token.RawKind != (int)SyntaxKind.EndOfFileToken)
+            {
+                hasToken = true;
+                builder.Append(token.RawKind);
+                builder.Append(':');
+                builder.Append(token.Text);
+                builder.Append(';');
+            }
+
+            AppendPreprocessorTrivia(builder, token.TrailingTrivia);
+        }
+
+        return hasToken;
+    }
+
+    private static void AppendPreprocessorTrivia(StringBuilder builder, SyntaxTriviaList triviaList)
+    {
+        foreach (var trivia in triviaList)
+        {
+            if (trivia.IsDirective)
+            {
+                builder.Append('#');
+                builder.Append(trivia.ToString().Trim());
+                builder.Append(';');
+            }
+            else if (trivia.RawKind == (int)SyntaxKind.DisabledTextTrivia)
+            {
+                // The text of an inactive nested branch is not tokenized, so it is tokenized separately
+                builder.Append('~');
+                AppendTokens(builder, trivia.ToString());
+                builder.Append(';');
+            }
+        }
     }
 
     internal sealed class BranchGroup(

@@ -143,6 +143,81 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
     }
 
     [Fact]
+    public Task NestedDirectives_DifferentConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            #if !B
+            _ = 0;
+            #endif
+            #else
+            #if !C
+            _ = 0;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedDirectives_SameConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            #if !B
+            _ = 0;
+            #endif
+            {|MA0202:#else|}
+            #if !B
+            _ = 0;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedDirectives_DifferentInactiveCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            _ = 2;
+            #if B
+            _ = 0;
+            #endif
+            #else
+            _ = 2;
+            #if B
+            _ = 1;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PragmaDirectiveInSingleBranch()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            #pragma warning disable CA1000
+            _ = 0;
+            #else
+            _ = 0;
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task IfElse_SameCode_PartialExpression()
     {
         var test = CreateTest();
