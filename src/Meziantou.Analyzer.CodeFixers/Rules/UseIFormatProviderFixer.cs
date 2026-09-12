@@ -58,7 +58,16 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
         bool RegisterCodeFix(string formatProviderExpression, string title)
         {
-            var newInvocation = CreateInvocationWithFormatProvider(semanticModel, generator, invocationExpression, parameterIndex, parameterName, formatProviderExpression, formatProviderSymbol);
+            var newInvocation = ArgumentListHelper.AddArgument(
+                semanticModel,
+                generator,
+                invocationExpression,
+                parameterIndex,
+                parameterName,
+                SyntaxFactory.ParseExpression(formatProviderExpression),
+                parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol),
+                cancellationToken: context.CancellationToken);
+
             if (newInvocation is null)
                 return false;
 
@@ -86,30 +95,6 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         }
     }
 
-    private static InvocationExpressionSyntax? CreateInvocationWithFormatProvider(SemanticModel semanticModel, SyntaxGenerator generator, InvocationExpressionSyntax invocationExpression, int parameterIndex, string parameterName, string formatProviderExpression, ITypeSymbol formatProviderSymbol)
-    {
-        var arguments = invocationExpression.ArgumentList.Arguments;
-
-        // A positional argument can only be added at the index of the parameter when all the arguments written before it are positional.
-        // Otherwise, C# does not allow it (CS1738, CS1739) or it would be bound to another parameter.
-        if (parameterIndex <= arguments.Count && !arguments.Take(parameterIndex).Any(argument => argument.NameColon is not null))
-        {
-            var positionalArgument = (ArgumentSyntax)generator.Argument(SyntaxFactory.ParseExpression(formatProviderExpression));
-            var candidate = ReplaceArguments(invocationExpression, arguments.Insert(parameterIndex, positionalArgument));
-            if (GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && parameterIndex < method.Parameters.Length && method.Parameters[parameterIndex].Type.IsOrInheritsFrom(formatProviderSymbol))
-                return candidate;
-        }
-
-        // A named argument added at the end of the list is valid whatever the order of the existing arguments, and keeps their evaluation order
-        var namedArgument = (ArgumentSyntax)generator.Argument(parameterName, RefKind.None, SyntaxFactory.ParseExpression(formatProviderExpression));
-        var namedCandidate = ReplaceArguments(invocationExpression, arguments.Add(namedArgument));
-        var namedParameter = GetTargetMethod(semanticModel, invocationExpression, namedCandidate)?.Parameters.FirstOrDefault(parameter => string.Equals(parameter.Name, parameterName, StringComparison.Ordinal));
-        if (namedParameter is not null && namedParameter.Type.IsOrInheritsFrom(formatProviderSymbol))
-            return namedCandidate;
-
-        return null;
-    }
-
     private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression)
     {
         var arguments = new List<ArgumentSyntax>(capacity: overload.Parameters.Length);
@@ -132,25 +117,11 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             arguments.Add(SyntaxFactory.Argument(expression));
         }
 
-        var candidate = ReplaceArguments(invocationExpression, SyntaxFactory.SeparatedList(arguments));
-        if (GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
+        var candidate = ArgumentListHelper.WithArguments(invocationExpression, SyntaxFactory.SeparatedList(arguments));
+        if (ArgumentListHelper.GetTargetMethod(semanticModel, invocationExpression, candidate) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
             return candidate;
 
         return null;
-    }
-
-    private static InvocationExpressionSyntax ReplaceArguments(InvocationExpressionSyntax invocationExpression, SeparatedSyntaxList<ArgumentSyntax> arguments)
-    {
-        return invocationExpression.WithArgumentList(invocationExpression.ArgumentList.WithArguments(arguments));
-    }
-
-    /// <summary>
-    /// Gets the method the invocation would be bound to, so the fix is only offered when the new invocation compiles
-    /// and the new argument is bound to the expected parameter.
-    /// </summary>
-    private static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation)
-    {
-        return semanticModel.GetSpeculativeSymbolInfo(invocationExpression.SpanStart, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
     }
 
     private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax invocationExpression, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)

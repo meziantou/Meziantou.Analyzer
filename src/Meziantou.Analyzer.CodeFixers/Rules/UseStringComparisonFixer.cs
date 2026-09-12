@@ -34,7 +34,16 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
 
         void AddCodeFix(string comparisonMode)
         {
-            var newInvocation = CreateInvocation(semanticModel, generator, invocationExpression, parameter, stringComparisonSymbol, comparisonMode);
+            var newInvocation = ArgumentListHelper.AddArgument(
+                semanticModel,
+                generator,
+                invocationExpression,
+                parameter.Ordinal,
+                parameter.Name,
+                generator.TypeMemberAccessExpression(stringComparisonSymbol, comparisonMode, addImport: true),
+                candidate => candidate.Type.IsEqualTo(stringComparisonSymbol),
+                cancellationToken: context.CancellationToken);
+
             if (newInvocation is null)
                 return;
 
@@ -46,46 +55,6 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
 
             context.RegisterCodeFix(codeAction, context.Diagnostics);
         }
-    }
-
-    private static InvocationExpressionSyntax? CreateInvocation(SemanticModel semanticModel, SyntaxGenerator generator, InvocationExpressionSyntax nodeToFix, IParameterSymbol parameter, INamedTypeSymbol stringComparison, string stringComparisonMode)
-    {
-        var comparisonExpression = generator.TypeMemberAccessExpression(stringComparison, stringComparisonMode, addImport: true);
-        var arguments = nodeToFix.ArgumentList.Arguments;
-        var parameterIndex = parameter.Ordinal;
-
-        // A positional argument can only be added at the index of the parameter when all the arguments written before it are positional.
-        // Otherwise, C# does not allow it (CS1738, CS1739, CS8323) or it would be bound to the wrong parameter.
-        if (parameterIndex <= arguments.Count && !arguments.Take(parameterIndex).Any(argument => argument.NameColon is not null))
-        {
-            var positionalArgument = (ArgumentSyntax)generator.Argument(comparisonExpression);
-            var candidate = ReplaceArguments(nodeToFix, arguments.Insert(parameterIndex, positionalArgument));
-            if (GetTargetMethod(semanticModel, nodeToFix, candidate) is { } method && parameterIndex < method.Parameters.Length && method.Parameters[parameterIndex].Type.IsEqualTo(stringComparison))
-                return candidate;
-        }
-
-        // A named argument added at the end of the list is valid whatever the order of the existing arguments
-        var namedArgument = (ArgumentSyntax)generator.Argument(parameter.Name, RefKind.None, comparisonExpression);
-        var namedCandidate = ReplaceArguments(nodeToFix, arguments.Add(namedArgument));
-        var namedParameter = GetTargetMethod(semanticModel, nodeToFix, namedCandidate)?.Parameters.FirstOrDefault(candidate => string.Equals(candidate.Name, parameter.Name, StringComparison.Ordinal));
-        if (namedParameter is not null && namedParameter.Type.IsEqualTo(stringComparison))
-            return namedCandidate;
-
-        return null;
-    }
-
-    private static InvocationExpressionSyntax ReplaceArguments(InvocationExpressionSyntax nodeToFix, SeparatedSyntaxList<ArgumentSyntax> arguments)
-    {
-        return nodeToFix.WithArgumentList(nodeToFix.ArgumentList.WithArguments(arguments));
-    }
-
-    /// <summary>
-    /// Gets the method the invocation would be bound to, so the fix is only offered when the new invocation compiles
-    /// and the new argument is bound to the StringComparison parameter.
-    /// </summary>
-    private static IMethodSymbol? GetTargetMethod(SemanticModel semanticModel, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation)
-    {
-        return semanticModel.GetSpeculativeSymbolInfo(nodeToFix.SpanStart, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
     }
 
     private static async Task<Document> FixInvocation(Document document, InvocationExpressionSyntax nodeToFix, InvocationExpressionSyntax newInvocation, CancellationToken cancellationToken)
