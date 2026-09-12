@@ -16,6 +16,13 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleFixer : CodeFixProvider
         if (nodeToFix is not XmlElementSyntax elementSyntax)
             return;
 
+        // The fix rebuilds the element from its text content, so it would drop any other node
+        foreach (var content in elementSyntax.Content)
+        {
+            if (content is not XmlTextSyntax)
+                return;
+        }
+
         var title = "Use single-line XML comment syntax";
         var codeAction = CodeAction.Create(
             title,

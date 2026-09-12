@@ -223,6 +223,51 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
     }
 
     [Fact]
+    public Task InnerXmlEmptyElement_See_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// <see cref="System.String"/>
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlEmptyElement_ParamRef_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <param name="value">
+                /// <paramref name="value"/>
+                /// </param>
+                public void Method(int value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InnerXmlEmptyElementWithText_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// Uses <see cref="System.String"/> internally
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task EmptyContent_ShouldReportDiagnostic()
     {
         var test = CreateTest();
