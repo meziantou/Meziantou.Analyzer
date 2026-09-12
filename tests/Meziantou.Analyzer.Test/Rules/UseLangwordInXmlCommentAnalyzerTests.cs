@@ -17,6 +17,18 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     [InlineData("{|MA0154:<c>void</c>|}", "<see langword=\"void\"/>")]
     [InlineData("{|MA0154:<code>void</code>|}", "<see langword=\"void\"/>")]
     [InlineData("{|MA0154:<code>null</code>|}", "<see langword=\"null\"/>")]
+    [InlineData("{|MA0154:<c>async</c>|}", "<see langword=\"async\"/>")]
+    [InlineData("{|MA0154:<c>await</c>|}", "<see langword=\"await\"/>")]
+    [InlineData("{|MA0154:<c>dynamic</c>|}", "<see langword=\"dynamic\"/>")]
+    [InlineData("{|MA0154:<c>init</c>|}", "<see langword=\"init\"/>")]
+    [InlineData("{|MA0154:<c>nameof</c>|}", "<see langword=\"nameof\"/>")]
+    [InlineData("{|MA0154:<c>nint</c>|}", "<see langword=\"nint\"/>")]
+    [InlineData("{|MA0154:<c>nuint</c>|}", "<see langword=\"nuint\"/>")]
+    [InlineData("{|MA0154:<c>partial</c>|}", "<see langword=\"partial\"/>")]
+    [InlineData("{|MA0154:<c>record</c>|}", "<see langword=\"record\"/>")]
+    [InlineData("{|MA0154:<c>required</c>|}", "<see langword=\"required\"/>")]
+    [InlineData("{|MA0154:<c>scoped</c>|}", "<see langword=\"scoped\"/>")]
+    [InlineData("{|MA0154:<c>var</c>|}", "<see langword=\"var\"/>")]
     public Task ValidateSummary_Invalid(string comment, string fix)
     {
         var test = CreateTest();
@@ -102,6 +114,11 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
     [InlineData("{|MA0219:<c>test</c>|}")]
     [InlineData("{|MA0219:<code>test</code>|}")]
     [InlineData("""{|MA0219:<c title="sample">test</c>|}""")]
+    // Contextual keywords that are commonly used as identifiers or plain words are not reported as keywords
+    [InlineData("{|MA0219:<c>value</c>|}")]
+    [InlineData("{|MA0219:<c>from</c>|}")]
+    [InlineData("{|MA0219:<c>get</c>|}")]
+    [InlineData("{|MA0219:<c>set</c>|}")]
     public Task MissingLanguageAttribute(string comment)
     {
         var test = CreateTest();

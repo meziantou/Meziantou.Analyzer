@@ -1,5 +1,4 @@
 using Microsoft.CodeAnalysis.CSharp.Syntax;
-using System.Linq.Expressions;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -8,10 +7,14 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 {
     private static readonly ObjectPool<PooledQueue<SyntaxNode>> NodeQueuePool = ObjectPool.CreateQueuePool<SyntaxNode>();
 
+    // Reserved keywords, plus the contextual keywords and the type keywords that are unlikely to be used as an identifier.
+    // Contextual keywords such as "value", "from", "select", "add", "remove", "get" or "set" are excluded as they are commonly used as plain words or identifiers.
     private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
     {
         "abstract",
         "as",
+        "async",
+        "await",
         "base",
         "bool",
         "break",
@@ -28,6 +31,7 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         "delegate",
         "do",
         "double",
+        "dynamic",
         "else",
         "enum",
         "event",
@@ -43,27 +47,35 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         "if",
         "implicit",
         "in",
+        "init",
         "int",
         "interface",
         "internal",
         "is",
         "lock",
         "long",
+        "nameof",
         "namespace",
         "new",
+        "nint",
+        "nuint",
         "null",
         "object",
         "operator",
         "out",
         "override",
         "params",
+        "partial",
         "private",
         "protected",
         "public",
         "readonly",
+        "record",
         "ref",
+        "required",
         "return",
         "sbyte",
+        "scoped",
         "sealed",
         "short",
         "sizeof",
@@ -83,6 +95,7 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         "unsafe",
         "ushort",
         "using",
+        "var",
         "virtual",
         "void",
         "volatile",
