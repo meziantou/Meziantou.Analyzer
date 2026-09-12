@@ -854,22 +854,22 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.Arguments.Length != 2)
                 return;
 
-            var selectorArg = operation.Arguments[1];
-
-            var returnOp = selectorArg.Descendants().OfType<IReturnOperation>().FirstOrDefault();
-            if (returnOp is null)
+            if (operation.Arguments[1].Value is not IDelegateCreationOperation { Target: IAnonymousFunctionOperation selectorLambda })
                 return;
 
-            // If what's returned is not a cast value or the cast is done by 'as' operator
-            if (returnOp.ReturnedValue is not IConversionOperation castOp || castOp.IsTryCast || castOp.Type is null)
+            // The selector must only return the cast value. Cast<T>() would remove any other statement of the selector.
+            if (selectorLambda.Body.Operations is not [IReturnOperation { ReturnedValue: IConversionOperation castOp }])
+                return;
+
+            // If the cast is done by 'as' operator
+            if (castOp.IsTryCast || castOp.Type is null)
                 return;
 
             // If the cast is not applied directly to the source element (the first parameter of the selector)
             if (castOp.Operand is not IParameterReferenceOperation parameterReference)
                 return;
 
-            var selectorLambda = selectorArg.Descendants().OfType<IAnonymousFunctionOperation>().FirstOrDefault();
-            if (selectorLambda is null || selectorLambda.Symbol.Parameters.Length == 0 || !parameterReference.Parameter.IsEqualTo(selectorLambda.Symbol.Parameters[0]))
+            if (selectorLambda.Symbol.Parameters.Length == 0 || !parameterReference.Parameter.IsEqualTo(selectorLambda.Symbol.Parameters[0]))
                 return;
 
             // Ensure the code is valid after replacement. The semantic may be different if you use Cast<T>() instead of Select(x => (T)x).

@@ -123,6 +123,47 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
     }
 
     [Fact]
+    public Task ReturnValueIsUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            object a = default;
+            System.Console.WriteLine(System.Threading.Interlocked.CompareExchange(ref a, new object(), null) is null);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnValueIsAssignedToAVariable()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            object a = default;
+            object previous = System.Threading.Interlocked.CompareExchange(ref a, new object(), null);
+            System.Console.WriteLine(previous);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnValueIsDiscarded()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            object a = default;
+            _ = {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new object(), null)|};
+            """;
+        test.FixedCode = """
+            object a = default;
+            _ = System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new object());
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task NewCustomStruct()
     {
         var test = CreateTest();

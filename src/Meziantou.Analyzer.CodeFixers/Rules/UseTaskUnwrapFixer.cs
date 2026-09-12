@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 using static Microsoft.CodeAnalysis.CSharp.SyntaxFactory;
 
 namespace Meziantou.Analyzer.Rules;
@@ -28,13 +29,18 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
         if (awaitOp.Syntax is not AwaitExpressionSyntax)
             return;
 
+        // Unwrap is an extension method, so its namespace must be imported for the new invocation to compile
+        var taskExtensionsSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskExtensions");
+        if (taskExtensionsSymbol is null)
+            return;
+
         const string Title = "Use Unwrap";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => UseUnwrap(context.Document, nodeToFix, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => UseUnwrap(context.Document, nodeToFix, taskExtensionsSymbol, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> UseUnwrap(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseUnwrap(Document document, SyntaxNode nodeToFix, INamedTypeSymbol taskExtensionsSymbol, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         if (FindAwait(editor.SemanticModel, nodeToFix, cancellationToken) is not { } awaitOperation)
@@ -45,11 +51,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
 
         if (awaitOperation.Operation is IAwaitOperation innerAwait)
         {
-            var unwrappedExpression = InvocationExpression(
-                MemberAccessExpression(
-                    Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    (ExpressionSyntax)innerAwait.Operation.Syntax.WithoutTrivia().Parenthesize(),
-                    IdentifierName("Unwrap")));
+            var unwrappedExpression = CreateUnwrapInvocation(editor.Generator, innerAwait.Operation.Syntax, taskExtensionsSymbol);
 
             var newNode = awaitExpression.WithExpression(unwrappedExpression.WithTriviaFrom(awaitExpression.Expression));
             editor.ReplaceNode(awaitExpression, newNode.WithAdditionalAnnotations(Formatter.Annotation));
@@ -60,11 +62,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             awaitExpression.Expression is InvocationExpressionSyntax invocation &&
             invocation.Expression is MemberAccessExpressionSyntax memberAccess)
         {
-            var unwrappedExpression = InvocationExpression(
-                MemberAccessExpression(
-                    Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
-                    (ExpressionSyntax)innerAwaitOperation.Operation.Syntax.WithoutTrivia().Parenthesize(),
-                    IdentifierName("Unwrap")));
+            var unwrappedExpression = CreateUnwrapInvocation(editor.Generator, innerAwaitOperation.Operation.Syntax, taskExtensionsSymbol);
 
             var newExpression = invocation.WithExpression(memberAccess.WithExpression(unwrappedExpression.WithTriviaFrom(memberAccess.Expression)));
             editor.ReplaceNode(awaitExpression, awaitExpression.WithExpression(newExpression).WithAdditionalAnnotations(Formatter.Annotation));
@@ -72,6 +70,21 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
         }
 
         return document;
+    }
+
+    private static InvocationExpressionSyntax CreateUnwrapInvocation(SyntaxGenerator generator, SyntaxNode task, INamedTypeSymbol taskExtensionsSymbol)
+    {
+        // The type expression is annotated with the symbol of TaskExtensions. Copying its annotations lets the code action
+        // add the using directive of the extension method when it is not in scope.
+        var unwrapName = generator.TypeExpression(taskExtensionsSymbol, addImport: true)
+            .WithAdditionalAnnotations(Simplifier.AddImportsAnnotation)
+            .CopyAnnotationsTo(IdentifierName("Unwrap"));
+
+        return InvocationExpression(
+            MemberAccessExpression(
+                Microsoft.CodeAnalysis.CSharp.SyntaxKind.SimpleMemberAccessExpression,
+                (ExpressionSyntax)task.WithoutTrivia().Parenthesize(),
+                unwrapName));
     }
 
     private static IAwaitOperation? FindAwait(SemanticModel semanticModel, SyntaxNode node, CancellationToken cancellationToken)
