@@ -412,6 +412,66 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzerTests
     }
 
     [Fact]
+    public Task CodeFix_ShouldUnescapeBraces()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$"{{text}}"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "{text}";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_Verbatim_ShouldUnescapeBracesAndQuotes()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$@"{{""text"": ""\""}}"|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "{\"text\": \"\\\"}";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_EmptyString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public string Test() => {|MA0184:$""|};
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public string Test() => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task RawInterpolatedStringWithoutParameters_ShouldReportDiagnostic()
     {
         var test = CreateTest();

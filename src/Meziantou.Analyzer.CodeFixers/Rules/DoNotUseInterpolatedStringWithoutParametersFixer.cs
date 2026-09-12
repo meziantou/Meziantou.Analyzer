@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
@@ -17,7 +19,7 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
         if (nodeToFix is not InterpolatedStringExpressionSyntax interpolatedString)
             return;
 
-        var regularString = CreateRegularString(interpolatedString);
+        var regularString = await CreateRegularStringAsync(context.Document, interpolatedString, context.CancellationToken).ConfigureAwait(false);
         if (regularString is null)
             return;
 
@@ -29,12 +31,10 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
             context.Diagnostics);
     }
 
-    private static ExpressionSyntax? CreateRegularString(InterpolatedStringExpressionSyntax interpolatedString)
+    private static async Task<ExpressionSyntax?> CreateRegularStringAsync(Document document, InterpolatedStringExpressionSyntax interpolatedString, CancellationToken cancellationToken)
     {
         // Check if this is a raw string literal (C# 11+)
-        var isRawString = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedMultiLineRawStringStartToken) ||
-                          interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedSingleLineRawStringStartToken);
-        if (isRawString)
+        if (interpolatedString.StringStartToken.Kind() is SyntaxKind.InterpolatedMultiLineRawStringStartToken or SyntaxKind.InterpolatedSingleLineRawStringStartToken)
         {
             // For raw strings, remove the whole $ prefix from the start token, as the number of $ determines
             // the number of braces that start an interpolation: $$"""{text}""" -> """{text}"""
@@ -52,21 +52,24 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersFixer : CodeFixPr
             return newNode;
         }
 
-        // Extract the string content from the interpolated string
-        var stringContent = string.Empty;
-        foreach (var content in interpolatedString.Contents)
+        // The text of the tokens still contains the escaped braces ("{{" and "}}"),
+        // so use the value computed by the compiler
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        if (semanticModel?.GetOperation(interpolatedString, cancellationToken) is not IInterpolatedStringOperation operation)
+            return null;
+
+        var stringContent = new StringBuilder();
+        foreach (var part in operation.Parts)
         {
-            if (content is InterpolatedStringTextSyntax textSyntax)
-            {
-                // Use the ValueText which contains the actual string value (not escaped)
-                stringContent += textSyntax.TextToken.ValueText;
-            }
+            if (part is not IInterpolatedStringTextOperation { Text.ConstantValue: { HasValue: true, Value: string text } })
+                return null;
+
+            stringContent.Append(text);
         }
 
-        // Create a regular string literal with the same content
         return SyntaxFactory.LiteralExpression(
             SyntaxKind.StringLiteralExpression,
-            SyntaxFactory.Literal(stringContent));
+            SyntaxFactory.Literal(stringContent.ToString()));
     }
 
     private static async Task<Document> ConvertToRegularString(Document document, InterpolatedStringExpressionSyntax interpolatedString, ExpressionSyntax regularString, CancellationToken cancellationToken)
