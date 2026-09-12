@@ -91,7 +91,135 @@ public class SimplifyCallerArgumentExpressionAnalyzerTests
 
                 void A(string value)
                 {
-                    NotNull(value, "extra");
+                    NotNull(value, extra: "extra");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_FollowedByPositionalArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string extra = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, {|MA0108:"value"|}, "extra");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string extra = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, extra: "extra");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_FollowedByNamedArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string extra = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, {|MA0108:"value"|}, extra: "extra");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string extra = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, extra: "extra");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_FollowedByPositionalArgument_ParameterNameIsKeyword()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string @class = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, {|MA0108:"value"|}, "extra");
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, string @class = null) { }
+
+                void A(string value)
+                {
+                    NotNull(value, @class: "extra");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_FollowedByExpandedParamsArguments_NoCodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, params int[] values) { }
+
+                void A(string value)
+                {
+                    NotNull(value, {|MA0108:"value"|}, 1, 2);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void NotNull(object? target, [CallerArgumentExpression("target")] string? parameterName = null, params int[] values) { }
+
+                void A(string value)
+                {
+                    NotNull(value, {|MA0108:"value"|}, 1, 2);
                 }
             }
             """;
