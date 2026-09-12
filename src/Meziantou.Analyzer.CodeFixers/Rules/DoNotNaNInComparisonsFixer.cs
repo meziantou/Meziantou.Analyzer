@@ -30,6 +30,12 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
 
         var leftIsNaN = TryGetNaNType(binaryOperation.LeftOperand, halfTypeSymbol, out _, out var leftSyntax);
         var rightIsNaN = TryGetNaNType(binaryOperation.RightOperand, halfTypeSymbol, out _, out var rightSyntax);
+
+        // NaN == NaN is false and NaN != NaN is true, whereas IsNaN(NaN) is true.
+        // Replacing the comparison would change the behavior of the code, so there is nothing to fix.
+        if (leftIsNaN && rightIsNaN)
+            return;
+
         if (leftIsNaN && leftSyntax is not null && nodeToFix.IsEquivalentTo(leftSyntax))
         {
             RegisterCodeFix(binaryOperation.LeftOperand);
