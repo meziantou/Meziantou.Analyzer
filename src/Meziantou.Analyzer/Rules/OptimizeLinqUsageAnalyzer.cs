@@ -590,6 +590,12 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (otherOperand is null)
                 return;
 
+            // The 'Take' and 'Skip' rewrites keep the operand in the comparison and also use it as the argument of the
+            // new method, so they evaluate it twice and before the enumeration instead of after it. A constant operand
+            // is replaced by its value, so only the non-constant operands must be side-effect free and stable.
+            if (!otherOperand.ConstantValue.HasValue && !IsSideEffectFree(otherOperand))
+                return;
+
             string? message = null;
             var properties = ImmutableDictionary<string, string?>.Empty;
             if (otherOperand.ConstantValue.HasValue && otherOperand.ConstantValue.Value is int value)
@@ -837,6 +843,27 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                 return op.TargetMethod.Name == nameof(Enumerable.Take) && extensionMethodOwnerTypes.Contains(op.TargetMethod.ContainingType, SymbolEqualityComparer.Default);
             }
+        }
+
+        /// <summary>
+        /// Determines if evaluating the operation twice is equivalent to evaluating it once, and if it can be evaluated
+        /// before the enumeration of the sequence. Only the side-effect free reads are supported, as a call or a property
+        /// access can return a different value, modify a state, or throw.
+        /// </summary>
+        private static bool IsSideEffectFree(IOperation operation)
+        {
+            if (operation.ConstantValue.HasValue)
+                return true;
+
+            return operation.UnwrapImplicitConversions() switch
+            {
+                ILiteralOperation or ILocalReferenceOperation or IParameterReferenceOperation or IInstanceReferenceOperation => true,
+                // A volatile field is excluded as two reads can observe different values
+                IFieldReferenceOperation { Field.IsVolatile: false } fieldReference => fieldReference.Field.IsStatic || (fieldReference.Instance is not null && IsSideEffectFree(fieldReference.Instance)),
+                IUnaryOperation unary => unary.OperatorMethod is null && IsSideEffectFree(unary.Operand),
+                IBinaryOperation binary => binary.OperatorMethod is null && IsSideEffectFree(binary.LeftOperand) && IsSideEffectFree(binary.RightOperand),
+                _ => false,
+            };
         }
 
         private static void UseCastInsteadOfSelect(OperationAnalysisContext context, IInvocationOperation operation)

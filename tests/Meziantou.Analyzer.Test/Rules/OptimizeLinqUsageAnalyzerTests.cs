@@ -882,6 +882,81 @@ public sealed class OptimizeLinqUsageAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("Count() == Next()")]
+    [InlineData("Count() != Next()")]
+    [InlineData("Count() < Next()")]
+    [InlineData("Count() <= Next()")]
+    [InlineData("Count() > Next()")]
+    [InlineData("Count() >= Next()")]
+    [InlineData("Count() == Limit")]
+    [InlineData("Count() == limits[0]")]
+    [InlineData("Count() == Next() + 1")]
+    public Task Count_OperandIsNotSideEffectFree(string text)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                int Limit => 0;
+                static int Next() => 0;
+                public Test()
+                {
+                    var limits = new int[1];
+                    var enumerable = Enumerable.Empty<int>();
+                    _ = enumerable.{{text}};
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("_limit", "_limit")]
+    // The simplifier removes the redundant 'this.'
+    [InlineData("this._limit", "_limit")]
+    [InlineData("s_limit", "s_limit")]
+    [InlineData("n + 1", "n + 1")]
+    [InlineData("-n", "-n")]
+    public Task Count_SkipAndAny_SideEffectFreeOperand(string text, string fix)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                int _limit = 0;
+                static int s_limit = 0;
+                public Test(int n)
+                {
+                    var enumerable = Enumerable.Empty<int>();
+                    _ = {|#0:enumerable.Count() > {{text}}|};
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0031", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Replace 'Count() > n' with 'Skip(n).Any()'"));
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                int _limit = 0;
+                static int s_limit = 0;
+                public Test(int n)
+                {
+                    var enumerable = Enumerable.Empty<int>();
+                    _ = enumerable.Skip({{fix}}).Any();
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Any_List()
     {
