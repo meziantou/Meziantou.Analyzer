@@ -1053,7 +1053,293 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
-    public Task ExtensionMethod_NotInScopeInAnotherFile()
+    public Task ExtensionMethod_ImplicitReceiver()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            public class Sample
+            {
+                public void Do() => throw null;
+
+                public async Task A()
+                {
+                    {|MA0042:Do()|};
+                }
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Ext;
+
+            public class Sample
+            {
+                public void Do() => throw null;
+
+                public async Task A()
+                {
+                    await this.DoAsync();
+                }
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    {|MA0042:sample.Do()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Ext;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    await sample.DoAsync();
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_NoUsingDirectives()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            // File header
+            class Test
+            {
+                public async System.Threading.Tasks.Task A(Sample sample)
+                {
+                    {|MA0042:sample.Do()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            // File header
+            using Ext;
+
+            class Test
+            {
+                public async System.Threading.Tasks.Task A(Sample sample)
+                {
+                    await sample.DoAsync();
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_UsingDirectivesInNamespace()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            namespace App
+            {
+                using System.Threading.Tasks;
+
+                class Test
+                {
+                    public async Task A(Sample sample)
+                    {
+                        {|MA0042:sample.Do()|};
+                    }
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            namespace App
+            {
+                using System.Threading.Tasks;
+                using Ext;
+
+                class Test
+                {
+                    public async Task A(Sample sample)
+                    {
+                        await sample.DoAsync();
+                    }
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceNotImported_FixAll()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    {|MA0042:sample.Do()|};
+                    {|MA0042:sample.Do()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            using Ext;
+
+            class Test
+            {
+                public async Task A(Sample sample)
+                {
+                    await sample.DoAsync();
+                    await sample.DoAsync();
+                }
+            }
+
+            public class Sample
+            {
+                public void Do() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_NamespaceImportedInAnotherFile()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -1063,7 +1349,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             {
                 public async Task A(Sample sample)
                 {
-                    sample.Do();
+                    {|MA0042:sample.Do()|};
                 }
             }
             """;
@@ -1080,8 +1366,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             }
             """);
         test.TestState.Sources.Add("""
-            using System.Threading.Tasks;
-
             public class Sample
             {
                 public void Do() => throw null;
@@ -1091,7 +1375,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             {
                 public static class SampleExtensions
                 {
-                    public static Task DoAsync(this Sample sample) => throw null;
+                    public static System.Threading.Tasks.Task DoAsync(this Sample sample) => throw null;
                 }
             }
             """);
@@ -1100,35 +1384,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
-    public Task ExtensionMethod_NotInScopeInAnotherNamespaceOfTheSameFile()
+    public Task ExtensionMethod_NamespaceNotImported_NotAsyncEquivalent_NoDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
             using System.Threading.Tasks;
 
-            class WithoutUsing
+            class Test
             {
                 public async Task A(Sample sample)
                 {
                     sample.Do();
                 }
             }
-
-            namespace Consumer
-            {
-                using Ext;
-
-                class WithUsing
-                {
-                    public async Task A(Sample sample)
-                    {
-                        {|MA0042:sample.Do()|};
-                    }
-                }
-            }
-            """;
-        test.TestState.Sources.Add("""
-            using System.Threading.Tasks;
 
             public class Sample
             {
@@ -1139,10 +1407,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             {
                 public static class SampleExtensions
                 {
-                    public static Task DoAsync(this Sample sample) => throw null;
+                    public static Task DoAsync(this Sample sample, int value) => throw null;
+                    public static void DoAsync(this Sample sample, string value) => throw null;
+                    public static Task DoAsync(this string value) => throw null;
                 }
             }
-            """);
+            """;
 
         return test.RunAsync();
     }
