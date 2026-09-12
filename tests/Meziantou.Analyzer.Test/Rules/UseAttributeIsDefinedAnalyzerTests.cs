@@ -478,6 +478,69 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("0 == member.GetCustomAttributes<ObsoleteAttribute>().Count()", "!")]
+    [InlineData("0 != member.GetCustomAttributes<ObsoleteAttribute>().Count()", "")]
+    [InlineData("0 < member.GetCustomAttributes<ObsoleteAttribute>().Count()", "")]
+    [InlineData("1 <= member.GetCustomAttributes<ObsoleteAttribute>().Count()", "")]
+    [InlineData("1 > member.GetCustomAttributes<ObsoleteAttribute>().Count()", "!")]
+    [InlineData("0 >= member.GetCustomAttributes<ObsoleteAttribute>().Count()", "!")]
+    public Task GetCustomAttributes_Count_ConstantOnLeft(string expression, string negation)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {|MA0179:{{expression}}|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Linq;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {{negation}}Attribute.IsDefined(member, typeof(ObsoleteAttribute));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("0 > member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length")]
+    [InlineData("1 == member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length")]
+    [InlineData("2 <= member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length")]
+    public Task GetCustomAttributes_Length_ConstantOnLeft_AmbiguousComparison_ShouldNotReport(string expression)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Reflection;
+
+            class TestClass
+            {
+                void Test(MemberInfo member)
+                {
+                    _ = {{expression}};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task GetCustomAttributes_Count_WithPredicate_ShouldNotReport()
     {
@@ -662,6 +725,12 @@ public sealed class UseAttributeIsDefinedAnalyzerTests
     [Theory]
     [InlineData("member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length < 1", "!")]
     [InlineData("member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length <= 0", "!")]
+    [InlineData("0 == member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "!")]
+    [InlineData("0 != member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "")]
+    [InlineData("0 < member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "")]
+    [InlineData("1 <= member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "")]
+    [InlineData("1 > member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "!")]
+    [InlineData("0 >= member.GetCustomAttributes(typeof(ObsoleteAttribute), false).Length", "!")]
     public Task GetCustomAttributes_Length_Comparison(string expression, string negation)
     {
         var test = CreateTest();
