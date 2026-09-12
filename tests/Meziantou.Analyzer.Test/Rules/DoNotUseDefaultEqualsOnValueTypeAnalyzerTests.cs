@@ -155,6 +155,73 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task GetHashCode_OnlyGetHashCodeOverriden()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            struct Test
+            {
+                public override int GetHashCode() => throw null;
+            }
+
+            class Sample
+            {
+                public void A()
+                {
+                    _ = new Test().GetHashCode();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_OnlyEqualsOverriden()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            #pragma warning disable CS0659
+            struct Test
+            {
+                public override bool Equals(object o) => throw null;
+            }
+
+            class Sample
+            {
+                public void A()
+                {
+                    _ = new Test().Equals(new Test());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_IEquatableOverload()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            struct Test : System.IEquatable<Test>
+            {
+                public bool Equals(Test other) => throw null;
+            }
+
+            class Sample
+            {
+                public void A()
+                {
+                    _ = new Test().Equals(new Test());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("new System.Collections.Generic.HashSet<Test>()")]
     [InlineData("new System.Collections.Generic.Dictionary<Test, object>()")]
