@@ -267,17 +267,6 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
                             }
                         }
                     }
-                    else if (operation.Arguments.Length == 4)
-                    {
-                        if (Join_Char_StringArray_Int32_Int32 is not null)
-                        {
-                            if (operation.Arguments[0].Value is { Type.SpecialType: SpecialType.System_String, ConstantValue: { HasValue: true, Value: string { Length: 1 } } })
-                            {
-                                context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
-                                return;
-                            }
-                        }
-                    }
                 }
             }
         }
