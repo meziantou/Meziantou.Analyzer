@@ -589,4 +589,203 @@ public sealed class ConcurrentDictionaryMustPreventClosureWhenAccessingTheKeyAna
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task GetOrAdd_ExplicitlyTypedLambda_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A()
+                {
+                    var value = 42;
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", {|MA0106:(string key) => value|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A()
+                {
+                    var value = 42;
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", (string key, int arg) => arg, value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_ExplicitlyTypedLambda_QualifiedType_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A()
+                {
+                    var value = new System.Text.StringBuilder();
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", {|MA0106:(string key) => value.Length|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A()
+                {
+                    var value = new System.Text.StringBuilder();
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", (string key, System.Text.StringBuilder arg) => arg.Length, value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_ExplicitlyTypedLambda_NullableType_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            #nullable enable
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A(string? value)
+                {
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", {|MA0106:(string key) => value?.Length ?? 0|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            #nullable enable
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A(string? value)
+                {
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", (string key, string? arg) => arg?.Length ?? 0, value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_ExplicitlyTypedLambdas_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                void A()
+                {
+                    var key = 1;
+                    var value = 1;
+                    var a = new ConcurrentDictionary<int, int>();
+                    a.AddOrUpdate(key, {|MA0106:(int k) => value|}, {|MA0106:(int k, int v) => value|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                void A()
+                {
+                    var key = 1;
+                    var value = 1;
+                    var a = new ConcurrentDictionary<int, int>();
+                    a.AddOrUpdate(key, (int k, int arg) => arg, (int k, int v, int arg) => arg, value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AddOrUpdate_OnlyTheUpdateValueFactoryIsExplicitlyTyped_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                void A()
+                {
+                    var key = 1;
+                    var value = 1;
+                    var a = new ConcurrentDictionary<int, int>();
+                    a.AddOrUpdate(key, k => k, {|MA0106:(int k, int v) => value|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                void A()
+                {
+                    var key = 1;
+                    var value = 1;
+                    var a = new ConcurrentDictionary<int, int>();
+                    a.AddOrUpdate(key, (k, arg) => k, (int k, int v, int arg) => arg, value);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GetOrAdd_LambdaWithDefaultParameterValue_NoCodeFix()
+    {
+        // No parameter can be added after the parameter with a default value, so the fix is not offered
+        var code = """
+            using System.Collections.Concurrent;
+
+            class Test
+            {
+                object A()
+                {
+                    var value = 42;
+                    var a = new ConcurrentDictionary<string, int>();
+                    return a.GetOrAdd("key", {|MA0106:(string key = "") => value|});
+                }
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
 }

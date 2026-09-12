@@ -6,6 +6,9 @@ namespace Meziantou.Analyzer.Rules;
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
 public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProvider
 {
+    private static readonly SymbolDisplayFormat TypeDisplayFormat = SymbolDisplayFormat.MinimallyQualifiedFormat
+        .AddMiscellaneousOptions(SymbolDisplayMiscellaneousOptions.IncludeNullableReferenceTypeModifier);
+
     public override ImmutableArray<string> FixableDiagnosticIds => ImmutableArray.Create(
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionary,
         RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg);
@@ -42,12 +45,13 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         if (context.Diagnostics.Any(d => d.Id == RuleIdentifiers.AvoidClosureWhenUsingConcurrentDictionaryByUsingFactoryArg)
             && invocationOperation.Syntax is InvocationExpressionSyntax invocationSyntax
             && GetFactoriesToUpdate(invocationOperation) is { } factories
-            && TryGetFactoryArgumentSymbol(semanticModel, factories, lambdaOperation, out var capturedSymbol))
+            && TryGetFactoryArgumentSymbol(semanticModel, factories, lambdaOperation, out var capturedSymbol)
+            && CreateFactoryArgumentParameters(semanticModel, factories, capturedSymbol) is { } parameters)
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
                     "Use factoryArgument overload",
-                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationSyntax, factories, capturedSymbol, ct),
+                    ct => UseFactoryArgumentOverload(context.Document, semanticModel, invocationSyntax, factories, parameters, capturedSymbol, ct),
                     equivalenceKey: "Use factoryArgument overload"),
                 context.Diagnostics);
         }
@@ -70,15 +74,14 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, InvocationExpressionSyntax invocationSyntax, List<IAnonymousFunctionOperation> factories, ISymbol capturedSymbol, CancellationToken cancellationToken)
+    private static async Task<Document> UseFactoryArgumentOverload(Document document, SemanticModel semanticModel, InvocationExpressionSyntax invocationSyntax, List<IAnonymousFunctionOperation> factories, List<ParameterSyntax> parameters, ISymbol capturedSymbol, CancellationToken cancellationToken)
     {
-        var parameterName = GetUniqueParameterName(factories.SelectMany(factory => factory.Symbol.Parameters).Select(p => p.Name), "arg");
-
         var arguments = invocationSyntax.ArgumentList.Arguments;
         for (var i = 0; i < factories.Count; i++)
         {
-            var updatedLambda = ReplaceSymbolReferences((AnonymousFunctionExpressionSyntax)factories[i].Syntax, semanticModel, capturedSymbol, parameterName);
-            var lambdaWithParameter = AddParameterToLambda(updatedLambda, parameterName);
+            var parameter = parameters[i];
+            var updatedLambda = ReplaceSymbolReferences((AnonymousFunctionExpressionSyntax)factories[i].Syntax, semanticModel, capturedSymbol, parameter.Identifier.ValueText);
+            var lambdaWithParameter = AddParameterToLambda(updatedLambda, parameter);
 
             // The factories are the arguments following the key
             var argumentIndex = i + 1;
@@ -134,6 +137,75 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
 
         capturedSymbol = symbol;
         return true;
+    }
+
+    /// <summary>
+    /// Creates the parameter receiving the <c>factoryArgument</c> in each factory, or <see langword="null"/> when one
+    /// of the factories cannot get it.
+    /// </summary>
+    private static List<ParameterSyntax>? CreateFactoryArgumentParameters(SemanticModel semanticModel, List<IAnonymousFunctionOperation> factories, ISymbol capturedSymbol)
+    {
+        var parameterType = capturedSymbol switch
+        {
+            ILocalSymbol local => local.Type,
+            IParameterSymbol parameter => parameter.Type,
+            _ => null,
+        };
+
+        if (parameterType is null)
+            return null;
+
+        var parameterName = GetUniqueParameterName(factories.SelectMany(factory => factory.Symbol.Parameters).Select(p => p.Name), "arg");
+
+        var parameters = new List<ParameterSyntax>(factories.Count);
+        foreach (var factory in factories)
+        {
+            // Each factory gets its own parameter, as one can be explicitly typed while another is not
+            var parameter = CreateFactoryArgumentParameter((AnonymousFunctionExpressionSyntax)factory.Syntax, parameterName, parameterType, semanticModel);
+            if (parameter is null)
+                return null;
+
+            parameters.Add(parameter);
+        }
+
+        return parameters;
+    }
+
+    /// <summary>
+    /// Creates the parameter receiving the <c>factoryArgument</c> in <paramref name="lambda"/>. The parameter must be
+    /// explicitly typed when the existing parameters are, as C# requires the parameters of a lambda to be either all
+    /// explicitly typed or all implicitly typed (CS0748).
+    /// </summary>
+    private static ParameterSyntax? CreateFactoryArgumentParameter(AnonymousFunctionExpressionSyntax lambda, string parameterName, ITypeSymbol parameterType, SemanticModel semanticModel)
+    {
+        var parameter = Parameter(Identifier(parameterName));
+        if (lambda is not ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
+            return parameter; // The single parameter of a simple lambda is always implicitly typed
+
+        var parameters = parenthesizedLambda.ParameterList.Parameters;
+
+        // No parameter can be added after a parameter with a default value or a 'params' parameter
+        if (parameters.Any(p => p.Default is not null || p.Modifiers.Any(SyntaxKind.ParamsKeyword)))
+            return null;
+
+        if (!parameters.Any(p => p.Type is not null))
+            return parameter;
+
+        var typeSyntax = CreateTypeSyntax(parameterType, semanticModel, lambda.SpanStart);
+        if (typeSyntax is null)
+            return null;
+
+        return parameter.WithType(typeSyntax);
+    }
+
+    private static TypeSyntax? CreateTypeSyntax(ITypeSymbol type, SemanticModel semanticModel, int position)
+    {
+        if (type.TypeKind is TypeKind.Error || type.IsAnonymousType)
+            return null;
+
+        // The type may still not be expressible, such as when it contains an anonymous type
+        var typeSyntax = ParseTypeName(type.ToMinimalDisplayString(semanticModel, position, TypeDisplayFormat), options: semanticModel.SyntaxTree.Options);
+        return typeSyntax.ContainsDiagnostics ? null : typeSyntax;
     }
 
     private static List<(ISymbol Symbol, string ParameterName)> GetReplacementMappings(IInvocationOperation invocationOperation, IAnonymousFunctionOperation lambdaOperation, IArgumentOperation lambdaArgument)
@@ -220,10 +292,8 @@ public sealed class AvoidClosureWhenUsingConcurrentDictionaryFixer : CodeFixProv
         return (AnonymousFunctionExpressionSyntax)rewriter.Visit(lambda);
     }
 
-    private static ParenthesizedLambdaExpressionSyntax AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, string parameterName)
+    private static ParenthesizedLambdaExpressionSyntax AddParameterToLambda(AnonymousFunctionExpressionSyntax lambda, ParameterSyntax parameter)
     {
-        var parameter = Parameter(Identifier(parameterName));
-
         if (lambda is ParenthesizedLambdaExpressionSyntax parenthesizedLambda)
         {
             return parenthesizedLambda.WithParameterList(parenthesizedLambda.ParameterList.WithParameters(parenthesizedLambda.ParameterList.Parameters.Add(parameter)));
