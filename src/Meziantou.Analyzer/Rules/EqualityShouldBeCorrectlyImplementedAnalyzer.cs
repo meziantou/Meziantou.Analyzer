@@ -134,8 +134,9 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
             }
 
             // IEquatable<T> without Equals(object)
-            // Only report if directly implemented (not inherited via CRTP - Curiously Recurring Template Pattern)
-            // Check the entire type hierarchy for an Equals(object) override
+            // Only report when IEquatable<T> is implemented by this type (not inherited via CRTP - Curiously
+            // Recurring Template Pattern), and when this type does not itself override Equals(object): inheriting
+            // the base override would make object.Equals disagree with the new IEquatable<T> semantics.
             if (directlyImplementIEquatableOfT && !symbol.GetMembers().OfType<IMethodSymbol>().Any(IsEqualsMethodOverride))
             {
                 context.ReportDiagnostic(OverrideEqualsObjectRule, symbol);
