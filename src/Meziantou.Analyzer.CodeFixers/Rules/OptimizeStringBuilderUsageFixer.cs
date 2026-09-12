@@ -314,10 +314,11 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         var methodName = operation.TargetMethod.Name; // Append or AppendLine
         var isAppendLine = string.Equals(methodName, nameof(StringBuilder.AppendLine), StringComparison.Ordinal);
 
-        var stringFormatOperation = (IInvocationOperation)operation.Arguments[0].Value;
+        // Use the syntax arguments, as the argument operation of an expanded params parameter is the whole invocation
+        var stringJoinSyntax = (InvocationExpressionSyntax)operation.Arguments[0].Value.Syntax;
 
         var newExpression = generator.InvocationExpression(generator.MemberAccessExpression(operation.GetChildOperations().First().Syntax, "AppendJoin"),
-            [.. stringFormatOperation.Arguments.Select(a => a.Syntax)]);
+            [.. stringJoinSyntax.ArgumentList.Arguments]);
 
         if (isAppendLine)
         {

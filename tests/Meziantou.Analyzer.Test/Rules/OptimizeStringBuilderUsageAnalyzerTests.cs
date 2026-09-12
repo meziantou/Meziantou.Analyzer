@@ -1142,6 +1142,68 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     }
 
     [Fact]
+    public Task Append_StringJoin_Range_NoDiagnostic()
+    {
+        // AppendJoin has no overload with a range, so AppendJoin(",", array, 1, 2) would append "System.String[],1,2"
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(string[] values)
+                {
+                    new StringBuilder().Append(string.Join(",", values, 1, 2));
+                    new StringBuilder().AppendLine(string.Join(',', values, 1, 2));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Append_StringJoin_AppendJoin_AllOverloads()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Text;
+            class Test
+            {
+                void A(string[] strings, object[] objects, IEnumerable<string> stringEnumerable, List<int> ints, string a, object b)
+                {
+                    {|MA0028:new StringBuilder().Append(string.Join(",", strings))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', strings))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", objects))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", stringEnumerable))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', ints))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(",", a, a))|};
+                    {|MA0028:new StringBuilder().Append(string.Join(',', a, b))|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Text;
+            class Test
+            {
+                void A(string[] strings, object[] objects, IEnumerable<string> stringEnumerable, List<int> ints, string a, object b)
+                {
+                    new StringBuilder().AppendJoin(",", strings);
+                    new StringBuilder().AppendJoin(',', strings);
+                    new StringBuilder().AppendJoin(",", objects);
+                    new StringBuilder().AppendJoin(",", stringEnumerable);
+                    new StringBuilder().AppendJoin(',', ints);
+                    new StringBuilder().AppendJoin(",", a, a);
+                    new StringBuilder().AppendJoin(',', a, b);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AppendLine_AppendSubString()
     {
         var test = CreateTest();
