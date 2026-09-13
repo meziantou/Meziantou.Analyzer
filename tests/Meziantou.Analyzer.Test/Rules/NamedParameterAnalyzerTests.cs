@@ -603,6 +603,20 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task KeyValuePairCtor_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test() => new System.Collections.Generic.KeyValuePair<string, object>("key", null);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Ctor_ShouldUseTheRightParameterName()
     {
         var test = CreateTest();
