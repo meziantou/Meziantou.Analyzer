@@ -51,7 +51,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private readonly OperationUtilities _operationUtilities = new(compilation);
         private readonly INamedTypeSymbol _stringComparisonSymbol = compilation.GetTypeByMetadataName("System.StringComparison")!;
         private readonly INamedTypeSymbol? _jobjectSymbol = compilation.GetTypeByMetadataName("Newtonsoft.Json.Linq.JObject");
-        private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetTypeByMetadataName("XUnit.Assert");
+        private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetTypeByMetadataName("Xunit.Assert");
         private readonly INamedTypeSymbol? _meziantouFrameworkAssertSymbol = compilation.GetTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
         private readonly HashSet<ISymbol> _nonCultureSensitiveSymbols = CreateNonCultureSensitiveSymbols(compilation);
 
