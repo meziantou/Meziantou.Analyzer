@@ -22,7 +22,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersFixer : CodeFixPr
         if (receiverType is null)
             return;
 
-        var memoryMarshalType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.MemoryMarshal");
+        var memoryMarshalType = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.MemoryMarshal");
         if (memoryMarshalType is null)
             return;
 

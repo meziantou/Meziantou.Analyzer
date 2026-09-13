@@ -47,7 +47,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         context.RegisterCompilationStartAction(context =>
         {
-            var attributeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Diagnostics.DebuggerDisplayAttribute");
+            var attributeSymbol = context.Compilation.GetTypeByMetadataName("System.Diagnostics.DebuggerDisplayAttribute");
             if (attributeSymbol is null)
                 return;
 

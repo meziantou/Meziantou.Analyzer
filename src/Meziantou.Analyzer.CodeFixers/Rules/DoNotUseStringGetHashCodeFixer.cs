@@ -20,7 +20,7 @@ public sealed class DoNotUseStringGetHashCodeFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        var stringComparerSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
         if (stringComparerSymbol is null)
             return;
 

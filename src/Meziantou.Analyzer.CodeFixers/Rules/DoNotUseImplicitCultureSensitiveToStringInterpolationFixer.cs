@@ -18,7 +18,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
         if (semanticModel is null || !CanUseStringCreate(semanticModel.Compilation))
             return;
 
-        var cultureInfoType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        var cultureInfoType = semanticModel.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
         if (cultureInfoType is null)
             return;
 
@@ -53,7 +53,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringInterpolationFixer :
 
     private static bool CanUseStringCreate(Compilation compilation)
     {
-        var formatProviderType = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+        var formatProviderType = compilation.GetTypeByMetadataName("System.IFormatProvider");
         var defaultInterpolatedStringHandlerType = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
         if (formatProviderType is null || defaultInterpolatedStringHandlerType is null)

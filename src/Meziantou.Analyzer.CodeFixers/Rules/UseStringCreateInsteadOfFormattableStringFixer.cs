@@ -21,7 +21,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringFixer : CodeFixProv
         if (semanticModel is null)
             return;
 
-        var cultureInfoSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        var cultureInfoSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
         if (cultureInfoSymbol is null)
             return;
 

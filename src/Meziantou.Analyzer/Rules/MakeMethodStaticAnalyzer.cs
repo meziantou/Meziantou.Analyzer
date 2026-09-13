@@ -49,10 +49,10 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         private readonly ConcurrentHashSet<ISymbol> _potentialSymbols = new(SymbolEqualityComparer.Default);
         private readonly ConcurrentHashSet<ISymbol> _cannotBeStaticSymbols = new(SymbolEqualityComparer.Default);
 
-        private readonly ITypeSymbol? _httpContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
-        private readonly ITypeSymbol? _iapplicationBuilder = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
-        private readonly ITypeSymbol? _iserviceCollectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
-        private readonly ITypeSymbol? _imiddlewareSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
+        private readonly ITypeSymbol? _httpContextSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.HttpContext");
+        private readonly ITypeSymbol? _iapplicationBuilder = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Builder.IApplicationBuilder");
+        private readonly ITypeSymbol? _iserviceCollectionSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.IServiceCollection");
+        private readonly ITypeSymbol? _imiddlewareSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Http.IMiddleware");
 
         public void CompilationEnd(CompilationAnalysisContext context)
         {

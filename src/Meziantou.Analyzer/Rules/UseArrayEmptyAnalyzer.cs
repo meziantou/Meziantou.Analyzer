@@ -24,7 +24,7 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var typeSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Array");
+            var typeSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Array");
             if (typeSymbol is null || typeSymbol.DeclaredAccessibility != Accessibility.Public)
                 return;
 

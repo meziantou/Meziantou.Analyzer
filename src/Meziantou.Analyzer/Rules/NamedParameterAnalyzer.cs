@@ -38,22 +38,22 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(context =>
         {
             var objectType = context.Compilation.GetSpecialType(SpecialType.System_Object);
-            var taskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            var taskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            var valueTaskTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            var valueTaskGenericTokenType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            var taskCompletionSourceType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
-            var volatileType = context.Compilation.GetBestTypeByMetadataName("System.Threading.Volatile");
-            var methodBaseTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.MethodBase");
-            var fieldInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.FieldInfo");
-            var propertyInfoTokenType = context.Compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo");
-            var msTestAssertTokenType = context.Compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
-            var nunitAssertTokenType = context.Compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
-            var xunitAssertTokenType = context.Compilation.GetBestTypeByMetadataName("Xunit.Assert");
-            var keyValuePairTokenType = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.KeyValuePair`2");
-            var propertyBuilderType = context.Compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
-            var syntaxNodeType = context.Compilation.GetBestTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
-            var expressionType = context.Compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
+            var taskTokenType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+            var taskGenericTokenType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+            var valueTaskTokenType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            var valueTaskGenericTokenType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            var taskCompletionSourceType = context.Compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskCompletionSource`1");
+            var volatileType = context.Compilation.GetTypeByMetadataName("System.Threading.Volatile");
+            var methodBaseTokenType = context.Compilation.GetTypeByMetadataName("System.Reflection.MethodBase");
+            var fieldInfoTokenType = context.Compilation.GetTypeByMetadataName("System.Reflection.FieldInfo");
+            var propertyInfoTokenType = context.Compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo");
+            var msTestAssertTokenType = context.Compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+            var nunitAssertTokenType = context.Compilation.GetTypeByMetadataName("NUnit.Framework.Assert");
+            var xunitAssertTokenType = context.Compilation.GetTypeByMetadataName("Xunit.Assert");
+            var keyValuePairTokenType = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.KeyValuePair`2");
+            var propertyBuilderType = context.Compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.Metadata.Builders.PropertyBuilder`1");
+            var syntaxNodeType = context.Compilation.GetTypeByMetadataName("Microsoft.CodeAnalysis.SyntaxNode");
+            var expressionType = context.Compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression");
             var operationUtilities = new OperationUtilities(context.Compilation);
 
             // The attribute can be defined in multiple assemblies, so all the types with that name are considered.

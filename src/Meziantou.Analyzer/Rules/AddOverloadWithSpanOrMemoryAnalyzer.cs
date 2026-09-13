@@ -32,10 +32,10 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _spanType = compilation.GetBestTypeByMetadataName("System.Span`1");
-        private readonly INamedTypeSymbol? _readOnlySpanType = compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1");
-        private readonly INamedTypeSymbol? _memoryType = compilation.GetBestTypeByMetadataName("System.Memory`1");
-        private readonly INamedTypeSymbol? _readOnlyMemoryType = compilation.GetBestTypeByMetadataName("System.ReadOnlyMemory`1");
+        private readonly INamedTypeSymbol? _spanType = compilation.GetTypeByMetadataName("System.Span`1");
+        private readonly INamedTypeSymbol? _readOnlySpanType = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
+        private readonly INamedTypeSymbol? _memoryType = compilation.GetTypeByMetadataName("System.Memory`1");
+        private readonly INamedTypeSymbol? _readOnlyMemoryType = compilation.GetTypeByMetadataName("System.ReadOnlyMemory`1");
 
         public bool IsValid => _spanType is not null || _readOnlySpanType is not null || _memoryType is not null || _readOnlyMemoryType is not null;
 

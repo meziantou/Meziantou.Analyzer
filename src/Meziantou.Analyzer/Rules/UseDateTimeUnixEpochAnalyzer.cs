@@ -49,9 +49,9 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly TimeSpanOperation _timeSpanOperation = new(compilation);
-        private readonly ITypeSymbol? _dateTimeSymbol = compilation.GetBestTypeByMetadataName("System.DateTime");
-        private readonly ITypeSymbol? _dateTimeOffsetSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
-        private readonly ITypeSymbol? _dateTimeKindSymbol = compilation.GetBestTypeByMetadataName("System.DateTimeKind");
+        private readonly ITypeSymbol? _dateTimeSymbol = compilation.GetTypeByMetadataName("System.DateTime");
+        private readonly ITypeSymbol? _dateTimeOffsetSymbol = compilation.GetTypeByMetadataName("System.DateTimeOffset");
+        private readonly ITypeSymbol? _dateTimeKindSymbol = compilation.GetTypeByMetadataName("System.DateTimeKind");
 
         public bool HasDateTimeUnixEpoch => _dateTimeSymbol is not null && _dateTimeSymbol.GetMembers("UnixEpoch").Length > 0;
         public bool HasDateTimeOffsetUnixEpoch => _dateTimeOffsetSymbol is not null && _dateTimeOffsetSymbol.GetMembers("UnixEpoch").Length > 0;

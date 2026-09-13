@@ -26,7 +26,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferFixer : CodeFixProvider
         if (field.FixedSize is < 2 or > 16)
             return;
 
-        var inlineArrayType = semanticModel.Compilation.GetBestTypeByMetadataName($"System.Runtime.CompilerServices.InlineArray{field.FixedSize.ToString(CultureInfo.InvariantCulture)}`1");
+        var inlineArrayType = semanticModel.Compilation.GetTypeByMetadataName($"System.Runtime.CompilerServices.InlineArray{field.FixedSize.ToString(CultureInfo.InvariantCulture)}`1");
         if (inlineArrayType is null)
             return;
 
@@ -60,7 +60,7 @@ public sealed class UseInlineArrayInsteadOfFixedBufferFixer : CodeFixProvider
         if (editor.SemanticModel.GetTypeInfo(variableDeclaration.Type, cancellationToken).Type is not { } elementType)
             return document;
 
-        var inlineArrayType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName($"System.Runtime.CompilerServices.InlineArray{size.ToString(CultureInfo.InvariantCulture)}`1");
+        var inlineArrayType = editor.SemanticModel.Compilation.GetTypeByMetadataName($"System.Runtime.CompilerServices.InlineArray{size.ToString(CultureInfo.InvariantCulture)}`1");
         if (inlineArrayType is null)
             return document;
 

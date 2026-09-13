@@ -59,10 +59,10 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
 
         public AnalyzerContext(Compilation compilation)
         {
-            ParameterSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
-            SupplyParameterFromQuerySymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.SupplyParameterFromQueryAttribute");
-            EditorRequiredSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.EditorRequiredAttribute");
-            RouteAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.RouteAttribute");
+            ParameterSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
+            SupplyParameterFromQuerySymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.SupplyParameterFromQueryAttribute");
+            EditorRequiredSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.EditorRequiredAttribute");
+            RouteAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.RouteAttribute");
 
             AspNetCoreVersion = SupplyParameterFromQuerySymbol?.ContainingAssembly.Identity.Version;
         }

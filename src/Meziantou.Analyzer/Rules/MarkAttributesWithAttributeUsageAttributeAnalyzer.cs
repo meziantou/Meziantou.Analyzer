@@ -22,8 +22,8 @@ public sealed class MarkAttributesWithAttributeUsageAttributeAnalyzer : Diagnost
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Attribute");
-            var attributeUsageAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
+            var attributeType = compilationContext.Compilation.GetTypeByMetadataName("System.Attribute");
+            var attributeUsageAttributeType = compilationContext.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");
             if (attributeType is null || attributeUsageAttributeType is null)
                 return;
 

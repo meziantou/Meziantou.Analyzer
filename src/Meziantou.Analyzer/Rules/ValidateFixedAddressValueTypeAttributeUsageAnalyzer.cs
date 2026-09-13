@@ -32,7 +32,7 @@ public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzer : Diagno
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.FixedAddressValueTypeAttribute");
+            var attributeType = compilationContext.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.FixedAddressValueTypeAttribute");
             if (attributeType is null)
                 return;
 

@@ -26,33 +26,33 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         context.RegisterCompilationStartAction(context =>
         {
             var excludedBaseTypes = ImmutableArray.Create(
-                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.UserControl"),
-                context.Compilation.GetBestTypeByMetadataName("System.Windows.Controls.Page"),
-                context.Compilation.GetBestTypeByMetadataName("System.Windows.Window"),
-                context.Compilation.GetBestTypeByMetadataName("System.Windows.Application"));
+                context.Compilation.GetTypeByMetadataName("System.Windows.Controls.UserControl"),
+                context.Compilation.GetTypeByMetadataName("System.Windows.Controls.Page"),
+                context.Compilation.GetTypeByMetadataName("System.Windows.Window"),
+                context.Compilation.GetTypeByMetadataName("System.Windows.Application"));
             var csWinRTCustomMappedInterfaces = ImmutableArray.Create(
-                context.Compilation.GetBestTypeByMetadataName("System.IDisposable"),
-                context.Compilation.GetBestTypeByMetadataName("System.IServiceProvider"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.IEnumerable"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.IList"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerator`1"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IList`1"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IDictionary`2"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyDictionary`2"),
-                context.Compilation.GetBestTypeByMetadataName("System.Collections.Specialized.INotifyCollectionChanged"),
-                context.Compilation.GetBestTypeByMetadataName("System.ComponentModel.INotifyDataErrorInfo"),
-                context.Compilation.GetBestTypeByMetadataName("System.ComponentModel.INotifyPropertyChanged"),
-                context.Compilation.GetBestTypeByMetadataName("System.Windows.Input.ICommand"));
+                context.Compilation.GetTypeByMetadataName("System.IDisposable"),
+                context.Compilation.GetTypeByMetadataName("System.IServiceProvider"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.IEnumerable"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.IList"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerator`1"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IDictionary`2"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyDictionary`2"),
+                context.Compilation.GetTypeByMetadataName("System.Collections.Specialized.INotifyCollectionChanged"),
+                context.Compilation.GetTypeByMetadataName("System.ComponentModel.INotifyDataErrorInfo"),
+                context.Compilation.GetTypeByMetadataName("System.ComponentModel.INotifyPropertyChanged"),
+                context.Compilation.GetTypeByMetadataName("System.Windows.Input.ICommand"));
             var hasCsWinRTAotSupport =
-                context.Compilation.GetBestTypeByMetadataName("WinRT.WindowsRuntimeTypeAttribute") is not null &&
-                context.Compilation.GetBestTypeByMetadataName("WinRT.GeneratedBindableCustomPropertyAttribute") is not null &&
-                context.Compilation.GetBestTypeByMetadataName("WinRT.GeneratedWinRTExposedTypeAttribute") is not null &&
-                context.Compilation.GetBestTypeByMetadataName("WinRT.WinRTExposedTypeAttribute") is not null;
+                context.Compilation.GetTypeByMetadataName("WinRT.WindowsRuntimeTypeAttribute") is not null &&
+                context.Compilation.GetTypeByMetadataName("WinRT.GeneratedBindableCustomPropertyAttribute") is not null &&
+                context.Compilation.GetTypeByMetadataName("WinRT.GeneratedWinRTExposedTypeAttribute") is not null &&
+                context.Compilation.GetTypeByMetadataName("WinRT.WinRTExposedTypeAttribute") is not null;
             var isMauiCompilation =
-                context.Compilation.GetBestTypeByMetadataName("Microsoft.Maui.Controls.Application") is not null &&
-                context.Compilation.GetBestTypeByMetadataName("Microsoft.Maui.Controls.BindableObject") is not null;
+                context.Compilation.GetTypeByMetadataName("Microsoft.Maui.Controls.Application") is not null &&
+                context.Compilation.GetTypeByMetadataName("Microsoft.Maui.Controls.BindableObject") is not null;
 
             context.RegisterSymbolAction(context => AnalyzeNamedTypeSymbol(context, excludedBaseTypes, csWinRTCustomMappedInterfaces, hasCsWinRTAotSupport, isMauiCompilation), SymbolKind.NamedType);
         });

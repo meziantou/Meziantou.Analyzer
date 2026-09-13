@@ -26,7 +26,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeAnalyzer : D
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var flagsAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
+            var flagsAttributeType = compilationContext.Compilation.GetTypeByMetadataName("System.FlagsAttribute");
             if (flagsAttributeType is null)
                 return;
 

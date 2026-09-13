@@ -46,8 +46,8 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
 
         public AnalyzerContext(Compilation compilation)
         {
-            _spanType = compilation.GetBestTypeByMetadataName("System.Span`1");
-            _readOnlySpanType = compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1");
+            _spanType = compilation.GetTypeByMetadataName("System.Span`1");
+            _readOnlySpanType = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
         }
 
         public bool IsValid => _spanType is not null || _readOnlySpanType is not null;

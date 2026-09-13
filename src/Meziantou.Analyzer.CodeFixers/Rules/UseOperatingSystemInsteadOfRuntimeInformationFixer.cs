@@ -37,7 +37,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationFixer : CodeFix
         if (methodName is null)
             return;
 
-        var operatingSystemType = semanticModel.Compilation.GetBestTypeByMetadataName("System.OperatingSystem");
+        var operatingSystemType = semanticModel.Compilation.GetTypeByMetadataName("System.OperatingSystem");
         if (operatingSystemType is null)
             return;
 

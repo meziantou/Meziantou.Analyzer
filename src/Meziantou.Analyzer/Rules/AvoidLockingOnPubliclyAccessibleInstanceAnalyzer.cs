@@ -22,7 +22,7 @@ public sealed class AvoidLockingOnPubliclyAccessibleInstanceAnalyzer : Diagnosti
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var typeSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Type");
+            var typeSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Type");
             compilationContext.RegisterOperationAction(context => AnalyzeOperation(context, typeSymbol), OperationKind.Lock);
         });
     }

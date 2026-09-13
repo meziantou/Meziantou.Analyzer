@@ -23,7 +23,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             case DoNotUseBlockingCallInAsyncContextData.Thread_Sleep:
                 {
                     var sm = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
-                    var taskSymbol = sm?.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+                    var taskSymbol = sm?.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
                     if (taskSymbol is null)
                         break;
 

@@ -35,11 +35,11 @@ public class DoNotOverwriteRazorComponentParameterValue : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            ComponentBaseSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
-            ParameterAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
-            CascadingParameterAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.CascadingParameterAttribute");
-            IDisposable_DisposeMethodSymbol = compilation.GetBestTypeByMetadataName("System.IDisposable")?.GetMembers("Dispose").SingleOrDefaultIfMultiple() as IMethodSymbol;
-            IAsyncDisposable_DisposeAsyncMethodSymbol = compilation.GetBestTypeByMetadataName("System.IAsyncDisposable")?.GetMembers("DisposeAsync").SingleOrDefaultIfMultiple() as IMethodSymbol;
+            ComponentBaseSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
+            ParameterAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
+            CascadingParameterAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.CascadingParameterAttribute");
+            IDisposable_DisposeMethodSymbol = compilation.GetTypeByMetadataName("System.IDisposable")?.GetMembers("Dispose").SingleOrDefaultIfMultiple() as IMethodSymbol;
+            IAsyncDisposable_DisposeAsyncMethodSymbol = compilation.GetTypeByMetadataName("System.IAsyncDisposable")?.GetMembers("DisposeAsync").SingleOrDefaultIfMultiple() as IMethodSymbol;
 
             if (ComponentBaseSymbol is not null)
             {

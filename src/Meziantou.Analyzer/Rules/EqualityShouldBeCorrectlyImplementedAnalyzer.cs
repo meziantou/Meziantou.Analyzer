@@ -77,9 +77,9 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         public IMethodSymbol? ObjectEqualsSymbol { get; set; } = compilation.GetSpecialType(SpecialType.System_Object).GetMembers("Equals").FirstOrDefault() as IMethodSymbol;
         public IMethodSymbol? ValueTypeEqualsSymbol { get; set; } = compilation.GetSpecialType(SpecialType.System_ValueType).GetMembers("Equals").FirstOrDefault() as IMethodSymbol;
 
-        public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable");
-        public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IComparable`1");
-        public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        public INamedTypeSymbol? IComparableSymbol { get; set; } = compilation.GetTypeByMetadataName("System.IComparable");
+        public INamedTypeSymbol? IComparableOfTSymbol { get; set; } = compilation.GetTypeByMetadataName("System.IComparable`1");
+        public INamedTypeSymbol? IEquatableOfTSymbol { get; set; } = compilation.GetTypeByMetadataName("System.IEquatable`1");
         public bool SupportRefStructs { get; } = compilation.GetCSharpLanguageVersion().IsCSharp13OrGreater() && compilation.IsNet9OrGreater();
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)

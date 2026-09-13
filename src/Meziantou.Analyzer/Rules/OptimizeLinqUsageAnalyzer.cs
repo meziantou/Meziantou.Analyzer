@@ -129,18 +129,18 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            EnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
-            QueryableSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Queryable");
+            EnumerableSymbol = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+            QueryableSymbol = compilation.GetTypeByMetadataName("System.Linq.Queryable");
             ExtensionMethodOwnerTypes.AddIfNotNull(EnumerableSymbol);
             ExtensionMethodOwnerTypes.AddIfNotNull(QueryableSymbol);
 
-            ExpressionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression`1");
-            ICollectionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ICollection`1");
-            IReadOnlyCollectionOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1");
-            ListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.List`1");
-            IListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IList`1");
-            IReadOnlyListOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
-            ICollectionSymbol = compilation.GetBestTypeByMetadataName("System.Collections.ICollection");
+            ExpressionOfTSymbol = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression`1");
+            ICollectionOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.ICollection`1");
+            IReadOnlyCollectionOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyCollection`1");
+            ListOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.List`1");
+            IListOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IList`1");
+            IReadOnlyListOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyList`1");
+            ICollectionSymbol = compilation.GetTypeByMetadataName("System.Collections.ICollection");
 
             HasEnumerableOrderMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Linq.Enumerable.Order``1(System.Collections.Generic.IEnumerable{``0})", compilation) is not null;
         }

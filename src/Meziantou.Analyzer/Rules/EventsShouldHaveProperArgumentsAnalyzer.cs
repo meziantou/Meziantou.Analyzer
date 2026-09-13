@@ -42,8 +42,8 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var eventArgsSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.EventArgs");
-            var multicastDelegateSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.MulticastDelegate");
+            var eventArgsSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.EventArgs");
+            var multicastDelegateSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.MulticastDelegate");
             if (eventArgsSymbol is null || multicastDelegateSymbol is null)
                 return;
 

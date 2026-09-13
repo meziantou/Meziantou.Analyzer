@@ -61,7 +61,7 @@ internal static class UseAwaitInsteadOfReturningTaskCommon
 
     private static bool IsSynchronized(IMethodSymbol method, Compilation compilation)
     {
-        var methodImplAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.MethodImplAttribute");
+        var methodImplAttributeSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.MethodImplAttribute");
         if (methodImplAttributeSymbol is null)
             return false;
 

@@ -23,7 +23,7 @@ public sealed class JsonSourceGenerationOptionsFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var attributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute");
+        var attributeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute");
         if (attributeSymbol is null)
             return;
 

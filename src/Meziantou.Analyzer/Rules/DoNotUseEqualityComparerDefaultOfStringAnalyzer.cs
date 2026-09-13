@@ -22,7 +22,7 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : Diagnostic
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var equalityComparerSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+            var equalityComparerSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
             if (equalityComparerSymbol is null)
                 return;
 

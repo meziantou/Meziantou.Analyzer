@@ -31,7 +31,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            StringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
+            StringComparisonSymbol = compilation.GetTypeByMetadataName("System.StringComparison");
             if (StringComparisonSymbol is not null)
             {
                 StringComparison_Ordinal = StringComparisonSymbol.GetMembers(nameof(StringComparison.Ordinal)).FirstOrDefault();
@@ -41,7 +41,7 @@ public sealed class OptimizeStartsWithAnalyzer : DiagnosticAnalyzer
 #pragma warning restore RS0030
             }
 
-            EnumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
+            EnumerableOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
 
             var stringSymbol = compilation.GetSpecialType(SpecialType.System_String);
             if (stringSymbol is not null)

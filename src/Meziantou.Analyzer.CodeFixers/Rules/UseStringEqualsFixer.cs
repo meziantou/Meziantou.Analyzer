@@ -27,14 +27,14 @@ public sealed class UseStringEqualsFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IBinaryOperation)
             return;
 
-        var stringComparisonSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+        var stringComparisonSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
         if (stringComparisonSymbol is null)
             return;
 
         RegisterCodeFix(nameof(StringComparison.Ordinal));
         RegisterCodeFix(nameof(StringComparison.OrdinalIgnoreCase));
 
-        var extensionsType = semanticModel.Compilation.GetBestTypeByMetadataName("Meziantou.Framework.StringExtensions");
+        var extensionsType = semanticModel.Compilation.GetTypeByMetadataName("Meziantou.Framework.StringExtensions");
         if (extensionsType is not null)
         {
             if (extensionsType.GetMembers("EqualsOrdinal").Length > 0)

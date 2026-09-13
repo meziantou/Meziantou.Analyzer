@@ -29,7 +29,7 @@ public sealed class CA1822DecoratedMethodSuppressor : DiagnosticSuppressor
     {
         foreach (var (descriptor, attributeName) in AttributeNames)
         {
-            var attributeSymbol = context.Compilation.GetBestTypeByMetadataName(attributeName);
+            var attributeSymbol = context.Compilation.GetTypeByMetadataName(attributeName);
             if (attributeSymbol is null)
                 continue;
 

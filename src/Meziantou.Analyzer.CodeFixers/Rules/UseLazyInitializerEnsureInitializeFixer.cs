@@ -25,7 +25,7 @@ public sealed class UseLazyInitializerEnsureInitializeFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation)
             return;
 
-        var lazyInitializerType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.LazyInitializer");
+        var lazyInitializerType = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.LazyInitializer");
         if (lazyInitializerType is null)
             return;
 

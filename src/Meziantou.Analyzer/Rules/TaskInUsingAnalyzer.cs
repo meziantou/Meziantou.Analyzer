@@ -22,7 +22,7 @@ public sealed class TaskInUsingAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var taskSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+            var taskSymbol = ctx.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
             if (taskSymbol is null)
                 return;
 

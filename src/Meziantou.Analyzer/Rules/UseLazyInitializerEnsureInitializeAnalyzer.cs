@@ -22,7 +22,7 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var interlockedType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Threading.Interlocked");
+            var interlockedType = compilationContext.Compilation.GetTypeByMetadataName("System.Threading.Interlocked");
 
             compilationContext.RegisterOperationAction(context =>
             {

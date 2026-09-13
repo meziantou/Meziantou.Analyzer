@@ -21,9 +21,9 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
         context.RegisterCompilationStartAction(compilationStartContext =>
         {
-            var formatProviderType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-            var consoleType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.Console");
-            var stringBuilderType = compilationStartContext.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
+            var formatProviderType = compilationStartContext.Compilation.GetTypeByMetadataName("System.IFormatProvider");
+            var consoleType = compilationStartContext.Compilation.GetTypeByMetadataName("System.Console");
+            var stringBuilderType = compilationStartContext.Compilation.GetTypeByMetadataName("System.Text.StringBuilder");
 
             compilationStartContext.RegisterOperationAction(
                 context => Analyze(context, formatProviderType, consoleType, stringBuilderType),

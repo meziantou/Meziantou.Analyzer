@@ -89,7 +89,7 @@ public class OptimizeStartsWithFixer : CodeFixProvider
 
     private static bool HasCharStringComparisonOverload(IMethodSymbol method, Compilation compilation)
     {
-        var stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
+        var stringComparisonSymbol = compilation.GetTypeByMetadataName("System.StringComparison");
         foreach (var member in method.ContainingType.GetMembers(method.Name))
         {
             if (member is IMethodSymbol { IsStatic: false, Parameters: [var valueParameter, var comparisonParameter] } && valueParameter.Type.IsChar() && comparisonParameter.Type.IsEqualTo(stringComparisonSymbol))
@@ -104,7 +104,7 @@ public class OptimizeStartsWithFixer : CodeFixProvider
         for (var i = invocation.Arguments.Length - 1; i >= 0; i--)
         {
             var argument = invocation.Arguments[i];
-            if (argument.Parameter?.Type.IsEqualTo(editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison")) is true)
+            if (argument.Parameter?.Type.IsEqualTo(editor.SemanticModel.Compilation.GetTypeByMetadataName("System.StringComparison")) is true)
             {
                 editor.RemoveNode(argument.Syntax);
                 return;

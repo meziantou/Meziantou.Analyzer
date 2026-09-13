@@ -22,7 +22,7 @@ public sealed class EventArgsNameShouldEndWithEventArgsAnalyzer : DiagnosticAnal
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var eventArgsType = compilationContext.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+            var eventArgsType = compilationContext.Compilation.GetTypeByMetadataName("System.EventArgs");
             if (eventArgsType is null)
                 return;
 

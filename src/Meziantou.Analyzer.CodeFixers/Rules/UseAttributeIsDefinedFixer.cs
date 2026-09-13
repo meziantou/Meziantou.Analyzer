@@ -211,8 +211,8 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
 
     private static SyntaxNode CreateAttributeIsDefinedInvocation(SyntaxGenerator generator, SemanticModel semanticModel, IInvocationOperation invocation, bool negate)
     {
-        var attributeTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Attribute");
-        var systemTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Type");
+        var attributeTypeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Attribute");
+        var systemTypeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Type");
         var attributeTypeSyntax = generator.TypeExpression(attributeTypeSymbol!);
 
         var instance = invocation.Instance;
@@ -328,8 +328,8 @@ public sealed class UseAttributeIsDefinedFixer : CodeFixProvider
         if (inheritArgument.Value.ConstantValue is { HasValue: true, Value: false })
             return false;
 
-        return CanBeInstanceOf(instanceType, compilation.GetBestTypeByMetadataName("System.Reflection.PropertyInfo")) ||
-               CanBeInstanceOf(instanceType, compilation.GetBestTypeByMetadataName("System.Reflection.EventInfo"));
+        return CanBeInstanceOf(instanceType, compilation.GetTypeByMetadataName("System.Reflection.PropertyInfo")) ||
+               CanBeInstanceOf(instanceType, compilation.GetTypeByMetadataName("System.Reflection.EventInfo"));
 
         static bool CanBeInstanceOf(ITypeSymbol type, INamedTypeSymbol? expectedType)
         {

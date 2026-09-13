@@ -115,7 +115,7 @@ public sealed class EventSourceImplementationAnalyzer : DiagnosticAnalyzer
             _eventAttributeSymbols = GetSymbols(compilation, "EventAttribute");
             _nonEventAttributeSymbols = GetSymbols(compilation, "NonEventAttribute");
             _eventSourceSettingsSymbols = GetSymbols(compilation, "EventSourceSettings");
-            _guidSymbol = compilation.GetBestTypeByMetadataName("System.Guid");
+            _guidSymbol = compilation.GetTypeByMetadataName("System.Guid");
         }
 
         public bool IsValid => !_eventSourceSymbols.IsEmpty;
@@ -125,7 +125,7 @@ public sealed class EventSourceImplementationAnalyzer : DiagnosticAnalyzer
             var result = ImmutableArray.CreateBuilder<INamedTypeSymbol>(Namespaces.Length);
             foreach (var ns in Namespaces)
             {
-                var symbol = compilation.GetBestTypeByMetadataName(ns + "." + typeName);
+                var symbol = compilation.GetTypeByMetadataName(ns + "." + typeName);
                 if (symbol is not null)
                 {
                     result.Add(symbol);

@@ -22,7 +22,7 @@ public sealed class ObjectGetTypeOnTypeInstanceAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
-            var typeSymbol = context.Compilation.GetBestTypeByMetadataName("System.Type");
+            var typeSymbol = context.Compilation.GetTypeByMetadataName("System.Type");
             if (typeSymbol is null)
                 return;
 

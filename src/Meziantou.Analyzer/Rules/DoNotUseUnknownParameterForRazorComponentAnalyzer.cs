@@ -41,10 +41,10 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
 
         public bool IsValid => IComponentSymbol is not null && ComponentBaseSymbol is not null && ParameterSymbol is not null;
 
-        public INamedTypeSymbol? IComponentSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
-        public INamedTypeSymbol? ComponentBaseSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
-        public INamedTypeSymbol? ParameterSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
-        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
+        public INamedTypeSymbol? IComponentSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+        public INamedTypeSymbol? ComponentBaseSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
+        public INamedTypeSymbol? ParameterSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ParameterAttribute");
+        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
 
         public void AnalyzeBlockOptions(OperationAnalysisContext context)
         {

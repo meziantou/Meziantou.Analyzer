@@ -22,7 +22,7 @@ public sealed class DontTagInstanceFieldsWithThreadStaticAttributeAnalyzer : Dia
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var threadStaticAttributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.ThreadStaticAttribute");
+            var threadStaticAttributeType = compilationContext.Compilation.GetTypeByMetadataName("System.ThreadStaticAttribute");
             if (threadStaticAttributeType is null)
                 return;
 

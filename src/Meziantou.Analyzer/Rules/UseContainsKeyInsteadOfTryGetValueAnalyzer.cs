@@ -29,8 +29,8 @@ public sealed class UseContainsKeyInsteadOfTryGetValueAnalyzer : DiagnosticAnaly
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private INamedTypeSymbol? IReadOnlyDictionary { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlyDictionary`2");
-        private INamedTypeSymbol? IDictionary { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IDictionary`2");
+        private INamedTypeSymbol? IReadOnlyDictionary { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlyDictionary`2");
+        private INamedTypeSymbol? IDictionary { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.IDictionary`2");
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {

@@ -32,7 +32,7 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
 
         context.RegisterCompilationStartAction(context =>
         {
-            var datetimeOffsetSymbol = context.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+            var datetimeOffsetSymbol = context.Compilation.GetTypeByMetadataName("System.DateTimeOffset");
             if (datetimeOffsetSymbol is null)
                 return;
 

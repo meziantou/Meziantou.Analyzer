@@ -23,7 +23,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
 
         if (context.Diagnostics[0].Id == RuleIdentifiers.UseDateTimeUnixEpoch)
         {
-            if (semanticModel.Compilation.GetBestTypeByMetadataName("System.DateTime") is null)
+            if (semanticModel.Compilation.GetTypeByMetadataName("System.DateTime") is null)
                 return;
 
             context.RegisterCodeFix(
@@ -35,7 +35,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
         }
         else
         {
-            if (semanticModel.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset") is null)
+            if (semanticModel.Compilation.GetTypeByMetadataName("System.DateTimeOffset") is null)
                 return;
 
             context.RegisterCodeFix(
@@ -50,7 +50,7 @@ public sealed class UseDateTimeUnixEpochFixer : CodeFixProvider
     private static async Task<Document> Remove(Document document, SyntaxNode node, string type, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var symbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName(type)!;
+        var symbol = editor.SemanticModel.Compilation.GetTypeByMetadataName(type)!;
 
         var generator = editor.Generator;
         var member = generator.TypeMemberAccessExpression(symbol, "UnixEpoch");

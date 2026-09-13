@@ -21,11 +21,11 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         if (semanticModel is null)
             return;
 
-        var attributeUsageAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeUsageAttribute");
+        var attributeUsageAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeUsageAttribute");
         if (attributeUsageAttribute is null)
             return;
 
-        var attributeTargets = semanticModel.Compilation.GetBestTypeByMetadataName("System.AttributeTargets");
+        var attributeTargets = semanticModel.Compilation.GetTypeByMetadataName("System.AttributeTargets");
         if (attributeTargets is null)
             return;
 

@@ -22,13 +22,13 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzer : DiagnosticAna
 
         context.RegisterCompilationStartAction(context =>
         {
-            var midpointRoundingSymbol = context.Compilation.GetBestTypeByMetadataName("System.MidpointRounding");
+            var midpointRoundingSymbol = context.Compilation.GetTypeByMetadataName("System.MidpointRounding");
             if (midpointRoundingSymbol is null)
                 return;
 
-            var ifloatingPointSymbol = context.Compilation.GetBestTypeByMetadataName("System.Numerics.IFloatingPoint`1");
-            var mathSymbol = context.Compilation.GetBestTypeByMetadataName("System.Math");
-            var mathFSymbol = context.Compilation.GetBestTypeByMetadataName("System.MathF");
+            var ifloatingPointSymbol = context.Compilation.GetTypeByMetadataName("System.Numerics.IFloatingPoint`1");
+            var mathSymbol = context.Compilation.GetTypeByMetadataName("System.Math");
+            var mathFSymbol = context.Compilation.GetTypeByMetadataName("System.MathF");
             if (ifloatingPointSymbol is null && mathSymbol is null && mathFSymbol is null)
                 return;
 

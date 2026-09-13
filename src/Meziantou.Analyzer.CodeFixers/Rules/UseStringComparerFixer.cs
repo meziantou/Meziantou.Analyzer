@@ -23,12 +23,12 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var stringComparerSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparer");
+        var stringComparerSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparer");
         if (stringComparerSymbol is null)
             return;
 
-        var equalityComparerOpenType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
-        var comparerOpenType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
+        var equalityComparerOpenType = semanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+        var comparerOpenType = semanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
 
         var insertionIndex = -1;
         var parameterName = string.Empty;
@@ -144,7 +144,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
 
     private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
     {
-        var openType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+        var openType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
         if (openType is null)
             return null;
 
@@ -153,7 +153,7 @@ public sealed class UseStringComparerFixer : CodeFixProvider
 
     private static INamedTypeSymbol? GetIComparerString(Compilation compilation)
     {
-        var openType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
+        var openType = compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
         if (openType is null)
             return null;
 

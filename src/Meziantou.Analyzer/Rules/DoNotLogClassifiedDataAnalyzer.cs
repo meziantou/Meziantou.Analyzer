@@ -38,13 +38,13 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            LoggerSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
+            LoggerSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
             if (LoggerSymbol is null)
                 return;
 
-            LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
-            LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
-            DataClassificationAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute");
+            LoggerExtensionsSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
+            LoggerMessageSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
+            DataClassificationAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Compliance.Classification.DataClassificationAttribute");
         }
 
         public INamedTypeSymbol? LoggerSymbol { get; }

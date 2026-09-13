@@ -32,11 +32,11 @@ public sealed class UseJSRuntimeInvokeVoidAsyncWhenReturnValueIsNotUsedAnalyzer 
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public INamedTypeSymbol? IJSRuntimeSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
-        public INamedTypeSymbol? JSRuntimeExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntimeExtensions");
+        public INamedTypeSymbol? IJSRuntimeSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
+        public INamedTypeSymbol? JSRuntimeExtensionsSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.JSInterop.JSRuntimeExtensions");
 
-        public INamedTypeSymbol? IJSInProcessRuntimeSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSInProcessRuntime");
-        public INamedTypeSymbol? JSInProcessRuntimeExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInProcessRuntimeExtensions");
+        public INamedTypeSymbol? IJSInProcessRuntimeSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.JSInterop.IJSInProcessRuntime");
+        public INamedTypeSymbol? JSInProcessRuntimeExtensionsSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.JSInterop.JSInProcessRuntimeExtensions");
 
         public bool IsValid => IJSInProcessRuntimeSymbol is not null || IJSRuntimeSymbol is not null;
 

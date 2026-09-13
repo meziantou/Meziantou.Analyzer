@@ -14,10 +14,10 @@ public sealed class IDE0058Suppressor : DiagnosticSuppressor
     public override void ReportSuppressions(SuppressionAnalysisContext context)
     {
 #pragma warning disable IDE1006 // Naming Styles
-        var System_Text_StringBuilder = context.Compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-        var System_IO_Directory = context.Compilation.GetBestTypeByMetadataName("System.IO.Directory");
-        var System_IO_Stream = context.Compilation.GetBestTypeByMetadataName("System.IO.Stream");
-        var System_Collections_Generic_HashSet = context.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1");
+        var System_Text_StringBuilder = context.Compilation.GetTypeByMetadataName("System.Text.StringBuilder");
+        var System_IO_Directory = context.Compilation.GetTypeByMetadataName("System.IO.Directory");
+        var System_IO_Stream = context.Compilation.GetTypeByMetadataName("System.IO.Stream");
+        var System_Collections_Generic_HashSet = context.Compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1");
 #pragma warning restore IDE1006
 
         foreach (var diagnostic in context.ReportedDiagnostics)

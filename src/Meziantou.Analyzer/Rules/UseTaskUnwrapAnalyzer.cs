@@ -34,11 +34,11 @@ public sealed class UseTaskUnwrapAnalyzer : DiagnosticAnalyzer
     {
         public AnalyzerContext(Compilation compilation)
         {
-            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+            TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
 
-            ConfiguredTaskAwaitableSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
-            ConfiguredTaskAwaitableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+            ConfiguredTaskAwaitableSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
+            ConfiguredTaskAwaitableOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
 
             ConfigureAwaitOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
             SuppressThrowingValue = ConfigureAwaitOptionsSymbol?.GetMembers("SuppressThrowing").OfType<IFieldSymbol>().FirstOrDefault()?.ConstantValue as int?;

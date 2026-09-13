@@ -4,9 +4,9 @@ internal sealed class TimeSpanOperation(Compilation compilation)
 {
     private const long TicksPerMicrosecond = TimeSpan.TicksPerMillisecond / 1000;
 
-    private readonly ISymbol? _timeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
-    private readonly ISymbol? _regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-    private readonly ISymbol? _timeoutSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Timeout");
+    private readonly ISymbol? _timeSpanSymbol = compilation.GetTypeByMetadataName("System.TimeSpan");
+    private readonly ISymbol? _regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+    private readonly ISymbol? _timeoutSymbol = compilation.GetTypeByMetadataName("System.Threading.Timeout");
 
     /// <summary>
     /// Gets the duration of a <see cref="TimeSpan"/> expression, or <see langword="null"/> when the expression is not

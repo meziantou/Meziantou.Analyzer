@@ -22,7 +22,7 @@ public sealed class DoNotRaiseApplicationExceptionAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var reservedExceptionType = ctx.Compilation.GetBestTypeByMetadataName("System.ApplicationException");
+            var reservedExceptionType = ctx.Compilation.GetTypeByMetadataName("System.ApplicationException");
             if (reservedExceptionType is not null)
             {
                 ctx.RegisterOperationAction(_ => Analyze(_, reservedExceptionType), OperationKind.Throw);

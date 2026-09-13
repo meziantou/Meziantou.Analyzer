@@ -22,8 +22,8 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
 
         context.RegisterCompilationStartAction(context =>
         {
-            var nullableSymbol = context.Compilation.GetBestTypeByMetadataName("System.Nullable`1");
-            var symbol = context.Compilation.GetBestTypeByMetadataName("System.ArgumentNullException");
+            var nullableSymbol = context.Compilation.GetTypeByMetadataName("System.Nullable`1");
+            var symbol = context.Compilation.GetTypeByMetadataName("System.ArgumentNullException");
             if (symbol is null)
                 return;
 

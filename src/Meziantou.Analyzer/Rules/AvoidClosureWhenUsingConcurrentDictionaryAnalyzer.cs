@@ -48,13 +48,13 @@ public class AvoidClosureWhenUsingConcurrentDictionaryAnalyzer : DiagnosticAnaly
     {
         public AnalyzerContext(Compilation compilation)
         {
-            ConcurrentDictionarySymbol = compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
+            ConcurrentDictionarySymbol = compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2");
             if (ConcurrentDictionarySymbol is null)
                 return;
 
-            Func2Symbol = compilation.GetBestTypeByMetadataName("System.Func`2");
-            Func3Symbol = compilation.GetBestTypeByMetadataName("System.Func`3");
-            Func4Symbol = compilation.GetBestTypeByMetadataName("System.Func`4");
+            Func2Symbol = compilation.GetTypeByMetadataName("System.Func`2");
+            Func3Symbol = compilation.GetTypeByMetadataName("System.Func`3");
+            Func4Symbol = compilation.GetTypeByMetadataName("System.Func`4");
 
             GetOrAddHasOverloadWithArg = ConcurrentDictionarySymbol.GetMembers("GetOrAdd").OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));
             AddOrUpdateHasOverloadWithArg = ConcurrentDictionarySymbol.GetMembers("AddOrUpdate").OfType<IMethodSymbol>().Any(m => m.Parameters.Any(p => p.Name == "factoryArgument"));

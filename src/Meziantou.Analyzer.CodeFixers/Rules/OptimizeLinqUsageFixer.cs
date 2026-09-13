@@ -501,7 +501,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             var type = symbol.TypeArguments[0];
             if (type is not null)
             {
-                var predicateType = compilation.GetBestTypeByMetadataName("System.Predicate`1")?.Construct(type);
+                var predicateType = compilation.GetTypeByMetadataName("System.Predicate`1")?.Construct(type);
                 if (predicateType is not null)
                 {
                     var predicate = ((InvocationExpressionSyntax)nodeToFix).ArgumentList.Arguments.Last().Expression;

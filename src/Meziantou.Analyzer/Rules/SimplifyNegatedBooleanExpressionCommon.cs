@@ -6,7 +6,7 @@ internal sealed class SimplifyNegatedBooleanExpressionCommon
 
     public SimplifyNegatedBooleanExpressionCommon(Compilation compilation)
     {
-        _halfType = compilation.GetBestTypeByMetadataName("System.Half");
+        _halfType = compilation.GetTypeByMetadataName("System.Half");
     }
 
     public bool TryMatch(IUnaryOperation operation, out IBinaryOperation binaryOperation)

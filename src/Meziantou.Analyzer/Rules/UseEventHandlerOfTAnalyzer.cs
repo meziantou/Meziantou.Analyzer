@@ -29,13 +29,13 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public INamedTypeSymbol? EventArgsSymbol { get; } = compilation.GetBestTypeByMetadataName("System.EventArgs");
+        public INamedTypeSymbol? EventArgsSymbol { get; } = compilation.GetTypeByMetadataName("System.EventArgs");
 
         /// <summary>
         /// <c>System.EventHandler&lt;TSender, TEventArgs&gt;</c>, which does not constrain <c>TSender</c> to <c>object</c>
         /// nor <c>TEventArgs</c> to <c>System.EventArgs</c>, so any construction of it is a valid event type.
         /// </summary>
-        public INamedTypeSymbol? EventHandlerOfTSenderTEventArgsSymbol { get; } = compilation.GetBestTypeByMetadataName("System.EventHandler`2");
+        public INamedTypeSymbol? EventHandlerOfTSenderTEventArgsSymbol { get; } = compilation.GetTypeByMetadataName("System.EventHandler`2");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

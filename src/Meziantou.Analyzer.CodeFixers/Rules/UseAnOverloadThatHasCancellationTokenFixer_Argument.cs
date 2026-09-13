@@ -30,7 +30,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenFixer_Argument : CodeFi
         if (semanticModel is null)
             return;
 
-        var cancellationTokenSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
+        var cancellationTokenSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
         if (cancellationTokenSymbol is null)
             return;
 

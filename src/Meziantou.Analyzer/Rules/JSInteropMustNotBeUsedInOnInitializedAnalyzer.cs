@@ -34,12 +34,12 @@ public sealed class JSInteropMustNotBeUsedInOnInitializedAnalyzer : DiagnosticAn
     {
         public AnalyzerContext(Compilation compilation)
         {
-            IJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
-            JSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSRuntime");
-            ProtectedBrowserStorageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedBrowserStorage");
-            WebAssemblyJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.WebAssembly.WebAssemblyJSRuntime");
-            WebViewJSRuntimeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.WebView.Services.WebViewJSRuntime");
-            var componentBase = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
+            IJSRuntimeSymbol = compilation.GetTypeByMetadataName("Microsoft.JSInterop.IJSRuntime");
+            JSRuntimeSymbol = compilation.GetTypeByMetadataName("Microsoft.JSInterop.JSRuntime");
+            ProtectedBrowserStorageSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.Server.ProtectedBrowserStorage.ProtectedBrowserStorage");
+            WebAssemblyJSRuntimeSymbol = compilation.GetTypeByMetadataName("Microsoft.JSInterop.WebAssembly.WebAssemblyJSRuntime");
+            WebViewJSRuntimeSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.WebView.Services.WebViewJSRuntime");
+            var componentBase = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.ComponentBase");
             if (componentBase is not null)
             {
                 OnInitializedMethodSymbol = componentBase.GetMembers("OnInitialized").SingleOrDefaultIfMultiple();

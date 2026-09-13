@@ -29,10 +29,10 @@ public sealed class DoNotNaNInComparisonsAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public ISymbol? DoubleNaN { get; } = compilation.GetBestTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
-        public ISymbol? SingleNaN { get; } = compilation.GetBestTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
-        public ISymbol? HalfNaN { get; } = compilation.GetBestTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
-        public INamedTypeSymbol? FloatingPointIeee754 { get; } = compilation.GetBestTypeByMetadataName("System.Numerics.IFloatingPointIeee754`1");
+        public ISymbol? DoubleNaN { get; } = compilation.GetTypeByMetadataName("System.Double")?.GetMembers("NaN").FirstOrDefault();
+        public ISymbol? SingleNaN { get; } = compilation.GetTypeByMetadataName("System.Single")?.GetMembers("NaN").FirstOrDefault();
+        public ISymbol? HalfNaN { get; } = compilation.GetTypeByMetadataName("System.Half")?.GetMembers("NaN").FirstOrDefault();
+        public INamedTypeSymbol? FloatingPointIeee754 { get; } = compilation.GetTypeByMetadataName("System.Numerics.IFloatingPointIeee754`1");
 
         public void AnalyzeBinaryOperator(OperationAnalysisContext context)
         {

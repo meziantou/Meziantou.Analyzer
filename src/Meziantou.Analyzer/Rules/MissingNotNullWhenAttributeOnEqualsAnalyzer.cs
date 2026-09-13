@@ -26,7 +26,7 @@ public sealed class MissingNotNullWhenAttributeOnEqualsAnalyzer : DiagnosticAnal
             if (notNullWhenAttributeSymbol is null)
                 return;
 
-            var iequatableOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+            var iequatableOfTSymbol = ctx.Compilation.GetTypeByMetadataName("System.IEquatable`1");
 
             ctx.RegisterSymbolAction(context =>
             {

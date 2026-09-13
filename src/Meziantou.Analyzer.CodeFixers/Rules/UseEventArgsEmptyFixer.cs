@@ -30,7 +30,7 @@ public sealed class UseEventArgsEmptyFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(context.Document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var typeSymbol = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+        var typeSymbol = editor.SemanticModel.Compilation.GetTypeByMetadataName("System.EventArgs");
         if (typeSymbol is null)
             return context.Document;
 

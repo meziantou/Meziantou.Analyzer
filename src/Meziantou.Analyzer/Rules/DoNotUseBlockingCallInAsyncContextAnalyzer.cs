@@ -72,7 +72,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             _awaitableTypes = new AwaitableTypes(compilation);
             _overloadFinder = new OverloadFinder(compilation);
 
-            var consoleSymbol = compilation.GetBestTypeByMetadataName("System.Console");
+            var consoleSymbol = compilation.GetTypeByMetadataName("System.Console");
             if (consoleSymbol is not null)
             {
                 ConsoleErrorAndOutSymbols = [.. consoleSymbol.GetMembers("Out"), .. consoleSymbol.GetMembers("Error")];
@@ -82,54 +82,54 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 ConsoleErrorAndOutSymbols = [];
             }
 
-            ProcessSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
-            StreamSymbol = compilation.GetBestTypeByMetadataName("System.IO.Stream");
-            TextWriterSymbol = compilation.GetBestTypeByMetadataName("System.IO.TextWriter");
-            DbConnectionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbConnection");
-            DbCommandSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbCommand");
-            DbDataReaderSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbDataReader");
-            DbTransactionSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbTransaction");
-            DbBatchSymbol = compilation.GetBestTypeByMetadataName("System.Data.Common.DbBatch");
-            SqliteConnectionSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteConnection");
-            SqliteCommandSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteCommand");
-            SqliteDataReaderSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Data.Sqlite.SqliteDataReader");
-            CancellationTokenSymbol = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken");
-            ObsoleteAttributeSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
+            ProcessSymbol = compilation.GetTypeByMetadataName("System.Diagnostics.Process");
+            StreamSymbol = compilation.GetTypeByMetadataName("System.IO.Stream");
+            TextWriterSymbol = compilation.GetTypeByMetadataName("System.IO.TextWriter");
+            DbConnectionSymbol = compilation.GetTypeByMetadataName("System.Data.Common.DbConnection");
+            DbCommandSymbol = compilation.GetTypeByMetadataName("System.Data.Common.DbCommand");
+            DbDataReaderSymbol = compilation.GetTypeByMetadataName("System.Data.Common.DbDataReader");
+            DbTransactionSymbol = compilation.GetTypeByMetadataName("System.Data.Common.DbTransaction");
+            DbBatchSymbol = compilation.GetTypeByMetadataName("System.Data.Common.DbBatch");
+            SqliteConnectionSymbol = compilation.GetTypeByMetadataName("Microsoft.Data.Sqlite.SqliteConnection");
+            SqliteCommandSymbol = compilation.GetTypeByMetadataName("Microsoft.Data.Sqlite.SqliteCommand");
+            SqliteDataReaderSymbol = compilation.GetTypeByMetadataName("Microsoft.Data.Sqlite.SqliteDataReader");
+            CancellationTokenSymbol = compilation.GetTypeByMetadataName("System.Threading.CancellationToken");
+            ObsoleteAttributeSymbol = compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
 
-            TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-            TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-            TaskAwaiterSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
-            TaskAwaiterOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
+            TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+            TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+            TaskAwaiterSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter");
+            TaskAwaiterOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.TaskAwaiter`1");
 
-            ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-            ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
-            ValueTaskAwaiterSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
-            ValueTaskAwaiterOfTSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
+            ValueTaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+            ValueTaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+            ValueTaskAwaiterSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
+            ValueTaskAwaiterOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
 
-            ThreadSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Thread");
-            SemaphoreSlimSymbol = compilation.GetBestTypeByMetadataName("System.Threading.SemaphoreSlim");
-            TimeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
+            ThreadSymbol = compilation.GetTypeByMetadataName("System.Threading.Thread");
+            SemaphoreSlimSymbol = compilation.GetTypeByMetadataName("System.Threading.SemaphoreSlim");
+            TimeSpanSymbol = compilation.GetTypeByMetadataName("System.TimeSpan");
 
-            DbContextSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
-            DbSetSymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
-            DbContextFactorySymbol = compilation.GetBestTypeByMetadataName("Microsoft.EntityFrameworkCore.IDbContextFactory`1");
+            DbContextSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbContext");
+            DbSetSymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.DbSet`1");
+            DbContextFactorySymbol = compilation.GetTypeByMetadataName("Microsoft.EntityFrameworkCore.IDbContextFactory`1");
 
-            ServiceProviderServiceExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
+            ServiceProviderServiceExtensionsSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.DependencyInjection.ServiceProviderServiceExtensions");
             if (ServiceProviderServiceExtensionsSymbol is not null)
             {
                 ServiceProviderServiceExtensions_CreateScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateScope").FirstOrDefault();
                 ServiceProviderServiceExtensions_CreateAsyncScopeSymbol = ServiceProviderServiceExtensionsSymbol.GetMembers("CreateAsyncScope").FirstOrDefault();
             }
 
-            Moq_MockSymbol = compilation.GetBestTypeByMetadataName("Moq.Mock`1");
+            Moq_MockSymbol = compilation.GetTypeByMetadataName("Moq.Mock`1");
 
             // Detect test frameworks
-            var xunitAssertSymbol = compilation.GetBestTypeByMetadataName("Xunit.Assert");
-            var nunitAssertSymbol = compilation.GetBestTypeByMetadataName("NUnit.Framework.Assert");
-            var msTestAssertSymbol = compilation.GetBestTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
+            var xunitAssertSymbol = compilation.GetTypeByMetadataName("Xunit.Assert");
+            var nunitAssertSymbol = compilation.GetTypeByMetadataName("NUnit.Framework.Assert");
+            var msTestAssertSymbol = compilation.GetTypeByMetadataName("Microsoft.VisualStudio.TestTools.UnitTesting.Assert");
             IsTestProject = xunitAssertSymbol is not null || nunitAssertSymbol is not null || msTestAssertSymbol is not null;
 
-            TemporaryDirectorySymbol = compilation.GetBestTypeByMetadataName("Meziantou.Framework.TemporaryDirectory");
+            TemporaryDirectorySymbol = compilation.GetTypeByMetadataName("Meziantou.Framework.TemporaryDirectory");
 
             var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);

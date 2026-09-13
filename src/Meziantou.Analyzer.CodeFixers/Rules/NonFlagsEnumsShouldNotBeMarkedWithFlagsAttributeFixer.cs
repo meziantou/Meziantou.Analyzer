@@ -19,7 +19,7 @@ public sealed class NonFlagsEnumsShouldNotBeMarkedWithFlagsAttributeFixer : Code
         if (semanticModel is null)
             return;
 
-        var flagsAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.FlagsAttribute");
+        var flagsAttributeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.FlagsAttribute");
         if (flagsAttributeSymbol is null)
             return;
 

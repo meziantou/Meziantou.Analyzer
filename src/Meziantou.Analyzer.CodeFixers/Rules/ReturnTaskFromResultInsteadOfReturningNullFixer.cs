@@ -24,7 +24,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullFixer : CodeFixPro
         if (ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(semanticModel, nodeToFix, context.CancellationToken)?.ReturnType is not INamedTypeSymbol type)
             return;
 
-        var taskTypeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
+        var taskTypeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
         if (taskTypeSymbol is null)
             return;
 
