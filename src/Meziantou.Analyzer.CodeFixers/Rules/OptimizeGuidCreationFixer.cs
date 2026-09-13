@@ -53,7 +53,7 @@ public sealed class OptimizeGuidCreationFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
         var uppercase = rawGuid.All(c => !char.IsLetter(c) || char.IsUpper(c));
-        var newExpression = generator.ObjectCreationExpression(editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Guid")!,
+        var newExpression = generator.ObjectCreationExpression(editor.SemanticModel.Compilation.GetTypeByMetadataName("System.Guid")!,
             [
                 CreateHexLiteral(data1, uppercase),
                 CreateHexLiteral(data2, uppercase),

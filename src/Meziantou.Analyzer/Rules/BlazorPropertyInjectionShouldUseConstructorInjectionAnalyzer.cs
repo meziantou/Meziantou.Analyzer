@@ -38,8 +38,8 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 
         public AnalyzerContext(Compilation compilation)
         {
-            InjectAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.InjectAttribute");
-            IComponentSymbol = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+            InjectAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.InjectAttribute");
+            IComponentSymbol = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
         }
 
         public INamedTypeSymbol? InjectAttributeSymbol { get; }

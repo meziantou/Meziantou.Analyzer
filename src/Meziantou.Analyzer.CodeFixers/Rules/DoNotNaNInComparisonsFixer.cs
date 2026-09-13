@@ -131,7 +131,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
                 return true;
             }
 
-            if (compilation.GetBestTypeByMetadataName("System.Half") is { } halfTypeSymbol && containingType.IsEqualTo(halfTypeSymbol))
+            if (compilation.GetTypeByMetadataName("System.Half") is { } halfTypeSymbol && containingType.IsEqualTo(halfTypeSymbol))
             {
                 typeSymbol = containingType;
                 expression = memberReference.Syntax as ExpressionSyntax;
@@ -141,7 +141,7 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             // Generic math: T.NaN where T is constrained to IFloatingPointIeee754<T>. The member is the one of the
             // interface, so the type to call IsNaN on is its type argument, which is the type written in the code.
             if (containingType is { TypeArguments: [{ } selfType] } &&
-                containingType.OriginalDefinition.IsEqualTo(compilation.GetBestTypeByMetadataName("System.Numerics.IFloatingPointIeee754`1")))
+                containingType.OriginalDefinition.IsEqualTo(compilation.GetTypeByMetadataName("System.Numerics.IFloatingPointIeee754`1")))
             {
                 typeSymbol = selfType;
                 expression = memberReference.Syntax as ExpressionSyntax;

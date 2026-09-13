@@ -23,7 +23,7 @@ public sealed class RemoveUselessToStringFixer : CodeFixProvider
 
         // The arguments are evaluated even though string.ToString ignores them, so they can only be removed
         // along with the call when evaluating them has no observable effect
-        var cultureInfoType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+        var cultureInfoType = semanticModel.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
         foreach (var argument in operation.Arguments)
         {
             if (!CanBeDiscarded(argument.Value, cultureInfoType))

@@ -77,13 +77,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         private readonly OverloadFinder _overloadFinder = new(compilation);
         private readonly HashSet<ISymbol> _excludedSymbols = AnnotationExclusions.GetExcludedSymbols(compilation, AnnotationAttributes.IsExcludeFromCancellationTokenAnalysisAttributeSymbol);
 
-        public INamedTypeSymbol CancellationTokenSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
-        public INamedTypeSymbol? CancellationTokenSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.CancellationTokenSource");
-        private INamedTypeSymbol? TaskSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        private INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
-        private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
-        private INamedTypeSymbol? XunitTestContextSymbol { get; } = compilation.GetBestTypeByMetadataName("Xunit.TestContext");
+        public INamedTypeSymbol CancellationTokenSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.CancellationToken")!;  // Not nullable as it is checked before registering the Operation actions
+        public INamedTypeSymbol? CancellationTokenSourceSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.CancellationTokenSource");
+        private INamedTypeSymbol? TaskSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        private INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+        private INamedTypeSymbol? EnumeratorCancellationAttributeSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
+        private INamedTypeSymbol? XunitTestContextSymbol { get; } = compilation.GetTypeByMetadataName("Xunit.TestContext");
 
         private bool IsExcluded(IMethodSymbol method)
         {

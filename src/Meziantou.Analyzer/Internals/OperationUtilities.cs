@@ -2,7 +2,7 @@
 
 internal sealed class OperationUtilities(Compilation compilation)
 {
-    private readonly INamedTypeSymbol? _expressionSymbol = compilation.GetBestTypeByMetadataName("System.Linq.Expressions.Expression");
+    private readonly INamedTypeSymbol? _expressionSymbol = compilation.GetTypeByMetadataName("System.Linq.Expressions.Expression");
 
     public bool IsInExpressionContext(IOperation operation)
     {

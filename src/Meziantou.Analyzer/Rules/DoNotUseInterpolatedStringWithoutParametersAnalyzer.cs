@@ -22,8 +22,8 @@ public sealed class DoNotUseInterpolatedStringWithoutParametersAnalyzer : Diagno
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var formattableStringSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.FormattableString");
-            var formattableSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormattable");
+            var formattableStringSymbol = ctx.Compilation.GetTypeByMetadataName("System.FormattableString");
+            var formattableSymbol = ctx.Compilation.GetTypeByMetadataName("System.IFormattable");
             var interpolatedStringHandlerAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
 
             ctx.RegisterOperationAction(context => AnalyzeInterpolatedString(context, formattableStringSymbol, formattableSymbol, interpolatedStringHandlerAttributeSymbol), OperationKind.InterpolatedString);

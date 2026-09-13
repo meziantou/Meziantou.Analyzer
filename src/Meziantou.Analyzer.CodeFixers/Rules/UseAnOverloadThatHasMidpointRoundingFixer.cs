@@ -25,7 +25,7 @@ public sealed class UseAnOverloadThatHasMidpointRoundingFixer : CodeFixProvider
         if (semanticModel.GetOperation(invocationExpression, context.CancellationToken) is not IInvocationOperation invocationOperation)
             return;
 
-        var midpointRoundingSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.MidpointRounding");
+        var midpointRoundingSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.MidpointRounding");
         if (midpointRoundingSymbol is null)
             return;
 

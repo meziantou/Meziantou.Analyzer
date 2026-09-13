@@ -32,10 +32,10 @@ public sealed class AvoidEnumerableContainsOnSetAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private INamedTypeSymbol? EnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
-        private INamedTypeSymbol? ISetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1");
-        private INamedTypeSymbol? IReadOnlySetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1");
-        private INamedTypeSymbol? IImmutableSetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1");
+        private INamedTypeSymbol? EnumerableSymbol { get; } = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+        private INamedTypeSymbol? ISetSymbol { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.ISet`1");
+        private INamedTypeSymbol? IReadOnlySetSymbol { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1");
+        private INamedTypeSymbol? IImmutableSetSymbol { get; } = compilation.GetTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1");
 
         public bool IsValid => EnumerableSymbol is not null && (ISetSymbol is not null || IReadOnlySetSymbol is not null || IImmutableSetSymbol is not null);
 

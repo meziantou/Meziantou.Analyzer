@@ -52,10 +52,10 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public INamedTypeSymbol ArgumentExceptionType { get; } = compilation.GetBestTypeByMetadataName("System.ArgumentException")!;
-        public INamedTypeSymbol ArgumentNullExceptionType { get; } = compilation.GetBestTypeByMetadataName("System.ArgumentNullException")!;
-        public INamedTypeSymbol? ArgumentOutOfRangeExceptionType { get; } = compilation.GetBestTypeByMetadataName("System.ArgumentOutOfRangeException");
-        public INamedTypeSymbol? InvalidEnumArgumentExceptionType { get; } = compilation.GetBestTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException");
+        public INamedTypeSymbol ArgumentExceptionType { get; } = compilation.GetTypeByMetadataName("System.ArgumentException")!;
+        public INamedTypeSymbol ArgumentNullExceptionType { get; } = compilation.GetTypeByMetadataName("System.ArgumentNullException")!;
+        public INamedTypeSymbol? ArgumentOutOfRangeExceptionType { get; } = compilation.GetTypeByMetadataName("System.ArgumentOutOfRangeException");
+        public INamedTypeSymbol? InvalidEnumArgumentExceptionType { get; } = compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException");
                 public INamedTypeSymbol? CallerArgumentExpressionAttribute { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
 
         public bool IsValid => ArgumentExceptionType is not null && ArgumentNullExceptionType is not null;

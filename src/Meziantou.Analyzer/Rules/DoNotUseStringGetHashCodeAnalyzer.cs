@@ -22,7 +22,7 @@ public sealed class DoNotUseStringGetHashCodeAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
-            var stringComparisonSymbol = context.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+            var stringComparisonSymbol = context.Compilation.GetTypeByMetadataName("System.StringComparison");
             if (stringComparisonSymbol is null)
                 return;
 

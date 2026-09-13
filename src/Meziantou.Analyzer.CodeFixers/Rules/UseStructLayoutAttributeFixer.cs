@@ -24,11 +24,11 @@ public sealed class UseStructLayoutAttributeFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var structLayoutAttribute = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
+        var structLayoutAttribute = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.StructLayoutAttribute");
         if (structLayoutAttribute is null)
             return;
 
-        var layoutKindEnum = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
+        var layoutKindEnum = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.LayoutKind");
         if (layoutKindEnum is null)
             return;
 

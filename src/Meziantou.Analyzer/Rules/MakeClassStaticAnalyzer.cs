@@ -54,7 +54,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         private readonly List<ITypeSymbol> _potentialClasses = [];
         private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
 
-        public INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
+        public INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {

@@ -32,8 +32,8 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public INamedTypeSymbol? TaskSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        public INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        public INamedTypeSymbol? TaskSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        public INamedTypeSymbol? TaskOfTSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
 
         public void AnalyzeReturnOperation(OperationAnalysisContext context)
         {

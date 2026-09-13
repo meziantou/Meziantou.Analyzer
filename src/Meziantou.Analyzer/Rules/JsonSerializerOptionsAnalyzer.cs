@@ -48,10 +48,10 @@ public sealed class JsonSerializerOptionsAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _optionsSymbol = compilation.GetBestTypeByMetadataName("System.Text.Json.JsonSerializerOptions");
+        private readonly INamedTypeSymbol? _optionsSymbol = compilation.GetTypeByMetadataName("System.Text.Json.JsonSerializerOptions");
 
         // JsonSerializerDefaults.Strict, introduced in .NET 10, sets both properties
-        private readonly IFieldSymbol? _strictDefaults = compilation.GetBestTypeByMetadataName("System.Text.Json.JsonSerializerDefaults")?
+        private readonly IFieldSymbol? _strictDefaults = compilation.GetTypeByMetadataName("System.Text.Json.JsonSerializerDefaults")?
             .GetMembers("Strict")
             .OfType<IFieldSymbol>()
             .FirstOrDefault(field => field.HasConstantValue);

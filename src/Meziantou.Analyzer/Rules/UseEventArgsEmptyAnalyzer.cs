@@ -22,7 +22,7 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
-            var type = context.Compilation.GetBestTypeByMetadataName("System.EventArgs");
+            var type = context.Compilation.GetTypeByMetadataName("System.EventArgs");
             if (type is null)
                 return;
 

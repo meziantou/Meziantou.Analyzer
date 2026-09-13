@@ -39,8 +39,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         public AnalyzerContext(Compilation compilation)
         {
-            _stringBuilderSymbol = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-            _formatProviderSymbol = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+            _stringBuilderSymbol = compilation.GetTypeByMetadataName("System.Text.StringBuilder");
+            _formatProviderSymbol = compilation.GetTypeByMetadataName("System.IFormatProvider");
             if (_stringBuilderSymbol is null)
                 return;
 
@@ -62,8 +62,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_String));
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Char));
             _appendOverloadTypes.AddIfNotNull(compilation.CreateArrayTypeSymbol(compilation.GetSpecialType(SpecialType.System_Char)));
-            _appendOverloadTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
-            _appendOverloadTypes.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.ReadOnlyMemory`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
+            _appendOverloadTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.ReadOnlyMemory`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
         }
 
         public bool IsValid => _stringBuilderSymbol is not null;

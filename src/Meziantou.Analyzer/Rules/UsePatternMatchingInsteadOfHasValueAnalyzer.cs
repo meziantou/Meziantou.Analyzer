@@ -37,7 +37,7 @@ public sealed class UsePatternMatchingInsteadOfHasValueAnalyzer : DiagnosticAnal
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly OperationUtilities _operationUtilities = new(compilation);
-        private readonly ISymbol? _nullableSymbol = compilation.GetBestTypeByMetadataName("System.Nullable`1");
+        private readonly ISymbol? _nullableSymbol = compilation.GetTypeByMetadataName("System.Nullable`1");
 
         public void AnalyzeHasValue(OperationAnalysisContext context)
         {

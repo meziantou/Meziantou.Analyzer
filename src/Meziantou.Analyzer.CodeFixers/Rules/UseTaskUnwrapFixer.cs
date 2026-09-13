@@ -30,7 +30,7 @@ public sealed class UseTaskUnwrapFixer : CodeFixProvider
             return;
 
         // Unwrap is an extension method, so its namespace must be imported for the new invocation to compile
-        var taskExtensionsSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.TaskExtensions");
+        var taskExtensionsSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.Tasks.TaskExtensions");
         if (taskExtensionsSymbol is null)
             return;
 

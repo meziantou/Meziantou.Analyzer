@@ -30,8 +30,8 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
             if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return;
 
-            var formatProviderSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-            var cultureInfoSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+            var formatProviderSymbol = ctx.Compilation.GetTypeByMetadataName("System.IFormatProvider");
+            var cultureInfoSymbol = ctx.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
             var defaultInterpolatedStringHandlerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
             var stringCreateSymbol = ctx.Compilation.GetSpecialType(SpecialType.System_String)

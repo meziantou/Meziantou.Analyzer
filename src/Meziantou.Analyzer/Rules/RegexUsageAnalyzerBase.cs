@@ -30,10 +30,10 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
     private protected sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly ITypeSymbol? _regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        private readonly ITypeSymbol? _regexOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
-        private readonly ITypeSymbol? _generatedRegexAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-        private readonly ITypeSymbol? _timeSpanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
+        private readonly ITypeSymbol? _regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        private readonly ITypeSymbol? _regexOptionsSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+        private readonly ITypeSymbol? _generatedRegexAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+        private readonly ITypeSymbol? _timeSpanSymbol = compilation.GetTypeByMetadataName("System.TimeSpan");
 
         public void AnalyzeGeneratedRegexSymbol(SymbolAnalysisContext context)
         {

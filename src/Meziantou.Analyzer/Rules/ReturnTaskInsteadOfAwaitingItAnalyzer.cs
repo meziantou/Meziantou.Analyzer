@@ -62,10 +62,10 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
             _awaitableTypes = new AwaitableTypes(compilation);
             _configuredAwaitableSymbols =
             [
-                compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable"),
-                compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1"),
-                compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable"),
-                compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1"),
+                compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable"),
+                compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1"),
+                compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable"),
+                compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1"),
             ];
             _configureAwaitOptionsSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
         }

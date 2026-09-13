@@ -76,7 +76,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
             return document;
 
-        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");
         if (genericInterfaceSymbol is null)
             return document;
 
@@ -134,7 +134,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
             return document;
 
-        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IEquatable`1");
+        var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IEquatable`1");
         if (genericInterfaceSymbol is null)
             return document;
 
@@ -161,7 +161,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (semanticModel is null || semanticModel.GetDeclaredSymbol(nodeToFix, cancellationToken: cancellationToken) is not INamedTypeSymbol declaredTypeSymbol)
             return document;
 
-        var genericInterfaceSymbol = semanticModel.Compilation.GetBestTypeByMetadataName(metadataName);
+        var genericInterfaceSymbol = semanticModel.Compilation.GetTypeByMetadataName(metadataName);
         if (genericInterfaceSymbol is null)
             return document;
 
@@ -256,8 +256,8 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
 
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
-        var comparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.Comparer`1");
-        var equalityComparerTypeDefinition = semanticModel.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
+        var comparerTypeDefinition = semanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.Comparer`1");
+        var equalityComparerTypeDefinition = semanticModel.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
         if (comparerTypeDefinition is null || equalityComparerTypeDefinition is null)
             return document;
 

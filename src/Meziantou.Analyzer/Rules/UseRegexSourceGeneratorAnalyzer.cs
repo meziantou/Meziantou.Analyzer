@@ -36,9 +36,9 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         private const string MatchTimeoutParameterName = "matchTimeout";
 
         private readonly TimeSpanOperation _timeSpanOperation = new(compilation);
-        private readonly ITypeSymbol? _regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        private readonly ITypeSymbol? _regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-        private readonly ITypeSymbol? _timespanSymbol = compilation.GetBestTypeByMetadataName("System.TimeSpan");
+        private readonly ITypeSymbol? _regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        private readonly ITypeSymbol? _regexGeneratorAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+        private readonly ITypeSymbol? _timespanSymbol = compilation.GetTypeByMetadataName("System.TimeSpan");
 
         private bool CanReport(IOperation operation)
         {

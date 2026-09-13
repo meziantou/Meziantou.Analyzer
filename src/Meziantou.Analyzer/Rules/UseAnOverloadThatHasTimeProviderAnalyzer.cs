@@ -53,7 +53,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
         private readonly OverloadFinder _overloadFinder = new(compilation);
 
-        public INamedTypeSymbol TimeProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeProvider")!; // not null as we check it in the constructor
+        public INamedTypeSymbol TimeProviderSymbol { get; } = compilation.GetTypeByMetadataName("System.TimeProvider")!; // not null as we check it in the constructor
 
         private bool HasExplicitTimeProviderArgument(IInvocationOperation operation)
         {

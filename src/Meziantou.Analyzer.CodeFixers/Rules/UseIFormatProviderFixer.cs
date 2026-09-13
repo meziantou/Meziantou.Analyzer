@@ -22,7 +22,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         if (semanticModel?.GetOperation(invocationExpression, context.CancellationToken) is not IInvocationOperation invocationOperation)
             return;
 
-        var formatProviderSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+        var formatProviderSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IFormatProvider");
         var stringSymbol = semanticModel.Compilation.GetSpecialType(SpecialType.System_String);
         if (formatProviderSymbol is null || stringSymbol is null)
             return;

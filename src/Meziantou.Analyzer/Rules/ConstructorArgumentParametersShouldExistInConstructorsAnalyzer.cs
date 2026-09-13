@@ -33,7 +33,7 @@ public sealed class ConstructorArgumentParametersShouldExistInConstructorsAnalyz
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public ISymbol? ConstructorArgumentSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Markup.ConstructorArgumentAttribute");
+        public ISymbol? ConstructorArgumentSymbol { get; } = compilation.GetTypeByMetadataName("System.Windows.Markup.ConstructorArgumentAttribute");
 
         public bool IsValid => ConstructorArgumentSymbol is not null;
 

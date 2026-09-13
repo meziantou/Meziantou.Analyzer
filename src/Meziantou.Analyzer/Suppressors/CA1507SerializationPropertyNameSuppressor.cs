@@ -36,7 +36,7 @@ public sealed class CA1507SerializationPropertyNameSuppressor : DiagnosticSuppre
 
             if (jsonPropertyAttributeSymbol is null)
             {
-                jsonPropertyAttributeSymbol = context.Compilation.GetBestTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute");
+                jsonPropertyAttributeSymbol = context.Compilation.GetTypeByMetadataName("Newtonsoft.Json.JsonPropertyAttribute");
                 if (jsonPropertyAttributeSymbol is null)
                     return;
             }

@@ -25,7 +25,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
             if (!ctx.Compilation.GetCSharpLanguageVersion().IsCSharp10OrGreater())
                 return;
 
-            var formatProviderSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+            var formatProviderSymbol = ctx.Compilation.GetTypeByMetadataName("System.IFormatProvider");
             var defaultInterpolatedStringHandlerSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler");
 
             var stringCreateSymbol = ctx.Compilation.GetSpecialType(SpecialType.System_String)
@@ -33,7 +33,7 @@ public sealed class UseStringCreateInsteadOfFormattableStringAnalyzer : Diagnost
                 .OfType<IMethodSymbol>()
                 .FirstOrDefault(m => m.ReturnType.IsString() && m.Parameters.Length == 2 && m.Parameters[0].Type.IsEqualTo(formatProviderSymbol) && m.Parameters[1].Type.IsEqualTo(defaultInterpolatedStringHandlerSymbol));
 
-            var formattableStringSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.FormattableString");
+            var formattableStringSymbol = ctx.Compilation.GetTypeByMetadataName("System.FormattableString");
             if (stringCreateSymbol is null || formatProviderSymbol is null)
                 return;
 

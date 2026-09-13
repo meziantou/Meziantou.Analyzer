@@ -22,7 +22,7 @@ public sealed class ExceptionNameShouldEndWithExceptionAnalyzer : DiagnosticAnal
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var exceptionType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Exception");
+            var exceptionType = compilationContext.Compilation.GetTypeByMetadataName("System.Exception");
             if (exceptionType is null)
                 return;
 

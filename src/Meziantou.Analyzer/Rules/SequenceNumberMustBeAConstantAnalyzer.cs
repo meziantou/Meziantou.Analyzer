@@ -52,8 +52,8 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
             "AddEventStopPropagationAttribute",
         };
 
-        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
-        public INamedTypeSymbol? WebRenderTreeBuilderExtensionsSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.Web.WebRenderTreeBuilderExtensions");
+        public INamedTypeSymbol? RenderTreeBuilderSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder");
+        public INamedTypeSymbol? WebRenderTreeBuilderExtensionsSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.Web.WebRenderTreeBuilderExtensions");
 
         public bool IsValid => RenderTreeBuilderSymbol is not null;
 

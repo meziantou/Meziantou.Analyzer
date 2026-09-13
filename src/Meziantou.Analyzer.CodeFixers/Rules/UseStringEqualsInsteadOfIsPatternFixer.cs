@@ -29,7 +29,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
             return;
 
         var compilation = semanticModel.Compilation;
-        if (compilation.GetBestTypeByMetadataName("System.StringComparison") is not { } stringComparisonType)
+        if (compilation.GetTypeByMetadataName("System.StringComparison") is not { } stringComparisonType)
             return;
 
         if (semanticModel.GetOperation(isPatternExpression, context.CancellationToken) is not IIsPatternOperation { Value.Type: { } operandType })
@@ -62,7 +62,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
         // The constant pattern also matches Span<char> and ReadOnlySpan<char> (C# 11). string.Equals does not accept
         // them, so the comparison is done by MemoryExtensions.Equals(ReadOnlySpan<char>, ReadOnlySpan<char>, StringComparison).
         if (operandType is INamedTypeSymbol { TypeArguments: [{ SpecialType: SpecialType.System_Char }] } namedType &&
-            namedType.OriginalDefinition.IsEqualToAny(compilation.GetBestTypeByMetadataName("System.Span`1"), compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1")))
+            namedType.OriginalDefinition.IsEqualToAny(compilation.GetTypeByMetadataName("System.Span`1"), compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")))
         {
             return HasMemoryExtensionsEquals(compilation, stringComparisonType) ? OperandKind.Span : OperandKind.None;
         }
@@ -77,8 +77,8 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
 
     private static bool HasMemoryExtensionsEquals(Compilation compilation, INamedTypeSymbol stringComparisonType)
     {
-        var memoryExtensionsType = compilation.GetBestTypeByMetadataName("System.MemoryExtensions");
-        var readOnlySpanType = compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1");
+        var memoryExtensionsType = compilation.GetTypeByMetadataName("System.MemoryExtensions");
+        var readOnlySpanType = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1");
         if (memoryExtensionsType is null || readOnlySpanType is null)
             return false;
 
@@ -97,13 +97,13 @@ public sealed class UseStringEqualsInsteadOfIsPatternFixer : CodeFixProvider
         var generator = editor.Generator;
         var compilation = editor.SemanticModel.Compilation;
 
-        var stringComparisonType = compilation.GetBestTypeByMetadataName("System.StringComparison")!;
+        var stringComparisonType = compilation.GetTypeByMetadataName("System.StringComparison")!;
         var stringType = compilation.GetSpecialType(SpecialType.System_String);
 
         var newExpression = operandKind switch
         {
             OperandKind.Span => generator.InvocationExpression(
-                generator.TypeMemberAccessExpression(compilation.GetBestTypeByMetadataName("System.MemoryExtensions")!, nameof(MemoryExtensions.Equals), addImport: true),
+                generator.TypeMemberAccessExpression(compilation.GetTypeByMetadataName("System.MemoryExtensions")!, nameof(MemoryExtensions.Equals), addImport: true),
                 isPatternExpression.Expression,
                 constantExpression,
                 generator.TypeMemberAccessExpression(stringComparisonType, comparisonMode, addImport: true)),

@@ -36,22 +36,22 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
+        private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
 
-        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
-        private INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
-        private INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+        private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
+        private INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
+        private INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
 
-        private INamedTypeSymbol? WPF_DispatcherObject { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Threading.DispatcherObject");
-        private INamedTypeSymbol? WPF_ICommand { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Input.ICommand");
-        private INamedTypeSymbol? WinForms_Control { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Forms.Control");
-        private INamedTypeSymbol? WebForms_WebControl { get; } = compilation.GetBestTypeByMetadataName("System.Web.UI.WebControls.WebControl");
-        private INamedTypeSymbol? AspNetCore_ControllerBase { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase");
-        private INamedTypeSymbol? AspNetCore_IRazorPage { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage");
-        private INamedTypeSymbol? AspNetCore_ITagHelper { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper");
-        private INamedTypeSymbol? AspNetCore_ITagHelperComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent");
-        private INamedTypeSymbol? AspNetCore_IFilterMetadata { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
-        private INamedTypeSymbol? AspNetCore_IComponent { get; } = compilation.GetBestTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
+        private INamedTypeSymbol? WPF_DispatcherObject { get; } = compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject");
+        private INamedTypeSymbol? WPF_ICommand { get; } = compilation.GetTypeByMetadataName("System.Windows.Input.ICommand");
+        private INamedTypeSymbol? WinForms_Control { get; } = compilation.GetTypeByMetadataName("System.Windows.Forms.Control");
+        private INamedTypeSymbol? WebForms_WebControl { get; } = compilation.GetTypeByMetadataName("System.Web.UI.WebControls.WebControl");
+        private INamedTypeSymbol? AspNetCore_ControllerBase { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.ControllerBase");
+        private INamedTypeSymbol? AspNetCore_IRazorPage { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Razor.IRazorPage");
+        private INamedTypeSymbol? AspNetCore_ITagHelper { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelper");
+        private INamedTypeSymbol? AspNetCore_ITagHelperComponent { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Razor.TagHelpers.ITagHelperComponent");
+        private INamedTypeSymbol? AspNetCore_IFilterMetadata { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Mvc.Filters.IFilterMetadata");
+        private INamedTypeSymbol? AspNetCore_IComponent { get; } = compilation.GetTypeByMetadataName("Microsoft.AspNetCore.Components.IComponent");
 
         public void AnalyzeOperationBlockStart(OperationBlockStartAnalysisContext context)
         {

@@ -26,13 +26,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             return;
 
         var compilation = semanticModel.Compilation;
-        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex") is null)
+        if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex") is null)
             return;
 
-        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute") is null)
+        if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute") is null)
             return;
 
-        if (compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions") is null)
+        if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions") is null)
             return;
 
         var arguments = semanticModel.GetOperation(nodeToFix, context.CancellationToken) switch
@@ -79,8 +79,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
         var compilation = semanticModel!.Compilation;
 
-        var regexSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
-        var regexGeneratorAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+        var regexSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
+        var regexGeneratorAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
         if (regexSymbol is null || regexGeneratorAttributeSymbol is null)
             return document;
 
@@ -303,7 +303,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (timeoutValue is not null && regexOptionsValue is null)
         {
-            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
+            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
         }
 
         SyntaxNode newMember;
@@ -720,7 +720,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (timeoutValue is not null && regexOptionsValue is null)
         {
-            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
+            regexOptionsValue = generator.MemberAccessExpression(generator.TypeExpression(compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions")!), "None");
         }
 
         // Generate the member

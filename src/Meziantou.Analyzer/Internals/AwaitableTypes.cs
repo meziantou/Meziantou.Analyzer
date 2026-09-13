@@ -10,14 +10,14 @@ internal sealed class AwaitableTypes
 
     public AwaitableTypes(Compilation compilation)
     {
-        INotifyCompletionSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.INotifyCompletion");
+        INotifyCompletionSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.INotifyCompletion");
         AsyncMethodBuilderAttributeSymbol = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.AsyncMethodBuilderAttribute");
-        IAsyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
-        IAsyncEnumeratorSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
-        TaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task");
-        TaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        ValueTaskSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask");
-        ValueTaskOfTSymbol = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        IAsyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
+        IAsyncEnumeratorSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerator`1");
+        TaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task");
+        TaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+        ValueTaskSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask");
+        ValueTaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
 
         if (INotifyCompletionSymbol is not null)
         {

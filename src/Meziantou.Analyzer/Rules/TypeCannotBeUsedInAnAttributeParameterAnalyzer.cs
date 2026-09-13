@@ -68,9 +68,9 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly ITypeSymbol? _attributeSymbol = compilation.GetBestTypeByMetadataName("System.Attribute");
-        private readonly ITypeSymbol? _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
-        private readonly ITypeSymbol? _enumSymbol = compilation.GetBestTypeByMetadataName("System.Enum");
+        private readonly ITypeSymbol? _attributeSymbol = compilation.GetTypeByMetadataName("System.Attribute");
+        private readonly ITypeSymbol? _typeSymbol = compilation.GetTypeByMetadataName("System.Type");
+        private readonly ITypeSymbol? _enumSymbol = compilation.GetTypeByMetadataName("System.Enum");
 
         public bool IsValid => _attributeSymbol is not null;
 

@@ -23,7 +23,7 @@ public sealed class DoNotRaiseNotImplementedExceptionAnalyzer : DiagnosticAnalyz
         context.RegisterCompilationStartAction(ctx =>
         {
             var compilation = ctx.Compilation;
-            var type = compilation.GetBestTypeByMetadataName("System.NotImplementedException");
+            var type = compilation.GetTypeByMetadataName("System.NotImplementedException");
 
             if (type is not null)
             {

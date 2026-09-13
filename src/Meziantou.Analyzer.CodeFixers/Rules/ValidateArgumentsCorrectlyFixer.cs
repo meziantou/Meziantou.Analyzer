@@ -107,7 +107,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
 
     private static ParameterListSyntax RemoveEnumeratorCancellationAttribute(ParameterListSyntax parameterListSyntax, SemanticModel semanticModel, CancellationToken cancellationToken)
     {
-        var enumeratorCancellationSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
+        var enumeratorCancellationSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.EnumeratorCancellationAttribute");
         if (enumeratorCancellationSymbol is null)
             return parameterListSyntax;
 

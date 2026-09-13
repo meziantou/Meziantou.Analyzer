@@ -33,7 +33,7 @@ public sealed class JSInvokableMethodsMustBePublicAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        public INamedTypeSymbol? JsInvokableSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.JSInterop.JSInvokableAttribute");
+        public INamedTypeSymbol? JsInvokableSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.JSInterop.JSInvokableAttribute");
 
         public bool IsValid => JsInvokableSymbol is not null;
 

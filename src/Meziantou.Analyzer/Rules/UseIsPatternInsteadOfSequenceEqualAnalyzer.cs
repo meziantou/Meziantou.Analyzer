@@ -23,10 +23,10 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
         context.RegisterCompilationStartAction(context =>
         {
             var compilation = context.Compilation;
-            var memoryExtensionsSymbol = compilation.GetBestTypeByMetadataName("System.MemoryExtensions");
-            var spanCharSymbol = compilation.GetBestTypeByMetadataName("System.Span`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char));
-            var readOnlySpanCharSymbol = compilation.GetBestTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char));
-            var stringComparisonSymbol = compilation.GetBestTypeByMetadataName("System.StringComparison");
+            var memoryExtensionsSymbol = compilation.GetTypeByMetadataName("System.MemoryExtensions");
+            var spanCharSymbol = compilation.GetTypeByMetadataName("System.Span`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char));
+            var readOnlySpanCharSymbol = compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char));
+            var stringComparisonSymbol = compilation.GetTypeByMetadataName("System.StringComparison");
             if (memoryExtensionsSymbol is null || spanCharSymbol is null || readOnlySpanCharSymbol is null || stringComparisonSymbol is null)
                 return;
 

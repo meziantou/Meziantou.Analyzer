@@ -23,7 +23,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         context.RegisterCompilationStartAction(context =>
         {
             var overloadFinder = new OverloadFinder(context.Compilation);
-            var exceptionSymbol = context.Compilation.GetBestTypeByMetadataName("System.Exception");
+            var exceptionSymbol = context.Compilation.GetTypeByMetadataName("System.Exception");
             if (exceptionSymbol is null)
                 return;
 

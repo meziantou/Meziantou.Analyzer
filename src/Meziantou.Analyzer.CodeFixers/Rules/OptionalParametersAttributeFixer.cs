@@ -27,9 +27,9 @@ public sealed class OptionalParametersAttributeFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var optionalAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
-        var defaultValueAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
-        var defaultParameterValueAttributeSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
+        var optionalAttributeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.OptionalAttribute");
+        var defaultValueAttributeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.ComponentModel.DefaultValueAttribute");
+        var defaultParameterValueAttributeSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.DefaultParameterValueAttribute");
         foreach (var diagnostic in context.Diagnostics)
         {
             if (diagnostic.Id == RuleIdentifiers.ParametersWithDefaultValueShouldBeMarkedWithOptionalParameter)

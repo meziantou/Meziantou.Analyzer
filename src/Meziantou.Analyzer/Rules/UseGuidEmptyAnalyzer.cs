@@ -22,7 +22,7 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var guidType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Guid");
+            var guidType = compilationContext.Compilation.GetTypeByMetadataName("System.Guid");
             if (guidType is null)
                 return;
 

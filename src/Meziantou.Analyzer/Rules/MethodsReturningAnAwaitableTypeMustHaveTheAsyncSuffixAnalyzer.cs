@@ -67,8 +67,8 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         private static readonly ImmutableHashSet<string> WellKnownMethodNames = ImmutableHashSet.Create(StringComparer.Ordinal, "ConfigureAwait", "GetAwaiter", "WithCancellation");
 
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
-        private readonly INamedTypeSymbol? _iasyncEnumerableSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
-        private readonly INamedTypeSymbol? _benchmarkSymbol = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
+        private readonly INamedTypeSymbol? _iasyncEnumerableSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IAsyncEnumerable`1");
+        private readonly INamedTypeSymbol? _benchmarkSymbol = compilation.GetTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
 
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {

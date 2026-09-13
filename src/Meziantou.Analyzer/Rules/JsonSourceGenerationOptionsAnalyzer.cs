@@ -45,11 +45,11 @@ public sealed class JsonSourceGenerationOptionsAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _jsonSerializerContextSymbol = compilation.GetBestTypeByMetadataName("System.Text.Json.Serialization.JsonSerializerContext");
-        private readonly INamedTypeSymbol? _attributeSymbol = compilation.GetBestTypeByMetadataName("System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute");
+        private readonly INamedTypeSymbol? _jsonSerializerContextSymbol = compilation.GetTypeByMetadataName("System.Text.Json.Serialization.JsonSerializerContext");
+        private readonly INamedTypeSymbol? _attributeSymbol = compilation.GetTypeByMetadataName("System.Text.Json.Serialization.JsonSourceGenerationOptionsAttribute");
 
         // JsonSerializerDefaults.Strict, introduced in .NET 10, sets both properties
-        private readonly IFieldSymbol? _strictDefaults = compilation.GetBestTypeByMetadataName("System.Text.Json.JsonSerializerDefaults")?
+        private readonly IFieldSymbol? _strictDefaults = compilation.GetTypeByMetadataName("System.Text.Json.JsonSerializerDefaults")?
             .GetMembers("Strict")
             .OfType<IFieldSymbol>()
             .FirstOrDefault(field => field.HasConstantValue);

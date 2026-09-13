@@ -41,7 +41,7 @@ public sealed class UseGuidEmptyFixer : CodeFixProvider
     private static SyntaxNode GenerateArrayEmptyInvocation(SyntaxGenerator generator, SemanticModel semanticModel)
     {
         return generator.TypeMemberAccessExpression(
-            semanticModel.Compilation.GetBestTypeByMetadataName("System.Guid")!,
+            semanticModel.Compilation.GetTypeByMetadataName("System.Guid")!,
             nameof(Guid.Empty));
     }
 }

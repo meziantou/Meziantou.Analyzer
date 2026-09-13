@@ -26,7 +26,7 @@ public sealed class MissingMaybeNullWhenAttributeOnTryGetValueAnalyzer : Diagnos
             if (maybeNullWhenAttributeSymbol is null)
                 return;
 
-            var idictionaryOfTSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Collections.Generic.IDictionary`2");
+            var idictionaryOfTSymbol = ctx.Compilation.GetTypeByMetadataName("System.Collections.Generic.IDictionary`2");
             if (idictionaryOfTSymbol is null)
                 return;
 

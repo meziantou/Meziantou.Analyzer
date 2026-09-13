@@ -22,7 +22,7 @@ public sealed class AttributeNameShouldEndWithAttributeAnalyzer : DiagnosticAnal
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var attributeType = compilationContext.Compilation.GetBestTypeByMetadataName("System.Attribute");
+            var attributeType = compilationContext.Compilation.GetTypeByMetadataName("System.Attribute");
             if (attributeType is null)
                 return;
 

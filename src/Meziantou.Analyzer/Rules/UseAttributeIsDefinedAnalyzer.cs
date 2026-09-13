@@ -37,12 +37,12 @@ public sealed class UseAttributeIsDefinedAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _attributeSymbol = compilation.GetBestTypeByMetadataName("System.Attribute");
-        private readonly INamedTypeSymbol? _assemblySymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Assembly");
-        private readonly INamedTypeSymbol? _moduleSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.Module");
-        private readonly INamedTypeSymbol? _memberInfoSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.MemberInfo");
-        private readonly INamedTypeSymbol? _typeSymbol = compilation.GetBestTypeByMetadataName("System.Type");
-        private readonly INamedTypeSymbol? _customAttributeExtensionsSymbol = compilation.GetBestTypeByMetadataName("System.Reflection.CustomAttributeExtensions");
+        private readonly INamedTypeSymbol? _attributeSymbol = compilation.GetTypeByMetadataName("System.Attribute");
+        private readonly INamedTypeSymbol? _assemblySymbol = compilation.GetTypeByMetadataName("System.Reflection.Assembly");
+        private readonly INamedTypeSymbol? _moduleSymbol = compilation.GetTypeByMetadataName("System.Reflection.Module");
+        private readonly INamedTypeSymbol? _memberInfoSymbol = compilation.GetTypeByMetadataName("System.Reflection.MemberInfo");
+        private readonly INamedTypeSymbol? _typeSymbol = compilation.GetTypeByMetadataName("System.Type");
+        private readonly INamedTypeSymbol? _customAttributeExtensionsSymbol = compilation.GetTypeByMetadataName("System.Reflection.CustomAttributeExtensions");
         private readonly IMethodSymbol? _enumerableAnyMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableAnyMethodDocId, compilation) as IMethodSymbol;
         private readonly IMethodSymbol? _enumerableCountMethod = DocumentationCommentId.GetFirstSymbolForDeclarationId(EnumerableCountMethodDocId, compilation) as IMethodSymbol;
 

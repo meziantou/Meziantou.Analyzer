@@ -90,7 +90,7 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 if (appendFormatSemanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation appendFormatOperation)
                     return;
 
-                var formatProviderType = appendFormatSemanticModel.Compilation.GetBestTypeByMetadataName("System.IFormatProvider");
+                var formatProviderType = appendFormatSemanticModel.Compilation.GetTypeByMetadataName("System.IFormatProvider");
                 var parameters = appendFormatOperation.TargetMethod.Parameters;
                 var formatArgIndex = parameters.Length > 0 && parameters[0].Type.IsEqualTo(formatProviderType) ? 1 : 0;
                 if (formatArgIndex >= appendFormatOperation.Arguments.Length)

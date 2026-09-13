@@ -10,37 +10,37 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
     // The culture sensitivity of a type only depends on the type and the options, both of which are stable for a compilation
     private readonly ConcurrentDictionary<CultureSensitivityCacheKey, CultureSensitivity> _cultureSensitivityCache = new();
 
-    public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormatProvider");
-    public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
-    public INamedTypeSymbol? NumberStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.NumberStyles");
-    public INamedTypeSymbol? DateTimeStyleSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Globalization.DateTimeStyles");
-    public INamedTypeSymbol? StringBuilderSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder");
-    public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
-    public INamedTypeSymbol? GuidSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Guid");
-    public INamedTypeSymbol? EnumSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Enum");
-    public INamedTypeSymbol? DateTimeOffsetSymbol { get; } = compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
-    public INamedTypeSymbol? DateOnlySymbol { get; } = compilation.GetBestTypeByMetadataName("System.DateOnly");
-    public INamedTypeSymbol? TimeOnlySymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeOnly");
-    public INamedTypeSymbol? UInt128Symbol { get; } = compilation.GetBestTypeByMetadataName("System.UInt128");
-    public INamedTypeSymbol? UriSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Uri");
-    public INamedTypeSymbol? TimeSpanSymbol { get; } = compilation.GetBestTypeByMetadataName("System.TimeSpan");
-    public INamedTypeSymbol? VersionSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Version");
-    public INamedTypeSymbol? SystemIFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.IFormattable");
-    public INamedTypeSymbol? SystemISpanFormattableSymbol { get; } = compilation.GetBestTypeByMetadataName("System.ISpanFormattable");
-    public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.FontStretch");
-    public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Windows.Media.Brush");
-    public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetBestTypeByMetadataName("NuGet.Versioning.SemanticVersion");
-    public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetBestTypeByMetadataName("System.FormattableString");
+    public INamedTypeSymbol? FormatProviderSymbol { get; } = compilation.GetTypeByMetadataName("System.IFormatProvider");
+    public INamedTypeSymbol? CultureInfoSymbol { get; } = compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
+    public INamedTypeSymbol? NumberStyleSymbol { get; } = compilation.GetTypeByMetadataName("System.Globalization.NumberStyles");
+    public INamedTypeSymbol? DateTimeStyleSymbol { get; } = compilation.GetTypeByMetadataName("System.Globalization.DateTimeStyles");
+    public INamedTypeSymbol? StringBuilderSymbol { get; } = compilation.GetTypeByMetadataName("System.Text.StringBuilder");
+    public INamedTypeSymbol? StringBuilder_AppendInterpolatedStringHandlerSymbol { get; } = compilation.GetTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler");
+    public INamedTypeSymbol? GuidSymbol { get; } = compilation.GetTypeByMetadataName("System.Guid");
+    public INamedTypeSymbol? EnumSymbol { get; } = compilation.GetTypeByMetadataName("System.Enum");
+    public INamedTypeSymbol? DateTimeOffsetSymbol { get; } = compilation.GetTypeByMetadataName("System.DateTimeOffset");
+    public INamedTypeSymbol? DateOnlySymbol { get; } = compilation.GetTypeByMetadataName("System.DateOnly");
+    public INamedTypeSymbol? TimeOnlySymbol { get; } = compilation.GetTypeByMetadataName("System.TimeOnly");
+    public INamedTypeSymbol? UInt128Symbol { get; } = compilation.GetTypeByMetadataName("System.UInt128");
+    public INamedTypeSymbol? UriSymbol { get; } = compilation.GetTypeByMetadataName("System.Uri");
+    public INamedTypeSymbol? TimeSpanSymbol { get; } = compilation.GetTypeByMetadataName("System.TimeSpan");
+    public INamedTypeSymbol? VersionSymbol { get; } = compilation.GetTypeByMetadataName("System.Version");
+    public INamedTypeSymbol? SystemIFormattableSymbol { get; } = compilation.GetTypeByMetadataName("System.IFormattable");
+    public INamedTypeSymbol? SystemISpanFormattableSymbol { get; } = compilation.GetTypeByMetadataName("System.ISpanFormattable");
+    public INamedTypeSymbol? SystemWindowsFontStretchSymbol { get; } = compilation.GetTypeByMetadataName("System.Windows.FontStretch");
+    public INamedTypeSymbol? SystemWindowsMediaBrushSymbol { get; } = compilation.GetTypeByMetadataName("System.Windows.Media.Brush");
+    public INamedTypeSymbol? NuGetVersioningSemanticVersionSymbol { get; } = compilation.GetTypeByMetadataName("NuGet.Versioning.SemanticVersion");
+    public INamedTypeSymbol? FormattableStringSymbol { get; } = compilation.GetTypeByMetadataName("System.FormattableString");
     public INamedTypeSymbol? InterpolatedStringHandlerAttributeSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute");
 
     /// <summary>Known .NET interpolated string handlers that format values to strings.</summary>
     private INamedTypeSymbol?[] KnownInterpolatedStringHandlerSymbols { get; } = [
         compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.DefaultInterpolatedStringHandler"),
-        compilation.GetBestTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler"),
-        compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+AssertInterpolatedStringHandler"),
-        compilation.GetBestTypeByMetadataName("System.Diagnostics.Debug+WriteIfInterpolatedStringHandler"),
-        compilation.GetBestTypeByMetadataName("System.MemoryExtensions+TryWriteInterpolatedStringHandler"),
-        compilation.GetBestTypeByMetadataName("System.Text.Unicode.Utf8+TryWriteInterpolatedStringHandler"),
+        compilation.GetTypeByMetadataName("System.Text.StringBuilder+AppendInterpolatedStringHandler"),
+        compilation.GetTypeByMetadataName("System.Diagnostics.Debug+AssertInterpolatedStringHandler"),
+        compilation.GetTypeByMetadataName("System.Diagnostics.Debug+WriteIfInterpolatedStringHandler"),
+        compilation.GetTypeByMetadataName("System.MemoryExtensions+TryWriteInterpolatedStringHandler"),
+        compilation.GetTypeByMetadataName("System.Text.Unicode.Utf8+TryWriteInterpolatedStringHandler"),
     ];
 
     public bool IsInterpolatedStringHandlerThatFormatsStringValues(ITypeSymbol namedTypeSymbol)

@@ -130,12 +130,12 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
         public INamedTypeSymbol? EqualityComparerStringType { get; } = GetIEqualityComparerString(compilation);
         public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
-        public INamedTypeSymbol? EnumerableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Enumerable");
-        public INamedTypeSymbol? QueryableType { get; } = compilation.GetBestTypeByMetadataName("System.Linq.Queryable");
-        public INamedTypeSymbol? ISetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
-        public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
-        public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetBestTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
-        public INamedTypeSymbol? MeziantouFrameworkAssertType { get; } = compilation.GetBestTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
+        public INamedTypeSymbol? EnumerableType { get; } = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
+        public INamedTypeSymbol? QueryableType { get; } = compilation.GetTypeByMetadataName("System.Linq.Queryable");
+        public INamedTypeSymbol? ISetType { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.ISet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
+        public INamedTypeSymbol? MeziantouFrameworkAssertType { get; } = compilation.GetTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
 
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
@@ -393,32 +393,32 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         private static HashSet<INamedTypeSymbol> BuildKnownOrdinalTypes(Compilation compilation)
         {
             var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.HashSet`1"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Generic.OrderedDictionary`2"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenDictionary`2"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenSet`1"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.HashSet`1"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.Dictionary`2"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Generic.OrderedDictionary`2"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Concurrent.ConcurrentDictionary`2"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary`2"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenDictionary`2"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenSet`1"));
             return result;
         }
 
         private static HashSet<INamedTypeSymbol> BuildKnownOrdinalContainerTypes(Compilation compilation)
         {
             var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Linq.Enumerable"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Linq.Queryable"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenDictionary"));
-            result.AddIfNotNull(compilation.GetBestTypeByMetadataName("System.Collections.Frozen.FrozenSet"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Linq.Enumerable"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Linq.Queryable"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableDictionary"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenDictionary"));
+            result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenSet"));
             return result;
         }
 
         private static INamedTypeSymbol? GetIEqualityComparerString(Compilation compilation)
         {
-            var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
+            var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IEqualityComparer`1");
             if (equalityComparerInterfaceType is null)
                 return null;
 
@@ -431,7 +431,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
         private static INamedTypeSymbol? GetIComparerString(Compilation compilation)
         {
-            var equalityComparerInterfaceType = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IComparer`1");
+            var equalityComparerInterfaceType = compilation.GetTypeByMetadataName("System.Collections.Generic.IComparer`1");
             if (equalityComparerInterfaceType is null)
                 return null;
 

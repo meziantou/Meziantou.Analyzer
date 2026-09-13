@@ -94,15 +94,15 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
             var compilation = context.Compilation;
             Configuration = LoggerConfigurationFile.Empty;
 
-            LoggerSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
-            SerilogILoggerSymbol = compilation.GetBestTypeByMetadataName("Serilog.ILogger");
-            SerilogLogSymbol = compilation.GetBestTypeByMetadataName("Serilog.Log");
+            LoggerSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.ILogger");
+            SerilogILoggerSymbol = compilation.GetTypeByMetadataName("Serilog.ILogger");
+            SerilogLogSymbol = compilation.GetTypeByMetadataName("Serilog.Log");
             if (LoggerSymbol is null && SerilogILoggerSymbol is null && SerilogLogSymbol is null)
                 return;
 
-            LoggerExtensionsSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
-            LoggerMessageSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
-            LoggerMessageAttributeSymbol = compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
+            LoggerExtensionsSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerExtensions");
+            LoggerMessageSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessage");
+            LoggerMessageAttributeSymbol = compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.LoggerMessageAttribute");
 
             SerilogLoggerEnrichmentConfigurationWithPropertySymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Configuration.LoggerEnrichmentConfiguration.WithProperty(System.String,System.Object,System.Boolean)", compilation);
             SerilogLogForContextSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:Serilog.Log.ForContext(System.String,System.Object,System.Boolean)", compilation);

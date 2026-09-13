@@ -128,9 +128,9 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly INamedTypeSymbol? _processStartInfoSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.ProcessStartInfo");
+        private readonly INamedTypeSymbol? _processStartInfoSymbol = compilation.GetTypeByMetadataName("System.Diagnostics.ProcessStartInfo");
 
-        private readonly INamedTypeSymbol? _processSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.Process");
+        private readonly INamedTypeSymbol? _processSymbol = compilation.GetTypeByMetadataName("System.Diagnostics.Process");
 
         public bool IsValid => _processStartInfoSymbol is not null;
 

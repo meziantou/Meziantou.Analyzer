@@ -40,11 +40,11 @@ public sealed class TaskInUsingFixer : CodeFixProvider
         if (type is null)
             return false;
 
-        var taskOfT = semanticModel.Compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
+        var taskOfT = semanticModel.Compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
         if (taskOfT is null || !type.OriginalDefinition.IsEqualTo(taskOfT) || type.TypeArguments.Length != 1)
             return false;
 
-        var disposableType = semanticModel.Compilation.GetBestTypeByMetadataName("System.IDisposable");
+        var disposableType = semanticModel.Compilation.GetTypeByMetadataName("System.IDisposable");
         if (disposableType is null)
             return false;
 

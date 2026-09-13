@@ -22,7 +22,7 @@ public sealed class ILoggerParameterTypeShouldMatchContainingTypeAnalyzer : Diag
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var iloggerSymbol = compilationContext.Compilation.GetBestTypeByMetadataName("Microsoft.Extensions.Logging.ILogger`1");
+            var iloggerSymbol = compilationContext.Compilation.GetTypeByMetadataName("Microsoft.Extensions.Logging.ILogger`1");
             if (iloggerSymbol is null)
                 return;
 

@@ -8,10 +8,10 @@ internal sealed class OverloadFinder(Compilation compilation)
     /// </summary>
     public const string NamespaceToImportPropertyName = "NamespaceToImport";
 
-    private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetBestTypeByMetadataName("System.ObsoleteAttribute");
+    private readonly ITypeSymbol? _obsoleteSymbol = compilation.GetTypeByMetadataName("System.ObsoleteAttribute");
     private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
-    private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetBestTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
-    private readonly INamedTypeSymbol? _halfSymbol = compilation.GetBestTypeByMetadataName("System.Half");
+    private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
+    private readonly INamedTypeSymbol? _halfSymbol = compilation.GetTypeByMetadataName("System.Half");
     private readonly Lazy<Dictionary<string, List<IMethodSymbol>>> _extensionMethodsByName = new(() => CreateExtensionMethodsByName(compilation));
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)

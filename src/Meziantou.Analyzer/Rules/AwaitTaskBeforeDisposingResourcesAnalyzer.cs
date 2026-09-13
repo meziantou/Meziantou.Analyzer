@@ -31,7 +31,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
     {
         private readonly AwaitableTypes _awaitableTypes = new(compilation);
 
-        public INamedTypeSymbol? AsyncFlowControlSymbol { get; set; } = compilation.GetBestTypeByMetadataName("System.Threading.AsyncFlowControl");
+        public INamedTypeSymbol? AsyncFlowControlSymbol { get; set; } = compilation.GetTypeByMetadataName("System.Threading.AsyncFlowControl");
 
         public void AnalyzeReturn(OperationAnalysisContext context)
         {

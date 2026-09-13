@@ -23,7 +23,7 @@ public sealed class UseOperatingSystemInsteadOfRuntimeInformationAnalyzer : Diag
         context.RegisterCompilationStartAction(context =>
         {
             var isOSPlatformSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform)", context.Compilation);
-            var osPlatformSymbol = context.Compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.OSPlatform");
+            var osPlatformSymbol = context.Compilation.GetTypeByMetadataName("System.Runtime.InteropServices.OSPlatform");
             var operatingSystemSymbol = DocumentationCommentId.GetFirstSymbolForDeclarationId("M:System.OperatingSystem.IsWindows", context.Compilation);
             if (isOSPlatformSymbol is null || operatingSystemSymbol is null || !context.Compilation.IsSymbolAccessibleWithin(operatingSystemSymbol, context.Compilation.Assembly) || osPlatformSymbol is null)
                 return;

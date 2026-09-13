@@ -22,8 +22,8 @@ public sealed class UseTimeProviderInsteadOfInterfaceAnalyzer : DiagnosticAnalyz
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var dateTimeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTime");
-            var dateTimeOffsetSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.DateTimeOffset");
+            var dateTimeSymbol = ctx.Compilation.GetTypeByMetadataName("System.DateTime");
+            var dateTimeOffsetSymbol = ctx.Compilation.GetTypeByMetadataName("System.DateTimeOffset");
 
             if (dateTimeSymbol is null && dateTimeOffsetSymbol is null)
                 return;

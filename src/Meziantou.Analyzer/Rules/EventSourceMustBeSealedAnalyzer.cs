@@ -32,12 +32,12 @@ public sealed class EventSourceMustBeSealedAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private INamedTypeSymbol? EventSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Diagnostics.Tracing.EventSource");
+        private INamedTypeSymbol? EventSourceSymbol { get; } = compilation.GetTypeByMetadataName("System.Diagnostics.Tracing.EventSource");
 
         /// <summary>
         /// The <c>EventSource</c> of the <c>Microsoft.Diagnostics.Tracing.EventSource</c> NuGet package.
         /// </summary>
-        private INamedTypeSymbol? NuGetEventSourceSymbol { get; } = compilation.GetBestTypeByMetadataName("Microsoft.Diagnostics.Tracing.EventSource");
+        private INamedTypeSymbol? NuGetEventSourceSymbol { get; } = compilation.GetTypeByMetadataName("Microsoft.Diagnostics.Tracing.EventSource");
 
         public bool IsValid => EventSourceSymbol is not null || NuGetEventSourceSymbol is not null;
 

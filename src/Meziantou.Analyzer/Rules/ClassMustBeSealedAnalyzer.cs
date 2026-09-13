@@ -41,9 +41,9 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
         private readonly List<ITypeSymbol> _potentialClasses = [];
         private readonly ConcurrentHashSet<ITypeSymbol> _cannotBeSealedClasses = new(SymbolEqualityComparer.Default);
 
-        private INamedTypeSymbol? ExceptionSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Exception");
-        private INamedTypeSymbol? ComImportSymbol { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
-        private INamedTypeSymbol? BenchmarkSymbol { get; } = compilation.GetBestTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
+        private INamedTypeSymbol? ExceptionSymbol { get; } = compilation.GetTypeByMetadataName("System.Exception");
+        private INamedTypeSymbol? ComImportSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.ComImportAttribute");
+        private INamedTypeSymbol? BenchmarkSymbol { get; } = compilation.GetTypeByMetadataName("BenchmarkDotNet.Attributes.BenchmarkAttribute");
 
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {

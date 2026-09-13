@@ -36,7 +36,7 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
 
-        var regexOptionsType = editor.SemanticModel.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+        var regexOptionsType = editor.SemanticModel.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
         if (regexOptionsType is null)
             return document;
 
@@ -56,7 +56,7 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
     {
         if (node.FirstAncestorOrSelf<AttributeSyntax>() is AttributeSyntax attribute && attribute.ArgumentList is not null)
         {
-            var regexOptionsType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+            var regexOptionsType = semanticModel.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
             if (regexOptionsType is not null)
             {
                 if (semanticModel.GetSymbolInfo(attribute, cancellationToken).Symbol is IMethodSymbol constructor)
@@ -94,7 +94,7 @@ public sealed class UseRegexExplicitCaptureOptionsFixer : CodeFixProvider
         var argumentSyntax = node.FirstAncestorOrSelf<ArgumentSyntax>();
         if (argumentSyntax is not null && semanticModel.GetOperation(argumentSyntax, cancellationToken) is IArgumentOperation argumentOp)
         {
-            var regexOptionsType = semanticModel.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
+            var regexOptionsType = semanticModel.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions");
             if (argumentOp.Parameter?.Type.IsEqualTo(regexOptionsType) is true)
             {
                 expression = argumentSyntax.Expression;

@@ -22,7 +22,7 @@ public sealed class OptimizeGuidCreationAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var type = ctx.Compilation.GetBestTypeByMetadataName("System.Guid");
+            var type = ctx.Compilation.GetTypeByMetadataName("System.Guid");
             if (type is null)
                 return;
 

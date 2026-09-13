@@ -23,11 +23,11 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
 
         context.RegisterCompilationStartAction(ctx =>
         {
-            var generatedRegexAttributeSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+            var generatedRegexAttributeSymbol = ctx.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
             if (generatedRegexAttributeSymbol is null)
                 return;
 
-            var regexSymbol = ctx.Compilation.GetBestTypeByMetadataName("System.Text.RegularExpressions.Regex");
+            var regexSymbol = ctx.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");
             if (regexSymbol is null)
                 return;
 

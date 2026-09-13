@@ -20,7 +20,7 @@ public sealed class UseStringComparisonFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var stringComparisonSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.StringComparison");
+        var stringComparisonSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.StringComparison");
         if (stringComparisonSymbol is null)
             return;
 

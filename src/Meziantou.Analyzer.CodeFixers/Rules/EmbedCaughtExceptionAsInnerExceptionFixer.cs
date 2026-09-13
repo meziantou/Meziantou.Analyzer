@@ -18,7 +18,7 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionFixer : CodeFixProvider
         if (semanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IObjectCreationOperation objectCreationOperation)
             return;
 
-        var exceptionSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.Exception");
+        var exceptionSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Exception");
         if (exceptionSymbol is null || objectCreationOperation.Constructor is null)
             return;
 

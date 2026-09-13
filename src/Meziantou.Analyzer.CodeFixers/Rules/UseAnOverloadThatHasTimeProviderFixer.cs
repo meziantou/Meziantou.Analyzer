@@ -27,7 +27,7 @@ public sealed class UseAnOverloadThatHasTimeProviderFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        var timeProviderSymbol = semanticModel.Compilation.GetBestTypeByMetadataName("System.TimeProvider");
+        var timeProviderSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.TimeProvider");
         if (timeProviderSymbol is null)
             return;
 

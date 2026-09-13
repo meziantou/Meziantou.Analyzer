@@ -22,7 +22,7 @@ public sealed class UseTimeSpanZeroAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var timeSpanType = compilationContext.Compilation.GetBestTypeByMetadataName("System.TimeSpan");
+            var timeSpanType = compilationContext.Compilation.GetTypeByMetadataName("System.TimeSpan");
             if (timeSpanType is null)
                 return;
 

@@ -25,7 +25,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (context.Compilation.GetSpecialType(SpecialType.System_Object).GetMembers("Equals").FirstOrDefault() is not IMethodSymbol objectEqualsSymbol)
                 return;
 
-            var cultureInfoSymbol = context.Compilation.GetBestTypeByMetadataName("System.Globalization.CultureInfo");
+            var cultureInfoSymbol = context.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
             if (cultureInfoSymbol is null)
                 return;
 

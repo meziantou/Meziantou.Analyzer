@@ -140,8 +140,8 @@ public sealed class UseAwaitInsteadOfReturningTaskFixer : CodeFixProvider
         if (symbol is not INamedTypeSymbol { IsGenericType: true } namedType)
             return false;
 
-        var taskOfT = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.Task`1");
-        var valueTaskOfT = compilation.GetBestTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
+        var taskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.Task`1");
+        var valueTaskOfT = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
         if (namedType.OriginalDefinition.IsEqualToAny(taskOfT, valueTaskOfT))
             return true;
 
