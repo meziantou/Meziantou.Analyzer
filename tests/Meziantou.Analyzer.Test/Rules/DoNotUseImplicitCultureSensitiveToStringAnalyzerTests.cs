@@ -122,6 +122,9 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     [InlineData("\"abc\"", @"$""test{new System.Uri("""")}""")]
     [InlineData("\"abc\"", @"' '")]
     [InlineData("\"abc\"", "default(System.Uri)")]
+    [InlineData("\"abc\"", "(nuint)1")]
+    [InlineData("\"abc\"", "new System.Text.StringBuilder()")]
+    [InlineData("\"abc\"", "new System.Version()")]
     public async Task ConcatNoDiagnostic(string left, string right)
     {
         var test = CreateTest();
@@ -143,6 +146,55 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
             """;
 
         await invertedTest.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("default(System.Windows.FontStretch)")]
+    [InlineData("new System.Windows.Media.SolidColorBrush()")]
+    [InlineData("new NuGet.Versioning.NuGetVersion()")]
+    public Task Concat_KnownCultureInsensitiveFormattableTypes_NoDiagnostic(string value)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                void A() { _ = "abc" + {{value}}; }
+            }
+
+            namespace System.Windows
+            {
+                public struct FontStretch : System.IFormattable
+                {
+                    public string ToString(string format, System.IFormatProvider provider) => "";
+                }
+            }
+
+            namespace System.Windows.Media
+            {
+                public abstract class Brush : System.IFormattable
+                {
+                    public string ToString(string format, System.IFormatProvider provider) => "";
+                }
+
+                public sealed class SolidColorBrush : Brush
+                {
+                }
+            }
+
+            namespace NuGet.Versioning
+            {
+                public class SemanticVersion : System.IFormattable
+                {
+                    public string ToString(string format, System.IFormatProvider provider) => "";
+                }
+
+                public sealed class NuGetVersion : SemanticVersion
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
     }
 
     [Fact]

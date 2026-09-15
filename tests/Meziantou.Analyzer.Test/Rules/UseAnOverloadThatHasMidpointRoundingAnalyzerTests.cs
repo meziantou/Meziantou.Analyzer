@@ -376,4 +376,39 @@ public sealed class UseAnOverloadThatHasMidpointRoundingAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task IFloatingPointImplicitImplementationDeclaredInSource_ReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(MyNumber value)
+                {
+                    _ = {|MA0193:MyNumber.Round(value)|};
+                    _ = MyNumber.Round(value, 1);
+                    _ = MyNumber.Round(value, System.MidpointRounding.AwayFromZero);
+                }
+            }
+
+            struct MyNumber : System.Numerics.IFloatingPoint<MyNumber>
+            {
+                public static MyNumber Round(MyNumber x) => x;
+                public static MyNumber Round(MyNumber x, int digits) => x;
+                public static MyNumber Round(MyNumber x, System.MidpointRounding mode) => x;
+            }
+
+            namespace System.Numerics
+            {
+                interface IFloatingPoint<TSelf> where TSelf : IFloatingPoint<TSelf>
+                {
+                    static abstract TSelf Round(TSelf x);
+                    static abstract TSelf Round(TSelf x, MidpointRounding mode);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -354,4 +354,122 @@ public sealed class MergeIsPatternChecksAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task LogicalOr_OtherTermsBetweenCandidates()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            var flag = false;
+            _ = {|MA0194:value is 1 || flag || value is 2 || value is 3|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            var flag = false;
+            _ = value is 1 || flag || value is 2 or 3;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LogicalOr_DifferentExpressionsAfterCandidates()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = {|MA0194:value1 is 1 || value1 is 2 || value2 is 3 || value2 is 4|};
+            """;
+        test.FixedCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = value1 is 1 or 2 || value2 is 3 or 4;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LogicalAnd_ConstantPatternsNotMergedWithOtherCandidates()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = {|MA0194:value1 is 1 && value1 is 2 && value2 is not 3 && value2 is not 4|};
+            """;
+        // Merging constant patterns with 'and' would create a pattern that never matches, so they are kept
+        test.FixedCode = """
+            var value1 = 0;
+            var value2 = 0;
+            _ = {|MA0194:value1 is 1 && value1 is 2 && value2 is not 3 and not 4|};
+            """;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedInParenthesizedLogicalExpression()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            var flag = false;
+            _ = flag && ({|MA0194:value is 1 || value is 2|});
+            """;
+        test.FixedCode = """
+            var value = 0;
+            var flag = false;
+            _ = flag && (value is 1 or 2);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParenthesizedValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            _ = {|MA0194:(value) is 1 || ((value)) is 2|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            _ = value is 1 or 2;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Event()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = new Sample().M();
+
+            class Sample
+            {
+                public event System.EventHandler Changed;
+
+                public bool M() => {|MA0194:Changed is null || Changed is { Method.IsStatic: true }|};
+            }
+            """;
+        test.FixedCode = """
+            _ = new Sample().M();
+
+            class Sample
+            {
+                public event System.EventHandler Changed;
+
+                public bool M() => Changed is null or { Method.IsStatic: true };
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

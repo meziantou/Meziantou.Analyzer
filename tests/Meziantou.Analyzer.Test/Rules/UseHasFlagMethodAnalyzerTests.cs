@@ -1250,4 +1250,77 @@ public sealed class UseHasFlagMethodAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("sbyte", "sbyte.MinValue")]
+    [InlineData("byte", "0x80")]
+    [InlineData("short", "short.MinValue")]
+    [InlineData("ushort", "0x8000")]
+    [InlineData("int", "int.MinValue")]
+    [InlineData("uint", "0x80000000")]
+    [InlineData("long", "long.MinValue")]
+    [InlineData("ulong", "0x8000000000000000")]
+    public Task EqualsZeroCheck_UnderlyingTypeHighestBit_ReportDiagnostic(string underlyingType, string flagValue)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum MyEnum : {{underlyingType}}
+            {
+                None = 0,
+                Flag = {{flagValue}},
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => {|MA0192:(value & MyEnum.Flag) == 0|};
+            }
+            """;
+        test.FixedCode = $$"""
+            [System.Flags]
+            enum MyEnum : {{underlyingType}}
+            {
+                None = 0,
+                Flag = {{flagValue}},
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => !value.HasFlag(MyEnum.Flag);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("sbyte")]
+    [InlineData("byte")]
+    [InlineData("short")]
+    [InlineData("ushort")]
+    [InlineData("int")]
+    [InlineData("uint")]
+    [InlineData("long")]
+    [InlineData("ulong")]
+    public Task EqualsZeroCheck_UnderlyingTypeCombinedFlag_NoDiagnostic(string underlyingType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum MyEnum : {{underlyingType}}
+            {
+                None = 0,
+                Flag1 = 1,
+                Flag2 = 2,
+                Flag1And2 = 3,
+            }
+
+            class Sample
+            {
+                bool M(MyEnum value) => (value & MyEnum.Flag1And2) == 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

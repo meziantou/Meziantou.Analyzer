@@ -16,6 +16,11 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [InlineData("Invalid()")]
     [InlineData("Invalid.Length")]
     [InlineData("System.IO.Path.DirectorySeparatorChar.Unknown()")]
+    [InlineData("Invalid[0]")]
+    [InlineData("Display[Invalid]")]
+    [InlineData("Invalid!")]
+    [InlineData("(Invalid).Length")]
+    [InlineData("((Display)).Invalid")]
     public Task UnknownMember(string memberName)
     {
         var test = CreateTest();
@@ -75,6 +80,12 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
     [Theory]
     [InlineData("Display")]
     [InlineData("System.IO.Path.DirectorySeparatorChar.ToString()")]
+    [InlineData(" ")]
+    [InlineData("Display[0]")]
+    [InlineData("Display[0].Invalid")] // Invalid is ignored because the type of the indexer is not resolved
+    [InlineData("Display!")]
+    [InlineData("(Display).Length")]
+    [InlineData("(Display + Display).Invalid")] // Invalid is ignored because the type of the expression is not resolved
     public Task Valid(string value)
     {
         var test = CreateTest();

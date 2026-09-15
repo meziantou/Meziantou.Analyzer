@@ -430,6 +430,9 @@ public class UseRegexSourceGeneratorAnalyzerTests
     [InlineData("TimeSpan.FromMilliseconds(0.5)")]
     [InlineData("TimeSpan.MaxValue")]
     [InlineData("TimeSpan.FromDays(30)")]
+    [InlineData("TimeSpan.FromDays(int.MaxValue)")]
+    [InlineData("new TimeSpan(int.MaxValue, int.MaxValue, int.MaxValue, int.MaxValue)")]
+    [InlineData("TimeSpan.Zero.Add(TimeSpan.FromSeconds(1))")]
     public Task Timeout_NotRepresentableInMilliseconds_NoDiagnostic(string timeout)
     {
         var test = CreateTest();
