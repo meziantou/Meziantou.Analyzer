@@ -24,7 +24,48 @@
   <PropertyGroup>
     <LangVersion>preview</LangVersion>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
-    <MeziantouPolyfill_IncludedPolyfills>*</MeziantouPolyfill_IncludedPolyfills>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <!-- Only generate the polyfills used by the code, as each polyfill increases the size of the assemblies.
+         The names are the XML documentation IDs of the polyfills (prefix match).
+         Set MeziantouPolyfill_GenerateDebugFile to true to list the available polyfills in Debug.g.cs. -->
+    <MeziantouPolyfill_IncludedPolyfills>
+      T:System.Diagnostics.CodeAnalysis.DoesNotReturnAttribute;
+      T:System.Diagnostics.CodeAnalysis.DynamicallyAccessedMemberTypes;
+      T:System.Diagnostics.CodeAnalysis.MaybeNullAttribute;
+      T:System.Diagnostics.CodeAnalysis.MaybeNullWhenAttribute;
+      T:System.Diagnostics.CodeAnalysis.NotNullIfNotNullAttribute;
+      T:System.Diagnostics.CodeAnalysis.NotNullWhenAttribute;
+      T:System.Index;
+      T:System.Range;
+      T:System.Runtime.CompilerServices.DefaultInterpolatedStringHandler;
+      T:System.Runtime.CompilerServices.InterpolatedStringHandlerArgumentAttribute;
+      T:System.Runtime.CompilerServices.InterpolatedStringHandlerAttribute;
+      T:System.Runtime.CompilerServices.IsExternalInit;
+      T:System.Runtime.CompilerServices.ModuleInitializerAttribute;
+      T:System.Threading.Lock;
+      M:System.Collections.Generic.CollectionExtensions.GetValueOrDefault``2(System.Collections.Generic.IReadOnlyDictionary{``0,``1},``0);
+      M:System.Collections.Generic.CollectionExtensions.GetValueOrDefault``2(System.Collections.Generic.IReadOnlyDictionary{``0,``1},``0,``1);
+      M:System.Collections.Generic.KeyValuePair`2.Deconstruct(`0@,`1@);
+      M:System.Collections.Generic.Queue`1.TryDequeue(`0@);
+      M:System.Linq.Enumerable.Order``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IComparer{``0});
+      M:System.Linq.Enumerable.ToHashSet``1(System.Collections.Generic.IEnumerable{``0},System.Collections.Generic.IEqualityComparer{``0});
+      M:System.MemoryExtensions.Contains``1(System.ReadOnlySpan{``0},``0);
+      M:System.String.Contains(System.Char,System.StringComparison);
+      M:System.String.Contains(System.String,System.StringComparison);
+      M:System.String.CopyTo(System.Span{System.Char});
+      M:System.String.Create(System.IFormatProvider,System.Runtime.CompilerServices.DefaultInterpolatedStringHandler@);
+      M:System.String.IndexOf(System.Char,System.Int32,System.StringComparison);
+      M:System.String.IndexOf(System.Char,System.StringComparison);
+      M:System.String.Join(System.Char,System.String[]);
+      M:System.String.Join``1(System.Char,System.Collections.Generic.IEnumerable{``0});
+      M:System.String.LastIndexOf(System.Char,System.StringComparison);
+      M:System.String.Replace(System.String,System.String,System.StringComparison);
+      M:System.String.Split(System.Char,System.StringSplitOptions);
+      M:System.String.StartsWith(System.Char,System.StringComparison);
+      M:System.String.TryCopyTo(System.Span{System.Char});
+    </MeziantouPolyfill_IncludedPolyfills>
   </PropertyGroup>
 
   <PropertyGroup>
