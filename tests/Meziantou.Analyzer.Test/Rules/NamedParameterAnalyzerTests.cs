@@ -1619,11 +1619,11 @@ public sealed class NamedParameterAnalyzerTests
         test.TestCode = """
             class Test
             {
-                public Test(object a) { }
+                public Test(bool a) { }
 
                 void A()
                 {
-                    _ = new Test(new object());
+                    _ = new Test(true);
                 }
             }
             """;
@@ -1660,6 +1660,142 @@ public sealed class NamedParameterAnalyzerTests
                 {
                     System.Action<string, string> action = null;
                     action(null, null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MinimumNumberOfParameters_2_MethodWithTwoParameters()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.minimum_method_parameters", "2");
+        test.TestCode = """
+            class Test
+            {
+                public Test(bool a, bool b) { }
+
+                void A()
+                {
+                    _ = new Test({|MA0003:true|}, {|MA0003:false|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MinimumNumberOfParameters_Invalid_UsesDefaultValue()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0003.minimum_method_parameters", "invalid");
+        test.TestCode = """
+            class Test
+            {
+                public Test(bool a) { }
+
+                void A()
+                {
+                    _ = new Test({|MA0003:true|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Params_SingleElement_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    B(true);
+                }
+
+                void B(params bool[] values) {}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReferenceEquals_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = object.ReferenceEquals(null, null);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Parse_FirstArgument_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = Parse(null, {|MA0003:null|});
+                    _ = TryParse(null, out _);
+                }
+
+                static int Parse(string value, object options) => 0;
+                static bool TryParse(string value, out int result) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A()
+                {
+                    _ = Parse(null, options: null);
+                    _ = TryParse(null, out _);
+                }
+
+                static int Parse(string value, object options) => 0;
+                static bool TryParse(string value, out int result) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxNode_With_MultipleParameters()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    var a = new Microsoft.CodeAnalysis.SyntaxNode();
+                    _ = a.WithElse(null, null);
+                }
+            }
+
+            namespace Microsoft.CodeAnalysis
+            {
+                public class SyntaxNode
+                {
+                    public SyntaxNode WithElse(object value1, object value2) => throw null;
                 }
             }
             """;

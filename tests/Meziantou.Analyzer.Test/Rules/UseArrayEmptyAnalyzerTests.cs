@@ -10,6 +10,8 @@ public sealed class UseArrayEmptyAnalyzerTests
 
     [Theory]
     [InlineData("new int[0]")]
+    [InlineData("new int[0L]")]
+    [InlineData("new int[0u]")]
     [InlineData("new int[] { }")]
     public Task EmptyArray_ShouldReportError(string code)
     {
@@ -38,6 +40,9 @@ public sealed class UseArrayEmptyAnalyzerTests
 
     [Theory]
     [InlineData("new int[1]")]
+    [InlineData("new int[1L]")]
+    [InlineData("new int[1u]")]
+    [InlineData("new int[0, 0]")]
     [InlineData("new int[] { 0 }")]
     public Task NonEmptyArray_ShouldNotReportError(string code)
     {
@@ -144,6 +149,40 @@ public sealed class UseArrayEmptyAnalyzerTests
                 {
                     Test();
                 }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsConstructor_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class TestClass
+            {
+                public TestClass(params string[] values)
+                {
+                }
+
+                public static TestClass Create() => new TestClass();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsIndexer_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class TestClass
+            {
+                public int this[int index, params string[] values] => 0;
+
+                public int Get() => this[0];
             }
             """;
 

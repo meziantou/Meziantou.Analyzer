@@ -1159,4 +1159,67 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task UseNameof_ThrowIfNull()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            class Sample
+            {
+                void M(string arg0)
+                {
+                    ArgumentNullException.ThrowIfNull(arg0, {|MA0043:"arg0"|});
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class Sample
+            {
+                void M(string arg0)
+                {
+                    ArgumentNullException.ThrowIfNull(arg0, nameof(arg0));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEnumArgumentException_ValidArgumentName_ShouldNotReportError()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void M(int arg0)
+                {
+                    throw new System.ComponentModel.InvalidEnumArgumentException(nameof(arg0), arg0, typeof(System.DayOfWeek));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEnumArgumentException_InvalidArgumentName_ShouldReportError()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void M(int arg0)
+                {
+                    throw new System.ComponentModel.InvalidEnumArgumentException({|#0:"invalid"|}, arg0, typeof(System.DayOfWeek));
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'invalid' is not a valid parameter name"));
+
+        return test.RunAsync();
+    }
 }
