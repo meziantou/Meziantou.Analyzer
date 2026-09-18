@@ -91,8 +91,10 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
     # create_nuget skips the analyzers and dotnet test does not run them, so this job reports their diagnostics
-    # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them
-    - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=true
+    - parallel:
+      # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them
+      - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=true
+      - run: dotnet build src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /p:RunAnalyzers=true
 
   create_nuget:
     runs-on: ubuntu-latest
@@ -104,14 +106,14 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
 
+    # The analyzers are skipped as the build_with_analyzers job runs them on the same projects
     # Meziantou.Analyzer.Annotations does not depend on the analyzer, so it is packed while the analyzer is built and packed
-    - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /bl:Meziantou.Analyzer.Annotations.pack.binlog
+    - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /p:RunAnalyzers=false /bl:Meziantou.Analyzer.Annotations.pack.binlog
       background: true
 
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
     # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
-    # The analyzers are skipped as they account for most of the compilation time, and the build_with_analyzers job runs them on the same projects
     - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=false /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
 
     - wait-all: true
