@@ -357,7 +357,16 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         private static bool IsConstString(IOperation operation)
         {
-            return TryGetConstStringValue(operation, out _);
+            if (TryGetConstStringValue(operation, out _))
+                return true;
+
+            // The compiler merges the constant chars and strings of a concatenation into a single string (e.g. " " + 'c' + " ")
+            return operation switch
+            {
+                IConversionOperation { IsImplicit: true, Operand.ConstantValue: { HasValue: true, Value: char } } => true,
+                IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binaryOperation when binaryOperation.Type.IsString() => IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand),
+                _ => false,
+            };
         }
 
         private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)

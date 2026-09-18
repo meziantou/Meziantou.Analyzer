@@ -264,6 +264,10 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [InlineData(@"$""abc{""test""}""")]
     [InlineData(@"""abc"" + ""test""")]
     [InlineData(@"$""abc{""test""}"" + ""test""")]
+    [InlineData(@"""abc"" + 'd'")]
+    [InlineData(@"'a' + ""bc""")]
+    [InlineData(@""" "" + 'c' + "" """)]
+    [InlineData(@"""a"" + ('b' + ""c"")")]
     public Task Append_NoDiagnostic(string text)
     {
         var test = CreateTest();
@@ -281,10 +285,28 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task Append_ConcatConstantChar_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                public const char Const = 'C';
+
+                string A() => new StringBuilder().Append(" " + Const + " ").AppendLine(" " + Const + " ").ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData(@"$""a{1}""")]
     [InlineData(@"""a"" + 10")]
     [InlineData(@"10 + 20 + ""a""")]
+    [InlineData(@"""a"" + 'b' + 10")]
     [InlineData(@"""""")]
     [InlineData(@""""" + """"")]
     [InlineData(@""""".Substring(0, 10)")]
