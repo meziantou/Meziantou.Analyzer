@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseArrayEmptyAnalyzer,
     Meziantou.Analyzer.Rules.UseArrayEmptyFixer>;
@@ -213,6 +214,32 @@ public sealed class UseArrayEmptyAnalyzerTests
             class TestAttribute : System.Attribute
             {
                 public TestAttribute(string a, params object[] data) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionExpression_ParamsConstructor_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+
+            public class TheoryData<T> : IEnumerable<T>
+            {
+                public TheoryData(params T[] values) { }
+                public void Add(T value) { }
+                public IEnumerator<T> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            public class TestClass
+            {
+                public static TheoryData<string> Data => ["foo", "bar"];
             }
             """;
 

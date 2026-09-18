@@ -83,6 +83,11 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
     private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
     {
+        // A collection expression calls the constructor of the collection type without arguments,
+        // so the compiler synthesizes an empty array when the constructor has a params parameter (e.g. xUnit's TheoryData<T>)
+        if (arrayCreationExpression.Syntax is CollectionExpressionSyntax)
+            return true;
+
         var semanticModel = context.Operation.SemanticModel!;
 
         // Compiler generated array creation seems to just use the syntax from the parent.
