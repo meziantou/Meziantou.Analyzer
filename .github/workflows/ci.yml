@@ -84,6 +84,16 @@ jobs:
         Write-Host "New version: $NewVersion"
         "package_version=$NewVersion" >> $env:GITHUB_OUTPUT
 
+  build_with_analyzers:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    # create_nuget skips the analyzers and dotnet test does not run them, so this job reports their diagnostics
+    # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them
+    - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=true
+
   create_nuget:
     runs-on: ubuntu-latest
     needs: [ compute_package_version ]
@@ -101,7 +111,7 @@ jobs:
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
     # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
-    # The analyzers are skipped as they account for most of the compilation time, and the build_and_test job already runs them on the same projects
+    # The analyzers are skipped as they account for most of the compilation time, and the build_with_analyzers job runs them on the same projects
     - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=false /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
 
     - wait-all: true
@@ -272,7 +282,7 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-latest'
-    needs: [ check_documentation, check_pragmas, validate_nuget, build_and_test ]
+    needs: [ check_documentation, check_pragmas, build_with_analyzers, validate_nuget, build_and_test ]
     permissions:
       contents: read
       id-token: write
