@@ -183,16 +183,8 @@ jobs:
         run: |
           dotnet tool update Meziantou.Framework.NuGetPackageValidation.Tool --global
           $files = Get-ChildItem "${{ env.NuGetDirectory }}/*" -Recurse -Include *.nupkg
-          $Errors = $false
-          foreach($file in $files) {
-              & meziantou.validate-nuget-package "$file"
-              if ($LASTEXITCODE -ne 0) {
-                $Errors = $true
-              }
-          }
-          if ($Errors) {
-            exit 1
-          }
+          & meziantou.validate-nuget-package $files.FullName
+          exit $LASTEXITCODE
 
   list_test_projects:
     runs-on: ubuntu-latest
