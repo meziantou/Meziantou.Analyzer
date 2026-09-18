@@ -43,7 +43,8 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
         // The compiler synthesizes the array of a params parameter (method, constructor, indexer, attribute,
         // or the constructor called by a collection expression). The user cannot replace it with Array.Empty<T>().
-        if (operation.IsImplicit)
+        // The array created by an array initializer (int[] a = { }) is also implicit, but it is written by the user.
+        if (operation is { IsImplicit: true, Syntax: not InitializerExpressionSyntax })
             return;
 
         if (IsZeroLengthArrayCreation(operation, context.CancellationToken))

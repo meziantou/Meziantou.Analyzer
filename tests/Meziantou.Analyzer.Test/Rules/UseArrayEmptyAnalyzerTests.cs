@@ -245,4 +245,118 @@ public sealed class UseArrayEmptyAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ArrayInitializer_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int[] a = [|{ }|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int[] a = System.Array.Empty<int>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FieldArrayInitializer_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int[] a = [|{ }|];
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                int[] a = System.Array.Empty<int>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitEmptyArrayPassedToParams_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(params string[] values)
+                {
+                }
+
+                void CallTest()
+                {
+                    Test([|new string[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(params string[] values)
+                {
+                }
+
+                void CallTest()
+                {
+                    Test(System.Array.Empty<string>());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericElementType_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                T[] Test<T>() => [|new T[0]|];
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                T[] Test<T>() => System.Array.Empty<T>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonConstantLength_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int[] Test(int length) => new int[length];
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
