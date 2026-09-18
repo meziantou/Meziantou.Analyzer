@@ -101,7 +101,8 @@ jobs:
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
     # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
-    - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
+    # The analyzers are skipped as they account for most of the compilation time, and the build_and_test job already runs them on the same projects
+    - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=false /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
 
     - wait-all: true
 
