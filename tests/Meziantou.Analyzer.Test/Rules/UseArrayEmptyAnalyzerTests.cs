@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseArrayEmptyAnalyzer,
     Meziantou.Analyzer.Rules.UseArrayEmptyFixer>;
@@ -213,6 +214,146 @@ public sealed class UseArrayEmptyAnalyzerTests
             class TestAttribute : System.Attribute
             {
                 public TestAttribute(string a, params object[] data) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionExpression_ParamsConstructor_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+
+            public class TheoryData<T> : IEnumerable<T>
+            {
+                public TheoryData(params T[] values) { }
+                public void Add(T value) { }
+                public IEnumerator<T> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            public class TestClass
+            {
+                public static TheoryData<string> Data => ["foo", "bar"];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ArrayInitializer_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int[] a = [|{ }|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    int[] a = System.Array.Empty<int>();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FieldArrayInitializer_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int[] a = [|{ }|];
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                int[] a = System.Array.Empty<int>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExplicitEmptyArrayPassedToParams_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(params string[] values)
+                {
+                }
+
+                void CallTest()
+                {
+                    Test([|new string[0]|]);
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(params string[] values)
+                {
+                }
+
+                void CallTest()
+                {
+                    Test(System.Array.Empty<string>());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericElementType_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                T[] Test<T>() => [|new T[0]|];
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                T[] Test<T>() => System.Array.Empty<T>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NonConstantLength_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int[] Test(int length) => new int[length];
             }
             """;
 
