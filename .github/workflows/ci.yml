@@ -84,6 +84,18 @@ jobs:
         Write-Host "New version: $NewVersion"
         "package_version=$NewVersion" >> $env:GITHUB_OUTPUT
 
+  build_with_analyzers:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - name: Setup .NET Core
+      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    # create_nuget skips the analyzers and dotnet test does not run them, so this job reports their diagnostics
+    - parallel:
+      # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them
+      - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=true
+      - run: dotnet build src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /p:RunAnalyzers=true
+
   create_nuget:
     runs-on: ubuntu-latest
     needs: [ compute_package_version ]
@@ -94,13 +106,17 @@ jobs:
     - name: Setup .NET Core
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
 
+    # The analyzers are skipped as the build_with_analyzers job runs them on the same projects
+    # Meziantou.Analyzer.Annotations does not depend on the analyzer, so it is packed while the analyzer is built and packed
+    - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /p:RunAnalyzers=false /bl:Meziantou.Analyzer.Annotations.pack.binlog
+      background: true
+
     - run: dotnet run --project src/ListDotNetTypes/ListDotNetTypes.csproj -- src/Meziantou.Analyzer/Resources/
 
     # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them in the right order
-    - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.build.binlog
+    - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=false /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
 
-    - run: dotnet pack src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release --no-build /p:Version=${{ needs.compute_package_version.outputs.package_version }} /bl:Meziantou.Analyzer.Pack.pack.binlog
-    - run: dotnet pack src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /bl:Meziantou.Analyzer.Annotations.pack.binlog
+    - wait-all: true
 
     - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
       with:
@@ -169,16 +185,8 @@ jobs:
         run: |
           dotnet tool update Meziantou.Framework.NuGetPackageValidation.Tool --global
           $files = Get-ChildItem "${{ env.NuGetDirectory }}/*" -Recurse -Include *.nupkg
-          $Errors = $false
-          foreach($file in $files) {
-              & meziantou.validate-nuget-package "$file"
-              if ($LASTEXITCODE -ne 0) {
-                $Errors = $true
-              }
-          }
-          if ($Errors) {
-            exit 1
-          }
+          & meziantou.validate-nuget-package $files.FullName
+          exit $LASTEXITCODE
 
   list_test_projects:
     runs-on: ubuntu-latest
@@ -268,7 +276,7 @@ jobs:
 
   deploy:
     runs-on: 'ubuntu-latest'
-    needs: [ check_documentation, check_pragmas, validate_nuget, build_and_test ]
+    needs: [ check_documentation, check_pragmas, build_with_analyzers, validate_nuget, build_and_test ]
     permissions:
       contents: read
       id-token: write
