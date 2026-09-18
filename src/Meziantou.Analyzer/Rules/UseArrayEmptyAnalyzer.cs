@@ -40,6 +40,12 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeArrayCreationOperation(OperationAnalysisContext context)
     {
         var operation = (IArrayCreationOperation)context.Operation;
+
+        // The compiler synthesizes the array of a params parameter (method, constructor, indexer, attribute,
+        // or the constructor called by a collection expression). The user cannot replace it with Array.Empty<T>().
+        if (operation.IsImplicit)
+            return;
+
         if (IsZeroLengthArrayCreation(operation, context.CancellationToken))
         {
             // Pointer types cannot be used as generic type arguments (CS0306)
@@ -48,9 +54,6 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
 
             // Cannot use Array.Empty<T>() as an attribute parameter
             if (IsInAttribute(operation))
-                return;
-
-            if (IsCompilerGeneratedParamsArray(operation, context))
                 return;
 
             context.ReportDiagnostic(Rule, operation);
@@ -79,65 +82,5 @@ public sealed class UseArrayEmptyAnalyzer : DiagnosticAnalyzer
     private static bool IsInAttribute(IArrayCreationOperation operation)
     {
         return operation.Syntax.AncestorsAndSelf().OfType<AttributeSyntax>().Any();
-    }
-
-    private static bool IsCompilerGeneratedParamsArray(IArrayCreationOperation arrayCreationExpression, OperationAnalysisContext context)
-    {
-        // A collection expression calls the constructor of the collection type without arguments,
-        // so the compiler synthesizes an empty array when the constructor has a params parameter (e.g. xUnit's TheoryData<T>)
-        if (arrayCreationExpression.Syntax is CollectionExpressionSyntax)
-            return true;
-
-        var semanticModel = context.Operation.SemanticModel!;
-
-        // Compiler generated array creation seems to just use the syntax from the parent.
-        var parent = semanticModel.GetOperation(arrayCreationExpression.Syntax, context.CancellationToken);
-        if (parent is null)
-            return false;
-
-        ISymbol? targetSymbol = null;
-        var arguments = ImmutableArray<IArgumentOperation>.Empty;
-        if (parent is IInvocationOperation invocation)
-        {
-            targetSymbol = invocation.TargetMethod;
-            arguments = invocation.Arguments;
-        }
-        else
-        {
-            if (parent is IObjectCreationOperation objectCreation)
-            {
-                targetSymbol = objectCreation.Constructor;
-                arguments = objectCreation.Arguments;
-            }
-            else if (parent is IPropertyReferenceOperation propertyReference)
-            {
-                targetSymbol = propertyReference.Property;
-                arguments = propertyReference.Arguments;
-            }
-        }
-
-        if (targetSymbol is null)
-            return false;
-
-        var parameters = GetParameters(targetSymbol);
-        if (parameters.Length == 0 || !parameters[^1].IsParams)
-            return false;
-
-        // At this point the array creation is known to be compiler synthesized as part of a call
-        // to a method with a params parameter, and so it is probably sound to return true at this point.
-        // As a sanity check, verify that the last argument to the call is equivalent to the array creation.
-        // (Comparing for object identity does not work because the semantic model can return a fresh operation tree.)
-        var lastArgument = arguments.LastOrDefault();
-        return lastArgument is not null && lastArgument.Value.Syntax == arrayCreationExpression.Syntax;
-    }
-
-    private static ImmutableArray<IParameterSymbol> GetParameters(ISymbol symbol)
-    {
-        return symbol.Kind switch
-        {
-            SymbolKind.Method => ((IMethodSymbol)symbol).Parameters,
-            SymbolKind.Property => ((IPropertySymbol)symbol).Parameters,
-            _ => ImmutableArray<IParameterSymbol>.Empty,
-        };
     }
 }
