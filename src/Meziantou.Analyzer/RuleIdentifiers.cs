@@ -239,7 +239,7 @@ internal static class RuleIdentifiers
     public const string EventSourceMissingRelatedActivityIdParameter = "MA0237";
     public const string EventSourceUnsupportedParameterType = "MA0238";
     public const string UseTypeofInsteadOfGetTypeOnSealedType = "MA0239";
-    public const string DoNotUseBannedSyntaxKind = "MA0240";
+    public const string DoNotUseBannedSyntax = "MA0240";
 
     public static string GetHelpUri(string identifier)
     {

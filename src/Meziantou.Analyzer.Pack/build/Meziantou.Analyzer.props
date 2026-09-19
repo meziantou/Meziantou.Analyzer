@@ -6,4 +6,12 @@
     <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'all-warnings'" Include="$(MSBuildThisFileDirectory)\..\configuration\all-warnings.editorconfig" />
     <GlobalAnalyzerConfigFiles Condition="'$(MeziantouAnalysisMode)' == 'all-errors'" Include="$(MSBuildThisFileDirectory)\..\configuration\all-errors.editorconfig" />
   </ItemGroup>
+
+  <!-- MA0240 reads the syntax to ban from the closest BannedSyntaxes.txt file, in the folder of the project or in one of its parent folders -->
+  <PropertyGroup Condition="'$(MeziantouIncludeBannedSyntaxesFile)' != 'false'">
+    <_MeziantouBannedSyntaxesDirectory>$([MSBuild]::GetDirectoryNameOfFileAbove('$(MSBuildProjectDirectory)', 'BannedSyntaxes.txt'))</_MeziantouBannedSyntaxesDirectory>
+  </PropertyGroup>
+  <ItemGroup Condition="'$(_MeziantouBannedSyntaxesDirectory)' != ''">
+    <AdditionalFiles Include="$([MSBuild]::NormalizePath('$(_MeziantouBannedSyntaxesDirectory)', 'BannedSyntaxes.txt'))" />
+  </ItemGroup>
 </Project>
