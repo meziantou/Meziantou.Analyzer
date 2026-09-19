@@ -8,7 +8,8 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseBannedSyntaxKindAnalyzerTests
 {
-    private static AnalyzerTest CreateTest() => new();
+    // The rule reports the invalid queries with a second descriptor, so the markup must use the first one
+    private static AnalyzerTest CreateTest() => new() { MarkupOptions = MarkupOptions.UseFirstDescriptor };
 
     [Fact]
     public Task NoConfiguration_NoDiagnostic()
@@ -150,6 +151,207 @@ public sealed class DoNotUseBannedSyntaxKindAnalyzerTests
                 }
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_PrimaryConstructor_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//ClassDeclaration/ParameterList");
+        test.TestCode = """
+            class Sample[|(int value)|]
+            {
+                Sample() : this(0) { }
+
+                void M(int value) { }
+            }
+
+            class Other { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_Predicate_ReportsSelectedNode()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//ClassDeclaration[ParameterList]");
+        test.TestCode = """
+            [|class Sample(int value)
+            {
+            }|]
+
+            class Other { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_MultipleQueries_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//ClassDeclaration/ParameterList | //StructDeclaration/ParameterList | //GotoStatement");
+        test.TestCode = """
+            class Sample[|(int value)|]
+            {
+                void M()
+                {
+                    [|goto label;|]
+                    label:
+                    return;
+                }
+            }
+
+            struct S[|(int value)|];
+
+            record R(int Value);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_NestedNodes_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//ConditionalExpression//ConditionalExpression");
+        test.TestCode = """
+            class Sample
+            {
+                int M(bool a, bool b) => a ? [|b ? 1 : 2|] : 3;
+                int N(bool a) => a ? 1 : 2;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_TokenAttribute_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//MethodDeclaration[@Identifier='Banned']");
+        test.TestCode = """
+            class Sample
+            {
+                [|void Banned() { }|]
+                void Allowed() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_TokenListAttribute_ReportsTokens()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//MethodDeclaration/@Modifiers[contains(., 'async')]");
+        test.TestCode = """
+            class Sample
+            {
+                {|#0:public async|} System.Threading.Tasks.Task A() => await System.Threading.Tasks.Task.Yield();
+                public void B() { }
+                void C() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0240", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("MethodDeclaration/@Modifiers"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_ParentAxis_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//ReturnStatement/parent::Block/parent::MethodDeclaration/@Identifier");
+        test.TestCode = """
+            class Sample
+            {
+                int [|A|]()
+                {
+                    return 0;
+                }
+
+                void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SiblingAxes_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//MethodDeclaration[preceding-sibling::FieldDeclaration and following-sibling::FieldDeclaration]/@Identifier");
+        test.TestCode = """
+            class Sample
+            {
+                int a;
+                void [|A|]() { }
+                int b;
+                void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task QueryAndSyntaxKinds_SameNode_ReportedOnce()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(("MA0240.syntax_kinds", "GotoStatement"), ("MA0240.query", "//GotoStatement | //LockStatement"));
+        test.TestCode = """
+            class Sample
+            {
+                void M(object o)
+                {
+                    [|lock (o) { }|]
+                    [|goto label;|]
+                    label:
+                    return;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_NoMatch_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//GotoStatement");
+        test.TestCode = """
+            class Sample
+            {
+                void M() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//ClassDeclaration[")]
+    [InlineData("count(//ClassDeclaration)")]
+    [InlineData("//ClassDeclaration[unknown-function()]")]
+    public Task Query_Invalid_Diagnostic(string query)
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", query);
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0240", DiagnosticSeverity.Warning));
 
         return test.RunAsync();
     }
