@@ -18,16 +18,15 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBannedSyntax));
 
-    // Uses the same id as the rule, so the invalid entries are not reported to the projects that disable the rule
     private static readonly DiagnosticDescriptor InvalidEntryRule = new(
-        RuleIdentifiers.DoNotUseBannedSyntax,
-        title: "Do not use banned syntax",
+        RuleIdentifiers.InvalidBannedSyntaxEntry,
+        title: "The banned syntax entry is not valid",
         messageFormat: "The query '{0}' is not valid: {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBannedSyntax));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.InvalidBannedSyntaxEntry));
 
     private const string FileName = "BannedSyntaxes.txt";
     private const string FileNamePrefix = "BannedSyntaxes.";

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class DoNotUseBannedSyntaxAnalyzerTests
 {
-    // The rule reports the invalid entries with a second descriptor, so the markup must use the first one
+    // The analyzer also reports the invalid entries (MA0241), so the markup must use the first descriptor (MA0240)
     private static AnalyzerTest CreateTest(string bannedSyntaxes)
     {
         var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
@@ -413,7 +413,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
             {
             }
             """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0240", DiagnosticSeverity.Warning).WithLocation(0));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0));
 
         return test.RunAsync();
     }
@@ -437,7 +437,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
                 }
             }
             """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0240", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
         test.ExpectedDiagnostics.Add(Diagnostic(1, "GotoStatement", ""));
 
         return test.RunAsync();
@@ -466,7 +466,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
                 }
             }
             """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0240", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
         test.ExpectedDiagnostics.Add(Diagnostic(1, "GotoStatement", ""));
 
         return test.RunAsync();
