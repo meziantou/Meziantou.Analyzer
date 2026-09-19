@@ -712,3 +712,9 @@ dotnet_diagnostic.MA0238.severity = error
 
 # MA0239: Use 'typeof' instead of 'GetType()' when the type is sealed
 dotnet_diagnostic.MA0239.severity = error
+
+# MA0240: Do not use banned syntax
+dotnet_diagnostic.MA0240.severity = error
+
+# MA0241: The banned syntax entry is not valid
+dotnet_diagnostic.MA0241.severity = error

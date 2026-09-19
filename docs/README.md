@@ -238,6 +238,8 @@
 |[MA0237](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0237.md)|Usage|An EventSource event method writing a related activity id must declare it as its first parameter|<span title='Warning'>⚠️</span>|❌|❌|❌|
 |[MA0238](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0238.md)|Usage|The parameter type of an EventSource event method is not supported|<span title='Warning'>⚠️</span>|❌|❌|❌|
 |[MA0239](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0239.md)|Performance|Use 'typeof' instead of 'GetType()' when the type is sealed|<span title='Info'>ℹ️</span>|❌|✔️|❌|
+|[MA0240](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0240.md)|Design|Do not use banned syntax|<span title='Warning'>⚠️</span>|✔️|❌|❌|
+|[MA0241](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0241.md)|Design|The banned syntax entry is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
