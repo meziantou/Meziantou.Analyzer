@@ -714,4 +714,4 @@ dotnet_diagnostic.MA0238.severity = none
 dotnet_diagnostic.MA0239.severity = none
 
 # MA0240: Do not use banned syntax
-dotnet_diagnostic.MA0240.severity = none
+dotnet_diagnostic.MA0240.severity = warning

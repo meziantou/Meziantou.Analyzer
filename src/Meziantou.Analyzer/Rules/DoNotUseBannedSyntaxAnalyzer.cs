@@ -14,18 +14,18 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         messageFormat: "The syntax '{0}' is banned{1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBannedSyntax));
 
-    // Uses the same id as the rule, so the invalid entries are reported only to the projects that enable the rule
+    // Uses the same id as the rule, so the invalid entries are not reported to the projects that disable the rule
     private static readonly DiagnosticDescriptor InvalidEntryRule = new(
         RuleIdentifiers.DoNotUseBannedSyntax,
         title: "Do not use banned syntax",
         messageFormat: "The query '{0}' is not valid: {1}",
         RuleCategories.Design,
         DiagnosticSeverity.Warning,
-        isEnabledByDefault: false,
+        isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBannedSyntax));
 
@@ -48,14 +48,29 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
         context.RegisterCompilationStartAction(context =>
         {
+            // The rule is enabled by default, so it must not cost anything to the projects without a banned syntax file
+            if (!HasBannedSyntaxFile(context.Options.AdditionalFiles))
+                return;
+
+            context.RegisterAdditionalFileAction(AnalyzeAdditionalFile);
+
             var configuration = BannedSyntaxConfiguration.Create(context.Options.AdditionalFiles, context.CancellationToken);
             if (configuration is not null)
             {
                 context.RegisterSyntaxTreeAction(configuration.AnalyzeTree);
             }
         });
+    }
 
-        context.RegisterAdditionalFileAction(AnalyzeAdditionalFile);
+    private static bool HasBannedSyntaxFile(ImmutableArray<AdditionalText> additionalFiles)
+    {
+        foreach (var additionalFile in additionalFiles)
+        {
+            if (IsBannedSyntaxFile(additionalFile.Path))
+                return true;
+        }
+
+        return false;
     }
 
     private static void AnalyzeAdditionalFile(AdditionalFileAnalysisContext context)
