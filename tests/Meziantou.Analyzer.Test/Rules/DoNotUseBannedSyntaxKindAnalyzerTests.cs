@@ -355,4 +355,29 @@ public sealed class DoNotUseBannedSyntaxKindAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Query_Count_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0240.query", "//*[count(ParameterList/Parameter) > 5]/@Identifier");
+        test.TestCode = """
+            class Sample
+            {
+                void [|A|](int a, int b, int c, int d, int e, int f) { }
+                void B(int a, int b, int c, int d, int e) { }
+
+                [|Sample|](int a, int b, int c, int d, int e, int f) { }
+
+                void M()
+                {
+                    void [|Local|](int a, int b, int c, int d, int e, int f) { }
+                }
+            }
+
+            delegate void [|D|](int a, int b, int c, int d, int e, int f);
+            """;
+
+        return test.RunAsync();
+    }
 }
