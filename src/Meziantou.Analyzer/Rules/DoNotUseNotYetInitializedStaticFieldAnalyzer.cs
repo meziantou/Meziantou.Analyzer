@@ -58,8 +58,8 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
 
     private sealed class AnalyzerContext(INamedTypeSymbol containingType, ConcurrentDictionary<IFieldSymbol, FieldDeclarationInfo?> fieldDeclarationInfos)
     {
-        private readonly ConcurrentBag<FieldReferenceInfo> _candidates = [];
-        private readonly ConcurrentDictionary<IFieldSymbol, bool> _fieldsAssignedInStaticConstructor = new(SymbolEqualityComparer.Default);
+        private readonly List<FieldReferenceInfo> _candidates = [];
+        private readonly HashSet<IFieldSymbol> _fieldsAssignedInStaticConstructor = new(SymbolEqualityComparer.Default);
 
         public void AnalyzeFieldReference(OperationAnalysisContext context)
         {
@@ -78,7 +78,10 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
             {
                 if (referencedField.ContainingType.IsEqualTo(containingType) && IsWrittenInStaticConstructor(context, fieldReferenceOperation))
                 {
-                    _fieldsAssignedInStaticConstructor.TryAdd(referencedField, true);
+                    lock (_fieldsAssignedInStaticConstructor)
+                    {
+                        _fieldsAssignedInStaticConstructor.Add(referencedField);
+                    }
                 }
 
                 return;
@@ -90,11 +93,15 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
             if (referencedField.IsEqualTo(currentField))
                 return;
 
-            _candidates.Add(new(fieldReferenceOperation.Syntax.GetLocation(), referencedField, currentField));
+            lock (_candidates)
+            {
+                _candidates.Add(new(fieldReferenceOperation.Syntax.GetLocation(), referencedField, currentField));
+            }
         }
 
         public void ReportDiagnostics(SymbolAnalysisContext context)
         {
+            // The symbol end action runs after all the operation actions of the symbol, so no lock is needed here
             foreach (var (location, referencedField, currentField) in _candidates)
             {
                 context.CancellationToken.ThrowIfCancellationRequested();
@@ -111,7 +118,7 @@ public sealed class DoNotUseNotYetInitializedStaticFieldAnalyzer : DiagnosticAna
                 {
                     // A field with no initializer is only observed as not-yet-initialized when the static constructor
                     // assigns it, as the static constructor body runs after all the static field initializers.
-                    if (!_fieldsAssignedInStaticConstructor.ContainsKey(referencedField))
+                    if (!_fieldsAssignedInStaticConstructor.Contains(referencedField))
                         continue;
 
                     context.ReportDiagnostic(Rule, location, referencedField.Name, StaticConstructorReason);
