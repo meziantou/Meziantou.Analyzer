@@ -1,8 +1,10 @@
 using System.Collections.Concurrent;
+using System.Globalization;
 using System.Reflection;
 using System.Xml;
 using System.Xml.XPath;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Internals;
@@ -11,13 +13,45 @@ namespace Meziantou.Analyzer.Internals;
 /// Exposes a syntax tree as an XML document, so it can be queried with XPath. Each syntax node is an element named
 /// after its <see cref="SyntaxKind"/>, and the tokens of a node (<c>Identifier</c>, <c>Modifiers</c>, <c>Keyword</c>, ...)
 /// are the attributes of its element, named after the property of the node that returns them.
+/// When a <see cref="SemanticModel"/> is provided, the data of the semantic model is exposed as additional attributes
+/// in the <c>semantic</c> namespace (<c>semantic:Type</c>, <c>semantic:Symbol</c>, ...).
 /// </summary>
 internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 {
+    /// <summary>The prefix of the attributes that expose the data of the semantic model.</summary>
+    public const string SemanticPrefix = "semantic";
+
+    private const string SemanticNamespaceUri = "urn:meziantou.analyzer:semantic";
+
+    // The local names of the attributes of the 'semantic' namespace, mapped to their qualified name
+    private static readonly Dictionary<string, string> SemanticNames = CreateSemanticNames(
+    [
+        SemanticName.TypeMetadataName,
+        SemanticName.TypeDocumentationId,
+        SemanticName.TypeReferenceId,
+        SemanticName.ConvertedTypeMetadataName,
+        SemanticName.ConvertedTypeDocumentationId,
+        SemanticName.ConvertedTypeReferenceId,
+        SemanticName.ReturnTypeMetadataName,
+        SemanticName.ReturnTypeDocumentationId,
+        SemanticName.ReturnTypeReferenceId,
+        SemanticName.ContainingTypeMetadataName,
+        SemanticName.ContainingTypeDocumentationId,
+        SemanticName.ContainingTypeReferenceId,
+        SemanticName.Symbol,
+        SemanticName.SymbolDocumentationId,
+        SemanticName.SymbolKind,
+        SemanticName.HasConstantValue,
+        SemanticName.ConstantValue,
+    ]);
+
+    private static readonly XmlNamespaceManager NamespaceManager = CreateNamespaceManager();
+
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> TokenProperties = new();
     private static readonly ConcurrentDictionary<SyntaxKind, string> KindNames = new();
 
     private readonly SyntaxNode _root;
+    private readonly SemanticModel? _semanticModel;
     private readonly XmlNameTable _nameTable;
     private readonly CancellationToken _cancellationToken;
 
@@ -31,8 +65,14 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
     private int _attributeIndex = -1;
 
     public SyntaxNodeXPathNavigator(SyntaxNode root, CancellationToken cancellationToken)
+        : this(root, semanticModel: null, cancellationToken)
+    {
+    }
+
+    public SyntaxNodeXPathNavigator(SyntaxNode root, SemanticModel? semanticModel, CancellationToken cancellationToken)
     {
         _root = root;
+        _semanticModel = semanticModel;
         _nameTable = new NameTable();
         _cancellationToken = cancellationToken;
     }
@@ -40,6 +80,7 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
     private SyntaxNodeXPathNavigator(SyntaxNodeXPathNavigator other)
     {
         _root = other._root;
+        _semanticModel = other._semanticModel;
         _nameTable = other._nameTable;
         _cancellationToken = other._cancellationToken;
         _node = other._node;
@@ -49,12 +90,22 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
     }
 
     /// <summary>
+    /// Resolves the <c>semantic</c> prefix, so the queries using it can be compiled.
+    /// </summary>
+    public static IXmlNamespaceResolver NamespaceResolver => NamespaceManager;
+
+    /// <summary>
+    /// Indicates whether a name is one of the attributes of the <c>semantic</c> namespace.
+    /// </summary>
+    public static bool IsSemanticName(string name) => SemanticNames.ContainsKey(name);
+
+    /// <summary>
     /// The node the navigator is positioned on, or the node that owns the attribute the navigator is positioned on.
     /// </summary>
     public SyntaxNode? Node => _node;
 
     /// <summary>
-    /// The name of the attribute the navigator is positioned on, if any.
+    /// The name of the attribute the navigator is positioned on, if any. It is prefixed for the semantic attributes.
     /// </summary>
     public string? AttributeName => IsOnAttribute ? _attributes![_attributeIndex].Name : null;
 
@@ -83,17 +134,17 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
         get
         {
             if (IsOnAttribute)
-                return _attributes![_attributeIndex].Name;
+                return _attributes![_attributeIndex].LocalName;
 
             return _node is null ? "" : GetKindName(_node.Kind());
         }
     }
 
-    public override string Name => LocalName;
+    public override string Name => IsOnAttribute ? _attributes![_attributeIndex].Name : LocalName;
 
-    public override string NamespaceURI => "";
+    public override string NamespaceURI => IsOnAttribute ? _attributes![_attributeIndex].NamespaceUri : "";
 
-    public override string Prefix => "";
+    public override string Prefix => IsOnAttribute && _attributes![_attributeIndex].NamespaceUri.Length > 0 ? SemanticPrefix : "";
 
     public override string BaseURI => "";
 
@@ -280,7 +331,33 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private static string GetKindName(SyntaxKind kind) => KindNames.GetOrAdd(kind, static kind => kind.ToString());
 
-    private static Attribute[] GetAttributes(SyntaxNode node)
+    private static Dictionary<string, string> CreateSemanticNames(string[] names)
+    {
+        var result = new Dictionary<string, string>(names.Length, StringComparer.Ordinal);
+        foreach (var name in names)
+        {
+            result.Add(name, SemanticPrefix + ":" + name);
+        }
+
+        return result;
+    }
+
+    private static XmlNamespaceManager CreateNamespaceManager()
+    {
+        var manager = new XmlNamespaceManager(new NameTable());
+        manager.AddNamespace(SemanticPrefix, SemanticNamespaceUri);
+        return manager;
+    }
+
+    private Attribute[] GetAttributes(SyntaxNode node)
+    {
+        var attributes = new List<Attribute>();
+        AddTokenAttributes(attributes, node);
+        AddSemanticAttributes(attributes, node);
+        return attributes.Count is 0 ? [] : [.. attributes];
+    }
+
+    private static void AddTokenAttributes(List<Attribute> attributes, SyntaxNode node)
     {
         var properties = TokenProperties.GetOrAdd(node.GetType(), static type =>
         [
@@ -291,10 +368,6 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
                 .OrderBy(property => property.Name, StringComparer.Ordinal),
         ]);
 
-        if (properties.Length is 0)
-            return [];
-
-        var attributes = new List<Attribute>(properties.Length);
         foreach (var property in properties)
         {
             object? value;
@@ -310,17 +383,103 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
             switch (value)
             {
                 case SyntaxToken token when !token.IsMissing && !token.IsKind(SyntaxKind.None):
-                    attributes.Add(new Attribute(property.Name, token.Text, token.Span));
+                    attributes.Add(new Attribute(property.Name, property.Name, NamespaceUri: "", token.Text, token.Span));
                     break;
 
                 case SyntaxTokenList { Count: > 0 } tokens:
-                    attributes.Add(new Attribute(property.Name, string.Join(" ", tokens.Select(token => token.Text)), tokens.Span));
+                    attributes.Add(new Attribute(property.Name, property.Name, NamespaceUri: "", string.Join(" ", tokens.Select(token => token.Text)), tokens.Span));
                     break;
             }
         }
-
-        return [.. attributes];
     }
 
-    private readonly record struct Attribute(string Name, string Value, TextSpan Span);
+    private void AddSemanticAttributes(List<Attribute> attributes, SyntaxNode node)
+    {
+        var semanticModel = _semanticModel;
+        if (semanticModel is null)
+            return;
+
+        var span = node.Span;
+        var typeInfo = semanticModel.GetTypeInfo(node, _cancellationToken);
+        AddType(attributes, span, typeInfo.Type, SemanticName.TypeMetadataName, SemanticName.TypeDocumentationId, SemanticName.TypeReferenceId);
+        AddType(attributes, span, typeInfo.ConvertedType, SemanticName.ConvertedTypeMetadataName, SemanticName.ConvertedTypeDocumentationId, SemanticName.ConvertedTypeReferenceId);
+
+        var symbolInfo = semanticModel.GetSymbolInfo(node, _cancellationToken);
+        var symbol = symbolInfo.Symbol ?? symbolInfo.CandidateSymbols.FirstOrDefault() ?? semanticModel.GetDeclaredSymbol(node, _cancellationToken);
+        if (symbol is not null)
+        {
+            Add(attributes, span, SemanticName.Symbol, SymbolNameFormatter.GetSymbolName(symbol));
+            Add(attributes, span, SemanticName.SymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
+            Add(attributes, span, SemanticName.SymbolKind, symbol.Kind.ToString());
+            AddType(attributes, span, symbol.ContainingType, SemanticName.ContainingTypeMetadataName, SemanticName.ContainingTypeDocumentationId, SemanticName.ContainingTypeReferenceId);
+
+            if (symbol is IMethodSymbol method)
+            {
+                AddType(attributes, span, method.ReturnType, SemanticName.ReturnTypeMetadataName, SemanticName.ReturnTypeDocumentationId, SemanticName.ReturnTypeReferenceId);
+            }
+        }
+
+        if (node is ExpressionSyntax)
+        {
+            var constantValue = semanticModel.GetConstantValue(node, _cancellationToken);
+            if (constantValue.HasValue)
+            {
+                Add(attributes, span, SemanticName.HasConstantValue, "true");
+                Add(attributes, span, SemanticName.ConstantValue, FormatConstantValue(constantValue.Value));
+            }
+        }
+    }
+
+    private static void AddType(List<Attribute> attributes, TextSpan span, ITypeSymbol? type, string metadataName, string documentationIdName, string referenceIdName)
+    {
+        if (type is null)
+            return;
+
+        // The metadata name and the documentation comment id have no type arguments, so they are the ones of the
+        // definition of the type. The reference id is the only format that carries them.
+        Add(attributes, span, metadataName, SymbolNameFormatter.GetMetadataName(type));
+        Add(attributes, span, documentationIdName, SymbolNameFormatter.GetDocumentationId(type));
+        Add(attributes, span, referenceIdName, SymbolNameFormatter.GetReferenceId(type));
+    }
+
+    private static void Add(List<Attribute> attributes, TextSpan span, string name, string? value)
+    {
+        if (value is null or "")
+            return;
+
+        attributes.Add(new Attribute(SemanticNames[name], name, SemanticNamespaceUri, value, span));
+    }
+
+    private static string? FormatConstantValue(object? value) => value switch
+    {
+        null => null,
+        bool boolean => boolean ? "true" : "false",
+        string text => text,
+        char character => character.ToString(),
+        IFormattable formattable => formattable.ToString(format: null, CultureInfo.InvariantCulture),
+        _ => value.ToString(),
+    };
+
+    private readonly record struct Attribute(string Name, string LocalName, string NamespaceUri, string Value, TextSpan Span);
+
+    private static class SemanticName
+    {
+        public const string TypeMetadataName = nameof(TypeMetadataName);
+        public const string TypeDocumentationId = nameof(TypeDocumentationId);
+        public const string TypeReferenceId = nameof(TypeReferenceId);
+        public const string ConvertedTypeMetadataName = nameof(ConvertedTypeMetadataName);
+        public const string ConvertedTypeDocumentationId = nameof(ConvertedTypeDocumentationId);
+        public const string ConvertedTypeReferenceId = nameof(ConvertedTypeReferenceId);
+        public const string ReturnTypeMetadataName = nameof(ReturnTypeMetadataName);
+        public const string ReturnTypeDocumentationId = nameof(ReturnTypeDocumentationId);
+        public const string ReturnTypeReferenceId = nameof(ReturnTypeReferenceId);
+        public const string ContainingTypeMetadataName = nameof(ContainingTypeMetadataName);
+        public const string ContainingTypeDocumentationId = nameof(ContainingTypeDocumentationId);
+        public const string ContainingTypeReferenceId = nameof(ContainingTypeReferenceId);
+        public const string Symbol = nameof(Symbol);
+        public const string SymbolDocumentationId = nameof(SymbolDocumentationId);
+        public const string SymbolKind = nameof(SymbolKind);
+        public const string HasConstantValue = nameof(HasConstantValue);
+        public const string ConstantValue = nameof(ConstantValue);
+    }
 }
