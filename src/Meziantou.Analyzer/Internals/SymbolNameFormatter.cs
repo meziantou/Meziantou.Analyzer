@@ -4,20 +4,13 @@ namespace Meziantou.Analyzer.Internals;
 
 /// <summary>
 /// Formats the name of a symbol for the <c>semantic</c> attributes of <see cref="SyntaxNodeXPathNavigator"/>.
+/// The formats are the ones Roslyn produces, so they are predictable and documented elsewhere.
 /// </summary>
 internal static class SymbolNameFormatter
 {
-    // Fully qualified, without 'global::' and without the C# keywords, so 'int?' is 'System.Nullable<System.Int32>'
-    private static readonly SymbolDisplayFormat DisplayFormat = new(
+    private static readonly SymbolDisplayFormat NamespaceFormat = new(
         globalNamespaceStyle: SymbolDisplayGlobalNamespaceStyle.Omitted,
-        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces,
-        genericsOptions: SymbolDisplayGenericsOptions.IncludeTypeParameters,
-        miscellaneousOptions: SymbolDisplayMiscellaneousOptions.ExpandNullable);
-
-    /// <summary>
-    /// The fully qualified name of a type, with its type arguments: <c>System.Collections.Generic.List&lt;System.String&gt;</c>.
-    /// </summary>
-    public static string? GetDisplayName(ITypeSymbol? symbol) => symbol?.ToDisplayString(DisplayFormat);
+        typeQualificationStyle: SymbolDisplayTypeQualificationStyle.NameAndContainingTypesAndNamespaces);
 
     /// <summary>
     /// The name of a type as <see cref="Compilation.GetTypeByMetadataName(string)"/> expects it,
@@ -30,35 +23,7 @@ internal static class SymbolNameFormatter
 
         var builder = new StringBuilder();
         AppendMetadataName(builder, symbol);
-        return builder.ToString();
-    }
-
-    /// <summary>
-    /// The name of a symbol, qualified by the metadata name of its containing type: <c>System.Console.WriteLine</c>.
-    /// The parameters are not part of the name, so it is the name of all the overloads.
-    /// </summary>
-    public static string? GetSymbolName(ISymbol? symbol)
-    {
-        if (symbol is null)
-            return null;
-
-        symbol = symbol.OriginalDefinition;
-        if (symbol is ITypeSymbol type)
-            return GetMetadataName(type);
-
-        if (symbol is INamespaceSymbol { IsGlobalNamespace: false } @namespace)
-            return @namespace.ToDisplayString(DisplayFormat);
-
-        var name = symbol.Name;
-        if (name.Length is 0)
-            return null;
-
-        // A local, a parameter or a label is not a member of its containing type, so qualifying it would be misleading
-        if (symbol.Kind is SymbolKind.Local or SymbolKind.Parameter or SymbolKind.RangeVariable or SymbolKind.Label or SymbolKind.TypeParameter)
-            return name;
-
-        var containingType = GetMetadataName(symbol.ContainingType);
-        return containingType is null ? name : containingType + "." + name;
+        return builder.Length is 0 ? null : builder.ToString();
     }
 
     /// <summary>
@@ -96,8 +61,49 @@ internal static class SymbolNameFormatter
         return id;
     }
 
-    // ToDisplayString cannot emit the arity suffix of a generic type nor the '+' that separates the nested types,
-    // so the metadata name is built from the metadata name of each part
+    /// <summary>
+    /// The documentation comment reference id of a type, the form a <c>cref</c> uses. It is the only format that
+    /// carries the type arguments: <c>System.Collections.Generic.List{System.String}</c>.
+    /// </summary>
+    public static string? GetReferenceId(ITypeSymbol? symbol)
+    {
+        if (symbol is null)
+            return null;
+
+        var id = DocumentationCommentId.CreateReferenceId(symbol);
+        return string.IsNullOrEmpty(id) ? null : id;
+    }
+
+    /// <summary>
+    /// The name of a symbol, qualified by the metadata name of its containing type: <c>System.Console.WriteLine</c>.
+    /// The parameters are not part of the name, so it is the name of all the overloads.
+    /// </summary>
+    public static string? GetSymbolName(ISymbol? symbol)
+    {
+        if (symbol is null)
+            return null;
+
+        symbol = symbol.OriginalDefinition;
+        if (symbol is ITypeSymbol type)
+            return GetMetadataName(type);
+
+        if (symbol is INamespaceSymbol { IsGlobalNamespace: false } @namespace)
+            return @namespace.ToDisplayString(NamespaceFormat);
+
+        var name = symbol.Name;
+        if (name.Length is 0)
+            return null;
+
+        // A local, a parameter or a label is not a member of its containing type, so qualifying it would be misleading
+        if (symbol.Kind is SymbolKind.Local or SymbolKind.Parameter or SymbolKind.RangeVariable or SymbolKind.Label or SymbolKind.TypeParameter)
+            return name;
+
+        var containingType = GetMetadataName(symbol.ContainingType);
+        return containingType is null ? name : containingType + "." + name;
+    }
+
+    // There is no Roslyn API for the metadata name of a type, as ToDisplayString emits neither the arity suffix of a
+    // generic type nor the '+' that separates the nested types, so it is built from the metadata name of each part
     private static void AppendMetadataName(StringBuilder builder, ITypeSymbol symbol)
     {
         switch (symbol)
@@ -120,14 +126,14 @@ internal static class SymbolNameFormatter
                 }
                 else if (namedType.ContainingNamespace is { IsGlobalNamespace: false } containingNamespace)
                 {
-                    builder.Append(containingNamespace.ToDisplayString(DisplayFormat)).Append('.');
+                    builder.Append(containingNamespace.ToDisplayString(NamespaceFormat)).Append('.');
                 }
 
                 builder.Append(namedType.MetadataName);
                 break;
 
             default:
-                builder.Append(symbol.ToDisplayString(DisplayFormat));
+                builder.Append(symbol.MetadataName);
                 break;
         }
     }

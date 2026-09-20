@@ -444,9 +444,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticTypeConstructedFrom_Diagnostic()
+    public Task Query_SemanticTypeMetadataName_Diagnostic()
     {
-        var test = CreateTest("//AddExpression/*[@semantic:TypeConstructedFrom='System.Nullable`1']");
+        var test = CreateTest("//AddExpression/*[@semantic:TypeMetadataName='System.Nullable`1']");
         test.TestCode = """
             class Sample
             {
@@ -459,9 +459,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticTypeConstructedFromDocumentationId_Diagnostic()
+    public Task Query_SemanticTypeDocumentationId_Diagnostic()
     {
-        var test = CreateTest("//AddExpression/*[@semantic:TypeConstructedFromDocumentationId='T:System.Nullable`1']");
+        var test = CreateTest("//AddExpression/*[@semantic:TypeDocumentationId='T:System.Nullable`1']");
         test.TestCode = """
             class Sample
             {
@@ -474,9 +474,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticType_Diagnostic()
+    public Task Query_SemanticTypeReferenceId_Diagnostic()
     {
-        var test = CreateTest("//ObjectCreationExpression[@semantic:Type='System.Text.StringBuilder']");
+        var test = CreateTest("//ObjectCreationExpression[@semantic:TypeReferenceId='System.Text.StringBuilder']");
         test.TestCode = """
             class Sample
             {
@@ -489,9 +489,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticType_IncludesTypeArguments()
+    public Task Query_SemanticTypeReferenceId_IncludesTypeArguments()
     {
-        var test = CreateTest("//ObjectCreationExpression[@semantic:Type='System.Collections.Generic.List<System.String>']");
+        var test = CreateTest("//ObjectCreationExpression[@semantic:TypeReferenceId='System.Collections.Generic.List{System.String}']");
         test.TestCode = """
             class Sample
             {
@@ -506,7 +506,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticConvertedType_Diagnostic()
     {
-        var test = CreateTest("//*[@semantic:Type='System.Int32' and @semantic:ConvertedType='System.Object']; No boxing");
+        var test = CreateTest("//*[@semantic:TypeReferenceId='System.Int32' and @semantic:ConvertedTypeReferenceId='System.Object']; No boxing");
         test.TestCode = """
             class Sample
             {
@@ -593,7 +593,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     public Task Query_SemanticReturnTypeOfADeclaration_Diagnostic()
     {
         // The return type is the only child of a method declaration that has a type
-        var test = CreateTest("//MethodDeclaration/*[@semantic:TypeConstructedFrom='System.Threading.Tasks.Task`1']");
+        var test = CreateTest("//MethodDeclaration/*[@semantic:TypeMetadataName='System.Threading.Tasks.Task`1']");
         test.TestCode = """
             class Sample
             {
@@ -610,7 +610,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     public Task Query_SemanticReturnTypeOfACall_Diagnostic()
     {
         // The type of an invocation is the return type of the method it calls
-        var test = CreateTest("//InvocationExpression[@semantic:Type='System.Int32']");
+        var test = CreateTest("//InvocationExpression[@semantic:TypeReferenceId='System.Int32']");
         test.TestCode = """
             class Sample
             {
@@ -631,7 +631,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticReturnType_Diagnostic()
     {
-        var test = CreateTest("//MethodDeclaration[@semantic:ReturnType='System.Void']");
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeReferenceId='System.Void']");
         test.TestCode = """
             class Sample
             {
@@ -644,9 +644,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticReturnTypeConstructedFrom_Diagnostic()
+    public Task Query_SemanticReturnTypeMetadataName_Diagnostic()
     {
-        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeConstructedFrom='System.Threading.Tasks.Task`1']");
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeMetadataName='System.Threading.Tasks.Task`1']");
         test.TestCode = """
             class Sample
             {
@@ -660,9 +660,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticReturnTypeConstructedFromDocumentationId_Diagnostic()
+    public Task Query_SemanticReturnTypeDocumentationId_Diagnostic()
     {
-        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeConstructedFromDocumentationId='T:System.Threading.Tasks.Task`1']");
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeDocumentationId='T:System.Threading.Tasks.Task`1']");
         test.TestCode = """
             class Sample
             {
@@ -677,7 +677,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticReturnTypeCombinedWithAToken_Diagnostic()
     {
-        var test = CreateTest("//MethodDeclaration[@Identifier='Handle' and @semantic:ReturnType='System.Void']");
+        var test = CreateTest("//MethodDeclaration[@Identifier='Handle' and @semantic:ReturnTypeReferenceId='System.Void']");
         test.TestCode = """
             class Sample
             {
@@ -693,7 +693,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticReturnTypeOfACalledMethod_Diagnostic()
     {
-        var test = CreateTest("//InvocationExpression[@semantic:ReturnType='System.Int32']");
+        var test = CreateTest("//InvocationExpression[@semantic:ReturnTypeReferenceId='System.Int32']");
         test.TestCode = """
             class Sample
             {
@@ -712,14 +712,15 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticType_TupleUsesItsElementNames()
+    public Task Query_SemanticTypeReferenceId_TupleIgnoresTheElementNames()
     {
-        var test = CreateTest("//MethodDeclaration[@semantic:ReturnType='(System.Int32 x, System.String y)']");
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeReferenceId='System.ValueTuple{System.Int32,System.String}']");
         test.TestCode = """
             class Sample
             {
                 [|(int x, string y) A() => (1, "a");|]
-                (int a, string b) B() => (1, "a");
+                [|(int a, string b) B() => (1, "a");|]
+                (int a, int b) C() => (1, 2);
             }
             """;
 
@@ -727,9 +728,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
-    public Task Query_SemanticTypeConstructedFrom_TupleIsAValueTuple()
+    public Task Query_SemanticTypeMetadataName_TupleIsAValueTuple()
     {
-        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeConstructedFrom='System.ValueTuple`2']");
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeMetadataName='System.ValueTuple`2']");
         test.TestCode = """
             class Sample
             {
@@ -762,7 +763,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticContainingType_Diagnostic()
     {
-        var test = CreateTest("//InvocationExpression[@semantic:ContainingType='System.Console']");
+        var test = CreateTest("//InvocationExpression[@semantic:ContainingTypeMetadataName='System.Console']");
         test.TestCode = """
             class Sample
             {
@@ -843,14 +844,14 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticAttribute_ReportsNodeAndPrefixedName()
     {
-        var test = CreateTest("//ObjectCreationExpression/@semantic:Type");
+        var test = CreateTest("//ObjectCreationExpression/@semantic:TypeReferenceId");
         test.TestCode = """
             class Sample
             {
                 object A() => {|#0:new System.Text.StringBuilder()|};
             }
             """;
-        test.ExpectedDiagnostics.Add(Diagnostic(0, "ObjectCreationExpression/@semantic:Type", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "ObjectCreationExpression/@semantic:TypeReferenceId", ""));
 
         return test.RunAsync();
     }
@@ -858,7 +859,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticNegativePredicate_Diagnostic()
     {
-        var test = CreateTest("//ObjectCreationExpression[@semantic:Type!='System.Text.StringBuilder']");
+        var test = CreateTest("//ObjectCreationExpression[@semantic:TypeReferenceId!='System.Text.StringBuilder']");
         test.TestCode = """
             class Sample
             {
@@ -876,7 +877,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
         var test = CreateTest("""
             GotoStatement; Use structured control flow instead
             //ClassDeclaration/ParameterList; Do not use primary constructors
-            //InvocationExpression[@semantic:ContainingType='System.Console']; Use the logger
+            //InvocationExpression[@semantic:ContainingTypeMetadataName='System.Console']; Use the logger
             """);
         test.TestCode = """
             class Sample{|#0:(int value)|}
@@ -899,7 +900,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     [Fact]
     public Task Query_SemanticAttributesOnEveryNodeKind_NoDiagnostic()
     {
-        var test = CreateTest("//*[@semantic:Type='Does.Not.Exist' or @semantic:Symbol='Does.Not.Exist' or @semantic:HasConstantValue='no']");
+        var test = CreateTest("//*[@semantic:TypeReferenceId='Does.Not.Exist' or @semantic:Symbol='Does.Not.Exist' or @semantic:HasConstantValue='no']");
         test.TestCode = """
             using System;
             using System.Linq;

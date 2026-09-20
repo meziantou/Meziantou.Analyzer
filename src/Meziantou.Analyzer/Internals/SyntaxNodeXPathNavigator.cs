@@ -26,20 +26,21 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
     // The local names of the attributes of the 'semantic' namespace, mapped to their qualified name
     private static readonly Dictionary<string, string> SemanticNames = CreateSemanticNames(
     [
-        SemanticName.Type,
-        SemanticName.TypeConstructedFrom,
-        SemanticName.TypeConstructedFromDocumentationId,
-        SemanticName.ConvertedType,
-        SemanticName.ConvertedTypeConstructedFrom,
-        SemanticName.ConvertedTypeConstructedFromDocumentationId,
-        SemanticName.ReturnType,
-        SemanticName.ReturnTypeConstructedFrom,
-        SemanticName.ReturnTypeConstructedFromDocumentationId,
+        SemanticName.TypeMetadataName,
+        SemanticName.TypeDocumentationId,
+        SemanticName.TypeReferenceId,
+        SemanticName.ConvertedTypeMetadataName,
+        SemanticName.ConvertedTypeDocumentationId,
+        SemanticName.ConvertedTypeReferenceId,
+        SemanticName.ReturnTypeMetadataName,
+        SemanticName.ReturnTypeDocumentationId,
+        SemanticName.ReturnTypeReferenceId,
+        SemanticName.ContainingTypeMetadataName,
+        SemanticName.ContainingTypeDocumentationId,
+        SemanticName.ContainingTypeReferenceId,
         SemanticName.Symbol,
         SemanticName.SymbolDocumentationId,
         SemanticName.SymbolKind,
-        SemanticName.ContainingType,
-        SemanticName.ContainingTypeDocumentationId,
         SemanticName.HasConstantValue,
         SemanticName.ConstantValue,
     ]);
@@ -400,8 +401,8 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
         var span = node.Span;
         var typeInfo = semanticModel.GetTypeInfo(node, _cancellationToken);
-        AddType(attributes, span, typeInfo.Type, SemanticName.Type, SemanticName.TypeConstructedFrom, SemanticName.TypeConstructedFromDocumentationId);
-        AddType(attributes, span, typeInfo.ConvertedType, SemanticName.ConvertedType, SemanticName.ConvertedTypeConstructedFrom, SemanticName.ConvertedTypeConstructedFromDocumentationId);
+        AddType(attributes, span, typeInfo.Type, SemanticName.TypeMetadataName, SemanticName.TypeDocumentationId, SemanticName.TypeReferenceId);
+        AddType(attributes, span, typeInfo.ConvertedType, SemanticName.ConvertedTypeMetadataName, SemanticName.ConvertedTypeDocumentationId, SemanticName.ConvertedTypeReferenceId);
 
         var symbolInfo = semanticModel.GetSymbolInfo(node, _cancellationToken);
         var symbol = symbolInfo.Symbol ?? symbolInfo.CandidateSymbols.FirstOrDefault() ?? semanticModel.GetDeclaredSymbol(node, _cancellationToken);
@@ -410,12 +411,11 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
             Add(attributes, span, SemanticName.Symbol, SymbolNameFormatter.GetSymbolName(symbol));
             Add(attributes, span, SemanticName.SymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
             Add(attributes, span, SemanticName.SymbolKind, symbol.Kind.ToString());
-            Add(attributes, span, SemanticName.ContainingType, SymbolNameFormatter.GetMetadataName(symbol.ContainingType));
-            Add(attributes, span, SemanticName.ContainingTypeDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol.ContainingType));
+            AddType(attributes, span, symbol.ContainingType, SemanticName.ContainingTypeMetadataName, SemanticName.ContainingTypeDocumentationId, SemanticName.ContainingTypeReferenceId);
 
             if (symbol is IMethodSymbol method)
             {
-                AddType(attributes, span, method.ReturnType, SemanticName.ReturnType, SemanticName.ReturnTypeConstructedFrom, SemanticName.ReturnTypeConstructedFromDocumentationId);
+                AddType(attributes, span, method.ReturnType, SemanticName.ReturnTypeMetadataName, SemanticName.ReturnTypeDocumentationId, SemanticName.ReturnTypeReferenceId);
             }
         }
 
@@ -430,14 +430,16 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
         }
     }
 
-    private static void AddType(List<Attribute> attributes, TextSpan span, ITypeSymbol? type, string name, string constructedFromName, string documentationIdName)
+    private static void AddType(List<Attribute> attributes, TextSpan span, ITypeSymbol? type, string metadataName, string documentationIdName, string referenceIdName)
     {
         if (type is null)
             return;
 
-        Add(attributes, span, name, SymbolNameFormatter.GetDisplayName(type));
-        Add(attributes, span, constructedFromName, SymbolNameFormatter.GetMetadataName(type.OriginalDefinition));
+        // The metadata name and the documentation comment id have no type arguments, so they are the ones of the
+        // definition of the type. The reference id is the only format that carries them.
+        Add(attributes, span, metadataName, SymbolNameFormatter.GetMetadataName(type));
         Add(attributes, span, documentationIdName, SymbolNameFormatter.GetDocumentationId(type));
+        Add(attributes, span, referenceIdName, SymbolNameFormatter.GetReferenceId(type));
     }
 
     private static void Add(List<Attribute> attributes, TextSpan span, string name, string? value)
@@ -462,20 +464,21 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private static class SemanticName
     {
-        public const string Type = nameof(Type);
-        public const string TypeConstructedFrom = nameof(TypeConstructedFrom);
-        public const string TypeConstructedFromDocumentationId = nameof(TypeConstructedFromDocumentationId);
-        public const string ConvertedType = nameof(ConvertedType);
-        public const string ConvertedTypeConstructedFrom = nameof(ConvertedTypeConstructedFrom);
-        public const string ConvertedTypeConstructedFromDocumentationId = nameof(ConvertedTypeConstructedFromDocumentationId);
-        public const string ReturnType = nameof(ReturnType);
-        public const string ReturnTypeConstructedFrom = nameof(ReturnTypeConstructedFrom);
-        public const string ReturnTypeConstructedFromDocumentationId = nameof(ReturnTypeConstructedFromDocumentationId);
+        public const string TypeMetadataName = nameof(TypeMetadataName);
+        public const string TypeDocumentationId = nameof(TypeDocumentationId);
+        public const string TypeReferenceId = nameof(TypeReferenceId);
+        public const string ConvertedTypeMetadataName = nameof(ConvertedTypeMetadataName);
+        public const string ConvertedTypeDocumentationId = nameof(ConvertedTypeDocumentationId);
+        public const string ConvertedTypeReferenceId = nameof(ConvertedTypeReferenceId);
+        public const string ReturnTypeMetadataName = nameof(ReturnTypeMetadataName);
+        public const string ReturnTypeDocumentationId = nameof(ReturnTypeDocumentationId);
+        public const string ReturnTypeReferenceId = nameof(ReturnTypeReferenceId);
+        public const string ContainingTypeMetadataName = nameof(ContainingTypeMetadataName);
+        public const string ContainingTypeDocumentationId = nameof(ContainingTypeDocumentationId);
+        public const string ContainingTypeReferenceId = nameof(ContainingTypeReferenceId);
         public const string Symbol = nameof(Symbol);
         public const string SymbolDocumentationId = nameof(SymbolDocumentationId);
         public const string SymbolKind = nameof(SymbolKind);
-        public const string ContainingType = nameof(ContainingType);
-        public const string ContainingTypeDocumentationId = nameof(ContainingTypeDocumentationId);
         public const string HasConstantValue = nameof(HasConstantValue);
         public const string ConstantValue = nameof(ConstantValue);
     }
