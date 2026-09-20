@@ -712,6 +712,37 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Query_SemanticType_TupleUsesItsElementNames()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnType='(System.Int32 x, System.String y)']");
+        test.TestCode = """
+            class Sample
+            {
+                [|(int x, string y) A() => (1, "a");|]
+                (int a, string b) B() => (1, "a");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeConstructedFrom_TupleIsAValueTuple()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeConstructedFrom='System.ValueTuple`2']");
+        test.TestCode = """
+            class Sample
+            {
+                [|(int x, string y) A() => (1, "a");|]
+                [|(int a, string b) B() => (1, "a");|]
+                int C() => 1;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Query_SemanticSymbolKind_Diagnostic()
     {
         var test = CreateTest("//IdentifierName[@semantic:SymbolKind='Field']");

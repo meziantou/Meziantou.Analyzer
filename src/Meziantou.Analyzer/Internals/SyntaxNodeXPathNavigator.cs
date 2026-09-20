@@ -442,10 +442,10 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private static void Add(List<Attribute> attributes, TextSpan span, string name, string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value is null or "")
             return;
 
-        attributes.Add(new Attribute(SemanticNames[name], name, SemanticNamespaceUri, value!, span));
+        attributes.Add(new Attribute(SemanticNames[name], name, SemanticNamespaceUri, value, span));
     }
 
     private static string? FormatConstantValue(object? value) => value switch
