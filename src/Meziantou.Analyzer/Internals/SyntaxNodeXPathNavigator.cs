@@ -23,24 +23,28 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private const string SemanticNamespaceUri = "urn:meziantou.analyzer:semantic";
 
+    // The attributes that expose a type, grouped by the type they expose. They must be initialized before the
+    // dictionary of the names, as a static field initializer runs in the order of the declarations.
+    private static readonly TypeAttributeNames TypeNames = new(SemanticName.TypeMetadataName, SemanticName.TypeDocumentationId, SemanticName.TypeReferenceId, SemanticName.TypeIsValueType, SemanticName.TypeNullableAnnotation, SemanticName.TypeSpecialType);
+    private static readonly TypeAttributeNames ConvertedTypeNames = new(SemanticName.ConvertedTypeMetadataName, SemanticName.ConvertedTypeDocumentationId, SemanticName.ConvertedTypeReferenceId, SemanticName.ConvertedTypeIsValueType, SemanticName.ConvertedTypeNullableAnnotation, SemanticName.ConvertedTypeSpecialType);
+    private static readonly TypeAttributeNames ReturnTypeNames = new(SemanticName.ReturnTypeMetadataName, SemanticName.ReturnTypeDocumentationId, SemanticName.ReturnTypeReferenceId, SemanticName.ReturnTypeIsValueType, SemanticName.ReturnTypeNullableAnnotation, SemanticName.ReturnTypeSpecialType);
+    private static readonly TypeAttributeNames ContainingTypeNames = new(SemanticName.ContainingTypeMetadataName, SemanticName.ContainingTypeDocumentationId, SemanticName.ContainingTypeReferenceId, SemanticName.ContainingTypeIsValueType, SemanticName.ContainingTypeNullableAnnotation, SemanticName.ContainingTypeSpecialType);
+
     // The local names of the attributes of the 'semantic' namespace, mapped to their qualified name
     private static readonly Dictionary<string, string> SemanticNames = CreateSemanticNames(
     [
-        SemanticName.TypeMetadataName,
-        SemanticName.TypeDocumentationId,
-        SemanticName.TypeReferenceId,
-        SemanticName.ConvertedTypeMetadataName,
-        SemanticName.ConvertedTypeDocumentationId,
-        SemanticName.ConvertedTypeReferenceId,
-        SemanticName.ReturnTypeMetadataName,
-        SemanticName.ReturnTypeDocumentationId,
-        SemanticName.ReturnTypeReferenceId,
-        SemanticName.ContainingTypeMetadataName,
-        SemanticName.ContainingTypeDocumentationId,
-        SemanticName.ContainingTypeReferenceId,
+        .. TypeNames.All,
+        .. ConvertedTypeNames.All,
+        .. ReturnTypeNames.All,
+        .. ContainingTypeNames.All,
         SemanticName.Symbol,
         SemanticName.SymbolDocumentationId,
         SemanticName.SymbolKind,
+        SemanticName.ContainingSymbol,
+        SemanticName.ContainingSymbolDocumentationId,
+        SemanticName.ContainingSymbolKind,
+        SemanticName.DeclaredAccessibility,
+        SemanticName.IsStatic,
         SemanticName.HasConstantValue,
         SemanticName.ConstantValue,
     ]);
@@ -49,6 +53,7 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> TokenProperties = new();
     private static readonly ConcurrentDictionary<SyntaxKind, string> KindNames = new();
+    private static readonly ConcurrentDictionary<SpecialType, string> SpecialTypeNames = new();
 
     private readonly SyntaxNode _root;
     private readonly SemanticModel? _semanticModel;
@@ -401,8 +406,8 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
         var span = node.Span;
         var typeInfo = semanticModel.GetTypeInfo(node, _cancellationToken);
-        AddType(attributes, span, typeInfo.Type, SemanticName.TypeMetadataName, SemanticName.TypeDocumentationId, SemanticName.TypeReferenceId);
-        AddType(attributes, span, typeInfo.ConvertedType, SemanticName.ConvertedTypeMetadataName, SemanticName.ConvertedTypeDocumentationId, SemanticName.ConvertedTypeReferenceId);
+        AddType(attributes, span, typeInfo.Type, TypeNames);
+        AddType(attributes, span, typeInfo.ConvertedType, ConvertedTypeNames);
 
         var symbolInfo = semanticModel.GetSymbolInfo(node, _cancellationToken);
         var symbol = symbolInfo.Symbol ?? symbolInfo.CandidateSymbols.FirstOrDefault() ?? semanticModel.GetDeclaredSymbol(node, _cancellationToken);
@@ -411,11 +416,22 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
             Add(attributes, span, SemanticName.Symbol, SymbolNameFormatter.GetSymbolName(symbol));
             Add(attributes, span, SemanticName.SymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
             Add(attributes, span, SemanticName.SymbolKind, symbol.Kind.ToString());
-            AddType(attributes, span, symbol.ContainingType, SemanticName.ContainingTypeMetadataName, SemanticName.ContainingTypeDocumentationId, SemanticName.ContainingTypeReferenceId);
+            Add(attributes, span, SemanticName.DeclaredAccessibility, GetAccessibilityName(symbol.DeclaredAccessibility));
+            Add(attributes, span, SemanticName.IsStatic, ToXPathBoolean(symbol.IsStatic));
+            AddType(attributes, span, symbol.ContainingType, ContainingTypeNames);
+
+            // The containing symbol is the containing type for a member, but it is the method for a local or a
+            // parameter, and the namespace for a type
+            if (symbol.ContainingSymbol is { } containingSymbol)
+            {
+                Add(attributes, span, SemanticName.ContainingSymbol, SymbolNameFormatter.GetSymbolName(containingSymbol));
+                Add(attributes, span, SemanticName.ContainingSymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(containingSymbol));
+                Add(attributes, span, SemanticName.ContainingSymbolKind, containingSymbol.Kind.ToString());
+            }
 
             if (symbol is IMethodSymbol method)
             {
-                AddType(attributes, span, method.ReturnType, SemanticName.ReturnTypeMetadataName, SemanticName.ReturnTypeDocumentationId, SemanticName.ReturnTypeReferenceId);
+                AddType(attributes, span, method.ReturnType, ReturnTypeNames);
             }
         }
 
@@ -430,16 +446,19 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
         }
     }
 
-    private static void AddType(List<Attribute> attributes, TextSpan span, ITypeSymbol? type, string metadataName, string documentationIdName, string referenceIdName)
+    private static void AddType(List<Attribute> attributes, TextSpan span, ITypeSymbol? type, TypeAttributeNames names)
     {
         if (type is null)
             return;
 
         // The metadata name and the documentation comment id have no type arguments, so they are the ones of the
         // definition of the type. The reference id is the only format that carries them.
-        Add(attributes, span, metadataName, SymbolNameFormatter.GetMetadataName(type));
-        Add(attributes, span, documentationIdName, SymbolNameFormatter.GetDocumentationId(type));
-        Add(attributes, span, referenceIdName, SymbolNameFormatter.GetReferenceId(type));
+        Add(attributes, span, names.MetadataName, SymbolNameFormatter.GetMetadataName(type));
+        Add(attributes, span, names.DocumentationId, SymbolNameFormatter.GetDocumentationId(type));
+        Add(attributes, span, names.ReferenceId, SymbolNameFormatter.GetReferenceId(type));
+        Add(attributes, span, names.IsValueType, ToXPathBoolean(type.IsValueType));
+        Add(attributes, span, names.NullableAnnotation, GetNullableAnnotationName(type.NullableAnnotation));
+        Add(attributes, span, names.SpecialType, GetSpecialTypeName(type.SpecialType));
     }
 
     private static void Add(List<Attribute> attributes, TextSpan span, string name, string? value)
@@ -448,6 +467,37 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
             return;
 
         attributes.Add(new Attribute(SemanticNames[name], name, SemanticNamespaceUri, value, span));
+    }
+
+    // XPath 1.0 has no boolean value in an attribute, so the value is the one the language uses
+    private static string ToXPathBoolean(bool value) => value ? "true" : "false";
+
+    // The accessibility is not exposed when it does not apply to the symbol, such as for a local or a parameter
+    private static string? GetAccessibilityName(Accessibility accessibility) => accessibility switch
+    {
+        Accessibility.Private => nameof(Accessibility.Private),
+        Accessibility.ProtectedAndInternal => nameof(Accessibility.ProtectedAndInternal),
+        Accessibility.Protected => nameof(Accessibility.Protected),
+        Accessibility.Internal => nameof(Accessibility.Internal),
+        Accessibility.ProtectedOrInternal => nameof(Accessibility.ProtectedOrInternal),
+        Accessibility.Public => nameof(Accessibility.Public),
+        _ => null,
+    };
+
+    // The annotation is 'None' in a file where the nullable context is disabled, which is not exposed
+    private static string? GetNullableAnnotationName(NullableAnnotation annotation) => annotation switch
+    {
+        NullableAnnotation.NotAnnotated => nameof(NullableAnnotation.NotAnnotated),
+        NullableAnnotation.Annotated => nameof(NullableAnnotation.Annotated),
+        _ => null,
+    };
+
+    private static string? GetSpecialTypeName(SpecialType specialType)
+    {
+        if (specialType is SpecialType.None)
+            return null;
+
+        return SpecialTypeNames.GetOrAdd(specialType, static specialType => specialType.ToString());
     }
 
     private static string? FormatConstantValue(object? value) => value switch
@@ -462,23 +512,48 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator
 
     private readonly record struct Attribute(string Name, string LocalName, string NamespaceUri, string Value, TextSpan Span);
 
+    /// <summary>
+    /// The names of the attributes that expose a type, such as <c>TypeMetadataName</c> for the type of the node.
+    /// </summary>
+    private sealed record TypeAttributeNames(string MetadataName, string DocumentationId, string ReferenceId, string IsValueType, string NullableAnnotation, string SpecialType)
+    {
+        public string[] All { get; } = [MetadataName, DocumentationId, ReferenceId, IsValueType, NullableAnnotation, SpecialType];
+    }
+
     private static class SemanticName
     {
         public const string TypeMetadataName = nameof(TypeMetadataName);
         public const string TypeDocumentationId = nameof(TypeDocumentationId);
         public const string TypeReferenceId = nameof(TypeReferenceId);
+        public const string TypeIsValueType = nameof(TypeIsValueType);
+        public const string TypeNullableAnnotation = nameof(TypeNullableAnnotation);
+        public const string TypeSpecialType = nameof(TypeSpecialType);
         public const string ConvertedTypeMetadataName = nameof(ConvertedTypeMetadataName);
         public const string ConvertedTypeDocumentationId = nameof(ConvertedTypeDocumentationId);
         public const string ConvertedTypeReferenceId = nameof(ConvertedTypeReferenceId);
+        public const string ConvertedTypeIsValueType = nameof(ConvertedTypeIsValueType);
+        public const string ConvertedTypeNullableAnnotation = nameof(ConvertedTypeNullableAnnotation);
+        public const string ConvertedTypeSpecialType = nameof(ConvertedTypeSpecialType);
         public const string ReturnTypeMetadataName = nameof(ReturnTypeMetadataName);
         public const string ReturnTypeDocumentationId = nameof(ReturnTypeDocumentationId);
         public const string ReturnTypeReferenceId = nameof(ReturnTypeReferenceId);
+        public const string ReturnTypeIsValueType = nameof(ReturnTypeIsValueType);
+        public const string ReturnTypeNullableAnnotation = nameof(ReturnTypeNullableAnnotation);
+        public const string ReturnTypeSpecialType = nameof(ReturnTypeSpecialType);
         public const string ContainingTypeMetadataName = nameof(ContainingTypeMetadataName);
         public const string ContainingTypeDocumentationId = nameof(ContainingTypeDocumentationId);
         public const string ContainingTypeReferenceId = nameof(ContainingTypeReferenceId);
+        public const string ContainingTypeIsValueType = nameof(ContainingTypeIsValueType);
+        public const string ContainingTypeNullableAnnotation = nameof(ContainingTypeNullableAnnotation);
+        public const string ContainingTypeSpecialType = nameof(ContainingTypeSpecialType);
         public const string Symbol = nameof(Symbol);
         public const string SymbolDocumentationId = nameof(SymbolDocumentationId);
         public const string SymbolKind = nameof(SymbolKind);
+        public const string ContainingSymbol = nameof(ContainingSymbol);
+        public const string ContainingSymbolDocumentationId = nameof(ContainingSymbolDocumentationId);
+        public const string ContainingSymbolKind = nameof(ContainingSymbolKind);
+        public const string DeclaredAccessibility = nameof(DeclaredAccessibility);
+        public const string IsStatic = nameof(IsStatic);
         public const string HasConstantValue = nameof(HasConstantValue);
         public const string ConstantValue = nameof(ConstantValue);
     }

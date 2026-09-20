@@ -797,6 +797,212 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Query_SemanticTypeIsValueType_Diagnostic()
+    {
+        var test = CreateTest("//*[@semantic:TypeIsValueType='true' and @semantic:ConvertedTypeMetadataName='System.Object']; No boxing");
+        test.TestCode = """
+            class Sample
+            {
+                object A(int value) => {|#0:value|};
+                object B(string value) => value;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "IdentifierName", ": No boxing"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeIsValueType_False()
+    {
+        var test = CreateTest("//ObjectCreationExpression[@semantic:TypeIsValueType='false']");
+        test.TestCode = """
+            class Sample
+            {
+                object A() => [|new System.Text.StringBuilder()|];
+                object B() => new System.DateTime();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeSpecialType_Diagnostic()
+    {
+        var test = CreateTest("//EqualsExpression/*[@semantic:TypeSpecialType='System_String']; Use string.Equals");
+        test.TestCode = """
+            class Sample
+            {
+                bool A(string a, string b) => {|#0:a|} == {|#1:b|};
+                bool B(int a, int b) => a == b;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "IdentifierName", ": Use string.Equals"));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "IdentifierName", ": Use string.Equals"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeSpecialType_NotExposedForOtherTypes()
+    {
+        var test = CreateTest("//ObjectCreationExpression[not(@semantic:TypeSpecialType)]");
+        test.TestCode = """
+            class Sample
+            {
+                object A() => [|new System.Text.StringBuilder()|];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeNullableAnnotation_Diagnostic()
+    {
+        var test = CreateTest("//IdentifierName[@semantic:TypeNullableAnnotation='Annotated']");
+        test.TestCode = """
+            #nullable enable
+            class Sample
+            {
+                string M(string? a, string b) => [|a|] ?? b;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeNullableAnnotation_NotExposedWhenNullableIsDisabled()
+    {
+        var test = CreateTest("//IdentifierName[@semantic:TypeNullableAnnotation]");
+        test.TestCode = """
+            #nullable disable
+            class Sample
+            {
+                string M(string a) => a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticDeclaredAccessibility_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:DeclaredAccessibility='Public']");
+        test.TestCode = """
+            class Sample
+            {
+                [|public void A() { }|]
+                private void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticDeclaredAccessibility_PrivateProtected()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:DeclaredAccessibility='ProtectedAndInternal']");
+        test.TestCode = """
+            class Sample
+            {
+                [|private protected void A() { }|]
+                protected internal void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsStatic_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsStatic='true']");
+        test.TestCode = """
+            class Sample
+            {
+                [|static void A() { }|]
+                void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsStatic_False()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsStatic='false']");
+        test.TestCode = """
+            class Sample
+            {
+                static void A() { }
+                [|void B() { }|]
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingSymbol_Diagnostic()
+    {
+        var test = CreateTest("//IdentifierName[@semantic:ContainingSymbol='Sample.M']");
+        test.TestCode = """
+            class Sample
+            {
+                private int _field;
+
+                int M()
+                {
+                    int local = 0;
+                    return [|local|] + _field;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingSymbolDocumentationId_Diagnostic()
+    {
+        var test = CreateTest("//IdentifierName[@semantic:ContainingSymbolDocumentationId='M:Sample.M']");
+        test.TestCode = """
+            class Sample
+            {
+                private int _field;
+
+                int M()
+                {
+                    int local = 0;
+                    return [|local|] + _field;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingSymbolKind_Diagnostic()
+    {
+        var test = CreateTest("//ClassDeclaration[@semantic:ContainingSymbolKind='Namespace']");
+        test.TestCode = """
+            [|class Outer
+            {
+                class Inner { }
+            }|]
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Query_SemanticDeclaredSymbol_Diagnostic()
     {
         var test = CreateTest("//MethodDeclaration[@semantic:Symbol='Sample.Banned']");
