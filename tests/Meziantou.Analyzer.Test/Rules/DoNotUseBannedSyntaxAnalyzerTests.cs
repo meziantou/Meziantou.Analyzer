@@ -1378,6 +1378,27 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Severity_EditorConfigOverridesTheSeverityOfTheEntries()
+    {
+        var test = CreateTest("GotoStatement;suggestion;");
+        test.TestState.SetConfiguration("dotnet_diagnostic.MA0240.severity", "error");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Severity_SameSyntaxBannedWithTwoSeverities_BothReported()
     {
         var test = CreateTest("""
