@@ -324,13 +324,18 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
         return names;
     }
 
-    internal static XPathAttribute[] BuildAttributes(IOperation operation)
+    internal static XPathAttribute[] BuildAttributes(IOperation operation, XPathAttributeFilter filter)
     {
         var attributes = new List<XPathAttribute>();
-        var writer = new XPathAttributeWriter(attributes, namespaceUri: "", qualifiedNames: null);
+        var writer = new XPathAttributeWriter(attributes, namespaceUri: "", qualifiedNames: null, filter);
         var span = operation.Syntax.Span;
         foreach (var property in GetProperties(operation))
         {
+            // Reading the property is a reflection call, so it is only done when a query can select one of the
+            // attributes it produces
+            if (!filter.IncludesAny(property.AttributeNames))
+                continue;
+
             object? value;
             try
             {
@@ -392,6 +397,11 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
     // The symbols of a property that returns several of them are joined by a space, like the tokens of a SyntaxTokenList
     private static void AddSymbols(in XPathAttributeWriter writer, TextSpan span, object value, SymbolAttributeNames names)
     {
+        var includeQualifiedNames = writer.Includes(names.QualifiedName);
+        var includeShortNames = writer.Includes(names.Name);
+        if (!includeQualifiedNames && !includeShortNames)
+            return;
+
         var qualifiedNames = new List<string>();
         var shortNames = new List<string>();
         try
@@ -401,12 +411,12 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
                 if (item is not ISymbol symbol)
                     continue;
 
-                if (SymbolNameFormatter.GetSymbolName(symbol) is { Length: > 0 } qualifiedName)
+                if (includeQualifiedNames && SymbolNameFormatter.GetSymbolName(symbol) is { Length: > 0 } qualifiedName)
                 {
                     qualifiedNames.Add(qualifiedName);
                 }
 
-                if (symbol.Name is { Length: > 0 } name)
+                if (includeShortNames && symbol.Name is { Length: > 0 } name)
                 {
                     shortNames.Add(name);
                 }
@@ -511,5 +521,12 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
         Constant,
     }
 
-    private sealed record OperationProperty(PropertyInfo Property, OperationPropertyKind Kind, string Name, TypeAttributeNames? TypeNames, SymbolAttributeNames? SymbolNames, string? HasValueName);
+    private sealed record OperationProperty(PropertyInfo Property, OperationPropertyKind Kind, string Name, TypeAttributeNames? TypeNames, SymbolAttributeNames? SymbolNames, string? HasValueName)
+    {
+        /// <summary>
+        /// The names of the attributes the property produces. A property that produces a symbol or a type produces
+        /// one attribute per format of its name.
+        /// </summary>
+        public string[] AttributeNames { get; } = TypeNames?.All ?? SymbolNames?.All ?? (HasValueName is null ? [Name] : [Name, HasValueName]);
+    }
 }

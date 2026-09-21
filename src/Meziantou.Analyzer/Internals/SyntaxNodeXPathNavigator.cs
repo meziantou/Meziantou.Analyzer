@@ -53,8 +53,8 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
     private static readonly ConcurrentDictionary<Type, PropertyInfo[]> TokenProperties = new();
     private static readonly ConcurrentDictionary<SyntaxKind, string> KindNames = new();
 
+    private readonly SyntaxForest _forest;
     private readonly SyntaxNode _root;
-    private readonly SemanticModel? _semanticModel;
     private readonly XmlNameTable _nameTable;
     private readonly CancellationToken _cancellationToken;
 
@@ -67,23 +67,18 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
     private XPathAttribute[]? _attributes;
     private int _attributeIndex = -1;
 
-    public SyntaxNodeXPathNavigator(SyntaxNode root, CancellationToken cancellationToken)
-        : this(root, semanticModel: null, cancellationToken)
+    public SyntaxNodeXPathNavigator(SyntaxForest forest)
     {
-    }
-
-    public SyntaxNodeXPathNavigator(SyntaxNode root, SemanticModel? semanticModel, CancellationToken cancellationToken)
-    {
-        _root = root;
-        _semanticModel = semanticModel;
+        _forest = forest;
+        _root = forest.Root;
         _nameTable = new NameTable();
-        _cancellationToken = cancellationToken;
+        _cancellationToken = forest.CancellationToken;
     }
 
     private SyntaxNodeXPathNavigator(SyntaxNodeXPathNavigator other)
     {
+        _forest = other._forest;
         _root = other._root;
-        _semanticModel = other._semanticModel;
         _nameTable = other._nameTable;
         _cancellationToken = other._cancellationToken;
         _node = other._node;
@@ -218,7 +213,7 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
         if (_node is null || IsOnAttribute)
             return false;
 
-        _attributes ??= GetAttributes(_node);
+        _attributes ??= _forest.GetAttributes(_node);
         if (_attributes.Length is 0)
             return false;
 
@@ -253,11 +248,12 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
             return true;
         }
 
-        var index = FindChildNode(_node.ChildNodesAndTokens(), startIndex: 0, step: 1);
+        var children = _node.ChildNodesAndTokens();
+        var index = FindChildNode(children, startIndex: 0, step: 1);
         if (index < 0)
             return false;
 
-        SetNode(_node.ChildNodesAndTokens()[index].AsNode()!, index);
+        SetNode(children[index].AsNode()!, index);
         return true;
     }
 
@@ -372,15 +368,19 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
         return result;
     }
 
-    private XPathAttribute[] GetAttributes(SyntaxNode node)
+    /// <summary>
+    /// The attributes of a node. It is <see cref="SyntaxForest.GetAttributes(SyntaxNode)"/> that calls it, so they
+    /// are computed once per file.
+    /// </summary>
+    internal static XPathAttribute[] BuildAttributes(SyntaxNode node, SyntaxForest forest)
     {
         var attributes = new List<XPathAttribute>();
-        AddTokenAttributes(attributes, node);
-        AddSemanticAttributes(attributes, node);
+        AddTokenAttributes(attributes, node, forest.Selection.Filter);
+        AddSemanticAttributes(attributes, node, forest);
         return attributes.Count is 0 ? [] : [.. attributes];
     }
 
-    private static void AddTokenAttributes(List<XPathAttribute> attributes, SyntaxNode node)
+    private static void AddTokenAttributes(List<XPathAttribute> attributes, SyntaxNode node, XPathAttributeFilter filter)
     {
         var properties = TokenProperties.GetOrAdd(node.GetType(), static type =>
         [
@@ -393,6 +393,10 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
 
         foreach (var property in properties)
         {
+            // Reading the property is a reflection call, so it is only done when a query can select the attribute
+            if (!filter.Includes(property.Name))
+                continue;
+
             object? value;
             try
             {
@@ -410,61 +414,186 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
                     break;
 
                 case SyntaxTokenList { Count: > 0 } tokens:
-                    attributes.Add(new XPathAttribute(property.Name, property.Name, NamespaceUri: "", string.Join(" ", tokens.Select(token => token.Text)), tokens.Span));
+                    attributes.Add(new XPathAttribute(property.Name, property.Name, NamespaceUri: "", JoinTokens(tokens), tokens.Span));
                     break;
             }
         }
     }
 
-    private void AddSemanticAttributes(List<XPathAttribute> attributes, SyntaxNode node)
+    // The tokens of a list are joined by a space, so a query can test one of them with the 'contains' function
+    private static string JoinTokens(SyntaxTokenList tokens)
     {
-        var semanticModel = _semanticModel;
+        if (tokens.Count is 1)
+            return tokens[0].Text;
+
+        var builder = ObjectPool.SharedStringBuilderPool.Get();
+        try
+        {
+            foreach (var token in tokens)
+            {
+                if (builder.Length > 0)
+                {
+                    builder.Append(' ');
+                }
+
+                builder.Append(token.Text);
+            }
+
+            return builder.ToString();
+        }
+        finally
+        {
+            ObjectPool.SharedStringBuilderPool.Return(builder);
+        }
+    }
+
+    private static void AddSemanticAttributes(List<XPathAttribute> attributes, SyntaxNode node, SyntaxForest forest)
+    {
+        var semanticModel = forest.SemanticModel;
         if (semanticModel is null)
             return;
 
-        var writer = new XPathAttributeWriter(attributes, SemanticNamespaceUri, SemanticNames);
+        var selection = forest.Selection;
+        if (!selection.IncludesAny)
+            return;
+
+        var cancellationToken = forest.CancellationToken;
+        var writer = new XPathAttributeWriter(attributes, SemanticNamespaceUri, SemanticNames, selection.Filter);
         var span = node.Span;
-        var typeInfo = semanticModel.GetTypeInfo(node, _cancellationToken);
-        XPathAttributeFormatter.AddType(writer, span, typeInfo.Type, TypeNames);
-        XPathAttributeFormatter.AddType(writer, span, typeInfo.ConvertedType, ConvertedTypeNames);
 
-        var symbolInfo = semanticModel.GetSymbolInfo(node, _cancellationToken);
-        var symbol = symbolInfo.Symbol ?? symbolInfo.CandidateSymbols.FirstOrDefault() ?? semanticModel.GetDeclaredSymbol(node, _cancellationToken);
-        if (symbol is not null)
+        // Asking the semantic model is the expensive part, so it is only asked for the groups a query can select
+        if (selection.IncludesTypeInfo)
         {
-            writer.Add(span, SemanticName.Symbol, SymbolNameFormatter.GetSymbolName(symbol));
-            writer.Add(span, SemanticName.SymbolName, symbol.Name);
-            writer.Add(span, SemanticName.SymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
-            writer.Add(span, SemanticName.SymbolKind, XPathAttributeFormatter.GetSymbolKindName(symbol.Kind));
-            writer.Add(span, SemanticName.DeclaredAccessibility, XPathAttributeFormatter.GetAccessibilityName(symbol.DeclaredAccessibility));
-            writer.Add(span, SemanticName.IsStatic, XPathAttributeFormatter.ToXPathBoolean(symbol.IsStatic));
-            XPathAttributeFormatter.AddType(writer, span, symbol.ContainingType, ContainingTypeNames);
+            var typeInfo = semanticModel.GetTypeInfo(node, cancellationToken);
+            XPathAttributeFormatter.AddType(writer, span, typeInfo.Type, TypeNames);
+            XPathAttributeFormatter.AddType(writer, span, typeInfo.ConvertedType, ConvertedTypeNames);
+        }
 
-            // The containing symbol is the containing type for a member, but it is the method for a local or a
-            // parameter, and the namespace for a type
-            if (symbol.ContainingSymbol is { } containingSymbol)
+        if (selection.IncludesSymbol)
+        {
+            var symbolInfo = semanticModel.GetSymbolInfo(node, cancellationToken);
+            var symbol = symbolInfo.Symbol ?? symbolInfo.CandidateSymbols.FirstOrDefault() ?? semanticModel.GetDeclaredSymbol(node, cancellationToken);
+            if (symbol is not null)
             {
-                writer.Add(span, SemanticName.ContainingSymbol, SymbolNameFormatter.GetSymbolName(containingSymbol));
-                writer.Add(span, SemanticName.ContainingSymbolName, containingSymbol.Name);
-                writer.Add(span, SemanticName.ContainingSymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(containingSymbol));
-                writer.Add(span, SemanticName.ContainingSymbolKind, XPathAttributeFormatter.GetSymbolKindName(containingSymbol.Kind));
-            }
+                if (writer.Includes(SemanticName.Symbol))
+                {
+                    writer.Add(span, SemanticName.Symbol, SymbolNameFormatter.GetSymbolName(symbol));
+                }
 
-            if (symbol is IMethodSymbol method)
-            {
-                XPathAttributeFormatter.AddType(writer, span, method.ReturnType, ReturnTypeNames);
+                writer.Add(span, SemanticName.SymbolName, symbol.Name);
+
+                if (writer.Includes(SemanticName.SymbolDocumentationId))
+                {
+                    writer.Add(span, SemanticName.SymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
+                }
+
+                writer.Add(span, SemanticName.SymbolKind, XPathAttributeFormatter.GetSymbolKindName(symbol.Kind));
+                writer.Add(span, SemanticName.DeclaredAccessibility, XPathAttributeFormatter.GetAccessibilityName(symbol.DeclaredAccessibility));
+                writer.Add(span, SemanticName.IsStatic, XPathAttributeFormatter.ToXPathBoolean(symbol.IsStatic));
+
+                if (selection.IncludesContainingType)
+                {
+                    XPathAttributeFormatter.AddType(writer, span, symbol.ContainingType, ContainingTypeNames);
+                }
+
+                // The containing symbol is the containing type for a member, but it is the method for a local or a
+                // parameter, and the namespace for a type
+                if (selection.IncludesContainingSymbol && symbol.ContainingSymbol is { } containingSymbol)
+                {
+                    if (writer.Includes(SemanticName.ContainingSymbol))
+                    {
+                        writer.Add(span, SemanticName.ContainingSymbol, SymbolNameFormatter.GetSymbolName(containingSymbol));
+                    }
+
+                    writer.Add(span, SemanticName.ContainingSymbolName, containingSymbol.Name);
+
+                    if (writer.Includes(SemanticName.ContainingSymbolDocumentationId))
+                    {
+                        writer.Add(span, SemanticName.ContainingSymbolDocumentationId, SymbolNameFormatter.GetDocumentationId(containingSymbol));
+                    }
+
+                    writer.Add(span, SemanticName.ContainingSymbolKind, XPathAttributeFormatter.GetSymbolKindName(containingSymbol.Kind));
+                }
+
+                if (selection.IncludesReturnType && symbol is IMethodSymbol method)
+                {
+                    XPathAttributeFormatter.AddType(writer, span, method.ReturnType, ReturnTypeNames);
+                }
             }
         }
 
-        if (node is ExpressionSyntax)
+        if (selection.IncludesConstantValue && node is ExpressionSyntax)
         {
-            var constantValue = semanticModel.GetConstantValue(node, _cancellationToken);
+            var constantValue = semanticModel.GetConstantValue(node, cancellationToken);
             if (constantValue.HasValue)
             {
                 writer.Add(span, SemanticName.HasConstantValue, "true");
                 writer.Add(span, SemanticName.ConstantValue, XPathAttributeFormatter.FormatConstantValue(constantValue.Value));
             }
         }
+    }
+
+    /// <summary>
+    /// The groups of semantic attributes the queries of a file can select. The groups are computed once per file, as
+    /// a group is a single call to the semantic model that produces several attributes.
+    /// </summary>
+    internal sealed class AttributeSelection
+    {
+        // The attributes that come from the same call to the semantic model
+        private static readonly string[] TypeInfoNames = [.. TypeNames.All, .. ConvertedTypeNames.All];
+        private static readonly string[] SymbolNames =
+        [
+            SemanticName.Symbol,
+            SemanticName.SymbolName,
+            SemanticName.SymbolDocumentationId,
+            SemanticName.SymbolKind,
+            SemanticName.DeclaredAccessibility,
+            SemanticName.IsStatic,
+            .. ContainingTypeNames.All,
+            SemanticName.ContainingSymbol,
+            SemanticName.ContainingSymbolName,
+            SemanticName.ContainingSymbolDocumentationId,
+            SemanticName.ContainingSymbolKind,
+            .. ReturnTypeNames.All,
+        ];
+
+        private static readonly string[] ContainingSymbolNames =
+        [
+            SemanticName.ContainingSymbol,
+            SemanticName.ContainingSymbolName,
+            SemanticName.ContainingSymbolDocumentationId,
+            SemanticName.ContainingSymbolKind,
+        ];
+
+        private static readonly string[] ConstantValueNames = [SemanticName.HasConstantValue, SemanticName.ConstantValue];
+
+        public AttributeSelection(XPathAttributeFilter filter)
+        {
+            Filter = filter;
+            IncludesTypeInfo = filter.IncludesAny(TypeInfoNames);
+            IncludesSymbol = filter.IncludesAny(SymbolNames);
+            IncludesContainingType = filter.IncludesAny(ContainingTypeNames.All);
+            IncludesContainingSymbol = filter.IncludesAny(ContainingSymbolNames);
+            IncludesReturnType = filter.IncludesAny(ReturnTypeNames.All);
+            IncludesConstantValue = filter.IncludesAny(ConstantValueNames);
+        }
+
+        public XPathAttributeFilter Filter { get; }
+
+        /// <summary>Indicates whether the semantic model is asked for at least one group of attributes.</summary>
+        public bool IncludesAny => IncludesTypeInfo || IncludesSymbol || IncludesConstantValue;
+
+        public bool IncludesTypeInfo { get; }
+
+        public bool IncludesSymbol { get; }
+
+        public bool IncludesContainingType { get; }
+
+        public bool IncludesContainingSymbol { get; }
+
+        public bool IncludesReturnType { get; }
+
+        public bool IncludesConstantValue { get; }
     }
 
     private static class SemanticName
