@@ -2222,4 +2222,102 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
 
         return test.RunAsync();
     }
+    [Fact]
+    public Task Query_AnyAttribute_Diagnostic()
+    {
+        var test = CreateTest("//GotoStatement[@*]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|goto label;|]
+                    label:
+                    return;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_AnySemanticAttribute_Diagnostic()
+    {
+        var test = CreateTest("//InvocationExpression[@semantic:SymbolName='WriteLine' and @*]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|System.Console.WriteLine("a")|];
+                    System.Console.Write("b");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_AttributeAxis_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[attribute::Identifier='Banned']");
+        test.TestCode = """
+            class Sample
+            {
+                [|void Banned()
+                {
+                }|]
+
+                void Allowed()
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_AttributeAxisWildcard_Diagnostic()
+    {
+        var test = CreateTest("//GotoStatement[count(attribute::*) > 0]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|goto label;|]
+                    label:
+                    return;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SeveralEntriesShareTheSameNode_Diagnostic()
+    {
+        var test = CreateTest("""
+            //MethodDeclaration[@Identifier='First']
+            //MethodDeclaration[@semantic:ReturnTypeReferenceId='System.Int32']
+            //InvocationExpression[@semantic:SymbolName='WriteLine']
+            """);
+        test.TestCode = """
+            class Sample
+            {
+                [|void First()
+                {
+                    [|System.Console.WriteLine("a")|];
+                }|]
+
+                [|int Second() => 0;|]
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

@@ -32,11 +32,16 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
     private const string FileNamePrefix = "BannedSyntaxes.";
     private const string FileNameExtension = ".txt";
 
+    // The name of the axis that selects the attributes, which is how a query selects them without naming them
+    private const string AttributeAxisName = "attribute";
+
+    private static readonly char[] DirectorySeparators = [Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar];
+
     // The files are parsed by the compilation start action and by the additional file action, so the result is shared
     private static readonly ConditionalWeakTable<SourceText, BannedSyntaxFile> ParsedFiles = new();
 
     // The queries come from the files of the analyzed projects, and an editor provides a new content at every keystroke
-    private static readonly BoundedCache<string, (XPathExpression? Expression, BannedSyntaxTarget Target, string? ErrorMessage)> QueryCache = new(capacity: 128);
+    private static readonly BoundedCache<string, ParsedQuery> QueryCache = new(capacity: 128);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, InvalidEntryRule);
 
@@ -114,11 +119,19 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
+    // The name of the file is compared in place, as the rule is enabled by default and every project pays for the
+    // test, whereas only the projects that have a banned syntax file pay for anything else
     private static bool IsBannedSyntaxFile(string path)
     {
-        var fileName = Path.GetFileName(path);
-        return string.Equals(fileName, FileName, StringComparison.OrdinalIgnoreCase)
-            || (fileName.StartsWith(FileNamePrefix, StringComparison.OrdinalIgnoreCase) && fileName.EndsWith(FileNameExtension, StringComparison.OrdinalIgnoreCase));
+        var start = path.LastIndexOfAny(DirectorySeparators) + 1;
+        var length = path.Length - start;
+        if (length == FileName.Length && string.Compare(path, start, FileName, 0, FileName.Length, StringComparison.OrdinalIgnoreCase) is 0)
+            return true;
+
+        return length >= FileNamePrefix.Length
+            && length >= FileNameExtension.Length
+            && string.Compare(path, start, FileNamePrefix, 0, FileNamePrefix.Length, StringComparison.OrdinalIgnoreCase) is 0
+            && string.Compare(path, path.Length - FileNameExtension.Length, FileNameExtension, 0, FileNameExtension.Length, StringComparison.OrdinalIgnoreCase) is 0;
     }
 
     private static BannedSyntaxFile? GetParsedFile(AdditionalText additionalText, CancellationToken cancellationToken)
@@ -130,7 +143,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         return ParsedFiles.GetValue(text, BannedSyntaxFile.Parse);
     }
 
-    private static (XPathExpression? Expression, BannedSyntaxTarget Target, string? ErrorMessage) GetQuery(string query)
+    private static ParsedQuery GetQuery(string query)
     {
         return QueryCache.GetOrAdd(query, static query =>
         {
@@ -141,38 +154,42 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // cannot use a function of its own, whatever the context it is evaluated with.
                 var expression = XPathExpression.Compile(query, BannedSyntaxXsltContext.Empty);
                 if (expression.ReturnType is not XPathResultType.NodeSet)
-                    return (null, BannedSyntaxTarget.Syntax, "The query must return a node-set");
+                    return new ParsedQuery(Expression: null, BannedSyntaxTarget.Syntax, "The query must return a node-set", AttributeNames: null);
 
-                var (target, errorMessage) = ScanPrefixedNames(query);
+                var (target, errorMessage, attributeNames) = ScanNames(query);
                 if (errorMessage is not null)
-                    return (null, BannedSyntaxTarget.Syntax, errorMessage);
+                    return new ParsedQuery(Expression: null, BannedSyntaxTarget.Syntax, errorMessage, AttributeNames: null);
 
                 // Some errors, such as an unknown function, are only detected when the query is evaluated. The empty
                 // document has no semantic model and no operation, so those attributes are simply not exposed.
                 XPathNavigator navigator = target is BannedSyntaxTarget.Operations
                     ? new OperationXPathNavigator(OperationForest.Empty, CancellationToken.None)
-                    : new SyntaxNodeXPathNavigator(SyntaxFactory.CompilationUnit(), CancellationToken.None);
+                    : new SyntaxNodeXPathNavigator(new SyntaxForest(SyntaxFactory.CompilationUnit(), semanticModel: null, XPathAttributeFilter.All, CancellationToken.None));
 
                 foreach (var _ in navigator.Select(Prepare(expression, target is BannedSyntaxTarget.Operations ? BannedSyntaxXsltContext.Empty : null)))
                 {
                 }
 
-                return (expression, target, null);
+                return new ParsedQuery(expression, target, ErrorMessage: null, attributeNames);
             }
             catch (XPathException ex)
             {
-                return (null, BannedSyntaxTarget.Syntax, ex.Message);
+                return new ParsedQuery(Expression: null, BannedSyntaxTarget.Syntax, ex.Message, AttributeNames: null);
             }
         });
     }
 
     // A query using an attribute of the 'semantic' namespace needs the semantic model, and a query using an element of
     // the 'operation' namespace is evaluated on the operations. An unknown name would silently match nothing, so it is
-    // reported instead.
-    private static (BannedSyntaxTarget Target, string? ErrorMessage) ScanPrefixedNames(string query)
+    // reported instead. The names of the attributes the query selects are collected too, as computing an attribute
+    // costs a call to the semantic model or a reflection call.
+    private static (BannedSyntaxTarget Target, string? ErrorMessage, HashSet<string>? AttributeNames) ScanNames(string query)
     {
         var usesSemanticModel = false;
         var usesOperations = false;
+
+        // null once the query selects attributes it does not name, so all of them must be computed
+        var attributeNames = new HashSet<string>(StringComparer.Ordinal);
         var quote = '\0';
         for (var i = 0; i < query.Length; i++)
         {
@@ -193,6 +210,13 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
+            // '@*' and '@prefix:*' select the attributes the query does not name
+            if (c is '@' && IsWildcard(query, i + 1))
+            {
+                attributeNames = null;
+                continue;
+            }
+
             if (!IsNameStart(c))
                 continue;
 
@@ -206,7 +230,25 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
             // 'semantic::' is an axis, not a namespace prefix
             if (end >= query.Length || query[end] is not ':' || (end + 1 < query.Length && query[end + 1] is ':'))
+            {
+                // The 'attribute' axis selects the attributes without naming them, as in 'attribute::*'
+                if (IsAxis(query, end))
+                {
+                    if (IsName(query, start, end, AttributeAxisName))
+                    {
+                        attributeNames = null;
+                    }
+
+                    continue;
+                }
+
+                if (attributeNames is not null && IsAttributeName(query, start))
+                {
+                    attributeNames.Add(query.Substring(start, end - start));
+                }
+
                 continue;
+            }
 
             var identifier = query.Substring(start, end - start);
 
@@ -224,7 +266,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             // The context resolves the prefixes when the query is evaluated, so an undefined prefix selects nothing
             // instead of throwing when the query is compiled
             if (!isSemantic && !isOperation)
-                return (BannedSyntaxTarget.Syntax, $"'{prefix}' is not a defined namespace prefix");
+                return (BannedSyntaxTarget.Syntax, $"'{prefix}' is not a defined namespace prefix", AttributeNames: null);
 
             usesSemanticModel |= isSemantic;
             usesOperations |= isOperation;
@@ -240,12 +282,18 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             if (isSemantic)
             {
                 if (!SyntaxNodeXPathNavigator.IsSemanticName(name))
-                    return (BannedSyntaxTarget.SemanticSyntax, $"'{name}' is not a valid semantic attribute");
+                    return (BannedSyntaxTarget.SemanticSyntax, $"'{name}' is not a valid semantic attribute", AttributeNames: null);
+
+                // The semantic attributes are always prefixed, so they are the only prefixed attributes
+                if (attributeNames is not null && IsAttributeName(query, start))
+                {
+                    attributeNames.Add(name);
+                }
             }
             else if (name.Length > 0 && !IsOperationKindName(name))
             {
                 // 'operation:*' selects every operation, so it has no name to validate
-                return (BannedSyntaxTarget.Operations, $"'{name}' is not a kind of operation");
+                return (BannedSyntaxTarget.Operations, $"'{name}' is not a kind of operation", AttributeNames: null);
             }
 
             i = nameEnd - 1;
@@ -253,13 +301,42 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
         // A query is evaluated on a single document, and the operations expose no semantic attribute
         if (usesSemanticModel && usesOperations)
-            return (BannedSyntaxTarget.Operations, $"A query cannot use both the '{XPathNamespaces.SemanticPrefix}' and the '{XPathNamespaces.OperationPrefix}' prefixes");
+            return (BannedSyntaxTarget.Operations, $"A query cannot use both the '{XPathNamespaces.SemanticPrefix}' and the '{XPathNamespaces.OperationPrefix}' prefixes", AttributeNames: null);
 
         if (usesOperations)
-            return (BannedSyntaxTarget.Operations, null);
+            return (BannedSyntaxTarget.Operations, null, attributeNames);
 
-        return (usesSemanticModel ? BannedSyntaxTarget.SemanticSyntax : BannedSyntaxTarget.Syntax, null);
+        return (usesSemanticModel ? BannedSyntaxTarget.SemanticSyntax : BannedSyntaxTarget.Syntax, null, attributeNames);
     }
+
+    // The name is preceded by '@', so it is the name of an attribute and not the name of an element
+    private static bool IsAttributeName(string query, int index)
+    {
+        while (index > 0 && char.IsWhiteSpace(query[index - 1]))
+        {
+            index--;
+        }
+
+        return index > 0 && query[index - 1] is '@';
+    }
+
+    // The name is followed by '::', so it is the name of an axis
+    private static bool IsAxis(string query, int index) => index + 1 < query.Length && query[index] is ':' && query[index + 1] is ':';
+
+    // The value at this index is '*', possibly preceded by whitespace
+    private static bool IsWildcard(string query, int index)
+    {
+        while (index < query.Length && char.IsWhiteSpace(query[index]))
+        {
+            index++;
+        }
+
+        return index < query.Length && query[index] is '*';
+    }
+
+    // The range of the query is this name
+    private static bool IsName(string query, int start, int end, string name)
+        => end - start == name.Length && string.CompareOrdinal(query, start, name, 0, name.Length) is 0;
 
     // The name is followed by '(', so it is the name of a function and not the name of an element
     private static bool IsFunctionCall(string query, int index)
@@ -319,6 +396,10 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         _ => (false, null),
     };
 
+    // The result of the parsing of a query. The names of the attributes it selects are null when it selects the
+    // attributes it does not name, such as with '@*', so all of them must be computed.
+    private sealed record ParsedQuery(XPathExpression? Expression, BannedSyntaxTarget Target, string? ErrorMessage, HashSet<string>? AttributeNames);
+
     // The document a query is evaluated on. A query uses the syntax tree or the operations, never both.
     private enum BannedSyntaxTarget
     {
@@ -329,7 +410,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
     // The severity is null when the entry does not set one, so it reports with the default severity of the rule. An
     // entry that reports nothing, because it is not valid or because its severity is 'none', has no kind and no expression.
-    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, BannedSyntaxTarget Target, DiagnosticSeverity? Severity, string? ErrorMessage)
+    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, BannedSyntaxTarget Target, DiagnosticSeverity? Severity, string? ErrorMessage, HashSet<string>? AttributeNames = null)
     {
         // The argument of the message, so the message ends with the custom message when there is one
         public string FormattedMessage => string.IsNullOrEmpty(Message) ? "" : ": " + Message;
@@ -415,8 +496,8 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, Target: BannedSyntaxTarget.Syntax, Severity: null, ErrorMessage: $"'{name}' is not a member of SyntaxKind");
             }
 
-            var (expression, target, errorMessage) = GetQuery(query);
-            return new BannedSyntaxEntry(span, query, message, Kind: null, expression, target, severity, errorMessage);
+            var parsed = GetQuery(query);
+            return new BannedSyntaxEntry(span, query, message, Kind: null, parsed.Expression, parsed.Target, severity, parsed.ErrorMessage, parsed.AttributeNames);
         }
 
         // The field is a severity when it is a single word, such as 'warning'
@@ -480,12 +561,36 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         private readonly List<BannedSyntaxEntry> _semanticQueries;
         private readonly List<BannedSyntaxEntry> _operationQueries;
 
+        // The attributes the entries of each document can select, so the other ones are never computed
+        private readonly XPathAttributeFilter _queryFilter;
+        private readonly XPathAttributeFilter _semanticQueryFilter;
+        private readonly XPathAttributeFilter _operationQueryFilter;
+
         private BannedSyntaxConfiguration(Dictionary<SyntaxKind, List<BannedSyntaxEntry>> kinds, List<BannedSyntaxEntry> queries, List<BannedSyntaxEntry> semanticQueries, List<BannedSyntaxEntry> operationQueries)
         {
             _kinds = kinds;
             _queries = queries;
             _semanticQueries = semanticQueries;
             _operationQueries = operationQueries;
+            _queryFilter = CreateFilter(queries);
+            _semanticQueryFilter = CreateFilter(semanticQueries);
+            _operationQueryFilter = CreateFilter(operationQueries);
+        }
+
+        // An entry that selects the attributes it does not name needs all of them, and the other ones only need the
+        // attributes they name
+        private static XPathAttributeFilter CreateFilter(List<BannedSyntaxEntry> entries)
+        {
+            var names = new HashSet<string>(StringComparer.Ordinal);
+            foreach (var entry in entries)
+            {
+                if (entry.AttributeNames is null)
+                    return XPathAttributeFilter.All;
+
+                names.UnionWith(entry.AttributeNames);
+            }
+
+            return XPathAttributeFilter.Create(names);
         }
 
         // The operations are built from the semantic model
@@ -542,24 +647,18 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         public void AnalyzeTree(SyntaxTreeAnalysisContext context)
         {
             var tree = context.Tree;
-            var reporter = new DiagnosticReporter(context);
-            Analyze(tree.GetRoot(context.CancellationToken), semanticModel: null,
-                (span, severity, name, message) => Report(reporter, tree, span, severity, name, message), context.CancellationToken);
+            Analyze(tree.GetRoot(context.CancellationToken), semanticModel: null, new ReportSink(context, tree), context.CancellationToken);
         }
 
         public void AnalyzeSemanticModel(SemanticModelAnalysisContext context)
         {
             var semanticModel = context.SemanticModel;
             var tree = semanticModel.SyntaxTree;
-            var reporter = new DiagnosticReporter(context);
-            Analyze(tree.GetRoot(context.CancellationToken), semanticModel,
-                (span, severity, name, message) => Report(reporter, tree, span, severity, name, message), context.CancellationToken);
+            Analyze(tree.GetRoot(context.CancellationToken), semanticModel, new ReportSink(context, tree), context.CancellationToken);
         }
 
-        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, Action<TextSpan, DiagnosticSeverity?, string, string> report, CancellationToken cancellationToken)
+        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, ReportSink sink, CancellationToken cancellationToken)
         {
-            // The same syntax can be banned by several entries, possibly from several files
-            var reported = new HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)>();
             if (_kinds.Count > 0)
             {
                 foreach (var node in root.DescendantNodesAndSelf())
@@ -569,7 +668,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                     {
                         foreach (var entry in entries)
                         {
-                            Report(reported, report, node.Span, kind.ToString(), entry);
+                            sink.Report(node.Span, kind.ToString(), entry);
                         }
                     }
                 }
@@ -579,28 +678,30 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             // semantic attributes, so they do not pay for them
             if (_queries.Count > 0)
             {
-                Evaluate(_queries, new SyntaxNodeXPathNavigator(root, cancellationToken), reported, report);
+                var forest = new SyntaxForest(root, semanticModel: null, _queryFilter, cancellationToken);
+                Evaluate(_queries, new SyntaxNodeXPathNavigator(forest), sink);
             }
 
             if (_semanticQueries.Count > 0 && semanticModel is not null)
             {
-                Evaluate(_semanticQueries, new SyntaxNodeXPathNavigator(root, semanticModel, cancellationToken), reported, report);
+                var forest = new SyntaxForest(root, semanticModel, _semanticQueryFilter, cancellationToken);
+                Evaluate(_semanticQueries, new SyntaxNodeXPathNavigator(forest), sink);
             }
 
             // The operations of the file are walked once, whatever the number of entries
             if (_operationQueries.Count > 0 && semanticModel is not null)
             {
-                var forest = OperationForest.Create(root, semanticModel, cancellationToken);
+                var forest = OperationForest.Create(root, semanticModel, _operationQueryFilter, cancellationToken);
 
                 // The navigator of the syntax tree is only built when an entry uses the 'syntax' function. It has no
                 // semantic model, as the semantic attributes are not available in a query on the operations.
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(root, cancellationToken));
-                Evaluate(_operationQueries, new OperationXPathNavigator(forest, cancellationToken), reported, report, context);
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)));
+                Evaluate(_operationQueries, new OperationXPathNavigator(forest, cancellationToken), sink, context);
             }
         }
 
-        private static void Evaluate(List<BannedSyntaxEntry> entries, XPathNavigator navigator, HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)> reported, Action<TextSpan, DiagnosticSeverity?, string, string> report, BannedSyntaxXsltContext? context = null)
+        private static void Evaluate(List<BannedSyntaxEntry> entries, XPathNavigator navigator, ReportSink sink, BannedSyntaxXsltContext? context = null)
         {
             foreach (var entry in entries)
             {
@@ -614,7 +715,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                         if (match is not IBannedSyntaxNavigator { ReportName: { } name } reportable)
                             continue;
 
-                        Report(reported, report, reportable.Span, name, entry);
+                        sink.Report(reportable.Span, name, entry);
                     }
                 }
                 catch (XPathException)
@@ -624,23 +725,27 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static void Report(HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)> reported, Action<TextSpan, DiagnosticSeverity?, string, string> report, TextSpan span, string name, BannedSyntaxEntry entry)
+        // The diagnostics of a file. Most of the files have no match at all, so the set of the diagnostics that were
+        // already reported is only allocated when there is one.
+        private sealed class ReportSink(DiagnosticReporter reporter, SyntaxTree tree)
         {
-            var severity = entry.Severity;
-            var message = entry.FormattedMessage;
-            if (reported.Add((span, severity, name, message)))
-            {
-                report(span, severity, name, message);
-            }
-        }
+            // The same syntax can be banned by several entries, possibly from several files
+            private HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)>? _reported;
 
-        // An entry that sets a severity overrides the default severity of the rule
-        private static void Report(DiagnosticReporter reporter, SyntaxTree tree, TextSpan span, DiagnosticSeverity? severity, string name, string message)
-        {
-            var location = Location.Create(tree, span);
-            reporter.ReportDiagnostic(severity is { } value
-                ? Diagnostic.Create(Rule, location, value, additionalLocations: null, properties: null, name, message)
-                : Diagnostic.Create(Rule, location, name, message));
+            // An entry that sets a severity overrides the default severity of the rule
+            public void Report(TextSpan span, string name, BannedSyntaxEntry entry)
+            {
+                var severity = entry.Severity;
+                var message = entry.FormattedMessage;
+                _reported ??= [];
+                if (!_reported.Add((span, severity, name, message)))
+                    return;
+
+                var location = Location.Create(tree, span);
+                reporter.ReportDiagnostic(severity is { } value
+                    ? Diagnostic.Create(Rule, location, value, additionalLocations: null, properties: null, name, message)
+                    : Diagnostic.Create(Rule, location, name, message));
+            }
         }
     }
 }

@@ -9,16 +9,23 @@ namespace Meziantou.Analyzer.Internals;
 internal sealed class OperationForest
 {
     /// <summary>A forest with no operation, which is used to validate a query without a compilation.</summary>
-    public static readonly OperationForest Empty = new([]);
+    public static readonly OperationForest Empty = new([], XPathAttributeFilter.All);
 
     private static readonly IOperation[] NoChildren = [];
 
-    // The operations of Roslyn do not override Equals and GetHashCode, so the default comparer is reference equality.
-    // The forest is used by a single analysis of a single file, which is not concurrent.
-    private readonly Dictionary<IOperation, IOperation[]> _children = [];
-    private readonly Dictionary<IOperation, XPathAttribute[]> _attributes = [];
+    // The operations of Roslyn do not override Equals and GetHashCode, so the comparison is reference equality. The
+    // default comparer of an interface dispatches to the implementation, so the comparer is explicit. The forest is
+    // used by a single analysis of a single file, which is not concurrent.
+    private readonly Dictionary<IOperation, IOperation[]> _children = new(ReferenceComparer<IOperation>.Instance);
+    private readonly Dictionary<IOperation, XPathAttribute[]> _attributes = new(ReferenceComparer<IOperation>.Instance);
 
-    private OperationForest(IOperation[] roots) => Roots = roots;
+    private readonly XPathAttributeFilter _filter;
+
+    private OperationForest(IOperation[] roots, XPathAttributeFilter filter)
+    {
+        Roots = roots;
+        _filter = filter;
+    }
 
     /// <summary>
     /// The operations that have no parent, in document order. They are the bodies of the members, the initializers
@@ -26,7 +33,7 @@ internal sealed class OperationForest
     /// </summary>
     public IOperation[] Roots { get; }
 
-    public static OperationForest Create(SyntaxNode root, SemanticModel semanticModel, CancellationToken cancellationToken)
+    public static OperationForest Create(SyntaxNode root, SemanticModel semanticModel, XPathAttributeFilter filter, CancellationToken cancellationToken)
     {
         var roots = new List<IOperation>();
         var lastRootEnd = -1;
@@ -45,7 +52,7 @@ internal sealed class OperationForest
             }
         }
 
-        return new OperationForest([.. roots]);
+        return new OperationForest([.. roots], filter);
     }
 
     /// <summary>
@@ -72,7 +79,7 @@ internal sealed class OperationForest
         if (_attributes.TryGetValue(operation, out var attributes))
             return attributes;
 
-        attributes = OperationXPathNavigator.BuildAttributes(operation);
+        attributes = OperationXPathNavigator.BuildAttributes(operation, _filter);
         _attributes.Add(operation, attributes);
         return attributes;
     }

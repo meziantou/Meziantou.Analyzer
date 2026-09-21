@@ -23,9 +23,23 @@ internal static class XPathAttributeFormatter
             return;
 
         writer.Add(span, names.Name, type.Name);
-        writer.Add(span, names.MetadataName, SymbolNameFormatter.GetMetadataName(type));
-        writer.Add(span, names.DocumentationId, SymbolNameFormatter.GetDocumentationId(type));
-        writer.Add(span, names.ReferenceId, SymbolNameFormatter.GetReferenceId(type));
+
+        // The formatted names are the expensive ones, so they are only built when a query can select them
+        if (writer.Includes(names.MetadataName))
+        {
+            writer.Add(span, names.MetadataName, SymbolNameFormatter.GetMetadataName(type));
+        }
+
+        if (writer.Includes(names.DocumentationId))
+        {
+            writer.Add(span, names.DocumentationId, SymbolNameFormatter.GetDocumentationId(type));
+        }
+
+        if (writer.Includes(names.ReferenceId))
+        {
+            writer.Add(span, names.ReferenceId, SymbolNameFormatter.GetReferenceId(type));
+        }
+
         writer.Add(span, names.IsValueType, ToXPathBoolean(type.IsValueType));
         writer.Add(span, names.NullableAnnotation, GetNullableAnnotationName(type.NullableAnnotation));
         writer.Add(span, names.SpecialType, GetSpecialTypeName(type.SpecialType));
@@ -39,9 +53,18 @@ internal static class XPathAttributeFormatter
         if (symbol is null)
             return;
 
-        writer.Add(span, names.QualifiedName, SymbolNameFormatter.GetSymbolName(symbol));
+        if (writer.Includes(names.QualifiedName))
+        {
+            writer.Add(span, names.QualifiedName, SymbolNameFormatter.GetSymbolName(symbol));
+        }
+
         writer.Add(span, names.Name, symbol.Name);
-        writer.Add(span, names.DocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
+
+        if (writer.Includes(names.DocumentationId))
+        {
+            writer.Add(span, names.DocumentationId, SymbolNameFormatter.GetDocumentationId(symbol));
+        }
+
         writer.Add(span, names.Kind, GetSymbolKindName(symbol.Kind));
         writer.Add(span, names.IsStatic, ToXPathBoolean(symbol.IsStatic));
     }
