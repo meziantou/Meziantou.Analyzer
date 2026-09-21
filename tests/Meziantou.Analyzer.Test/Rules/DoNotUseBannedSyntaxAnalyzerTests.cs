@@ -1487,4 +1487,739 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Query_SemanticTypeName_Diagnostic()
+    {
+        var test = CreateTest("//ObjectCreationExpression[@semantic:TypeName='StringBuilder']");
+        test.TestCode = """
+            class Sample
+            {
+                object A() => [|new System.Text.StringBuilder()|];
+                object B() => new System.Exception();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticConvertedTypeName_Diagnostic()
+    {
+        var test = CreateTest("//*[@semantic:TypeName='Int32' and @semantic:ConvertedTypeName='Object']");
+        test.TestCode = """
+            class Sample
+            {
+                object A(int value) => [|value|];
+                int B(int value) => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticReturnTypeName_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:ReturnTypeName='Task']");
+        test.TestCode = """
+            class Sample
+            {
+                [|System.Threading.Tasks.Task<int> A() => null;|]
+                int B() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingTypeName_Diagnostic()
+    {
+        var test = CreateTest("//InvocationExpression[@semantic:ContainingTypeName='Console']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|System.Console.Write("a")|];
+                    M();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticSymbolName_Diagnostic()
+    {
+        // The short name of the symbol selects every overload, whatever the containing type
+        var test = CreateTest("//InvocationExpression[@semantic:SymbolName='WriteLine']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|System.Console.WriteLine("a")|];
+                    System.Console.Write("b");
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingSymbolName_Diagnostic()
+    {
+        var test = CreateTest("//IdentifierName[@semantic:ContainingSymbolName='M']");
+        test.TestCode = """
+            class Sample
+            {
+                private int _field;
+
+                int M()
+                {
+                    int local = 0;
+                    return [|local|] + _field;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_Kind_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    [|System.Console.WriteLine("a")|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_Boxing_Diagnostic()
+    {
+        var test = CreateTest("//operation:Conversion[@IsImplicit='true' and @TypeMetadataName='System.Object']; No boxing");
+        test.TestCode = """
+            class Sample
+            {
+                object A(int value) => {|#0:value|};
+                int B(int value) => value;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Conversion", ": No boxing"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethod_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation[@TargetMethod='System.Console.WriteLine']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine("a")|};
+                    System.Console.Write("b");
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethodName_Diagnostic()
+    {
+        // The short name of the symbol, whatever the containing type
+        var test = CreateTest("//operation:Invocation[@TargetMethodName='WriteLine']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine("a")|};
+                    System.Console.Write("b");
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethodDocumentationId_DistinguishesOverloads()
+    {
+        var test = CreateTest("//operation:Invocation[@TargetMethodDocumentationId='M:System.Console.WriteLine(System.String)']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine("a")|};
+                    System.Console.WriteLine(1);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethodIsStatic_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation[@TargetMethodIsStatic='true']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.Write("a")|};
+                    M();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_EnumAttribute_Diagnostic()
+    {
+        var test = CreateTest("//operation:Binary[@OperatorKind='Add']");
+        test.TestCode = """
+            class Sample
+            {
+                int A(int a, int b) => {|#0:a + b|};
+                int B(int a, int b) => a - b;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Binary", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_LoopKind_Diagnostic()
+    {
+        var test = CreateTest("//operation:Loop[@LoopKind='While']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(bool condition)
+                {
+                    {|#0:while (condition)
+                    {
+                    }|}
+
+                    foreach (var value in new int[0])
+                    {
+                    }
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Loop", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_BooleanAttribute_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation[@IsVirtual='true']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(object value)
+                {
+                    {|#0:value.ToString()|};
+                    System.Console.Write("a");
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_SymbolArrayAttribute_Diagnostic()
+    {
+        // The symbols of a property that returns several of them are joined by a space
+        var test = CreateTest("//operation:Block[@Locals='value']");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {|#0:{
+                    int value = 0;
+                }|}
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Block", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ConstantValue_Diagnostic()
+    {
+        var test = CreateTest("//operation:Literal[@HasConstantValue='true' and @ConstantValue='0']");
+        test.TestCode = """
+            class Sample
+            {
+                int A() => {|#0:0|};
+                int B() => 1;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Literal", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_Attribute_ReportedWithItsName()
+    {
+        var test = CreateTest("//operation:Invocation/@TargetMethod");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation/@TargetMethod", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_FieldInitializer_Diagnostic()
+    {
+        // The initializers are roots of the operations, like the bodies of the methods
+        var test = CreateTest("//operation:FieldInitializer");
+        test.TestCode = """
+            class Sample
+            {
+                private int _value {|#0:= 1|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:FieldInitializer", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_AndSyntaxEntryOnTheSameSpan_BothReported()
+    {
+        var test = CreateTest("""
+            //InvocationExpression; Syntax
+            //operation:Invocation; Operation
+            """);
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ": Syntax"));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ": Operation"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_Severity()
+    {
+        var test = CreateTest("//operation:Invocation;error;Use the logger");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "operation:Invocation", ": Use the logger"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_NoMatch_NoDiagnostic()
+    {
+        var test = CreateTest("//operation:Lock");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => System.Console.Write("a");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEntry_SemanticAttributeInAnOperationQuery_Reported()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0://operation:Invocation[@semantic:SymbolName='a']|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("//operation:Invocation[@semantic:SymbolName='a']", "A query cannot use both the 'semantic' and the 'operation' prefixes"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEntry_UnknownOperationKind_Reported()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0://operation:Invokation|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("//operation:Invokation", "'Invokation' is not a kind of operation"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_Wildcard_IsNotValidatedAsAKind()
+    {
+        var test = CreateTest("//operation:*[@TargetMethodName='Write']");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_AttributesOnEveryOperationKind_NoDiagnostic()
+    {
+        // Every operation of the file is visited, and the attributes of every kind of operation are computed
+        var test = CreateTest("//operation:*[@TypeReferenceId='Does.Not.Exist' or @TargetMethod='Does.Not.Exist' or @HasConstantValue='no' or @Locals='Does.Not.Exist']");
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            using Alias = System.Collections.Generic.List<int>;
+            using static System.Math;
+
+            namespace Demo;
+
+            [AttributeUsage(AttributeTargets.All)]
+            sealed class MarkerAttribute : Attribute { }
+
+            /// <summary>Documented <see cref="Sample.M(int)"/>.</summary>
+            record Point(int X, int Y)
+            {
+                public static Point operator +(Point a, Point b) => new(a.X + b.X, a.Y + b.Y);
+            }
+
+            [Marker]
+            unsafe class Sample<T> where T : struct
+            {
+                private event EventHandler? Changed;
+                private int[] _values = [1, 2, 3];
+
+                public int this[int index] => _values[index];
+
+                ~Sample() { }
+
+                public int M(int value)
+                {
+                    var query = from v in _values where v > 0 orderby v select v * 2;
+                    var (a, b) = (1, "text");
+                    var anonymous = new { a, b };
+                    Func<int, int> lambda = static x => x + 1;
+
+                    int Local(int x) => checked(x * 2);
+
+                    if (b is string { Length: > 0 } s and not null)
+                    {
+                        Console.WriteLine(s);
+                    }
+
+                    lock (_values)
+                    {
+                        using var disposable = new System.IO.MemoryStream();
+                    }
+
+                    switch (value)
+                    {
+                        case 0:
+                            goto end;
+                        default:
+                            break;
+                    }
+
+                end:
+                    Changed?.Invoke(this, EventArgs.Empty);
+                    var alias = new Alias();
+                    return Local(anonymous.a) + query.Count() + alias.Count + (int)Abs(-1d);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ChildOperations_Diagnostic()
+    {
+        // The operands of a binary operation are its child elements
+        var test = CreateTest("//operation:Binary[@OperatorKind='Equals']/*[@TypeSpecialType='System_String']");
+        test.TestCode = """
+            class Sample
+            {
+                bool A(string a, string b) => {|#0:a|} == {|#1:b|};
+                bool B(int a, int b) => a == b;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:ParameterReference", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "operation:ParameterReference", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_PropertyReference_Diagnostic()
+    {
+        var test = CreateTest("//operation:PropertyReference[@PropertyDocumentationId='P:System.DateTime.Now']");
+        test.TestCode = """
+            class Sample
+            {
+                System.DateTime A() => {|#0:System.DateTime.Now|};
+                System.DateTime B() => System.DateTime.UtcNow;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:PropertyReference", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ForEachLoop_Diagnostic()
+    {
+        var test = CreateTest("//operation:Loop[@LoopKind='ForEach']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int[] values)
+                {
+                    {|#0:foreach (var value in values)
+                    {
+                    }|}
+
+                    for (var i = 0; i < 1; i++)
+                    {
+                    }
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Loop", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_IsImplicitFalse_ExcludesTheOperationsTheCompilerInserts()
+    {
+        var test = CreateTest("//operation:ParameterReference[@IsImplicit='false']");
+        test.TestCode = """
+            class Sample
+            {
+                object A(int value) => {|#0:value|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:ParameterReference", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEntry_ObsoleteAliasOfAnOperationKind_Reported()
+    {
+        // 'BinaryOperator' is an alias of 'Binary', and the elements are named after the current name
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0://operation:BinaryOperator|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+                int M(int a, int b) => a + b;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("//operation:BinaryOperator", "'BinaryOperator' is not a kind of operation"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_UnaryKind_Diagnostic()
+    {
+        // 'Unary' is the other kind that has an alias
+        var test = CreateTest("//operation:Unary[@OperatorKind='Not']");
+        test.TestCode = """
+            class Sample
+            {
+                bool A(bool value) => {|#0:!value|};
+                bool B(bool value) => value;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Unary", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_ContinuesOnTheSyntaxTree()
+    {
+        // The nodes of the syntax tree are reported with the name of their kind
+        var test = CreateTest("syntax(//operation:Invocation[@TargetMethodName='Write'])//StringLiteralExpression");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    System.Console.Write({|#0:"a"|});
+                    System.Console.WriteLine("b");
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "StringLiteralExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_SelectsTheNodeOfTheOperation()
+    {
+        var test = CreateTest("syntax(//operation:Invocation)");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_InAPredicate()
+    {
+        // 'syntax(.)' is the node of the operation the predicate is evaluated on
+        var test = CreateTest("//operation:Invocation[syntax(.)//InterpolatedStringExpression]; Do not interpolate");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int value)
+                {
+                    {|#0:System.Console.Write($"a{value}")|};
+                    System.Console.Write("b");
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ": Do not interpolate"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_ReachesTheSyntaxThatHasNoOperation()
+    {
+        // The verbatim strings are only visible in the syntax tree, as an operation has the value of the literal
+        var test = CreateTest("syntax(//operation:Invocation)//StringLiteralExpression/@Token[starts-with(., '@')]");
+        test.TestCode = """"
+            class Sample
+            {
+                void M()
+                {
+                    System.Console.Write({|#0:@"a"|});
+                    System.Console.Write("b");
+                }
+            }
+            """";
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "StringLiteralExpression/@Token", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_OperationsSharingASyntaxNode_ReportedOnce()
+    {
+        // The conversion and its operand have the same syntax node
+        var test = CreateTest("syntax(//operation:Conversion | //operation:ParameterReference)");
+        test.TestCode = """
+            class Sample
+            {
+                object A(int value) => {|#0:value|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "IdentifierName", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_NoOperation_NoDiagnostic()
+    {
+        var test = CreateTest("syntax(//operation:Lock)//StringLiteralExpression");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => System.Console.Write("a");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEntry_UnknownFunctionInAnOperationQuery_Reported()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0:unknown-function(//operation:Invocation)|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0));
+
+        return test.RunAsync();
+    }
 }
