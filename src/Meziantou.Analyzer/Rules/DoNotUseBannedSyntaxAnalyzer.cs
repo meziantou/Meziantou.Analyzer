@@ -8,12 +8,19 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly DiagnosticDescriptor Rule = new(
+    // An entry can set its own severity, and a descriptor carries a single severity, so there is one descriptor per
+    // severity. The warning one is first, so it is the one the default severity of the rule uses.
+    private static readonly DiagnosticDescriptor Rule = CreateRule(DiagnosticSeverity.Warning);
+    private static readonly DiagnosticDescriptor HiddenRule = CreateRule(DiagnosticSeverity.Hidden);
+    private static readonly DiagnosticDescriptor InfoRule = CreateRule(DiagnosticSeverity.Info);
+    private static readonly DiagnosticDescriptor ErrorRule = CreateRule(DiagnosticSeverity.Error);
+
+    private static DiagnosticDescriptor CreateRule(DiagnosticSeverity severity) => new(
         RuleIdentifiers.DoNotUseBannedSyntax,
         title: "Do not use banned syntax",
         messageFormat: "The syntax '{0}' is banned{1}",
         RuleCategories.Design,
-        DiagnosticSeverity.Warning,
+        severity,
         isEnabledByDefault: true,
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseBannedSyntax));
@@ -38,7 +45,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
     // The queries come from the files of the analyzed projects, and an editor provides a new content at every keystroke
     private static readonly BoundedCache<string, (XPathExpression? Expression, bool RequiresSemanticModel, string? ErrorMessage)> QueryCache = new(capacity: 128);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, InvalidEntryRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, HiddenRule, InfoRule, ErrorRule, InvalidEntryRule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -241,7 +248,27 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, bool RequiresSemanticModel, string? ErrorMessage)
+    // The names are the ones of the 'dotnet_diagnostic.<id>.severity' option of the .editorconfig files. 'none' is
+    // valid and means the entry reports nothing, which turns off an entry coming from a shared file.
+    private static (bool IsValid, DiagnosticSeverity? Severity) ParseSeverity(string value) => value.ToUpperInvariant() switch
+    {
+        "NONE" => (true, null),
+        "SILENT" or "HIDDEN" => (true, DiagnosticSeverity.Hidden),
+        "SUGGESTION" or "INFO" => (true, DiagnosticSeverity.Info),
+        "WARNING" => (true, DiagnosticSeverity.Warning),
+        "ERROR" => (true, DiagnosticSeverity.Error),
+        _ => (false, null),
+    };
+
+    private static DiagnosticDescriptor GetDescriptor(DiagnosticSeverity severity) => severity switch
+    {
+        DiagnosticSeverity.Hidden => HiddenRule,
+        DiagnosticSeverity.Info => InfoRule,
+        DiagnosticSeverity.Error => ErrorRule,
+        _ => Rule,
+    };
+
+    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, bool RequiresSemanticModel, DiagnosticDescriptor? Descriptor, string? ErrorMessage)
     {
         // The argument of the message, so the message ends with the custom message when there is one
         public string FormattedMessage => string.IsNullOrEmpty(Message) ? "" : ": " + Message;
@@ -270,16 +297,46 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
                 var separatorIndex = IndexOfSeparator(content, start);
                 var query = (separatorIndex < 0 ? content.Substring(start) : content.Substring(start, separatorIndex - start)).TrimEnd();
-                var message = separatorIndex < 0 ? null : content.Substring(separatorIndex + 1).Trim();
+                string? severity = null;
+                string? message = null;
+                if (separatorIndex >= 0)
+                {
+                    var remainder = content.Substring(separatorIndex + 1);
+
+                    // The line is 'query;severity;message' when the field between the two separators is a single word,
+                    // so the message of a 'query;message' line can still contain a ';'
+                    var severityIndex = remainder.IndexOf(";", StringComparison.Ordinal);
+                    if (severityIndex >= 0 && IsSeverityField(remainder, severityIndex))
+                    {
+                        severity = remainder.Substring(0, severityIndex).Trim();
+                        message = remainder.Substring(severityIndex + 1).Trim();
+                    }
+                    else
+                    {
+                        message = remainder.Trim();
+                    }
+                }
+
                 var span = TextSpan.FromBounds(line.Start + start, line.End);
-                entries.Add(CreateEntry(span, query, message));
+                entries.Add(CreateEntry(span, query, severity, message));
             }
 
             return new BannedSyntaxFile(text, entries.ToImmutable());
         }
 
-        private static BannedSyntaxEntry CreateEntry(TextSpan span, string query, string? message)
+        private static BannedSyntaxEntry CreateEntry(TextSpan span, string query, string? severity, string? message)
         {
+            // A 'none' severity has no descriptor, so the entry is still validated but reports nothing
+            DiagnosticDescriptor? descriptor = Rule;
+            if (severity is not null)
+            {
+                var (isValid, parsedSeverity) = ParseSeverity(severity);
+                if (!isValid)
+                    return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, Descriptor: null, ErrorMessage: $"'{severity}' is not a valid severity");
+
+                descriptor = parsedSeverity is { } value ? GetDescriptor(value) : null;
+            }
+
             // A kind name, or "//" followed by a kind name, selects the nodes of this kind, which is faster to find
             // without evaluating a query. A single name is not a useful XPath query, as it selects the root node only
             // when it is of this kind, so it is always interpreted as a kind.
@@ -288,13 +345,39 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             {
                 var name = query.Substring(kindStart);
                 if (Enum.TryParse<SyntaxKind>(name, ignoreCase: false, out var kind) && kind is not SyntaxKind.None && Enum.IsDefined(typeof(SyntaxKind), kind))
-                    return new BannedSyntaxEntry(span, query, message, kind, Expression: null, RequiresSemanticModel: false, ErrorMessage: null);
+                    return new BannedSyntaxEntry(span, query, message, kind, Expression: null, RequiresSemanticModel: false, descriptor, ErrorMessage: null);
 
-                return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, ErrorMessage: $"'{name}' is not a member of SyntaxKind");
+                return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, Descriptor: null, ErrorMessage: $"'{name}' is not a member of SyntaxKind");
             }
 
             var (expression, requiresSemanticModel, errorMessage) = GetQuery(query);
-            return new BannedSyntaxEntry(span, query, message, Kind: null, expression, requiresSemanticModel, errorMessage);
+            return new BannedSyntaxEntry(span, query, message, Kind: null, expression, requiresSemanticModel, errorMessage is null ? descriptor : null, errorMessage);
+        }
+
+        // The field is a severity when it is a single word, such as 'warning'
+        private static bool IsSeverityField(string value, int end)
+        {
+            var start = 0;
+            while (start < end && char.IsWhiteSpace(value[start]))
+            {
+                start++;
+            }
+
+            while (end > start && char.IsWhiteSpace(value[end - 1]))
+            {
+                end--;
+            }
+
+            if (start == end)
+                return false;
+
+            for (var i = start; i < end; i++)
+            {
+                if (!char.IsLetter(value[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         // The query and the message are separated by the first ';' that is not in an XPath string literal
@@ -357,6 +440,10 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
                 foreach (var entry in file.Entries)
                 {
+                    // The entries that are not valid and the entries whose severity is 'none' report nothing
+                    if (entry.Descriptor is null)
+                        continue;
+
                     if (entry.Kind is { } kind)
                     {
                         if (!kinds.TryGetValue(kind, out var entries))
@@ -384,7 +471,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         {
             var tree = context.Tree;
             Analyze(tree.GetRoot(context.CancellationToken), semanticModel: null,
-                (span, name, message) => context.ReportDiagnostic(Rule, Location.Create(tree, span), name, message), context.CancellationToken);
+                (span, descriptor, name, message) => context.ReportDiagnostic(descriptor, Location.Create(tree, span), name, message), context.CancellationToken);
         }
 
         public void AnalyzeSemanticModel(SemanticModelAnalysisContext context)
@@ -392,13 +479,13 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             var semanticModel = context.SemanticModel;
             var tree = semanticModel.SyntaxTree;
             Analyze(tree.GetRoot(context.CancellationToken), semanticModel,
-                (span, name, message) => context.ReportDiagnostic(Rule, Location.Create(tree, span), name, message), context.CancellationToken);
+                (span, descriptor, name, message) => context.ReportDiagnostic(descriptor, Location.Create(tree, span), name, message), context.CancellationToken);
         }
 
-        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, Action<TextSpan, string, string> report, CancellationToken cancellationToken)
+        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, Action<TextSpan, DiagnosticDescriptor, string, string> report, CancellationToken cancellationToken)
         {
             // The same syntax can be banned by several entries, possibly from several files
-            var reported = new HashSet<(TextSpan Span, string Name, string Message)>();
+            var reported = new HashSet<(TextSpan Span, DiagnosticDescriptor Descriptor, string Name, string Message)>();
             if (_kinds.Count > 0)
             {
                 foreach (var node in root.DescendantNodesAndSelf())
@@ -427,7 +514,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static void Evaluate(List<BannedSyntaxEntry> entries, SyntaxNodeXPathNavigator navigator, HashSet<(TextSpan Span, string Name, string Message)> reported, Action<TextSpan, string, string> report)
+        private static void Evaluate(List<BannedSyntaxEntry> entries, SyntaxNodeXPathNavigator navigator, HashSet<(TextSpan Span, DiagnosticDescriptor Descriptor, string Name, string Message)> reported, Action<TextSpan, DiagnosticDescriptor, string, string> report)
         {
             foreach (var entry in entries)
             {
@@ -455,12 +542,13 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static void Report(HashSet<(TextSpan Span, string Name, string Message)> reported, Action<TextSpan, string, string> report, TextSpan span, string name, BannedSyntaxEntry entry)
+        private static void Report(HashSet<(TextSpan Span, DiagnosticDescriptor Descriptor, string Name, string Message)> reported, Action<TextSpan, DiagnosticDescriptor, string, string> report, TextSpan span, string name, BannedSyntaxEntry entry)
         {
+            var descriptor = entry.Descriptor!;
             var message = entry.FormattedMessage;
-            if (reported.Add((span, name, message)))
+            if (reported.Add((span, descriptor, name, message)))
             {
-                report(span, name, message);
+                report(span, descriptor, name, message);
             }
         }
     }
