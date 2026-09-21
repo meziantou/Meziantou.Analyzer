@@ -241,7 +241,21 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         return true;
     }
 
-    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, bool RequiresSemanticModel, string? ErrorMessage)
+    // The names are the ones of the 'dotnet_diagnostic.<id>.severity' option of the .editorconfig files. 'none' is
+    // valid, and its severity is null, as the entry reports nothing.
+    private static (bool IsValid, DiagnosticSeverity? Severity) ParseSeverity(string value) => value.ToUpperInvariant() switch
+    {
+        "NONE" => (true, null),
+        "SILENT" or "HIDDEN" => (true, DiagnosticSeverity.Hidden),
+        "SUGGESTION" or "INFO" => (true, DiagnosticSeverity.Info),
+        "WARNING" => (true, DiagnosticSeverity.Warning),
+        "ERROR" => (true, DiagnosticSeverity.Error),
+        _ => (false, null),
+    };
+
+    // The severity is null when the entry does not set one, so it reports with the default severity of the rule. An
+    // entry that reports nothing, because it is not valid or because its severity is 'none', has no kind and no expression.
+    private sealed record BannedSyntaxEntry(TextSpan Span, string Query, string? Message, SyntaxKind? Kind, XPathExpression? Expression, bool RequiresSemanticModel, DiagnosticSeverity? Severity, string? ErrorMessage)
     {
         // The argument of the message, so the message ends with the custom message when there is one
         public string FormattedMessage => string.IsNullOrEmpty(Message) ? "" : ": " + Message;
@@ -270,15 +284,49 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
 
                 var separatorIndex = IndexOfSeparator(content, start);
                 var query = (separatorIndex < 0 ? content.Substring(start) : content.Substring(start, separatorIndex - start)).TrimEnd();
-                var message = separatorIndex < 0 ? null : content.Substring(separatorIndex + 1).Trim();
+                string? severity = null;
+                string? message = null;
+                if (separatorIndex >= 0)
+                {
+                    var remainder = content.Substring(separatorIndex + 1);
+
+                    // The line is 'query;severity;message' when the field between the two separators is a single word,
+                    // so the message of a 'query;message' line can still contain a ';'
+                    var severityIndex = remainder.IndexOf(";", StringComparison.Ordinal);
+                    if (severityIndex >= 0 && IsSeverityField(remainder, severityIndex))
+                    {
+                        severity = remainder.Substring(0, severityIndex).Trim();
+                        message = remainder.Substring(severityIndex + 1).Trim();
+                    }
+                    else
+                    {
+                        message = remainder.Trim();
+                    }
+                }
+
                 var span = TextSpan.FromBounds(line.Start + start, line.End);
-                entries.Add(CreateEntry(span, query, message));
+                entries.Add(CreateEntry(span, query, severity, message));
             }
 
             return new BannedSyntaxFile(text, entries.ToImmutable());
         }
 
-        private static BannedSyntaxEntry CreateEntry(TextSpan span, string query, string? message)
+        private static BannedSyntaxEntry CreateEntry(TextSpan span, string query, string? severity, string? message)
+        {
+            if (severity is null)
+                return CreateEntry(span, query, message, severity: null);
+
+            var (isValid, parsedSeverity) = ParseSeverity(severity);
+            if (!isValid)
+                return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, Severity: null, ErrorMessage: $"'{severity}' is not a valid severity");
+
+            var entry = CreateEntry(span, query, message, parsedSeverity);
+
+            // A 'none' severity selects nothing, but the query is still validated
+            return parsedSeverity is not null ? entry : entry with { Kind = null, Expression = null };
+        }
+
+        private static BannedSyntaxEntry CreateEntry(TextSpan span, string query, string? message, DiagnosticSeverity? severity)
         {
             // A kind name, or "//" followed by a kind name, selects the nodes of this kind, which is faster to find
             // without evaluating a query. A single name is not a useful XPath query, as it selects the root node only
@@ -288,13 +336,39 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             {
                 var name = query.Substring(kindStart);
                 if (Enum.TryParse<SyntaxKind>(name, ignoreCase: false, out var kind) && kind is not SyntaxKind.None && Enum.IsDefined(typeof(SyntaxKind), kind))
-                    return new BannedSyntaxEntry(span, query, message, kind, Expression: null, RequiresSemanticModel: false, ErrorMessage: null);
+                    return new BannedSyntaxEntry(span, query, message, kind, Expression: null, RequiresSemanticModel: false, severity, ErrorMessage: null);
 
-                return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, ErrorMessage: $"'{name}' is not a member of SyntaxKind");
+                return new BannedSyntaxEntry(span, query, message, Kind: null, Expression: null, RequiresSemanticModel: false, Severity: null, ErrorMessage: $"'{name}' is not a member of SyntaxKind");
             }
 
             var (expression, requiresSemanticModel, errorMessage) = GetQuery(query);
-            return new BannedSyntaxEntry(span, query, message, Kind: null, expression, requiresSemanticModel, errorMessage);
+            return new BannedSyntaxEntry(span, query, message, Kind: null, expression, requiresSemanticModel, severity, errorMessage);
+        }
+
+        // The field is a severity when it is a single word, such as 'warning'
+        private static bool IsSeverityField(string value, int end)
+        {
+            var start = 0;
+            while (start < end && char.IsWhiteSpace(value[start]))
+            {
+                start++;
+            }
+
+            while (end > start && char.IsWhiteSpace(value[end - 1]))
+            {
+                end--;
+            }
+
+            if (start == end)
+                return false;
+
+            for (var i = start; i < end; i++)
+            {
+                if (!char.IsLetter(value[i]))
+                    return false;
+            }
+
+            return true;
         }
 
         // The query and the message are separated by the first ';' that is not in an XPath string literal
@@ -383,22 +457,24 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         public void AnalyzeTree(SyntaxTreeAnalysisContext context)
         {
             var tree = context.Tree;
+            var reporter = new DiagnosticReporter(context);
             Analyze(tree.GetRoot(context.CancellationToken), semanticModel: null,
-                (span, name, message) => context.ReportDiagnostic(Rule, Location.Create(tree, span), name, message), context.CancellationToken);
+                (span, severity, name, message) => Report(reporter, tree, span, severity, name, message), context.CancellationToken);
         }
 
         public void AnalyzeSemanticModel(SemanticModelAnalysisContext context)
         {
             var semanticModel = context.SemanticModel;
             var tree = semanticModel.SyntaxTree;
+            var reporter = new DiagnosticReporter(context);
             Analyze(tree.GetRoot(context.CancellationToken), semanticModel,
-                (span, name, message) => context.ReportDiagnostic(Rule, Location.Create(tree, span), name, message), context.CancellationToken);
+                (span, severity, name, message) => Report(reporter, tree, span, severity, name, message), context.CancellationToken);
         }
 
-        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, Action<TextSpan, string, string> report, CancellationToken cancellationToken)
+        private void Analyze(SyntaxNode root, SemanticModel? semanticModel, Action<TextSpan, DiagnosticSeverity?, string, string> report, CancellationToken cancellationToken)
         {
             // The same syntax can be banned by several entries, possibly from several files
-            var reported = new HashSet<(TextSpan Span, string Name, string Message)>();
+            var reported = new HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)>();
             if (_kinds.Count > 0)
             {
                 foreach (var node in root.DescendantNodesAndSelf())
@@ -427,7 +503,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static void Evaluate(List<BannedSyntaxEntry> entries, SyntaxNodeXPathNavigator navigator, HashSet<(TextSpan Span, string Name, string Message)> reported, Action<TextSpan, string, string> report)
+        private static void Evaluate(List<BannedSyntaxEntry> entries, SyntaxNodeXPathNavigator navigator, HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)> reported, Action<TextSpan, DiagnosticSeverity?, string, string> report)
         {
             foreach (var entry in entries)
             {
@@ -455,13 +531,23 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        private static void Report(HashSet<(TextSpan Span, string Name, string Message)> reported, Action<TextSpan, string, string> report, TextSpan span, string name, BannedSyntaxEntry entry)
+        private static void Report(HashSet<(TextSpan Span, DiagnosticSeverity? Severity, string Name, string Message)> reported, Action<TextSpan, DiagnosticSeverity?, string, string> report, TextSpan span, string name, BannedSyntaxEntry entry)
         {
+            var severity = entry.Severity;
             var message = entry.FormattedMessage;
-            if (reported.Add((span, name, message)))
+            if (reported.Add((span, severity, name, message)))
             {
-                report(span, name, message);
+                report(span, severity, name, message);
             }
+        }
+
+        // An entry that sets a severity overrides the default severity of the rule
+        private static void Report(DiagnosticReporter reporter, SyntaxTree tree, TextSpan span, DiagnosticSeverity? severity, string name, string message)
+        {
+            var location = Location.Create(tree, span);
+            reporter.ReportDiagnostic(severity is { } value
+                ? Diagnostic.Create(Rule, location, value, additionalLocations: null, properties: null, name, message)
+                : Diagnostic.Create(Rule, location, name, message));
         }
     }
 }

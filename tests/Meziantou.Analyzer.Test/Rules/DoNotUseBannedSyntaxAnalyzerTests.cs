@@ -16,7 +16,10 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     private static DiagnosticResult Diagnostic(int markupKey, string name, string message) =>
-        new DiagnosticResult("MA0240", DiagnosticSeverity.Warning).WithLocation(markupKey).WithArguments(name, message);
+        Diagnostic(markupKey, DiagnosticSeverity.Warning, name, message);
+
+    private static DiagnosticResult Diagnostic(int markupKey, DiagnosticSeverity severity, string name, string message) =>
+        new DiagnosticResult("MA0240", severity).WithLocation(markupKey).WithArguments(name, message);
 
     [Fact]
     public Task NoFile_NoDiagnostic()
@@ -1245,6 +1248,242 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
         test.ExpectedDiagnostics.Add(Diagnostic(1, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("error", DiagnosticSeverity.Error)]
+    [InlineData("warning", DiagnosticSeverity.Warning)]
+    [InlineData("suggestion", DiagnosticSeverity.Info)]
+    [InlineData("info", DiagnosticSeverity.Info)]
+    [InlineData("silent", DiagnosticSeverity.Hidden)]
+    [InlineData("hidden", DiagnosticSeverity.Hidden)]
+    [InlineData("Error", DiagnosticSeverity.Error)]
+    public Task Severity_CustomMessage(string severity, DiagnosticSeverity expectedSeverity)
+    {
+        var test = CreateTest($"GotoStatement;{severity}; Use structured control flow instead");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, expectedSeverity, "GotoStatement", ": Use structured control flow instead"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_EmptyMessage()
+    {
+        var test = CreateTest("GotoStatement;error;");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_Query()
+    {
+        var test = CreateTest("//ClassDeclaration/ParameterList;error;Do not use primary constructors");
+        test.TestCode = """
+            class Sample{|#0:(int value)|}
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "ParameterList", ": Do not use primary constructors"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_None_NoDiagnostic()
+    {
+        var test = CreateTest("""
+            GotoStatement;none;Use structured control flow instead
+            """);
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    goto label;
+                    label:
+                    return;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_None_OtherEntriesAreApplied()
+    {
+        var test = CreateTest("""
+            GotoStatement;none;
+            LockStatement;error;
+            """);
+        test.TestCode = """
+            class Sample
+            {
+                private readonly object _lock = new object();
+
+                void M()
+                {
+                    {|#0:lock (_lock) { }|}
+                    goto label;
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "LockStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_None_InvalidQueryIsStillReported()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0:UnknownKind;none;|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("UnknownKind", "'UnknownKind' is not a member of SyntaxKind"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_EditorConfigOverridesTheSeverityOfTheEntries()
+    {
+        var test = CreateTest("GotoStatement;suggestion;");
+        test.TestState.SetConfiguration("dotnet_diagnostic.MA0240.severity", "error");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Severity_SameSyntaxBannedWithTwoSeverities_BothReported()
+    {
+        var test = CreateTest("""
+            GotoStatement;error;
+            //GotoStatement;warning;
+            """);
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Error, "GotoStatement", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, DiagnosticSeverity.Warning, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidEntry_UnknownSeverity_Reported()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0:GotoStatement;warnign;Use structured control flow instead|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    goto label;
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("GotoStatement", "'warnign' is not a valid severity"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MessageContainingSeparator_IsNotASeverity()
+    {
+        var test = CreateTest("GotoStatement; Do not use goto; use structured control flow instead");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:goto label;|}
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "GotoStatement", ": Do not use goto; use structured control flow instead"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MessageStartingWithASingleWordFollowedBySeparator_IsASeverity()
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", """
+            {|#0:GotoStatement;Avoid;it is not readable|}
+            """));
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    goto label;
+                    label:
+                    return;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments("GotoStatement", "'Avoid' is not a valid severity"));
 
         return test.RunAsync();
     }
