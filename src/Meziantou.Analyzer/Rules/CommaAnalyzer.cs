@@ -19,7 +19,7 @@ public sealed class CommaAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> IgnoreCatchAllArmConfiguration = new([Rule.Id + ".ignore_catch_all_arm", Rule.Id + ".IgnoreCatchAllArm"], defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     private static readonly ImmutableArray<SyntaxKind> ObjectInitializerKinds = ImmutableArray.Create(SyntaxKind.ObjectInitializerExpression, SyntaxKind.ArrayInitializerExpression, SyntaxKind.CollectionInitializerExpression);
 

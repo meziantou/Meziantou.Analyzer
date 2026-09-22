@@ -26,7 +26,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzer : D
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.RawStringShouldNotContainsNonDeterministicEndOfLine));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleRawString);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, RuleRawString);
 
     public override void Initialize(AnalysisContext context)
     {

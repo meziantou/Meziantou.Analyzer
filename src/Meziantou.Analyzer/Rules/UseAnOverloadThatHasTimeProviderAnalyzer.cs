@@ -30,7 +30,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasTimeProvider + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasTimeProviderWhenAvailable + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasTimeProviderRule, UseAnOverloadThatHasTimeProviderWhenAvailable);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(UseAnOverloadThatHasTimeProviderRule, UseAnOverloadThatHasTimeProviderWhenAvailable);
 
     public override void Initialize(AnalysisContext context)
     {

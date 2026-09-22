@@ -43,7 +43,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
     // The queries come from the files of the analyzed projects, and an editor provides a new content at every keystroke
     private static readonly BoundedCache<string, ParsedQuery> QueryCache = new(capacity: 128);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, InvalidEntryRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, InvalidEntryRule);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -23,7 +23,7 @@ public sealed class ValidateFixedAddressValueTypeAttributeUsageAnalyzer : Diagno
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.FixedAddressValueTypeAttribute_FieldTypeMustBeValueType));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(FieldMustBeStaticRule, FieldTypeMustBeValueTypeRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(FieldMustBeStaticRule, FieldTypeMustBeValueTypeRule);
 
     public override void Initialize(AnalysisContext context)
     {

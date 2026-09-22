@@ -48,7 +48,7 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
     private static readonly ConfigurationDefinition<bool> ExcludeTestMethodsConfiguration = new("MA0137.exclude_test_methods", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> ExcludePropertyAccessorsConfiguration = new("MA0137.exclude_property_accessors", defaultValue: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule, AsyncSuffixRuleAsyncEnumerable, NotAsyncSuffixRuleAsyncEnumerable);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(AsyncSuffixRule, NotAsyncSuffixRule, AsyncSuffixRuleAsyncEnumerable, NotAsyncSuffixRuleAsyncEnumerable);
 
     public override void Initialize(AnalysisContext context)
     {

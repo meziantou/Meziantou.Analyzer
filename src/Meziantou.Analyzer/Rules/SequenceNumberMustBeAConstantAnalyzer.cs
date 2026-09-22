@@ -14,7 +14,7 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SequenceNumberMustBeAConstant),
         customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

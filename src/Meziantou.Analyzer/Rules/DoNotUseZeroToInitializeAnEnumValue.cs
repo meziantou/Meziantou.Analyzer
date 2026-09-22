@@ -18,7 +18,7 @@ public class DoNotUseZeroToInitializeAnEnumValue : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<string> ReportOnConfiguration = new(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".report_on", defaultValue: "all");
     private static readonly ConfigurationDefinition<bool> ExcludeEnumWithoutZeroMemberConfiguration = new(RuleIdentifiers.DoNotUseZeroToInitializeAnEnumValue + ".exclude_enum_without_zero_member", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

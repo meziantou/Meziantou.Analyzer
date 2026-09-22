@@ -33,7 +33,7 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EventArgsSenderShouldNotBeNullForEvents));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SenderInstanceRule, SenderStaticRule, EventArgsRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(SenderInstanceRule, SenderStaticRule, EventArgsRule);
 
     public override void Initialize(AnalysisContext context)
     {

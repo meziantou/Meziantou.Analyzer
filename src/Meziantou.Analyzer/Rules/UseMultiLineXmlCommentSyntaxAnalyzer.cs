@@ -15,7 +15,7 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzer : DiagnosticAnalyzer
         description: "Enforce multi-line XML documentation comment syntax for <summary> elements.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseMultiLineXmlCommentSyntax));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

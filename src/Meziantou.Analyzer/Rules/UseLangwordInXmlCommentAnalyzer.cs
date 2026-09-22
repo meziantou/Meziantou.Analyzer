@@ -132,7 +132,7 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingLanguageAttributeInXmlComment));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, EmptyLanguageAttributeRule, MissingLanguageAttributeRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, EmptyLanguageAttributeRule, MissingLanguageAttributeRule);
 
     public override void Initialize(AnalysisContext context)
     {

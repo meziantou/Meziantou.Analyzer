@@ -23,7 +23,7 @@ public sealed class DoNotImplicitlyConvertDateTimeToDateTimeOffsetAnalyzer : Dia
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseDateTimeOffsetInsteadOfDateTime));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleImplicitConversion, RuleUseDateTimeOffset);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RuleImplicitConversion, RuleUseDateTimeOffset);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -26,7 +26,7 @@ public sealed class JsonSourceGenerationOptionsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SetRespectRequiredConstructorParameters));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RespectNullableAnnotationsRule, RespectRequiredConstructorParametersRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RespectNullableAnnotationsRule, RespectRequiredConstructorParametersRule);
 
     public override void Initialize(AnalysisContext context)
     {

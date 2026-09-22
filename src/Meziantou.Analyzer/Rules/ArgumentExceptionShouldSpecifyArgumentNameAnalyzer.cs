@@ -28,7 +28,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
 
     private static readonly ConfigurationDefinition<bool> ConsiderMemberAccessAsParameterConfiguration = new(RuleIdentifiers.ArgumentExceptionShouldSpecifyArgumentName + ".consider_member_access_as_parameter", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, NameofRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, NameofRule);
 
     public override void Initialize(AnalysisContext context)
     {

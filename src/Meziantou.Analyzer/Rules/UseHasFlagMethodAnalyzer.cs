@@ -25,7 +25,7 @@ public sealed class UseHasFlagMethodAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseZeroValuedEnumFlagsInFlagChecks));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseHasFlagRule, DoNotUseZeroValuedEnumFlagsInFlagChecksRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(UseHasFlagRule, DoNotUseZeroValuedEnumFlagsInFlagChecksRule);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -21,7 +21,7 @@ public sealed class MethodShouldNotBeTooLongAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<int> MaximumStatementsPerMethodConfiguration = new(Rule.Id + ".maximum_statements_per_method", defaultValue: 40);
     private static readonly ConfigurationDefinition<int> MaximumLinesPerMethodConfiguration = new(Rule.Id + ".maximum_lines_per_method", defaultValue: 60);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

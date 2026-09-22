@@ -66,7 +66,7 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatConfiguration = new(Rule.Id + ".allow_non_constant_formats", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> AllowNonConstantFormatSerilogConfiguration = new(RuleSerilog.Id + ".allow_non_constant_formats", defaultValue: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, RuleSerilog, RuleInvalid, RuleDuplicate, RuleMissingConfiguration);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, RuleSerilog, RuleInvalid, RuleDuplicate, RuleMissingConfiguration);
 
     public override void Initialize(AnalysisContext context)
     {

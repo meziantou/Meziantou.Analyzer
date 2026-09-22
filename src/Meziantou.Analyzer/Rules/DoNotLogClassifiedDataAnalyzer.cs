@@ -18,7 +18,7 @@ public sealed class DoNotLogClassifiedDataAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> ReportTypesWithDataClassificationAttributesConfiguration = new(RuleIdentifiers.DoNotLogClassifiedData + ".report_types_with_data_classification_attributes", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
