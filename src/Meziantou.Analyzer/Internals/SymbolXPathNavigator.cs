@@ -89,7 +89,7 @@ internal sealed class SymbolXPathNavigator : XPathNavigator, IBannedSyntaxNaviga
     /// <summary>
     /// The locations of the symbol in the file, which are also the ones of its attributes.
     /// </summary>
-    public ImmutableArray<TextSpan> ReportSpans => _element is null ? [] : _forest.GetSpans(_element);
+    public ImmutableArray<TextSpan> ReportSpans => _element is null ? ImmutableArray<TextSpan>.Empty : _forest.GetSpans(_element);
 
     /// <summary>
     /// The qualified name of the element, followed by the name of the attribute when the navigator is positioned on

@@ -78,7 +78,7 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
     /// </summary>
     public TextSpan Span => IsOnAttribute ? _attributes![_attributeIndex].Span : _operation?.Syntax.Span ?? default;
 
-    public ImmutableArray<TextSpan> ReportSpans => [Span];
+    public ImmutableArray<TextSpan> ReportSpans => ImmutableArray.Create(Span);
 
     /// <summary>
     /// The qualified name of the element, followed by the name of the attribute when the navigator is positioned on
