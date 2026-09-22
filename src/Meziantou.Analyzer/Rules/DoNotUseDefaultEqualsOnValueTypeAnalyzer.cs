@@ -23,7 +23,7 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.StructWithDefaultEqualsImplementationUsedAsAKey));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, Rule2);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -106,22 +106,18 @@ public sealed class DoNotUseDefaultEqualsOnValueTypeAnalyzer : DiagnosticAnalyze
                 }
             }
 
+            // This runs for every invocation of the compilation, so the cheap checks come first and the
+            // method allocates nothing.
             bool IsImmutableCreateMethod(IMethodSymbol methodSymbol)
             {
-                var names = new[]
-                {
-                        "Create",
-                        "CreateBuilder",
-                        "CreateRange",
-                    };
+                if (methodSymbol.Arity < 1)
+                    return false;
 
-                var builderTypes = new[]
-                {
-                        ImmutableDictionarySymbol,
-                        ImmutableHashSetSymbol,
-                    };
+                if (methodSymbol.Name is not ("Create" or "CreateBuilder" or "CreateRange"))
+                    return false;
 
-                return methodSymbol.Arity >= 1 && names.Contains(methodSymbol.Name, StringComparer.Ordinal) && builderTypes.Any(type => type.IsEqualTo(methodSymbol.ContainingType.OriginalDefinition));
+                var containingType = methodSymbol.ContainingType.OriginalDefinition;
+                return ImmutableDictionarySymbol.IsEqualTo(containingType) || ImmutableHashSetSymbol.IsEqualTo(containingType);
             }
         }
 

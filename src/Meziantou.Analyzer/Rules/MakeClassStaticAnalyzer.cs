@@ -13,7 +13,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeClassStatic));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -52,7 +52,9 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly List<ITypeSymbol> _potentialClasses = [];
-        private readonly HashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
+        // The types are collected from the operations of every syntax tree, which are analyzed concurrently,
+        // so a concurrent set is used instead of locking on every reference.
+        private readonly ConcurrentHashSet<ITypeSymbol> _cannotBeStaticClasses = new(SymbolEqualityComparer.Default);
 
         public INamedTypeSymbol? CoClassAttributeSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.InteropServices.CoClassAttribute");
 
@@ -140,25 +142,29 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
 
         private void AddCannotBeStaticType(ITypeSymbol typeSymbol)
         {
-            lock (_cannotBeStaticClasses)
+            // The set is only used to exclude the candidates, which are all declared in the analyzed assembly,
+            // so the types coming from the references are not kept. The referenced types are still walked, as
+            // they can use a type of the analyzed assembly as a type argument (List&lt;MyClass&gt;).
+            if (typeSymbol.ContainingAssembly.IsEqualTo(compilation.Assembly))
             {
                 _cannotBeStaticClasses.Add(typeSymbol);
-                if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
-                {
-                    AddCannotBeStaticType(typeSymbol.OriginalDefinition);
-                }
+            }
 
-                if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
-                {
-                    AddCannotBeStaticType(arrayTypeSymbol.ElementType);
-                }
+            if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
+            {
+                AddCannotBeStaticType(typeSymbol.OriginalDefinition);
+            }
 
-                if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                AddCannotBeStaticType(arrayTypeSymbol.ElementType);
+            }
+
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                foreach (var typeArgument in namedTypeSymbol.TypeArguments)
                 {
-                    foreach (var typeArgument in namedTypeSymbol.TypeArguments)
-                    {
-                        AddCannotBeStaticType(typeArgument);
-                    }
+                    AddCannotBeStaticType(typeArgument);
                 }
             }
         }

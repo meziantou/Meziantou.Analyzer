@@ -13,25 +13,32 @@ public sealed class DontUseDangerousThreadingMethodsAnalyzer : DiagnosticAnalyze
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DontUseDangerousThreadingMethods));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterOperationAction(Analyze, OperationKind.Invocation);
+        context.RegisterCompilationStartAction(context =>
+        {
+            // The types are looked up once per compilation instead of once per matching invocation
+            var threadSymbols = context.Compilation.GetTypesByMetadataName("System.Threading.Thread");
+            if (threadSymbols.IsEmpty)
+                return;
+
+            context.RegisterOperationAction(context => Analyze(context, threadSymbols), OperationKind.Invocation);
+        });
     }
 
-    private static void Analyze(OperationAnalysisContext context)
+    private static void Analyze(OperationAnalysisContext context, ImmutableArray<INamedTypeSymbol> threadSymbols)
     {
         var op = (IInvocationOperation)context.Operation;
         if (string.Equals(op.TargetMethod.Name, "Abort", StringComparison.Ordinal) ||
             string.Equals(op.TargetMethod.Name, "Suspend", StringComparison.Ordinal) ||
             string.Equals(op.TargetMethod.Name, "Resume", StringComparison.Ordinal))
         {
-            var types = context.Compilation.GetTypesByMetadataName("System.Threading.Thread");
-            foreach (var type in types)
+            foreach (var type in threadSymbols)
             {
                 if (op.TargetMethod.ContainingType.IsEqualTo(type))
                 {

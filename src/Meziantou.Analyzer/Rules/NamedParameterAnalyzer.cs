@@ -28,7 +28,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<string> ExpressionKindsConfiguration = new(RuleIdentifiers.UseNamedParameter + ".expression_kinds", defaultValue: string.Empty);
     private static readonly ConfigurationDefinition<bool> IgnoreArgumentsMatchingParameterNameConfiguration = new(RuleIdentifiers.UseNamedParameter + ".ignore_arguments_matching_parameter_name", defaultValue: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -77,7 +77,14 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 // so the syntactic filter runs first and only the remaining candidates are bound.
                 var expression = argument.Expression;
                 var expressionKind = GetExpressionKind(expression);
-                if (expressionKind is ArgumentExpressionKinds.None && !hasRequireNamedArgumentAttribute)
+
+                // The kinds of expression the rule considers are configurable, and the default value excludes the
+                // numeric and string literals, which are very common. The configured kinds are therefore checked
+                // before binding, so those arguments are not bound only to be filtered out afterwards.
+                var mustCheckExpressionKind = expressionKind is not ArgumentExpressionKinds.None
+                    && MustCheckExpressionKind(syntaxContext, expression, expressionKind);
+
+                if (!mustCheckExpressionKind && !hasRequireNamedArgumentAttribute)
                     return;
 
                 var argumentOperation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
@@ -93,10 +100,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                if (expressionKind is ArgumentExpressionKinds.None)
-                    return;
-
-                if (!MustCheckExpressionKind(syntaxContext, expression, expressionKind))
+                if (!mustCheckExpressionKind)
                     return;
 
                 if (argumentOperation?.Parameter is not null)
@@ -252,16 +256,25 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (argumentOperation is not null && !argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
                             return;
 
-                        if (syntaxContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex))
+                        // Building the declaration id of a method is expensive, so it is only built once for
+                        // the two options that use it, and only when one of them is configured.
+                        syntaxContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex);
+                        syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods);
+
+                        string? declarationId = null;
+                        if (excludedMethodsRegex is not null || excludedMethods is not null)
                         {
-                            var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
+                            declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
+                        }
+
+                        if (excludedMethodsRegex is not null)
+                        {
                             if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, declarationId, defaultValue: false))
                                 return;
                         }
 
-                        if (syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods))
+                        if (excludedMethods is not null)
                         {
-                            var declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
                             if (declarationId is not null)
                             {
                                 var types = excludedMethods.Split('|');

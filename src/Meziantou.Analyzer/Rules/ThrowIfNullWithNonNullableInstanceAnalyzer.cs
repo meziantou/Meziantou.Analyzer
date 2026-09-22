@@ -13,7 +13,7 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ThrowIfNullWithNonNullableInstance));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -37,6 +37,10 @@ public sealed class ThrowIfNullWithNonNullableInstanceAnalyzer : DiagnosticAnaly
             {
                 var operation = (IInvocationOperation)context.Operation;
                 if (operation.Arguments.Length == 0)
+                    return;
+
+                // Comparing the name first avoids hashing the symbol of every invocation of the compilation
+                if (!string.Equals(operation.TargetMethod.Name, "ThrowIfNull", StringComparison.Ordinal))
                     return;
 
                 if (!memberHashSet.Contains(operation.TargetMethod))
