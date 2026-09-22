@@ -191,10 +191,19 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                     try
                     {
                         var regex1 = new Regex(key.Pattern, key.Options, Regex.InfiniteMatchTimeout);
+
+                        // GetGroupNames always contains the name of the whole match ("0"), so a single name means the
+                        // pattern has no group at all: the '(' comes from a non-capturing group, a lookaround or an
+                        // escaped parenthesis. There is nothing to name, and building the second regex would be useless
+                        // as ExplicitCapture can only remove the unnamed groups, never add one.
+                        var groupNames = regex1.GetGroupNames();
+                        if (groupNames.Length <= 1)
+                            return false;
+
                         var regex2 = new Regex(key.Pattern, key.Options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
 
                         // All groups are named => No need for explicit capture
-                        if (regex1.GetGroupNames().Length == regex2.GetGroupNames().Length)
+                        if (groupNames.Length == regex2.GetGroupNames().Length)
                             return false;
                     }
                     catch
