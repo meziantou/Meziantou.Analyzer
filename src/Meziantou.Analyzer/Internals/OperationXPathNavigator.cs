@@ -3,6 +3,7 @@ using System.Globalization;
 using System.Reflection;
 using System.Xml;
 using System.Xml.XPath;
+using Microsoft.CodeAnalysis.Operations;
 using Microsoft.CodeAnalysis.Text;
 
 namespace Meziantou.Analyzer.Internals;
@@ -363,6 +364,14 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
                     AddSymbols(writer, span, value, property.SymbolNames!);
                     break;
 
+                case OperationPropertyKind.Types:
+                    AddTypes(writer, span, value, property.TypeNames!);
+                    break;
+
+                case OperationPropertyKind.Conversion:
+                    XPathAttributeFormatter.AddConversion(writer, span, (CommonConversion)value, property.ConversionNames!);
+                    break;
+
                 case OperationPropertyKind.Boolean:
                     writer.Add(span, property.Name, XPathAttributeFormatter.ToXPathBoolean((bool)value));
                     break;
@@ -399,11 +408,13 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
     {
         var includeQualifiedNames = writer.Includes(names.QualifiedName);
         var includeShortNames = writer.Includes(names.Name);
-        if (!includeQualifiedNames && !includeShortNames)
+        var includeDocumentationIds = writer.Includes(names.DocumentationId);
+        if (!includeQualifiedNames && !includeShortNames && !includeDocumentationIds)
             return;
 
         var qualifiedNames = new List<string>();
         var shortNames = new List<string>();
+        var documentationIds = new List<string>();
         try
         {
             foreach (var item in (System.Collections.IEnumerable)value)
@@ -420,6 +431,11 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
                 {
                     shortNames.Add(name);
                 }
+
+                if (includeDocumentationIds && SymbolNameFormatter.GetDocumentationId(symbol) is { Length: > 0 } documentationId)
+                {
+                    documentationIds.Add(documentationId);
+                }
             }
         }
         catch (InvalidOperationException)
@@ -430,6 +446,62 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
 
         writer.Add(span, names.QualifiedName, string.Join(" ", qualifiedNames));
         writer.Add(span, names.Name, string.Join(" ", shortNames));
+        writer.Add(span, names.DocumentationId, string.Join(" ", documentationIds));
+    }
+
+    // The types of a property that returns several of them are joined by a space, like the symbols that are not types.
+    // Only the names are joined, as a boolean or the name of a member of an enumeration is not meaningful for a list.
+    private static void AddTypes(in XPathAttributeWriter writer, TextSpan span, object value, TypeAttributeNames names)
+    {
+        var includeNames = writer.Includes(names.Name);
+        var includeMetadataNames = writer.Includes(names.MetadataName);
+        var includeDocumentationIds = writer.Includes(names.DocumentationId);
+        var includeReferenceIds = writer.Includes(names.ReferenceId);
+        if (!includeNames && !includeMetadataNames && !includeDocumentationIds && !includeReferenceIds)
+            return;
+
+        var shortNames = new List<string>();
+        var metadataNames = new List<string>();
+        var documentationIds = new List<string>();
+        var referenceIds = new List<string>();
+        try
+        {
+            foreach (var item in (System.Collections.IEnumerable)value)
+            {
+                if (item is not ITypeSymbol type)
+                    continue;
+
+                if (includeNames && type.Name is { Length: > 0 } name)
+                {
+                    shortNames.Add(name);
+                }
+
+                if (includeMetadataNames && SymbolNameFormatter.GetMetadataName(type) is { Length: > 0 } metadataName)
+                {
+                    metadataNames.Add(metadataName);
+                }
+
+                if (includeDocumentationIds && SymbolNameFormatter.GetDocumentationId(type) is { Length: > 0 } documentationId)
+                {
+                    documentationIds.Add(documentationId);
+                }
+
+                if (includeReferenceIds && SymbolNameFormatter.GetReferenceId(type) is { Length: > 0 } referenceId)
+                {
+                    referenceIds.Add(referenceId);
+                }
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            // A default ImmutableArray cannot be enumerated
+            return;
+        }
+
+        writer.Add(span, names.Name, string.Join(" ", shortNames));
+        writer.Add(span, names.MetadataName, string.Join(" ", metadataNames));
+        writer.Add(span, names.DocumentationId, string.Join(" ", documentationIds));
+        writer.Add(span, names.ReferenceId, string.Join(" ", referenceIds));
     }
 
     private static OperationProperty[] GetProperties(IOperation operation)
@@ -476,44 +548,74 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
         var type = property.PropertyType;
 
         if (typeof(ITypeSymbol).IsAssignableFrom(type))
-            return new OperationProperty(property, OperationPropertyKind.Type, name, CreateTypeNames(name), SymbolNames: null, HasValueName: null);
+        {
+            var names = CreateTypeNames(name);
+            return new OperationProperty(property, OperationPropertyKind.Type, name, names.All, TypeNames: names);
+        }
 
         if (typeof(ISymbol).IsAssignableFrom(type))
-            return new OperationProperty(property, OperationPropertyKind.Symbol, name, TypeNames: null, CreateSymbolNames(name), HasValueName: null);
+        {
+            var names = CreateSymbolNames(name);
+            return new OperationProperty(property, OperationPropertyKind.Symbol, name, names.All, SymbolNames: names);
+        }
 
         if (type == typeof(Optional<object>))
-            return new OperationProperty(property, OperationPropertyKind.Constant, name, TypeNames: null, SymbolNames: null, HasValueName: "Has" + name);
+        {
+            var hasValueName = "Has" + name;
+            return new OperationProperty(property, OperationPropertyKind.Constant, name, [name, hasValueName], HasValueName: hasValueName);
+        }
+
+        if (type == typeof(CommonConversion))
+        {
+            var names = CreateConversionNames(name);
+            return new OperationProperty(property, OperationPropertyKind.Conversion, name, names.All, ConversionNames: names);
+        }
+
+        // The types are also symbols, so they are tested first to expose the names a type has
+        if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ImmutableArray<>) && typeof(ITypeSymbol).IsAssignableFrom(type.GetGenericArguments()[0]))
+        {
+            var names = CreateTypeNames(name);
+            return new OperationProperty(property, OperationPropertyKind.Types, name, names.List, TypeNames: names);
+        }
 
         if (type.IsGenericType && type.GetGenericTypeDefinition() == typeof(ImmutableArray<>) && typeof(ISymbol).IsAssignableFrom(type.GetGenericArguments()[0]))
-            return new OperationProperty(property, OperationPropertyKind.Symbols, name, TypeNames: null, CreateSymbolNames(name), HasValueName: null);
+        {
+            var names = CreateSymbolNames(name);
+            return new OperationProperty(property, OperationPropertyKind.Symbols, name, names.List, SymbolNames: names);
+        }
 
         if (type == typeof(bool))
-            return new OperationProperty(property, OperationPropertyKind.Boolean, name, TypeNames: null, SymbolNames: null, HasValueName: null);
+            return new OperationProperty(property, OperationPropertyKind.Boolean, name, [name]);
 
         if (type == typeof(string))
-            return new OperationProperty(property, OperationPropertyKind.String, name, TypeNames: null, SymbolNames: null, HasValueName: null);
+            return new OperationProperty(property, OperationPropertyKind.String, name, [name]);
 
         if (type == typeof(int))
-            return new OperationProperty(property, OperationPropertyKind.Int32, name, TypeNames: null, SymbolNames: null, HasValueName: null);
+            return new OperationProperty(property, OperationPropertyKind.Int32, name, [name]);
 
         if (type.IsEnum)
-            return new OperationProperty(property, OperationPropertyKind.Enumeration, name, TypeNames: null, SymbolNames: null, HasValueName: null);
+            return new OperationProperty(property, OperationPropertyKind.Enumeration, name, [name]);
 
-        // The other types, such as IOperation or CommonConversion, are the child elements or are not exposed
+        // The other types, such as IOperation, are the child elements or are not exposed
         return null;
     }
 
     private static TypeAttributeNames CreateTypeNames(string name)
-        => new(name + "Name", name + "MetadataName", name + "DocumentationId", name + "ReferenceId", name + "IsValueType", name + "NullableAnnotation", name + "SpecialType");
+        => new(name + "Name", name + "MetadataName", name + "DocumentationId", name + "ReferenceId", name + "Kind", name + "IsValueType", name + "NullableAnnotation", name + "SpecialType");
 
     private static SymbolAttributeNames CreateSymbolNames(string name)
-        => new(name, name + "Name", name + "DocumentationId", name + "Kind", name + "IsStatic");
+        => new(name, name + "Name", name + "DocumentationId", name + "Kind", name + "IsStatic", name + "IsAbstract", name + "IsVirtual", name + "IsOverride", name + "IsSealed", name + "IsAsync", name + "IsExtensionMethod", name + "Arity");
+
+    private static ConversionAttributeNames CreateConversionNames(string name)
+        => new(name + "Exists", name + "IsIdentity", name + "IsImplicit", name + "IsNullable", name + "IsNumeric", name + "IsReference", name + "IsUserDefined", CreateSymbolNames(name + "Method"));
 
     private enum OperationPropertyKind
     {
         Type,
+        Types,
         Symbol,
         Symbols,
+        Conversion,
         Boolean,
         Enumeration,
         String,
@@ -521,12 +623,9 @@ internal sealed class OperationXPathNavigator : XPathNavigator, IBannedSyntaxNav
         Constant,
     }
 
-    private sealed record OperationProperty(PropertyInfo Property, OperationPropertyKind Kind, string Name, TypeAttributeNames? TypeNames, SymbolAttributeNames? SymbolNames, string? HasValueName)
-    {
-        /// <summary>
-        /// The names of the attributes the property produces. A property that produces a symbol or a type produces
-        /// one attribute per format of its name.
-        /// </summary>
-        public string[] AttributeNames { get; } = TypeNames?.All ?? SymbolNames?.All ?? (HasValueName is null ? [Name] : [Name, HasValueName]);
-    }
+    /// <summary>
+    /// A property of an operation and the names of the attributes it produces. A property that produces a symbol, a
+    /// type or a conversion produces one attribute per format of its name and per member it exposes.
+    /// </summary>
+    private sealed record OperationProperty(PropertyInfo Property, OperationPropertyKind Kind, string Name, string[] AttributeNames, TypeAttributeNames? TypeNames = null, SymbolAttributeNames? SymbolNames = null, ConversionAttributeNames? ConversionNames = null, string? HasValueName = null);
 }
