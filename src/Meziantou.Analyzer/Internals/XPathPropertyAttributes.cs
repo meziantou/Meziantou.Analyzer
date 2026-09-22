@@ -80,6 +80,10 @@ internal sealed class XPathPropertyAttributes
                     writer.Add(span, property.Name, XPathAttributeFormatter.GetAccessibilityName((Accessibility)value));
                     break;
 
+                case PropertyKind.RefKind:
+                    writer.Add(span, property.Name, XPathAttributeFormatter.GetRefKindName((RefKind)value));
+                    break;
+
                 case PropertyKind.Enumeration:
                     writer.Add(span, property.Name, value.ToString());
                     break;
@@ -303,6 +307,10 @@ internal sealed class XPathPropertyAttributes
         if (type == typeof(Accessibility))
             return new ReflectedProperty(property, PropertyKind.Accessibility, name, [name]);
 
+        // RefKind has aliases, so its name is not left to Enum.ToString
+        if (type == typeof(RefKind))
+            return new ReflectedProperty(property, PropertyKind.RefKind, name, [name]);
+
         if (type.IsEnum)
             return new ReflectedProperty(property, PropertyKind.Enumeration, name, [name]);
 
@@ -318,7 +326,7 @@ internal sealed class XPathPropertyAttributes
         => new(name + "Name", name + "MetadataName", name + "DocumentationId", name + "ReferenceId", name + "Kind", name + "IsValueType", name + "NullableAnnotation", name + "SpecialType");
 
     private static SymbolAttributeNames CreateSymbolNames(string name)
-        => new(name, name + "Name", name + "DocumentationId", name + "Kind", name + "IsStatic", name + "IsAbstract", name + "IsVirtual", name + "IsOverride", name + "IsSealed", name + "IsAsync", name + "IsExtensionMethod", name + "Arity");
+        => new(name, name + "Name", name + "DocumentationId", name + "Kind", name + "IsStatic", name + "IsAbstract", name + "IsVirtual", name + "IsOverride", name + "IsSealed", name + "IsAsync", name + "IsExtensionMethod", name + "Arity", name + "RefKind", name + "IsParams", name + "IsOptional", name + "IsConst", name + "IsReadOnly");
 
     private static ConversionAttributeNames CreateConversionNames(string name)
         => new(name + "Exists", name + "IsIdentity", name + "IsImplicit", name + "IsNullable", name + "IsNumeric", name + "IsReference", name + "IsUserDefined", CreateSymbolNames(name + "Method"));
@@ -332,6 +340,7 @@ internal sealed class XPathPropertyAttributes
         Conversion,
         Boolean,
         Accessibility,
+        RefKind,
         Enumeration,
         String,
         Int32,

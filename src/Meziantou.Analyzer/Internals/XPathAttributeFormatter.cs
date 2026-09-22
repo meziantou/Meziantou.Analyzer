@@ -73,9 +73,10 @@ internal static class XPathAttributeFormatter
     }
 
     /// <summary>
-    /// Adds the attributes of the modifiers of a symbol. The modifiers that only a method or a type has are not added
-    /// for the other symbols, so an attribute that is not present means that the modifier does not apply to the
-    /// symbol, whereas the value <c>false</c> means that it applies and is not set.
+    /// Adds the attributes of the modifiers of a symbol. The modifiers that only some kinds of symbols have, such as
+    /// the ones of a method, of a parameter or of a field, are not added for the other symbols, so an attribute that is
+    /// not present means that the modifier does not apply to the symbol, whereas the value <c>false</c> means that it
+    /// applies and is not set.
     /// </summary>
     public static void AddSymbolModifiers(in XPathAttributeWriter writer, TextSpan span, ISymbol symbol, SymbolAttributeNames names)
     {
@@ -95,6 +96,22 @@ internal static class XPathAttributeFormatter
 
             case INamedTypeSymbol namedType:
                 writer.Add(span, names.Arity, namedType.Arity.ToString(CultureInfo.InvariantCulture));
+                break;
+
+            case IParameterSymbol parameter:
+                writer.Add(span, names.RefKind, GetRefKindName(parameter.RefKind));
+                writer.Add(span, names.IsParams, ToXPathBoolean(parameter.IsParams));
+                writer.Add(span, names.IsOptional, ToXPathBoolean(parameter.IsOptional));
+                break;
+
+            case IFieldSymbol field:
+                writer.Add(span, names.IsConst, ToXPathBoolean(field.IsConst));
+                writer.Add(span, names.IsReadOnly, ToXPathBoolean(field.IsReadOnly));
+                break;
+
+            case ILocalSymbol local:
+                writer.Add(span, names.RefKind, GetRefKindName(local.RefKind));
+                writer.Add(span, names.IsConst, ToXPathBoolean(local.IsConst));
                 break;
         }
     }
@@ -117,6 +134,16 @@ internal static class XPathAttributeFormatter
 
     // XPath 1.0 has no boolean value in an attribute, so the value is the one the language uses
     public static string ToXPathBoolean(bool value) => value ? "true" : "false";
+
+    // RefReadOnly is an alias of In, and Enum.ToString does not choose the same name on every runtime
+    public static string GetRefKindName(RefKind kind) => kind switch
+    {
+        RefKind.None => nameof(RefKind.None),
+        RefKind.Ref => nameof(RefKind.Ref),
+        RefKind.Out => nameof(RefKind.Out),
+        RefKind.In => nameof(RefKind.In),
+        _ => kind.ToString(),
+    };
 
     public static string GetSymbolKindName(SymbolKind kind) => SymbolKindNames.GetOrAdd(kind, static kind => kind.ToString());
 
