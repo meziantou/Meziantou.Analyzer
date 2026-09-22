@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 
 namespace Meziantou.Analyzer.Configurations;
@@ -164,19 +163,20 @@ public static class AnalyzerOptionsExtensions
 
     private static T ChangeType<T>(string value, string configurationKey, T defaultValue)
     {
-        // The options are read on hot paths, so the value types are converted without boxing. Both the 'is' pattern
-        // and the conversion through object would box the value. Unsafe.As is safe here as the type of T has just
-        // been checked, which also makes the value of that type by construction.
         if (typeof(T) == typeof(bool))
         {
-            var result = ChangeType(value, Unsafe.As<T, bool>(ref defaultValue));
-            return Unsafe.As<bool, T>(ref result);
+            if (defaultValue is bool boolDefaultValue)
+                return (T)(object)ChangeType(value, boolDefaultValue);
+
+            throw new InvalidOperationException($"Configuration value for '{configurationKey}' has an invalid default value.");
         }
 
         if (typeof(T) == typeof(int))
         {
-            var result = ChangeType(value, Unsafe.As<T, int>(ref defaultValue));
-            return Unsafe.As<int, T>(ref result);
+            if (defaultValue is int intDefaultValue)
+                return (T)(object)ChangeType(value, intDefaultValue);
+
+            throw new InvalidOperationException($"Configuration value for '{configurationKey}' has an invalid default value.");
         }
 
         if (typeof(T) == typeof(string))
