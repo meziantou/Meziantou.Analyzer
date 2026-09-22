@@ -43,7 +43,12 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
         SemanticName.IsSealed,
         SemanticName.IsAsync,
         SemanticName.IsExtensionMethod,
-        SemanticName.Arity);
+        SemanticName.Arity,
+        SemanticName.RefKind,
+        SemanticName.IsParams,
+        SemanticName.IsOptional,
+        SemanticName.IsConst,
+        SemanticName.IsReadOnly);
 
     // The local names of the attributes of the 'semantic' namespace, mapped to their qualified name
     private static readonly Dictionary<string, string> SemanticNames = CreateSemanticNames(
@@ -657,6 +662,11 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
         public const string IsAsync = nameof(IsAsync);
         public const string IsExtensionMethod = nameof(IsExtensionMethod);
         public const string Arity = nameof(Arity);
+        public const string RefKind = nameof(RefKind);
+        public const string IsParams = nameof(IsParams);
+        public const string IsOptional = nameof(IsOptional);
+        public const string IsConst = nameof(IsConst);
+        public const string IsReadOnly = nameof(IsReadOnly);
         public const string HasConstantValue = nameof(HasConstantValue);
         public const string ConstantValue = nameof(ConstantValue);
     }

@@ -1137,6 +1137,120 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Query_SemanticRefKind_Parameter()
+    {
+        var test = CreateTest("//Parameter[@semantic:RefKind='Out']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int a, ref int b, [|out int c|]) => c = 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticRefKind_In()
+    {
+        // RefReadOnly is an alias of In, so the name is always In
+        var test = CreateTest("//*[self::Parameter or self::VariableDeclarator][@semantic:RefKind='In']");
+        test.TestCode = """
+            class Sample
+            {
+                void M([|in int a|], int b)
+                {
+                    ref readonly int [|c = ref a|];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsParams_Diagnostic()
+    {
+        var test = CreateTest("//Parameter[@semantic:IsParams='true']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int a, [|params int[] b|]) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsOptional_Diagnostic()
+    {
+        var test = CreateTest("//Parameter[@semantic:IsOptional='true']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int a, [|int b = 0|]) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsConst_FieldsAndLocals()
+    {
+        var test = CreateTest("//VariableDeclarator[@semantic:IsConst='true']");
+        test.TestCode = """
+            class Sample
+            {
+                const int [|A = 1|];
+                static readonly int B = 2;
+
+                void M()
+                {
+                    const int [|c = 3|];
+                    int d = 4;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsReadOnly_Field()
+    {
+        var test = CreateTest("//VariableDeclarator[@semantic:IsReadOnly='true']");
+        test.TestCode = """
+            class Sample
+            {
+                readonly int [|_a|];
+                int _b;
+                const int C = 1;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticParameterModifiers_NotExposedForTheSymbolsThatAreNotAParameter()
+    {
+        // The modifiers that only a parameter has are not exposed for a field, and the ones of a field not for a parameter
+        var test = CreateTest("//VariableDeclarator[not(@semantic:IsParams)] | //Parameter[not(@semantic:IsConst) and not(@semantic:IsReadOnly)]");
+        test.TestCode = """
+            class Sample
+            {
+                int [|_value|];
+
+                void M([|int value|]) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Query_SemanticContainingSymbol_Diagnostic()
     {
         var test = CreateTest("//IdentifierName[@semantic:ContainingSymbol='Sample.M']");
@@ -2089,6 +2203,87 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Operation_ParameterRefKind_Diagnostic()
+    {
+        var test = CreateTest("//operation:ParameterReference[@ParameterRefKind='Ref']");
+        test.TestCode = """
+            class Sample
+            {
+                int M(ref int a, int b) => [|a|] + b;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ParameterIsParams_Diagnostic()
+    {
+        var test = CreateTest("//operation:ParameterReference[@ParameterIsParams='true']");
+        test.TestCode = """
+            class Sample
+            {
+                int M(int a, params int[] b) => a + [|b|].Length;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ParameterIsOptional_Diagnostic()
+    {
+        var test = CreateTest("//operation:Argument[@ParameterIsOptional='true']");
+        test.TestCode = """
+            class Sample
+            {
+                void A() => M(1, [|2|]);
+
+                void M(int a, int b = 0) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_FieldIsConstAndIsReadOnly_Diagnostic()
+    {
+        var test = CreateTest("//operation:FieldReference[@FieldIsConst='true' or @FieldIsReadOnly='true']");
+        test.TestCode = """
+            class Sample
+            {
+                const int A = 1;
+                readonly int _b = 2;
+                int _c = 3;
+
+                int M() => [|A|] + [|_b|] + _c;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_LocalIsConst_Diagnostic()
+    {
+        var test = CreateTest("//operation:LocalReference[@LocalIsConst='true']");
+        test.TestCode = """
+            class Sample
+            {
+                int M()
+                {
+                    const int a = 1;
+                    int b = 2;
+                    return [|a|] + b;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Operation_ConstantValue_Diagnostic()
     {
         var test = CreateTest("//operation:Literal[@HasConstantValue='true' and @ConstantValue='0']");
@@ -2818,6 +3013,21 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
             class Sample
             {
                 void M(int {|#0:a|}, string b) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ParameterRefKind_In()
+    {
+        var test = CreateTest("//symbol:Parameter[@RefKind='In']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(in int {|#0:a|}, ref int b) { }
             }
             """;
         test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
