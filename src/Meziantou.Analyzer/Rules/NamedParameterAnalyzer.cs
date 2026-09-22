@@ -61,9 +61,17 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
             // so the arguments don't need to be bound to look for it.
             var hasRequireNamedArgumentAttribute = !context.Compilation.GetTypesByMetadataName("Meziantou.Analyzer.Annotations.RequireNamedArgumentAttribute").IsEmpty;
 
-            context.RegisterSyntaxNodeAction(syntaxContext =>
+            // The rule needs the argument bound to its parameter. Registering on the operation gives the bound
+            // argument directly, whereas calling GetOperation from a syntax node action is much more expensive.
+            context.RegisterOperationAction(operationContext =>
             {
-                var argument = (ArgumentSyntax)syntaxContext.Node;
+                var argumentOperation = (IArgumentOperation)operationContext.Operation;
+
+                // The default value of an optional parameter is an implicit argument whose syntax is the invocation,
+                // so there is nothing to name at that location.
+                if (argumentOperation.Syntax is not ArgumentSyntax argument)
+                    return;
+
                 if (argument.NameColon is not null)
                     return;
 
@@ -73,37 +81,33 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 if (argument.Parent.IsKind(SyntaxKind.TupleExpression))
                     return; // Don't consider tuple
 
-                // Binding the argument is much more expensive than looking at the kind of the expression,
-                // so the syntactic filter runs first and only the remaining candidates are bound.
                 var expression = argument.Expression;
                 var expressionKind = GetExpressionKind(expression);
 
                 // The kinds of expression the rule considers are configurable, and the default value excludes the
-                // numeric and string literals, which are very common. The configured kinds are therefore checked
-                // before binding, so those arguments are not bound only to be filtered out afterwards.
+                // numeric and string literals, which are very common, so the configured kinds are checked before
+                // the more expensive work.
                 var mustCheckExpressionKind = expressionKind is not ArgumentExpressionKinds.None
-                    && MustCheckExpressionKind(syntaxContext, expression, expressionKind);
+                    && MustCheckExpressionKind(operationContext.Options, expression, expressionKind);
 
                 if (!mustCheckExpressionKind && !hasRequireNamedArgumentAttribute)
                     return;
 
-                var argumentOperation = syntaxContext.SemanticModel.GetOperation(argument, syntaxContext.CancellationToken) as IArgumentOperation;
-
                 // Naming an argument that already carries the name of the parameter doesn't improve readability
-                if (argumentOperation is not null && HasSameNameAsParameter(syntaxContext.Options, argumentOperation))
+                if (HasSameNameAsParameter(operationContext.Options, argumentOperation))
                     return;
 
                 if (hasRequireNamedArgumentAttribute && IsCallerMustUseNamedArgumentAttribute(argumentOperation))
                 {
-                    DiagnosticReporter reporter = syntaxContext;
-                    reporter.ReportDiagnostic(Diagnostic.Create(Rule, syntaxContext.Node.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
+                    DiagnosticReporter reporter = operationContext;
+                    reporter.ReportDiagnostic(Diagnostic.Create(Rule, argument.GetLocation(), effectiveSeverity: DiagnosticSeverity.Warning, additionalLocations: null, properties: null));
                     return;
                 }
 
                 if (!mustCheckExpressionKind)
                     return;
 
-                if (argumentOperation?.Parameter is not null)
+                if (argumentOperation.Parameter is not null)
                 {
                     var parameterName = argumentOperation.Parameter.Name;
                     if (!IsMeaningfulParameterName(parameterName))
@@ -125,7 +129,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     if (argumentList is null)
                         return;
 
-                    var invokedMethodSymbol = syntaxContext.SemanticModel.GetSymbolInfo(invocationExpression, syntaxContext.CancellationToken).Symbol;
+                    var invokedMethodSymbol = argumentOperation.SemanticModel!.GetSymbolInfo(invocationExpression, operationContext.CancellationToken).Symbol;
                     if (invokedMethodSymbol is null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
                         return; // Skip Array[index]
 
@@ -138,7 +142,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                             _ => ImmutableArray<IParameterSymbol>.Empty,
                         };
 
-                        if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(syntaxContext.Options, expression))
+                        if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(operationContext.Options, expression))
                             return;
 
                         var argumentIndex = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
@@ -160,7 +164,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                                 if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                                     return false;
 
-                                var type = syntaxContext.SemanticModel.GetTypeInfo(node, syntaxContext.CancellationToken).ConvertedType;
+                                var type = argumentOperation.SemanticModel!.GetTypeInfo(node, operationContext.CancellationToken).ConvertedType;
                                 return !type.IsEqualTo(lastParameter.Type);
                             }
 
@@ -253,13 +257,13 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritsFrom(syntaxNodeType))
                             return;
 
-                        if (argumentOperation is not null && !argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
+                        if (!argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
                             return;
 
                         // Building the declaration id of a method is expensive, so it is only built once for
                         // the two options that use it, and only when one of them is configured.
-                        syntaxContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex);
-                        syntaxContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods);
+                        operationContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex);
+                        operationContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods);
 
                         string? declarationId = null;
                         if (excludedMethodsRegex is not null || excludedMethods is not null)
@@ -288,8 +292,8 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     }
                 }
 
-                syntaxContext.ReportDiagnostic(Rule, syntaxContext.Node);
-            }, SyntaxKind.Argument);
+                operationContext.ReportDiagnostic(Rule, argument);
+            }, OperationKind.Argument);
         });
     }
 
@@ -353,9 +357,9 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         return DefaultExpressionKinds;
     }
 
-    private static bool MustCheckExpressionKind(SyntaxNodeAnalysisContext context, SyntaxNode expression, ArgumentExpressionKinds kind)
+    private static bool MustCheckExpressionKind(AnalyzerOptions analyzerOptions, SyntaxNode expression, ArgumentExpressionKinds kind)
     {
-        var options = GetExpressionKindsConfiguration(context.Options, expression);
+        var options = GetExpressionKindsConfiguration(analyzerOptions, expression);
         return (options & kind) == kind;
     }
 
