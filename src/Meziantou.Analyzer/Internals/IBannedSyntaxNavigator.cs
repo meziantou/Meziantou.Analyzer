@@ -7,8 +7,11 @@ namespace Meziantou.Analyzer.Internals;
 /// </summary>
 internal interface IBannedSyntaxNavigator
 {
-    /// <summary>The span of the node or of the tokens of the attribute the navigator is positioned on.</summary>
-    TextSpan Span { get; }
+    /// <summary>
+    /// The spans to report the position on. A node, an operation, or the tokens of an attribute have a single span,
+    /// whereas a symbol has one per declaration in the file, such as the parts of a partial type.
+    /// </summary>
+    ImmutableArray<TextSpan> ReportSpans { get; }
 
     /// <summary>
     /// The name to report, such as <c>GotoStatement</c> or <c>operation:Invocation/@TargetMethod</c>. It is null

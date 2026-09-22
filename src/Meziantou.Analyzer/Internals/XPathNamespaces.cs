@@ -13,6 +13,10 @@ internal static class XPathNamespaces
     /// <summary>The prefix of the elements that expose the operations.</summary>
     public const string OperationPrefix = "operation";
 
+    /// <summary>The prefix of the elements that expose the symbols.</summary>
+    public const string SymbolPrefix = "symbol";
+
     public const string SemanticNamespaceUri = "urn:meziantou.analyzer:semantic";
     public const string OperationNamespaceUri = "urn:meziantou.analyzer:operation";
+    public const string SymbolNamespaceUri = "urn:meziantou.analyzer:symbol";
 }
