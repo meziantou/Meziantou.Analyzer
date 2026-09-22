@@ -149,9 +149,9 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         {
             try
             {
-                // The context defines the 'semantic' and 'operation' prefixes and the 'syntax' function. An undefined
-                // prefix throws when the query is compiled, and an expression that is not compiled with an XsltContext
-                // cannot use a function of its own, whatever the context it is evaluated with.
+                // The context defines the 'semantic', 'operation' and 'symbol' prefixes and the 'syntax' and 'symbol'
+                // functions. An undefined prefix throws when the query is compiled, and an expression that is not
+                // compiled with an XsltContext cannot use a function of its own, whatever the context it is evaluated with.
                 var expression = XPathExpression.Compile(query, BannedSyntaxXsltContext.Empty);
                 if (expression.ReturnType is not XPathResultType.NodeSet)
                     return new ParsedQuery(Expression: null, BannedSyntaxTarget.Syntax, "The query must return a node-set", AttributeNames: null);
@@ -161,12 +161,15 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                     return new ParsedQuery(Expression: null, BannedSyntaxTarget.Syntax, errorMessage, AttributeNames: null);
 
                 // Some errors, such as an unknown function, are only detected when the query is evaluated. The empty
-                // document has no semantic model and no operation, so those attributes are simply not exposed.
-                XPathNavigator navigator = target is BannedSyntaxTarget.Operations
-                    ? new OperationXPathNavigator(OperationForest.Empty, CancellationToken.None)
-                    : new SyntaxNodeXPathNavigator(new SyntaxForest(SyntaxFactory.CompilationUnit(), semanticModel: null, XPathAttributeFilter.All, CancellationToken.None));
+                // document has no semantic model, no operation and no symbol, so those attributes are simply not exposed.
+                XPathNavigator navigator = target switch
+                {
+                    BannedSyntaxTarget.Operations => new OperationXPathNavigator(OperationForest.Empty, CancellationToken.None),
+                    BannedSyntaxTarget.Symbols => new SymbolXPathNavigator(SymbolForest.Empty),
+                    _ => new SyntaxNodeXPathNavigator(new SyntaxForest(SyntaxFactory.CompilationUnit(), semanticModel: null, XPathAttributeFilter.All, CancellationToken.None)),
+                };
 
-                foreach (var _ in navigator.Select(Prepare(expression, target is BannedSyntaxTarget.Operations ? BannedSyntaxXsltContext.Empty : null)))
+                foreach (var _ in navigator.Select(Prepare(expression, BannedSyntaxXsltContext.Empty)))
                 {
                 }
 
@@ -179,14 +182,20 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         });
     }
 
-    // A query using an attribute of the 'semantic' namespace needs the semantic model, and a query using an element of
-    // the 'operation' namespace is evaluated on the operations. An unknown name would silently match nothing, so it is
-    // reported instead. The names of the attributes the query selects are collected too, as computing an attribute
-    // costs a call to the semantic model or a reflection call.
+    // A query using an attribute of the 'semantic' namespace needs the semantic model, a query using an element of
+    // the 'operation' namespace is evaluated on the operations, and a query using an element of the 'symbol' namespace
+    // is evaluated on the symbols. The functions return the nodes of another document, but the names of a query that
+    // are not prefixed can be the ones of several documents, so the document the query starts on is decided by the
+    // names it uses. An unknown name would silently match nothing, so it is reported instead. The names of the
+    // attributes the query selects are collected too, as computing an attribute costs a call to the semantic model or
+    // a reflection call.
     private static (BannedSyntaxTarget Target, string? ErrorMessage, HashSet<string>? AttributeNames) ScanNames(string query)
     {
         var usesSemanticModel = false;
         var usesOperations = false;
+        var usesSymbols = false;
+        var usesSyntaxFunction = false;
+        var usesSymbolFunction = false;
 
         // null once the query selects attributes it does not name, so all of them must be computed
         var attributeNames = new HashSet<string>(StringComparer.Ordinal);
@@ -242,6 +251,26 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                     continue;
                 }
 
+                // A name followed by '(' is a function or a node type test, such as 'node()'
+                if (IsFunctionCall(query, end))
+                {
+                    if (IsName(query, start, end, BannedSyntaxXsltContext.SyntaxFunctionName))
+                    {
+                        usesSyntaxFunction = true;
+                    }
+                    else if (IsName(query, start, end, BannedSyntaxXsltContext.SymbolFunctionName))
+                    {
+                        usesSymbolFunction = true;
+                    }
+                    else if (IsAttributeName(query, start))
+                    {
+                        // '@node()' selects the attributes the query does not name
+                        attributeNames = null;
+                    }
+
+                    continue;
+                }
+
                 if (attributeNames is not null && IsAttributeName(query, start))
                 {
                     attributeNames.Add(query.Substring(start, end - start));
@@ -250,26 +279,19 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-            var identifier = query.Substring(start, end - start);
-
-            // The 'syntax' function returns the nodes of the operations, so a query using it is about the operations
-            if (IsFunctionCall(query, end) && string.Equals(identifier, BannedSyntaxXsltContext.SyntaxFunctionName, StringComparison.Ordinal))
-            {
-                usesOperations = true;
-                continue;
-            }
-
-            var prefix = identifier;
+            var prefix = query.Substring(start, end - start);
             var isSemantic = string.Equals(prefix, XPathNamespaces.SemanticPrefix, StringComparison.Ordinal);
             var isOperation = string.Equals(prefix, XPathNamespaces.OperationPrefix, StringComparison.Ordinal);
+            var isSymbol = string.Equals(prefix, XPathNamespaces.SymbolPrefix, StringComparison.Ordinal);
 
             // The context resolves the prefixes when the query is evaluated, so an undefined prefix selects nothing
             // instead of throwing when the query is compiled
-            if (!isSemantic && !isOperation)
+            if (!isSemantic && !isOperation && !isSymbol)
                 return (BannedSyntaxTarget.Syntax, $"'{prefix}' is not a defined namespace prefix", AttributeNames: null);
 
             usesSemanticModel |= isSemantic;
             usesOperations |= isOperation;
+            usesSymbols |= isSymbol;
 
             var nameStart = end + 1;
             var nameEnd = nameStart;
@@ -290,21 +312,52 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                     attributeNames.Add(name);
                 }
             }
-            else if (name.Length > 0 && !IsOperationKindName(name))
+            else if (isOperation && name.Length > 0 && !IsOperationKindName(name))
             {
                 // 'operation:*' selects every operation, so it has no name to validate
                 return (BannedSyntaxTarget.Operations, $"'{name}' is not a kind of operation", AttributeNames: null);
+            }
+            else if (isSymbol && name.Length > 0 && !SymbolXPathNavigator.IsKindName(name))
+            {
+                // The name must be one of the kinds of the symbols the tree contains, so a kind such as 'Label' is
+                // reported instead of silently selecting nothing
+                return (BannedSyntaxTarget.Symbols, $"'{name}' is not a kind of symbol", AttributeNames: null);
             }
 
             i = nameEnd - 1;
         }
 
-        // A query is evaluated on a single document, and the operations expose no semantic attribute
-        if (usesSemanticModel && usesOperations)
-            return (BannedSyntaxTarget.Operations, $"A query cannot use both the '{XPathNamespaces.SemanticPrefix}' and the '{XPathNamespaces.OperationPrefix}' prefixes", AttributeNames: null);
+        // The 'symbol' function takes syntax nodes, so a query using it starts on the syntax tree, with the semantic
+        // model the symbols come from. The operations are another document the query cannot reach.
+        if (usesSymbolFunction)
+        {
+            if (usesOperations)
+                return (BannedSyntaxTarget.SemanticSyntax, $"A query using the '{BannedSyntaxXsltContext.SymbolFunctionName}' function cannot use the '{XPathNamespaces.OperationPrefix}' prefix", AttributeNames: null);
 
-        if (usesOperations)
+            return (BannedSyntaxTarget.SemanticSyntax, null, attributeNames);
+        }
+
+        // A query is evaluated on a single document, and the operations and the symbols expose no semantic attribute
+        if (usesSymbols)
+        {
+            if (usesSemanticModel || usesOperations)
+                return (BannedSyntaxTarget.Symbols, $"A query cannot use both the '{XPathNamespaces.SymbolPrefix}' and the '{(usesSemanticModel ? XPathNamespaces.SemanticPrefix : XPathNamespaces.OperationPrefix)}' prefixes", AttributeNames: null);
+
+            return (BannedSyntaxTarget.Symbols, null, attributeNames);
+        }
+
+        // The 'syntax' function returns the nodes of the operations when the query does not use the symbols
+        if (usesOperations || usesSyntaxFunction)
+        {
+            if (usesSemanticModel)
+            {
+                return (BannedSyntaxTarget.Operations, usesOperations
+                    ? $"A query cannot use both the '{XPathNamespaces.SemanticPrefix}' and the '{XPathNamespaces.OperationPrefix}' prefixes"
+                    : $"A query using the '{BannedSyntaxXsltContext.SyntaxFunctionName}' function without the '{XPathNamespaces.SymbolPrefix}' prefix is evaluated on the operations, so it cannot use the '{XPathNamespaces.SemanticPrefix}' prefix", AttributeNames: null);
+            }
+
             return (BannedSyntaxTarget.Operations, null, attributeNames);
+        }
 
         return (usesSemanticModel ? BannedSyntaxTarget.SemanticSyntax : BannedSyntaxTarget.Syntax, null, attributeNames);
     }
@@ -350,7 +403,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
     }
 
     // A compiled expression is not thread-safe, so each evaluation uses its own copy. The context of the copy provides
-    // the 'syntax' function of the file that is analyzed.
+    // the 'syntax' and 'symbol' functions of the file that is analyzed.
     private static XPathExpression Prepare(XPathExpression expression, BannedSyntaxXsltContext? context)
     {
         var clone = expression.Clone();
@@ -400,12 +453,13 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
     // attributes it does not name, such as with '@*', so all of them must be computed.
     private sealed record ParsedQuery(XPathExpression? Expression, BannedSyntaxTarget Target, string? ErrorMessage, HashSet<string>? AttributeNames);
 
-    // The document a query is evaluated on. A query uses the syntax tree or the operations, never both.
+    // The document a query starts on. The 'syntax' and 'symbol' functions return the nodes of another document.
     private enum BannedSyntaxTarget
     {
         Syntax,
         SemanticSyntax,
         Operations,
+        Symbols,
     }
 
     // The severity is null when the entry does not set one, so it reports with the default severity of the rule. An
@@ -560,21 +614,25 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         private readonly List<BannedSyntaxEntry> _queries;
         private readonly List<BannedSyntaxEntry> _semanticQueries;
         private readonly List<BannedSyntaxEntry> _operationQueries;
+        private readonly List<BannedSyntaxEntry> _symbolQueries;
 
         // The attributes the entries of each document can select, so the other ones are never computed
         private readonly XPathAttributeFilter _queryFilter;
         private readonly XPathAttributeFilter _semanticQueryFilter;
         private readonly XPathAttributeFilter _operationQueryFilter;
+        private readonly XPathAttributeFilter _symbolQueryFilter;
 
-        private BannedSyntaxConfiguration(Dictionary<SyntaxKind, List<BannedSyntaxEntry>> kinds, List<BannedSyntaxEntry> queries, List<BannedSyntaxEntry> semanticQueries, List<BannedSyntaxEntry> operationQueries)
+        private BannedSyntaxConfiguration(Dictionary<SyntaxKind, List<BannedSyntaxEntry>> kinds, List<BannedSyntaxEntry> queries, List<BannedSyntaxEntry> semanticQueries, List<BannedSyntaxEntry> operationQueries, List<BannedSyntaxEntry> symbolQueries)
         {
             _kinds = kinds;
             _queries = queries;
             _semanticQueries = semanticQueries;
             _operationQueries = operationQueries;
+            _symbolQueries = symbolQueries;
             _queryFilter = CreateFilter(queries);
             _semanticQueryFilter = CreateFilter(semanticQueries);
             _operationQueryFilter = CreateFilter(operationQueries);
+            _symbolQueryFilter = CreateFilter(symbolQueries);
         }
 
         // An entry that selects the attributes it does not name needs all of them, and the other ones only need the
@@ -593,8 +651,8 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             return XPathAttributeFilter.Create(names);
         }
 
-        // The operations are built from the semantic model
-        public bool RequiresSemanticModel => _semanticQueries.Count > 0 || _operationQueries.Count > 0;
+        // The operations and the symbols are built from the semantic model
+        public bool RequiresSemanticModel => _semanticQueries.Count > 0 || _operationQueries.Count > 0 || _symbolQueries.Count > 0;
 
         public static BannedSyntaxConfiguration? Create(ImmutableArray<AdditionalText> additionalFiles, CancellationToken cancellationToken)
         {
@@ -602,6 +660,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             var queries = new List<BannedSyntaxEntry>();
             var semanticQueries = new List<BannedSyntaxEntry>();
             var operationQueries = new List<BannedSyntaxEntry>();
+            var symbolQueries = new List<BannedSyntaxEntry>();
             var paths = new HashSet<string>(StringComparer.Ordinal);
             foreach (var additionalFile in additionalFiles)
             {
@@ -629,6 +688,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                         var entries = entry.Target switch
                         {
                             BannedSyntaxTarget.Operations => operationQueries,
+                            BannedSyntaxTarget.Symbols => symbolQueries,
                             BannedSyntaxTarget.SemanticSyntax => semanticQueries,
                             _ => queries,
                         };
@@ -638,10 +698,10 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            if (kinds.Count is 0 && queries.Count is 0 && semanticQueries.Count is 0 && operationQueries.Count is 0)
+            if (kinds.Count is 0 && queries.Count is 0 && semanticQueries.Count is 0 && operationQueries.Count is 0 && symbolQueries.Count is 0)
                 return null;
 
-            return new BannedSyntaxConfiguration(kinds, queries, semanticQueries, operationQueries);
+            return new BannedSyntaxConfiguration(kinds, queries, semanticQueries, operationQueries, symbolQueries);
         }
 
         public void AnalyzeTree(SyntaxTreeAnalysisContext context)
@@ -685,7 +745,13 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             if (_semanticQueries.Count > 0 && semanticModel is not null)
             {
                 var forest = new SyntaxForest(root, semanticModel, _semanticQueryFilter, cancellationToken);
-                Evaluate(_semanticQueries, new SyntaxNodeXPathNavigator(forest), sink);
+                var navigator = new SyntaxNodeXPathNavigator(forest);
+
+                // The symbols are only built when an entry uses the 'symbol' function. The 'syntax' function goes back
+                // to the same tree, so the semantic attributes are still available after a round trip.
+                SymbolXPathNavigator? symbolNavigator = null;
+                var context = new BannedSyntaxXsltContext(() => navigator, () => symbolNavigator ??= new SymbolXPathNavigator(SymbolForest.Create(root, semanticModel, _semanticQueryFilter, cancellationToken)));
+                Evaluate(_semanticQueries, navigator, sink, context);
             }
 
             // The operations of the file are walked once, whatever the number of entries
@@ -696,8 +762,20 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // The navigator of the syntax tree is only built when an entry uses the 'syntax' function. It has no
                 // semantic model, as the semantic attributes are not available in a query on the operations.
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)));
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)), symbolNavigatorFactory: null);
                 Evaluate(_operationQueries, new OperationXPathNavigator(forest, cancellationToken), sink, context);
+            }
+
+            // The symbols declared in the file are collected once, whatever the number of entries
+            if (_symbolQueries.Count > 0 && semanticModel is not null)
+            {
+                var forest = SymbolForest.Create(root, semanticModel, _symbolQueryFilter, cancellationToken);
+
+                // Like for the operations, the navigator of the syntax tree is only built when an entry uses the
+                // 'syntax' function, and it has no semantic model
+                SyntaxNodeXPathNavigator? syntaxNavigator = null;
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _symbolQueryFilter, cancellationToken)), symbolNavigatorFactory: null);
+                Evaluate(_symbolQueries, new SymbolXPathNavigator(forest), sink, context);
             }
         }
 
@@ -707,15 +785,19 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             {
                 try
                 {
-                    // A query using the 'syntax' function selects the operations and the nodes of the syntax tree,
-                    // so the matches are not all of the same navigator
+                    // A query using the 'syntax' or the 'symbol' function selects the nodes of several documents, so the
+                    // matches are not all of the same navigator
                     foreach (XPathNavigator match in navigator.Select(Prepare(entry.Expression!, context)))
                     {
                         // The document that contains the elements is not reportable
                         if (match is not IBannedSyntaxNavigator { ReportName: { } name } reportable)
                             continue;
 
-                        sink.Report(reportable.Span, name, entry);
+                        // A symbol is reported on each of its declarations in the file
+                        foreach (var span in reportable.ReportSpans)
+                        {
+                            sink.Report(span, name, entry);
+                        }
                     }
                 }
                 catch (XPathException)

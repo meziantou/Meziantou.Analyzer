@@ -15,6 +15,11 @@ internal readonly struct XPathAttributeWriter(List<XPathAttribute> attributes, s
     public bool Includes(string name) => filter.Includes(name);
 
     /// <summary>
+    /// Indicates whether at least one of the attributes of these names can be selected by a query.
+    /// </summary>
+    public bool IncludesAny(string[] names) => filter.IncludesAny(names);
+
+    /// <summary>
     /// Adds an attribute, unless it has no value. An attribute that is not present selects nothing, which is how a
     /// query tests whether there is a value at all.
     /// </summary>

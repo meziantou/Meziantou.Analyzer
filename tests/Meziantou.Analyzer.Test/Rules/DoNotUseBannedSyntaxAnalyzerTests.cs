@@ -2630,4 +2630,617 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task SymbolTree_Method_ReportedOnTheName()
+    {
+        var test = CreateTest("//symbol:Method[@Name='Execute']");
+        test.TestCode = """
+            class Sample
+            {
+                void {|#0:Execute|}() { }
+                void Other() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_MembersAreChildrenOfTheirType()
+    {
+        var test = CreateTest("//symbol:NamedType[@Name='A']/symbol:Method");
+        test.TestCode = """
+            class A
+            {
+                void {|#0:M|}() { }
+            }
+
+            class B
+            {
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_QualifiedNamespace()
+    {
+        var test = CreateTest("//symbol:Namespace[@Name='A']/symbol:Namespace[@Name='B']/symbol:NamedType");
+        test.TestCode = """
+            namespace A.B
+            {
+                class {|#0:C|} { }
+            }
+
+            namespace A
+            {
+                class D { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_FileScopedNamespace()
+    {
+        var test = CreateTest("//symbol:Namespace[@Name='A']/symbol:Namespace[@Name='B']/symbol:NamedType");
+        test.TestCode = """
+            namespace A.B;
+
+            class {|#0:C|} { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_TypesOfTheGlobalNamespaceAreRoots()
+    {
+        var test = CreateTest("/symbol:NamedType");
+        test.TestCode = """
+            class {|#0:A|} { }
+
+            namespace N
+            {
+                class B { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_TypeKind()
+    {
+        var test = CreateTest("//symbol:NamedType[@TypeKind='Interface']");
+        test.TestCode = """
+            interface {|#0:ISample|} { }
+            class Sample { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_IsRecord()
+    {
+        var test = CreateTest("//symbol:NamedType[@IsRecord='true']");
+        test.TestCode = """
+            record {|#0:Sample|} { }
+            class Other { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_AccessibilityAndModifiers()
+    {
+        var test = CreateTest("//symbol:Method[@DeclaredAccessibility='Public' and @IsStatic='true']");
+        test.TestCode = """
+            public class Sample
+            {
+                public static void {|#0:A|}() { }
+                public void B() { }
+                private static void C() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_AsyncVoid()
+    {
+        var test = CreateTest("//symbol:Method[@IsAsync='true' and @ReturnsVoid='true']");
+        test.TestCode = """
+            class Sample
+            {
+                async void {|#0:A|}() { await System.Threading.Tasks.Task.Yield(); }
+                async System.Threading.Tasks.Task B() { await System.Threading.Tasks.Task.Yield(); }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_DocumentationId()
+    {
+        var test = CreateTest("//symbol:Method[@DocumentationId='M:Sample.Execute(System.Int32)']");
+        test.TestCode = """
+            class Sample
+            {
+                void {|#0:Execute|}(int value) { }
+                void Execute(string value) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ConstantValue()
+    {
+        var test = CreateTest("//symbol:Field[@ConstantValue='42']");
+        test.TestCode = """
+            class Sample
+            {
+                const int {|#0:A|} = 42;
+                int B = 42;
+                const int C = 1;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Field", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ParameterType()
+    {
+        var test = CreateTest("//symbol:Parameter[@TypeSpecialType='System_Int32']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int {|#0:a|}, string b) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_Attribute_ReportedOnTheLocationOfTheSymbol()
+    {
+        var test = CreateTest("//symbol:Method/@Name[. = 'Execute']");
+        test.TestCode = """
+            class Sample
+            {
+                void {|#0:Execute|}() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method/@Name", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_AccessorsAreChildrenOfTheirProperty()
+    {
+        var test = CreateTest("//symbol:Property/symbol:Method[@MethodKind='PropertyGet']");
+        test.TestCode = """
+            class Sample
+            {
+                int Value { {|#0:get|}; set; }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_Locals()
+    {
+        var test = CreateTest("//symbol:Method[@Name='M']/symbol:Local");
+        test.TestCode = """
+            class Sample
+            {
+                void M(object value)
+                {
+                    var {|#0:a|} = 1;
+                    foreach (var {|#1:item|} in new int[0]) { }
+                    if (value is int {|#2:b|}) { }
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Local", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(2, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_LocalsOfALocalFunction()
+    {
+        var test = CreateTest("//symbol:Method[@MethodKind='LocalFunction']/symbol:Local");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    var a = 1;
+                    void Local()
+                    {
+                        var {|#0:b|} = 2;
+                    }
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ParametersOfALambda()
+    {
+        var test = CreateTest("//symbol:Method[@Name='M']/symbol:Method[@MethodKind='AnonymousFunction']/symbol:Parameter");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    System.Func<int, int> f = {|#0:x|} => x;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ExplicitDefaultValue()
+    {
+        var test = CreateTest("//symbol:Parameter[@ExplicitDefaultValue='1']");
+        test.TestCode = """
+            class Sample
+            {
+                void M(int {|#0:a|} = 1, int b = 2, int c = 0) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_RecordPositionalProperty()
+    {
+        var test = CreateTest("syntax(//symbol:NamedType/symbol:Property)");
+        test.TestCode = """
+            record Sample({|#0:int Value|});
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_ImplicitlyDeclaredSymbols_NotExposed()
+    {
+        // A record has synthesized members, and a type without constructor has a default one
+        var test = CreateTest("//symbol:Method");
+        test.TestCode = """
+            record Sample
+            {
+                public void {|#0:M|}() { }
+            }
+
+            class Other { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_PartialTypeInSeveralFiles_OnlyTheMembersOfTheFile()
+    {
+        var test = CreateTest("//symbol:NamedType[count(symbol:Method) = 1]/symbol:Method");
+        test.TestState.Sources.Add(("File1.cs", """
+            partial class Sample
+            {
+                void {|#0:A|}() { }
+            }
+            """));
+        test.TestState.Sources.Add(("File2.cs", """
+            partial class Sample
+            {
+                void {|#1:B|}() { }
+            }
+            """));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_PartialTypeDeclaredTwiceInAFile_ReportedOnEachDeclaration()
+    {
+        var test = CreateTest("//symbol:NamedType");
+        test.TestCode = """
+            partial class {|#0:Sample|} { }
+            partial class {|#1:Sample|} { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_SyntaxFunction_ReturnsTheDeclaration()
+    {
+        var test = CreateTest("syntax(//symbol:Method[@Name='M'])");
+        test.TestCode = """
+            class Sample
+            {
+                {|#0:void M() { }|}
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "MethodDeclaration", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_SyntaxFunction_Field()
+    {
+        var test = CreateTest("syntax(//symbol:Field)");
+        test.TestCode = """
+            class Sample
+            {
+                int {|#0:a|}, {|#1:b = 1|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "VariableDeclarator", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "VariableDeclarator", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_SyntaxFunction_PartialTypeReturnsEachDeclaration()
+    {
+        var test = CreateTest("syntax(//symbol:NamedType)");
+        test.TestCode = """
+            {|#0:partial class Sample { }|}
+            {|#1:partial class Sample { }|}
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "ClassDeclaration", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "ClassDeclaration", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolTree_SyntaxFunction_InAPredicate()
+    {
+        var test = CreateTest("//symbol:Method[syntax(.)//GotoStatement]; Do not use goto");
+        test.TestCode = """
+            class Sample
+            {
+                void {|#0:A|}()
+                {
+                    goto end;
+                end:
+                    return;
+                }
+
+                void B() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ": Do not use goto"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_ReturnsTheSymbolOfADeclaration()
+    {
+        var test = CreateTest("symbol(//ClassDeclaration[@Identifier='A'])/symbol:Method");
+        test.TestCode = """
+            class A
+            {
+                void {|#0:M|}() { }
+            }
+
+            class B
+            {
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_InAPredicate()
+    {
+        var test = CreateTest("//MethodDeclaration[symbol(.)/symbol:Parameter[@RefKind='Out']]");
+        test.TestCode = """
+            class Sample
+            {
+                {|#0:void A(out int value) => value = 0;|}
+                void B(int value) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "MethodDeclaration", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_ReferencesToALocal_ReturnedOnce()
+    {
+        // The references to a symbol declared in another assembly, such as Console.WriteLine, return nothing
+        var test = CreateTest("symbol(//IdentifierName)");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    var {|#0:a|} = 1;
+                    System.Console.WriteLine(a + a);
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_ReferenceToAGenericMethod_ReturnsItsDeclaration()
+    {
+        var test = CreateTest("symbol(//GenericName)");
+        test.TestCode = """
+            class Sample
+            {
+                void {|#0:M|}<T>() { }
+                void N() => M<int>();
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_SelfAxis()
+    {
+        var test = CreateTest("symbol(//IdentifierName)[self::symbol:Local]");
+        test.TestCode = """
+            class Sample
+            {
+                int field;
+
+                void M()
+                {
+                    var {|#0:a|} = field;
+                    var b = a;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_PartialType_ReturnedOnce()
+    {
+        var test = CreateTest("//CompilationUnit[count(symbol(ClassDeclaration)) = 1]");
+        test.TestCode = """
+            {|#0:partial class Sample { }
+            partial class Sample { }|}
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "CompilationUnit", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_AttributesOfTheSymbol()
+    {
+        var test = CreateTest("//MethodDeclaration[symbol(.)[@IsAsync='true']]/@Identifier");
+        test.TestCode = """
+            class Sample
+            {
+                async System.Threading.Tasks.Task {|#0:A|}() => await System.Threading.Tasks.Task.Yield();
+                System.Threading.Tasks.Task B() => System.Threading.Tasks.Task.CompletedTask;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "MethodDeclaration/@Identifier", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SymbolFunction_RoundTripKeepsTheSemanticAttributes()
+    {
+        var test = CreateTest("symbol(//ClassDeclaration)[syntax(.)//IdentifierName[@semantic:SymbolName='WriteLine']]");
+        test.TestCode = """
+            class {|#0:A|}
+            {
+                void M() => System.Console.WriteLine();
+            }
+
+            class B
+            {
+                void M() => System.Console.Write("");
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SyntaxFunction_WithoutPrefix_EvaluatedOnTheOperations()
+    {
+        var test = CreateTest("syntax(//*)[self::InvocationExpression]");
+        test.TestCode = """
+            class Sample
+            {
+                void M() => {|#0:System.Console.Write("a")|};
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//symbol:Type", "'Type' is not a kind of symbol")]
+    [InlineData("//symbol:Label", "'Label' is not a kind of symbol")]
+    [InlineData("//symbol:Method[@semantic:Symbol='a']", "A query cannot use both the 'symbol' and the 'semantic' prefixes")]
+    [InlineData("//symbol:Method | //operation:Invocation", "A query cannot use both the 'symbol' and the 'operation' prefixes")]
+    [InlineData("symbol(//operation:Invocation)", "A query using the 'symbol' function cannot use the 'operation' prefix")]
+    [InlineData("syntax(//*)[@semantic:Symbol='a']", "A query using the 'syntax' function without the 'symbol' prefix is evaluated on the operations, so it cannot use the 'semantic' prefix")]
+    public Task InvalidEntry_SymbolQuery_Reported(string query, string message)
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", "{|#0:" + query + "|}"));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments(query, message));
+
+        return test.RunAsync();
+    }
 }

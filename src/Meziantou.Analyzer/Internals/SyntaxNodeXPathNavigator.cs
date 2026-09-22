@@ -119,6 +119,8 @@ internal sealed class SyntaxNodeXPathNavigator : XPathNavigator, IBannedSyntaxNa
     /// </summary>
     public TextSpan Span => IsOnAttribute ? _attributes![_attributeIndex].Span : _node?.Span ?? _root.Span;
 
+    public ImmutableArray<TextSpan> ReportSpans => [Span];
+
     /// <summary>
     /// The kind of the node, followed by the name of the attribute when the navigator is positioned on one.
     /// </summary>
