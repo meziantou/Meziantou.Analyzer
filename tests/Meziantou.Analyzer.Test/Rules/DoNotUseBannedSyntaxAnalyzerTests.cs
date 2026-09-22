@@ -952,6 +952,191 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
     }
 
     [Fact]
+    public Task Query_SemanticTypeKind_Diagnostic()
+    {
+        var test = CreateTest("//Parameter/*[@semantic:TypeKind='Interface']; Do not take an interface");
+        test.TestCode = """
+            class Sample
+            {
+                void A({|#0:System.IDisposable|} value) { }
+                void B(string value) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "QualifiedName", ": Do not take an interface"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticTypeKind_Enum()
+    {
+        var test = CreateTest("//ArrowExpressionClause//IdentifierName[@semantic:TypeKind='Enum']");
+        test.TestCode = """
+            enum Color { Red }
+
+            class Sample
+            {
+                object A(Color color) => [|color|];
+                object B(int value) => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticContainingTypeKind_Diagnostic()
+    {
+        var test = CreateTest("//InvocationExpression[@semantic:ContainingTypeKind='Interface']");
+        test.TestCode = """
+            class Sample
+            {
+                void A(System.IDisposable value) => [|value.Dispose()|];
+                void B(string value) => value.ToString();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsAbstract_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsAbstract='true']");
+        test.TestCode = """
+            abstract class Sample
+            {
+                [|protected abstract void A();|]
+                protected virtual void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsVirtual_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsVirtual='true']");
+        test.TestCode = """
+            class Sample
+            {
+                [|protected virtual void A() { }|]
+                protected void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsOverrideAndIsSealed_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsOverride='true' and @semantic:IsSealed='true']");
+        test.TestCode = """
+            class Base
+            {
+                protected virtual void A() { }
+                protected virtual void B() { }
+            }
+
+            class Sample : Base
+            {
+                [|protected sealed override void A() { }|]
+                protected override void B() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsAsync_Diagnostic()
+    {
+        var test = CreateTest("//MethodDeclaration[@semantic:IsAsync='true']");
+        test.TestCode = """
+            using System.Threading.Tasks;
+
+            class Sample
+            {
+                [|async Task A() { await Task.Yield(); }|]
+                Task B() => Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsAsync_NotExposedForTheSymbolsThatAreNotAMethod()
+    {
+        // The modifiers that only a method has are not exposed for the other symbols, so the attribute is not present
+        var test = CreateTest("//VariableDeclarator[not(@semantic:IsAsync)]");
+        test.TestCode = """
+            class Sample
+            {
+                int [|_value|];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticIsExtensionMethod_Diagnostic()
+    {
+        var test = CreateTest("//InvocationExpression[@semantic:IsExtensionMethod='true']");
+        test.TestCode = """
+            static class Extensions
+            {
+                public static int Twice(this int value) => value * 2;
+
+                public static int Once(int value) => value;
+            }
+
+            class Sample
+            {
+                int A(int value) => [|value.Twice()|];
+                int B(int value) => Extensions.Once(value);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticArity_Diagnostic()
+    {
+        var test = CreateTest("//InvocationExpression[@semantic:Arity='2']; Too many type arguments");
+        test.TestCode = """
+            class Sample
+            {
+                void A() => {|#0:M<int, string>()|};
+                void B() => M<int>();
+
+                void M<T>() { }
+                void M<T1, T2>() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ": Too many type arguments"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Query_SemanticArity_NamedType()
+    {
+        var test = CreateTest("//ClassDeclaration[@semantic:Arity='1']");
+        test.TestCode = """
+            [|class Generic<T> { }|]
+
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Query_SemanticContainingSymbol_Diagnostic()
     {
         var test = CreateTest("//IdentifierName[@semantic:ContainingSymbol='Sample.M']");
@@ -1774,6 +1959,131 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
             }
             """;
         test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Block", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_SymbolArrayDocumentationId_Diagnostic()
+    {
+        // The documentation ids of a property that returns several symbols are joined by a space
+        var test = CreateTest("//operation:FieldInitializer[contains(@InitializedFieldsDocumentationId, 'F:Sample._value')]");
+        test.TestCode = """
+            class Sample
+            {
+                int _value [|= 0|];
+                int _other;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TypeArrayAttribute_Diagnostic()
+    {
+        // A property that returns several types exposes the names a type has, not the ones of the other symbols
+        var test = CreateTest("//operation:DynamicMemberReference[@TypeArgumentsMetadataName='System.Int32']");
+        test.TestCode = """
+            class Sample
+            {
+                void A(dynamic value) => [|value.M<int>|]();
+                void B(dynamic value) => value.M<string>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ConversionIsUserDefined_Diagnostic()
+    {
+        var test = CreateTest("//operation:Conversion[@ConversionIsUserDefined='true']; Do not use the implicit operators");
+        test.TestCode = """
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+
+                int A(Sample value) => {|#0:value|};
+                int B(short value) => value;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Conversion", ": Do not use the implicit operators"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ConversionMethod_Diagnostic()
+    {
+        var test = CreateTest("//operation:Conversion[@ConversionMethod='Sample.op_Implicit']");
+        test.TestCode = """
+            class Sample
+            {
+                public static implicit operator int(Sample value) => 0;
+
+                int A(Sample value) => [|value|];
+                int B(short value) => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_ConversionIsNumeric_Diagnostic()
+    {
+        var test = CreateTest("//operation:Conversion[@ConversionIsNumeric='true' and @ConversionIsImplicit='true']");
+        test.TestCode = """
+            class Sample
+            {
+                long A(int value) => [|value|];
+                object B(string value) => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethodModifiers_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation[@TargetMethodIsAbstract='true']");
+        test.TestCode = """
+            abstract class Base
+            {
+                public abstract void A();
+
+                public void B() { }
+            }
+
+            class Sample
+            {
+                void M(Base value)
+                {
+                    [|value.A()|];
+                    value.B();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Operation_TargetMethodArity_Diagnostic()
+    {
+        var test = CreateTest("//operation:Invocation[@TargetMethodArity='2']");
+        test.TestCode = """
+            class Sample
+            {
+                void A() => [|M<int, string>()|];
+                void B() => M<int>();
+
+                void M<T>() { }
+                void M<T1, T2>() { }
+            }
+            """;
 
         return test.RunAsync();
     }

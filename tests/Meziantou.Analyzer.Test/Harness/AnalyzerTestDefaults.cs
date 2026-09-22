@@ -46,10 +46,11 @@ internal static class AnalyzerTestDefaults
 
         return FrameworkSourceGenerators.GetOrAdd(version, static version =>
         {
-            var loader = new GeneratorAssemblyLoader(version);
+            var paths = NuGetPackages.GetReferencesAsync("Microsoft.NETCore.App.Ref", version, ["analyzers/dotnet/cs/"]).Result;
+            var loader = new GeneratorAssemblyLoader(version, paths);
             return
             [
-                .. NuGetPackages.GetReferencesAsync("Microsoft.NETCore.App.Ref", version, ["analyzers/dotnet/cs/"]).Result
+                .. paths
                     .SelectMany(path => loader.Load(path).GetTypes())
                     .Where(type => !type.IsAbstract && type.GetCustomAttribute<GeneratorAttribute>() is not null),
             ];
