@@ -70,7 +70,7 @@ public sealed class EventSourceImplementationAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(ruleIdentifier));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
         EventIdMustBePositiveRule,
         DuplicateEventIdRule,
         DuplicateEventNameRule,

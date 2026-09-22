@@ -28,7 +28,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.AvoidCultureSensitiveMethod + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseStringComparison + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
 
     public override void Initialize(AnalysisContext context)
     {

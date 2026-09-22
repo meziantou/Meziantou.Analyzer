@@ -99,7 +99,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> ReportWhenConversionNeededConfiguration = new(ListMethodsRule.Id + ".report_when_conversion_needed", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
         ListMethodsRule,
         IndexerInsteadOfElementAtRule,
         CombineLinqMethodsRule,
@@ -149,6 +149,16 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
         private List<INamedTypeSymbol> ExtensionMethodOwnerTypes { get; } = [];
 
+        /// <summary>
+        /// Indicates whether the type declares the LINQ extension methods. This runs for every invocation of the
+        /// compilation, so the two symbols are compared directly instead of enumerating the list, whose enumerator
+        /// would be boxed by <see cref="Enumerable.Contains{TSource}(IEnumerable{TSource}, TSource, IEqualityComparer{TSource}?)"/>.
+        /// </summary>
+        private bool IsExtensionMethodOwnerType(INamedTypeSymbol? type)
+        {
+            return type.IsEqualTo(EnumerableSymbol) || type.IsEqualTo(QueryableSymbol);
+        }
+
         private INamedTypeSymbol? EnumerableSymbol { get; set; }
         private INamedTypeSymbol? QueryableSymbol { get; set; }
         private INamedTypeSymbol? ExpressionOfTSymbol { get; set; }
@@ -167,7 +177,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 return;
 
             var method = operation.TargetMethod;
-            if (!ExtensionMethodOwnerTypes.Contains(method.ContainingType, SymbolEqualityComparer.Default))
+            if (!IsExtensionMethodOwnerType(method.ContainingType))
                 return;
 
             UseFindInsteadOfFirstOrDefault(context, operation);
@@ -230,7 +240,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or "Order" or "OrderDescending")
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType))
+                if (parent is not null && IsExtensionMethodOwnerType(parent.TargetMethod.ContainingType))
                 {
                     if (parent.TargetMethod.Name == nameof(Enumerable.Where))
                     {
@@ -469,7 +479,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                 // Check parent methods
                 var parent = GetParentLinqOperation(operation);
-                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
+                if (parent is not null && IsExtensionMethodOwnerType(parent.TargetMethod.ContainingType))
                 {
                     if (CombinableLinqMethods.Contains(parent.TargetMethod.Name))
                     {
@@ -531,7 +541,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or nameof(Enumerable.ThenBy) or nameof(Enumerable.ThenByDescending) or "Order" or "OrderDescending")
             {
                 var parent = GetParentLinqOperation(operation);
-                if (parent is not null && ExtensionMethodOwnerTypes.Contains(parent.TargetMethod.ContainingType, SymbolEqualityComparer.Default))
+                if (parent is not null && IsExtensionMethodOwnerType(parent.TargetMethod.ContainingType))
                 {
                     if (parent.TargetMethod.Name is nameof(Enumerable.OrderBy) or nameof(Enumerable.OrderByDescending) or "Order" or "OrderDescending")
                     {
@@ -612,7 +622,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() == 1
-                            if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                            if (!HasTake(operation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -637,7 +647,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         else
                         {
                             // expr.Count() != 1
-                            if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                            if (!HasTake(operation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
                                 properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -743,7 +753,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     case BinaryOperatorKind.Equals:
                         // expr.Count() == 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                        if (!HasTake(operation))
                         {
                             message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
                             properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -753,7 +763,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
 
                     case BinaryOperatorKind.NotEquals:
                         // expr.Count() != 1
-                        if (!HasTake(operation, ExtensionMethodOwnerTypes))
+                        if (!HasTake(operation))
                         {
                             message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
                             properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
@@ -829,13 +839,13 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 };
             }
 
-            static bool HasTake(IInvocationOperation operation, List<INamedTypeSymbol> extensionMethodOwnerTypes)
+            bool HasTake(IInvocationOperation operation)
             {
                 var op = GetChildLinqOperation(operation);
                 if (op is null)
                     return false;
 
-                return op.TargetMethod.Name == nameof(Enumerable.Take) && extensionMethodOwnerTypes.Contains(op.TargetMethod.ContainingType, SymbolEqualityComparer.Default);
+                return op.TargetMethod.Name == nameof(Enumerable.Take) && IsExtensionMethodOwnerType(op.TargetMethod.ContainingType);
             }
         }
 

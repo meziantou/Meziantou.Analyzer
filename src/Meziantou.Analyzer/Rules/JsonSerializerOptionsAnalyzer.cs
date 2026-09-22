@@ -29,7 +29,7 @@ public sealed class JsonSerializerOptionsAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.SetRespectRequiredConstructorParametersOnJsonSerializerOptions));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RespectNullableAnnotationsRule, RespectRequiredConstructorParametersRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RespectNullableAnnotationsRule, RespectRequiredConstructorParametersRule);
 
     public override void Initialize(AnalysisContext context)
     {

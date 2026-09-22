@@ -13,7 +13,7 @@ public sealed class DoNotUseServerCertificateValidationCallbackAnalyzer : Diagno
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DoNotUseServerCertificateValidationCallback));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -35,7 +35,7 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsConfiguration = new(Rule.Id + ".excluded_file_name_parts", defaultValue: string.Empty);
     private static readonly ConfigurationDefinition<string> ExcludedFileNamePartsRegexConfiguration = new(Rule.Id + ".excluded_file_name_parts_regex", defaultValue: string.Empty) { RegexOptions = RegexOptions.CultureInvariant | RegexOptions.IgnoreCase };
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

@@ -23,7 +23,7 @@ public sealed class UseDateTimeUnixEpochAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseDateTimeOffsetUnixEpoch));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(DateTimeRule, DateTimeOffsetRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(DateTimeRule, DateTimeOffsetRule);
 
     public override void Initialize(AnalysisContext context)
     {

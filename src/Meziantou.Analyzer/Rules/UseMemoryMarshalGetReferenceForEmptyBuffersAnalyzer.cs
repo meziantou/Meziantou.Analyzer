@@ -15,7 +15,7 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
         description: "Indexing a Span<T>, ReadOnlySpan<T>, or array at index 0 to obtain a by-reference value throws IndexOutOfRangeException on empty buffers. Use MemoryMarshal.GetReference (for spans) or MemoryMarshal.GetArrayDataReference (for arrays) instead, which safely returns a reference to the start even for empty collections.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseMemoryMarshalGetReferenceForEmptyBuffers));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

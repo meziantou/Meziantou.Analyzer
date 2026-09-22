@@ -13,7 +13,7 @@ public sealed class UseStringEqualsInsteadOfIsPatternAnalyzer : DiagnosticAnalyz
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseStringEqualsInsteadOfIsPattern));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RulePattern);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RulePattern);
 
     public override void Initialize(AnalysisContext context)
     {

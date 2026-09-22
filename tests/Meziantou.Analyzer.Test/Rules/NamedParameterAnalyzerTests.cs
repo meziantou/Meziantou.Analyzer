@@ -14,6 +14,27 @@ public sealed class NamedParameterAnalyzerTests
         return test;
     }
 
+
+    [Fact]
+    public Task MethodThatDoesNotBind()
+    {
+        // The arguments of a call that does not bind have no parameter to name, and the code fixer could not
+        // produce a valid fix, so the rule stays silent and lets the compiler report the actual error.
+        var test = CreateTest();
+        test.CompilerDiagnostics = Microsoft.CodeAnalysis.Testing.CompilerDiagnostics.None;
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    UnknownMethod(null, true);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
 
     public Task MethodWithNoParameter()

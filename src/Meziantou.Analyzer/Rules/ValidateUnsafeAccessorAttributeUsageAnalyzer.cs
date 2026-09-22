@@ -23,7 +23,7 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UnsafeAccessorAttribute_NameMustBeSet));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleInvalidSignature, RuleNameMustBeSet);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RuleInvalidSignature, RuleNameMustBeSet);
 
     public override void Initialize(AnalysisContext context)
     {

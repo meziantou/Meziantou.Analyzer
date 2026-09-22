@@ -43,7 +43,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UsePatternMatchingForInequalityComparison));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleEqualNull, RuleNotEqualNull, RuleEqualConstant, RuleNotEqualConstant);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RuleEqualNull, RuleNotEqualNull, RuleEqualConstant, RuleNotEqualConstant);
 
     public override void Initialize(AnalysisContext context)
     {

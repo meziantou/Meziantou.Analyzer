@@ -51,7 +51,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasCancellationToken + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration = new(RuleIdentifiers.UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailable + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(UseAnOverloadThatHasCancellationTokenRule, UseAnOverloadThatHasCancellationTokenWhenACancellationTokenIsAvailableRule, FlowCancellationTokenInAwaitForEachRule, FlowCancellationTokenInAwaitForEachRuleWhenACancellationTokenIsAvailableRule);
 
     public override void Initialize(AnalysisContext context)
     {

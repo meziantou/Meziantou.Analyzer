@@ -53,7 +53,7 @@ public sealed partial class EqualityShouldBeCorrectlyImplementedAnalyzer : Diagn
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.TheComparisonOperatorsShouldBeOverriddenWhenImplementingIComparable));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(
         ImplementIEquatableWhenIComparableRule,
         OverrideEqualsObjectRule,
         ImplementIEquatableRule,

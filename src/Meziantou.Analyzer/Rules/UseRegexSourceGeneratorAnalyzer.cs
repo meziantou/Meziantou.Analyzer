@@ -13,7 +13,7 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseRegexSourceGenerator));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RegexSourceGeneratorRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RegexSourceGeneratorRule);
 
     public override void Initialize(AnalysisContext context)
     {

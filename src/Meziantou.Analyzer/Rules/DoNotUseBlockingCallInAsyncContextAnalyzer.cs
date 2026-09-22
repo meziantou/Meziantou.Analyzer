@@ -36,7 +36,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule, Rule2);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, Rule2);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -197,6 +197,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (IsExcludedDiagnosticSymbol(targetMethod))
                 return;
 
+            // Nothing is reported when the enclosing method cannot await, so the async equivalent of the
+            // called method, whose search is expensive, is only looked for when a diagnostic can be reported.
+            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            if (asyncContextKind is AsyncContextKind.None)
+                return;
+
             // The cache only contains methods with no async equivalent methods.
             // This optimizes the best-case scenario where code is correctly written according to this analyzer.
             // The async equivalent is searched from the call site, so the same method can have an async equivalent in
@@ -216,7 +222,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, includeExtensionMethodsFromNotImportedNamespaces, context.CancellationToken, out var diagnosticMessage);
             if (diagnosticMessage is not null)
             {
-                ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage, requiresNamespaceImport: diagnosticMessage.NamespaceToImport is not null);
+                ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage, asyncContextKind, requiresNamespaceImport: diagnosticMessage.NamespaceToImport is not null);
             }
             else if (result is AsyncEquivalentSearchResult.NotFound)
             {
@@ -586,26 +592,24 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                 {
+                    var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
                     var data = new DiagnosticData("Use await instead of 'Result'", DoNotUseBlockingCallInAsyncContextData.Task_Result);
-                    ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
+                    ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage, asyncContextKind);
                 }
             }
         }
 
         /// <param name="requiresNamespaceImport">Indicates the fix calls an extension method declared in a namespace that is not imported, so the diagnostic is only reported when the rule is configured to include them.</param>
-        private void ReportDiagnosticIfNeeded(OperationAnalysisContext context, ImmutableDictionary<string, string?>? properties, IOperation operation, string message, bool requiresNamespaceImport = false)
+        private static void ReportDiagnosticIfNeeded(OperationAnalysisContext context, ImmutableDictionary<string, string?>? properties, IOperation operation, string message, AsyncContextKind asyncContextKind, bool requiresNamespaceImport = false)
         {
-            if (!CanBeAsync(operation))
-                return;
-
-            if (IsAsyncContext(operation, context.CancellationToken))
+            if (asyncContextKind is AsyncContextKind.AsyncContext)
             {
                 if (requiresNamespaceImport && !context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration))
                     return;
 
                 context.ReportDiagnostic(Rule, properties, operation, message);
             }
-            else if (CanChangeParentMethodSignature(operation, context.CancellationToken))
+            else if (asyncContextKind is AsyncContextKind.CanBecomeAsyncContext)
             {
                 if (requiresNamespaceImport && !context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration))
                     return;
@@ -614,37 +618,39 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
         }
 
-        private bool IsAsyncContext(IOperation operation, CancellationToken cancellationToken)
+        /// <summary>
+        /// Indicates which rule can be reported at the location of the operation, or <see cref="AsyncContextKind.None"/>
+        /// when neither can. Nothing is reported in a method that cannot await, so this is checked before looking for a
+        /// blocking call, which is much more expensive.
+        /// </summary>
+        private AsyncContextKind GetAsyncContextKind(IOperation operation, CancellationToken cancellationToken)
         {
+            if (IsInLock(operation))
+                return AsyncContextKind.None;
+
             // lambda, delegate, method, local function
+            if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is not IMethodSymbol methodSymbol)
+                return AsyncContextKind.None;
+
             // Check if returns Task or async void
-            if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is IMethodSymbol methodSymbol)
+            if (_awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol, operation.SemanticModel, cancellationToken))
+                return AsyncContextKind.AsyncContext;
+
+            if (!methodSymbol.IsOverrideOrInterfaceImplementation() && !methodSymbol.IsVisibleOutsideOfAssembly())
+                return AsyncContextKind.CanBecomeAsyncContext;
+
+            return AsyncContextKind.None;
+        }
+
+        private static bool IsInLock(IOperation operation)
+        {
+            for (var current = operation.Parent; current is not null; current = current.Parent)
             {
-                if (_awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol, operation.SemanticModel, cancellationToken))
+                if (current is ILockOperation)
                     return true;
             }
 
             return false;
-        }
-
-        private static bool CanChangeParentMethodSignature(IOperation operation, CancellationToken cancellationToken)
-        {
-            var symbol = operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken);
-            if (symbol is IMethodSymbol methodSymbol)
-            {
-                return !methodSymbol.IsOverrideOrInterfaceImplementation()
-                    && !methodSymbol.IsVisibleOutsideOfAssembly();
-            }
-
-            return false;
-        }
-
-        private static bool CanBeAsync(IOperation operation)
-        {
-            if (operation.Ancestors().Any(op => op is ILockOperation))
-                return false;
-
-            return true;
         }
 
         private bool HasDisposeAsyncMethod(INamedTypeSymbol symbol)
@@ -794,7 +800,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return HasDisposeAsyncMethod(type);
         }
 
-        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled)
+        private bool ReportIfCanBeAwaitUsing(OperationAnalysisContext context, IOperation usingOperation, IVariableDeclarationGroupOperation operation, bool sqliteSpecialCasesEnabled, bool dbSpecialCasesEnabled, AsyncContextKind asyncContextKind)
         {
             foreach (var declaration in operation.Declarations)
             {
@@ -803,7 +809,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     if (CanBeAwaitUsing(declaration.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
-                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
+                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage, asyncContextKind);
                         return true;
                     }
                 }
@@ -813,7 +819,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                     if (declarator.Initializer is not null && CanBeAwaitUsing(declarator.Initializer.Value, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
                     {
                         var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.UsingDeclarator);
-                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage);
+                        ReportDiagnosticIfNeeded(context, data.CreateProperties(), usingOperation, data.DiagnosticMessage, asyncContextKind);
                         return true;
                     }
                 }
@@ -828,18 +834,22 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
+            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            if (asyncContextKind is AsyncContextKind.None)
+                return;
+
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             var dbSpecialCasesEnabled = IsDbSpecialCasesEnabled(context, operation);
             if (operation.Resources is IVariableDeclarationGroupOperation variableDeclarationGroupOperation)
             {
-                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled))
+                if (ReportIfCanBeAwaitUsing(context, operation, variableDeclarationGroupOperation, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, asyncContextKind))
                     return;
             }
 
             if (CanBeAwaitUsing(operation.Resources, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, context.CancellationToken))
             {
                 var data = new DiagnosticData("Prefer using 'await using'", DoNotUseBlockingCallInAsyncContextData.Using);
-                ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage);
+                ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage, asyncContextKind);
             }
         }
 
@@ -849,10 +859,29 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
+            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            if (asyncContextKind is AsyncContextKind.None)
+                return;
+
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             var dbSpecialCasesEnabled = IsDbSpecialCasesEnabled(context, operation);
-            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled);
+            ReportIfCanBeAwaitUsing(context, operation, operation.DeclarationGroup, sqliteSpecialCasesEnabled, dbSpecialCasesEnabled, asyncContextKind);
         }
+    }
+
+    /// <summary>
+    /// Indicates whether a blocking call can be reported at a location, and with which rule.
+    /// </summary>
+    private enum AsyncContextKind
+    {
+        /// <summary>The enclosing method cannot await, so nothing is reported.</summary>
+        None,
+
+        /// <summary>The enclosing method can already await, so <see cref="Rule"/> is reported.</summary>
+        AsyncContext,
+
+        /// <summary>The enclosing method can be made async, so <see cref="Rule2"/> is reported.</summary>
+        CanBecomeAsyncContext,
     }
 
     /// <summary>

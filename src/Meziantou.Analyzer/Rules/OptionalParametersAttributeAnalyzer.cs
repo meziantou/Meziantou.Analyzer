@@ -23,7 +23,7 @@ public sealed class OptionalParametersAttributeAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.DefaultValueShouldNotBeUsedWhenParameterDefaultValueIsMeant));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(OptionalRule, DefaultValueRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(OptionalRule, DefaultValueRule);
 
     public override void Initialize(AnalysisContext context)
     {

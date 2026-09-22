@@ -46,7 +46,7 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
     private static readonly ConfigurationDefinition<bool> StringInterpolationExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseImplicitCultureSensitiveToStringInterpolation + ".exclude_tostring_methods", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> ObjectToStringExcludeToStringMethodsConfiguration = new(RuleIdentifiers.DoNotUseCultureSensitiveObjectToString + ".exclude_tostring_methods", defaultValue: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(StringConcatRule, StringInterpolationRule, ObjectToStringRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(StringConcatRule, StringInterpolationRule, ObjectToStringRule);
 
     public override void Initialize(AnalysisContext context)
     {

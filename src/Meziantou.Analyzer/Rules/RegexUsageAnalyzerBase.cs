@@ -6,6 +6,11 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 {
     private static readonly string[] MethodNames = ["IsMatch", "Match", "Matches", "Replace", "Split"];
 
+    // Detecting the unnamed groups of a pattern requires building two Regex, which is expensive, and the same
+    // patterns are used over and over in a compilation. The cache is bounded, so the patterns of the projects
+    // that are no longer analyzed do not stay alive for the lifetime of the process.
+    private static readonly BoundedCache<(string Pattern, RegexOptions Options), bool> HasUnnamedGroupsCache = new(capacity: 128);
+
     private static readonly DiagnosticDescriptor TimeoutRule = new(
         RuleIdentifiers.MissingTimeoutParameterForRegex,
         title: "Add regex evaluation timeout",
@@ -26,7 +31,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.UseRegexExplicitCaptureOptions));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(TimeoutRule, ExplicitCaptureRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(TimeoutRule, ExplicitCaptureRule);
 
     private protected sealed class AnalyzerContext(Compilation compilation)
     {
@@ -180,21 +185,33 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
             static bool HasUnnamedGroups(string pattern, RegexOptions options)
             {
-                try
+                options &= ~RegexOptions.Compiled; // Compiled options doesn't change anything but is much more resource consuming
+                return HasUnnamedGroupsCache.GetOrAdd((pattern, options), static key =>
                 {
-                    options &= ~RegexOptions.Compiled; // Compiled options doesn't change anything but is much more resource consuming
-                    var regex1 = new Regex(pattern, options, Regex.InfiniteMatchTimeout);
-                    var regex2 = new Regex(pattern, options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
+                    try
+                    {
+                        var regex1 = new Regex(key.Pattern, key.Options, Regex.InfiniteMatchTimeout);
 
-                    // All groups are named => No need for explicit capture
-                    if (regex1.GetGroupNames().Length == regex2.GetGroupNames().Length)
-                        return false;
-                }
-                catch
-                {
-                }
+                        // GetGroupNames always contains the name of the whole match ("0"), so a single name means the
+                        // pattern has no group at all: the '(' comes from a non-capturing group, a lookaround or an
+                        // escaped parenthesis. There is nothing to name, and building the second regex would be useless
+                        // as ExplicitCapture can only remove the unnamed groups, never add one.
+                        var groupNames = regex1.GetGroupNames();
+                        if (groupNames.Length <= 1)
+                            return false;
 
-                return true;
+                        var regex2 = new Regex(key.Pattern, key.Options | RegexOptions.ExplicitCapture, Regex.InfiniteMatchTimeout);
+
+                        // All groups are named => No need for explicit capture
+                        if (groupNames.Length == regex2.GetGroupNames().Length)
+                            return false;
+                    }
+                    catch
+                    {
+                    }
+
+                    return true;
+                });
             }
         }
     }

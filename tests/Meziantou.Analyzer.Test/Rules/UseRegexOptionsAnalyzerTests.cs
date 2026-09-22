@@ -29,6 +29,9 @@ public sealed class UseRegexOptionsAnalyzerTests
     [InlineData("([a-z]+)", "RegexOptions.None", false)]
     [InlineData("([a-z]+)", "RegexOptions.ExplicitCapture", true)]
     [InlineData("(?<test>[a-z]+)", "RegexOptions.None", true)]
+    // The pattern contains a '(' but no group to name
+    [InlineData("(?:[a-z]+)", "RegexOptions.None", true)]
+    [InlineData("(?=[a-z]+)", "RegexOptions.None", true)]
     public Task IsMatch_RegexOptions(string regex, string options, bool isValid)
     {
         var test = CreateTest();

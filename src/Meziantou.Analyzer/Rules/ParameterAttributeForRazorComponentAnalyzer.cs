@@ -36,7 +36,7 @@ public sealed class ParameterAttributeForRazorComponentAnalyzer : DiagnosticAnal
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EditorRequiredRequiresParameterAttributeForRazorComponent),
         customTags: [GeneratedCodeReporting.ReportInGeneratedCodeTag]);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(SupplyParameterFromQueryRule, EditorRequiredRule, SupplyParameterFromQueryRoutableRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(SupplyParameterFromQueryRule, EditorRequiredRule, SupplyParameterFromQueryRoutableRule);
 
     public override void Initialize(AnalysisContext context)
     {

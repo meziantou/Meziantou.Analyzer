@@ -14,7 +14,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AvoidUnusedInternalTypes),
         customTags: ["CompilationEnd"]);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {
@@ -73,7 +73,9 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
     private sealed class AnalyzerContext(Compilation compilation)
     {
         private readonly List<ITypeSymbol> _potentialUnusedTypes = [];
-        private readonly HashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
+        // The used types are collected from the operations of every syntax tree, which are analyzed concurrently,
+        // so a concurrent set is used instead of locking on every reference.
+        private readonly ConcurrentHashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
         private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
         private readonly INamedTypeSymbol? _moduleInitializerAttribute = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ModuleInitializerAttribute");
 
@@ -311,78 +313,68 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 
         private void AddUsedType(IOperation? referenceLocation, ITypeSymbol typeSymbol)
         {
-            if (referenceLocation?.SemanticModel is null)
-            {
-                AddUsedType((ITypeSymbol?)null, typeSymbol);
-                return;
-            }
-
-            var semanticModel = referenceLocation.SemanticModel;
-            var containingType = semanticModel.GetEnclosingSymbol(referenceLocation.Syntax.SpanStart);
-            AddUsedType(containingType, typeSymbol);
+            var location = ReferenceLocation.FromOperation(referenceLocation);
+            AddUsedType(ref location, typeSymbol);
         }
 
         private void AddUsedType(ISymbol? containingSymbol, ITypeSymbol typeSymbol)
         {
-            if (containingSymbol is null)
-            {
-                AddUsedType((ITypeSymbol?)null, typeSymbol);
-                return;
-            }
-
-            if (containingSymbol is not ITypeSymbol)
-            {
-                containingSymbol = containingSymbol.ContainingType;
-            }
-
-            AddUsedType(containingSymbol as ITypeSymbol, typeSymbol);
+            var location = ReferenceLocation.FromSymbol(containingSymbol);
+            AddUsedType(ref location, typeSymbol);
         }
 
-        private void AddUsedType(ITypeSymbol typeSymbol) => AddUsedType((ITypeSymbol?)null, typeSymbol);
-
-        private void AddUsedType(ITypeSymbol? referenceLocation, ITypeSymbol typeSymbol)
+        private void AddUsedType(ITypeSymbol typeSymbol)
         {
-            if (referenceLocation is not null && referenceLocation.IsEqualTo(typeSymbol))
-                return;
+            var location = ReferenceLocation.None;
+            AddUsedType(ref location, typeSymbol);
+        }
 
-            lock (_usedTypes)
+        private void AddUsedType(ref ReferenceLocation referenceLocation, ITypeSymbol typeSymbol)
+        {
+            // The reference location is always a type of the analyzed assembly, so it can only be the type itself
+            // when the type belongs to that assembly. Resolving the reference location queries the semantic model,
+            // which is much more expensive than comparing the assemblies, so it is only resolved for those types.
+            if (ShouldConsiderType(typeSymbol))
             {
-                // Prevent re-processing already seen types
-                if (ShouldConsiderType(typeSymbol) && !_usedTypes.Add(typeSymbol))
+                if (referenceLocation.Resolve().IsEqualTo(typeSymbol))
                     return;
 
-                // Also mark the original definition as used (in case of generic instantiations)
-                if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
+                // Prevent re-processing already seen types
+                if (!_usedTypes.Add(typeSymbol))
+                    return;
+            }
+
+            // Also mark the original definition as used (in case of generic instantiations)
+            if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
+            {
+                AddUsedType(ref referenceLocation, typeSymbol.OriginalDefinition);
+            }
+
+            // Handle array element types
+            if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+            {
+                AddUsedType(ref referenceLocation, arrayTypeSymbol.ElementType);
+            }
+
+            // Handle pointer types
+            if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
+            {
+                AddUsedType(ref referenceLocation, pointerTypeSymbol.PointedAtType);
+            }
+
+            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            {
+                // Handle generic type arguments
+                foreach (var typeArgument in namedTypeSymbol.TypeArguments)
                 {
-                    AddUsedType(referenceLocation, typeSymbol.OriginalDefinition);
+                    AddUsedType(ref referenceLocation, typeArgument);
                 }
 
-                // Handle array element types
-                if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+                // Iterate containing types (e.g. Interop.Kernel32.CreateFile)
+                var containingType = namedTypeSymbol.ContainingType;
+                if (containingType is not null)
                 {
-                    AddUsedType(referenceLocation, arrayTypeSymbol.ElementType);
-                }
-
-                // Handle pointer types
-                if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
-                {
-                    AddUsedType(referenceLocation, pointerTypeSymbol.PointedAtType);
-                }
-
-                if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
-                {
-                    // Handle generic type arguments
-                    foreach (var typeArgument in namedTypeSymbol.TypeArguments)
-                    {
-                        AddUsedType(referenceLocation, typeArgument);
-                    }
-
-                    // Iterate containing types (e.g. Interop.Kernel32.CreateFile)
-                    var containingType = namedTypeSymbol.ContainingType;
-                    if (containingType is not null)
-                    {
-                        AddUsedType(referenceLocation, containingType);
-                    }
+                    AddUsedType(ref referenceLocation, containingType);
                 }
             }
         }
@@ -390,6 +382,52 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         private bool ShouldConsiderType(ITypeSymbol typeSymbol)
         {
             return typeSymbol.ContainingAssembly.IsEqualTo(compilation.Assembly);
+        }
+
+        /// <summary>
+        /// The type that contains the reference to the used types. It is only needed to ignore the references a type
+        /// makes to itself, so the enclosing symbol of an operation is resolved at most once, and only when a type
+        /// of the analyzed assembly is reached.
+        /// </summary>
+        private struct ReferenceLocation
+        {
+            private IOperation? _operation;
+            private ITypeSymbol? _type;
+
+            public static ReferenceLocation None => default;
+
+            public static ReferenceLocation FromOperation(IOperation? operation)
+            {
+                return operation?.SemanticModel is null ? None : new ReferenceLocation { _operation = operation };
+            }
+
+            public static ReferenceLocation FromSymbol(ISymbol? symbol)
+            {
+                if (symbol is not null and not ITypeSymbol)
+                {
+                    symbol = symbol.ContainingType;
+                }
+
+                return new ReferenceLocation { _type = symbol as ITypeSymbol };
+            }
+
+            public ITypeSymbol? Resolve()
+            {
+                if (_operation is null)
+                    return _type;
+
+                return ResolveOperation();
+            }
+
+            private ITypeSymbol? ResolveOperation()
+            {
+                var operation = _operation!;
+                _operation = null;
+
+                var enclosingSymbol = operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart);
+                _type = FromSymbol(enclosingSymbol)._type;
+                return _type;
+            }
         }
     }
 }

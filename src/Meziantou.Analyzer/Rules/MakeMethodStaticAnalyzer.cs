@@ -26,7 +26,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
      description: "",
      helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(MethodRule, PropertyRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(MethodRule, PropertyRule);
 
     public override void Initialize(AnalysisContext context)
     {

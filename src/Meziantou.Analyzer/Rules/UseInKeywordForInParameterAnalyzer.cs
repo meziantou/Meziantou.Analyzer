@@ -29,7 +29,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseInKeywordToSelectInOverload + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(RuleUseInForInParameter, RuleUseInToSelectInOverload);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(RuleUseInForInParameter, RuleUseInToSelectInOverload);
 
     public override void Initialize(AnalysisContext context)
     {

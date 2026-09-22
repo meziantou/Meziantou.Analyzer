@@ -13,7 +13,7 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         description: "Await the task before the end of the enclosing using block.",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.AwaitTaskBeforeDisposingResources));
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

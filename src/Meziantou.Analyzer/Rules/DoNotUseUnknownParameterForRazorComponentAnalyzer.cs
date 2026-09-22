@@ -19,7 +19,7 @@ public sealed class DoNotUseUnknownParameterForRazorComponentAnalyzer : Diagnost
 
     private static readonly ConfigurationDefinition<bool> ReportPascalCaseUnmatchedParameterConfiguration = new(["MA0115.report_pascal_case_unmatched_parameter", "MA0115.ReportPascalCaseUnmatchedParameter"], defaultValue: true);
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     public override void Initialize(AnalysisContext context)
     {

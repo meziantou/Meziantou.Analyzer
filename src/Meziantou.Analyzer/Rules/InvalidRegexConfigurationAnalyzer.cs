@@ -19,7 +19,7 @@ public sealed class InvalidRegexConfigurationAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<string>[] RegexConfigurations = GetRegexConfigurations();
 
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics => ImmutableArray.Create(Rule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
     /// <summary>
     /// Gets the options whose value must be a valid regular expression. The rules ignore an invalid value, so this rule
