@@ -322,10 +322,10 @@ internal sealed class XPathPropertyAttributes
         return null;
     }
 
-    private static TypeAttributeNames CreateTypeNames(string name)
+    internal static TypeAttributeNames CreateTypeNames(string name)
         => new(name + "Name", name + "MetadataName", name + "DocumentationId", name + "ReferenceId", name + "Kind", name + "IsValueType", name + "NullableAnnotation", name + "SpecialType");
 
-    private static SymbolAttributeNames CreateSymbolNames(string name)
+    internal static SymbolAttributeNames CreateSymbolNames(string name)
         => new(name, name + "Name", name + "DocumentationId", name + "Kind", name + "IsStatic", name + "IsAbstract", name + "IsVirtual", name + "IsOverride", name + "IsSealed", name + "IsAsync", name + "IsExtensionMethod", name + "Arity", name + "RefKind", name + "IsParams", name + "IsOptional", name + "IsConst", name + "IsReadOnly");
 
     private static ConversionAttributeNames CreateConversionNames(string name)

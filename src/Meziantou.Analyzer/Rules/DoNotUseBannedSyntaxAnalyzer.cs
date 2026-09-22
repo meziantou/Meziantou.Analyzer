@@ -149,8 +149,8 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         {
             try
             {
-                // The context defines the 'semantic', 'operation' and 'symbol' prefixes and the 'syntax' and 'symbol'
-                // functions. An undefined prefix throws when the query is compiled, and an expression that is not
+                // The context defines the 'semantic', 'operation' and 'symbol' prefixes, the 'syntax' and 'symbol'
+                // functions, and the semantic functions, such as 'implements'. An undefined prefix throws when the query is compiled, and an expression that is not
                 // compiled with an XsltContext cannot use a function of its own, whatever the context it is evaluated with.
                 var expression = XPathExpression.Compile(query, BannedSyntaxXsltContext.Empty);
                 if (expression.ReturnType is not XPathResultType.NodeSet)
@@ -196,6 +196,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
         var usesSymbols = false;
         var usesSyntaxFunction = false;
         var usesSymbolFunction = false;
+        var usesSemanticFunction = false;
 
         // null once the query selects attributes it does not name, so all of them must be computed
         var attributeNames = new HashSet<string>(StringComparer.Ordinal);
@@ -261,6 +262,14 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                     else if (IsName(query, start, end, BannedSyntaxXsltContext.SymbolFunctionName))
                     {
                         usesSymbolFunction = true;
+                    }
+                    else if (BannedSyntaxXsltContext.IsSemanticFunctionName(query.Substring(start, end - start)))
+                    {
+                        usesSemanticFunction = true;
+
+                        // An unknown format would silently match nothing, so it is reported when it is a literal
+                        if (BannedSyntaxXsltContext.IsTypeNameFunctionName(query.Substring(start, end - start)) && GetSecondStringArgument(query, end) is { } format && !XPathTypeNameMatcher.IsFormatName(format))
+                            return (BannedSyntaxTarget.SemanticSyntax, $"'{format}' is not a valid type name format. The valid formats are '{XPathTypeNameMatcher.MetadataNameFormat}', '{XPathTypeNameMatcher.DocumentationDeclarationIdFormat}' and '{XPathTypeNameMatcher.DocumentationReferenceIdFormat}'", AttributeNames: null);
                     }
                     else if (IsAttributeName(query, start))
                     {
@@ -359,7 +368,69 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             return (BannedSyntaxTarget.Operations, null, attributeNames);
         }
 
-        return (usesSemanticModel ? BannedSyntaxTarget.SemanticSyntax : BannedSyntaxTarget.Syntax, null, attributeNames);
+        // The semantic functions, such as 'implements', need the semantic model, which the operations and the symbols
+        // already have
+        return (usesSemanticModel || usesSemanticFunction ? BannedSyntaxTarget.SemanticSyntax : BannedSyntaxTarget.Syntax, null, attributeNames);
+    }
+
+    // The second argument of the function call whose name ends at this index, when it is a string literal, such as
+    // the format of 'implements('System.IDisposable', 'MetadataName')'. The arguments can contain function calls,
+    // predicates and literals, so only the ',' that are not nested separate the arguments.
+    private static string? GetSecondStringArgument(string query, int index)
+    {
+        while (index < query.Length && query[index] is not '(')
+        {
+            index++;
+        }
+
+        var depth = 0;
+        var quote = '\0';
+        for (var i = index + 1; i < query.Length; i++)
+        {
+            var c = query[i];
+            if (quote is not '\0')
+            {
+                if (c == quote)
+                {
+                    quote = '\0';
+                }
+
+                continue;
+            }
+
+            switch (c)
+            {
+                case '\'' or '"':
+                    quote = c;
+                    break;
+
+                case '(' or '[':
+                    depth++;
+                    break;
+
+                case ')' or ']':
+                    if (depth is 0)
+                        return null;
+
+                    depth--;
+                    break;
+
+                case ',' when depth is 0:
+                    var start = i + 1;
+                    while (start < query.Length && char.IsWhiteSpace(query[start]))
+                    {
+                        start++;
+                    }
+
+                    if (start >= query.Length || query[start] is not ('\'' or '"'))
+                        return null;
+
+                    var end = query.IndexOf(query[start], start + 1, StringComparison.Ordinal);
+                    return end < 0 ? null : query.Substring(start + 1, end - start - 1);
+            }
+        }
+
+        return null;
     }
 
     // The name is preceded by '@', so it is the name of an attribute and not the name of an element
@@ -750,7 +821,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // The symbols are only built when an entry uses the 'symbol' function. The 'syntax' function goes back
                 // to the same tree, so the semantic attributes are still available after a round trip.
                 SymbolXPathNavigator? symbolNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => navigator, () => symbolNavigator ??= new SymbolXPathNavigator(SymbolForest.Create(root, semanticModel, _semanticQueryFilter, cancellationToken)));
+                var context = new BannedSyntaxXsltContext(() => navigator, () => symbolNavigator ??= new SymbolXPathNavigator(SymbolForest.Create(root, semanticModel, _semanticQueryFilter, cancellationToken)), semanticModel, cancellationToken);
                 Evaluate(_semanticQueries, navigator, sink, context);
             }
 
@@ -762,7 +833,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // The navigator of the syntax tree is only built when an entry uses the 'syntax' function. It has no
                 // semantic model, as the semantic attributes are not available in a query on the operations.
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)), symbolNavigatorFactory: null);
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)), symbolNavigatorFactory: null, semanticModel, cancellationToken);
                 Evaluate(_operationQueries, new OperationXPathNavigator(forest, cancellationToken), sink, context);
             }
 
@@ -774,7 +845,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // Like for the operations, the navigator of the syntax tree is only built when an entry uses the
                 // 'syntax' function, and it has no semantic model
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _symbolQueryFilter, cancellationToken)), symbolNavigatorFactory: null);
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _symbolQueryFilter, cancellationToken)), symbolNavigatorFactory: null, semanticModel, cancellationToken);
                 Evaluate(_symbolQueries, new SymbolXPathNavigator(forest), sink, context);
             }
         }
