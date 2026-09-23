@@ -1371,7 +1371,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [InlineData("bool")]
     [InlineData("byte")]
     [InlineData("char")]
-    [InlineData("char[]")]
     [InlineData("decimal")]
     [InlineData("double")]
     [InlineData("short")]
@@ -1398,6 +1397,9 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     [Theory]
     [InlineData("object")]
     [InlineData("System.ReadOnlySpan<bool>")]
+
+    // char[].ToString() returns "System.Char[]", whereas Append(char[]) appends the characters
+    [InlineData("char[]")]
     public Task AppendLine_ValueToString_NoReport(string dataType)
     {
         var test = CreateTest();
@@ -1405,6 +1407,240 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         test.TestCode = $$$""""
             {{{$$"""new System.Text.StringBuilder().AppendLine(default({{dataType}}).ToString());"""}}}
             """";
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public Task AppendLine_InterpolatedOneCharString_NoDiagnostic(bool netStandard)
+    {
+        var test = CreateTest();
+        if (netStandard)
+        {
+            test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        }
+
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb) => sb.AppendLine($"a");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Append(", "Append('a')")]
+    [InlineData("Insert(0, ", "Insert(0, 'a')")]
+    public Task InterpolatedOneCharString(string method, string expected)
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetStandard.NetStandard20;
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb) => sb.{{method}}{|MA0028:$"a"|});
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb) => sb.{{expected}};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(@"sb.Append("""")")]
+    [InlineData(@"sb.Insert(0, """")")]
+    [InlineData(@"sb.Insert(index, """")")]
+    [InlineData(@"_field.Append("""")")]
+    [InlineData(@"this._field.Append(string.Empty)")]
+    public Task RemoveNoOpCall_Statement(string expression)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                private StringBuilder _field = new StringBuilder();
+
+                void A(StringBuilder sb, int index)
+                {
+                    {|MA0028:{{expression}}|};
+                    sb.AppendLine();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                private StringBuilder _field = new StringBuilder();
+
+                void A(StringBuilder sb, int index)
+                {
+                    sb.AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RemoveNoOpCall_Statement_InSwitchSection()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb, int value)
+                {
+                    switch (value)
+                    {
+                        case 0:
+                            {|MA0028:sb.Append("")|};
+                            break;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb, int value)
+                {
+                    switch (value)
+                    {
+                        case 0:
+                            break;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RemoveNoOpCall_TopLevelStatement()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var sb = new System.Text.StringBuilder();
+            {|MA0028:sb.Append("")|};
+            sb.AppendLine();
+            """;
+        test.FixedCode = """
+            var sb = new System.Text.StringBuilder();
+
+            sb.AppendLine();
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RemoveNoOpCall_Statement_ChainedCall()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb)
+                {
+                    {|MA0028:sb.AppendLine().Append("")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb)
+                {
+                    sb.AppendLine();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RemoveNoOpCall_ResultIsUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text;
+            class Test
+            {
+                StringBuilder A(StringBuilder sb) => {|MA0028:sb.Append("")|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Text;
+            class Test
+            {
+                StringBuilder A(StringBuilder sb) => sb;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData(@"void A(StringBuilder sb) => {|MA0028:sb.Append("""")|};")]
+    [InlineData(@"void A(StringBuilder sb, bool condition) { if (condition) {|MA0028:sb.Append("""")|}; }")]
+    [InlineData(@"void A() { {|MA0028:Property.Append("""")|}; }")]
+    [InlineData(@"void A(StringBuilder sb, int index) { {|MA0028:sb.Insert(index++, """")|}; }")]
+    [InlineData(@"void A(StringBuilder sb) { {|MA0028:sb.Insert(GetIndex(), """")|}; }")]
+    public Task RemoveNoOpCall_NoCodeFix(string method)
+    {
+        var code = $$"""
+            using System.Text;
+            class Test
+            {
+                StringBuilder Property => new StringBuilder();
+
+                static int GetIndex() => 0;
+
+                {{method}}
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Append")]
+    [InlineData("AppendLine")]
+    public Task CharArrayToString_NoDiagnostic(string method)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb, char[] chars) => sb.{{method}}(chars.ToString());
+            }
+            """;
 
         return test.RunAsync();
     }

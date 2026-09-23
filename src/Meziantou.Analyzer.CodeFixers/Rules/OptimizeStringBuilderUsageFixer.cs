@@ -34,7 +34,35 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeStringBuilderUsageData.RemoveMethod:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveMethod(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                if (nodeToFix is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax { Expression: var receiver } } removedInvocation)
+                    return;
+
+                var removeSemanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                if (removeSemanticModel?.GetOperation(removedInvocation, context.CancellationToken) is not IInvocationOperation removedOperation)
+                    return;
+
+                // 'a?.b.Append("")' cannot be replaced by 'a?.b'
+                if (removedOperation.Parent is IConditionalAccessOperation)
+                    return;
+
+                // The other arguments, such as the index of 'Insert(index, "")', are not evaluated anymore
+                if (removedOperation.Arguments.Any(argument => argument.Parameter is not { Type.SpecialType: SpecialType.System_String } && !CanBeEvaluatedMultipleTimes(argument.Value)))
+                    return;
+
+                // 'sb.Append("").Append(value)' => 'sb.Append(value)', and 'sb.AppendLine().Append("");' => 'sb.AppendLine();'
+                if (removedOperation.Parent is not IExpressionStatementOperation || receiver is InvocationExpressionSyntax or ObjectCreationExpressionSyntax)
+                {
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceNode(context.Document, removedInvocation, receiver.WithTriviaFrom(removedInvocation), ct), equivalenceKey: title), context.Diagnostics);
+                    break;
+                }
+
+                // 'sb.Append("");' => '', as 'sb;' is not a valid statement. The statement can be removed only when the receiver has no side effect,
+                // and when it is not the embedded statement of another statement, such as 'if (condition) sb.Append("");'
+                if (removedInvocation.Parent is not ExpressionStatementSyntax { Parent: BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax } statement || !CanBeEvaluatedMultipleTimes(removedOperation.Instance))
+                    return;
+
+                SyntaxNode nodeToRemove = statement.Parent is GlobalStatementSyntax globalStatement ? globalStatement : statement;
+                context.RegisterCodeFix(CodeAction.Create(title, ct => RemoveNode(context.Document, nodeToRemove, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeStringBuilderUsageData.ReplaceWithChar:
@@ -386,16 +414,17 @@ public sealed class OptimizeStringBuilderUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> RemoveMethod(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceNode(Document document, SyntaxNode nodeToReplace, SyntaxNode newNode, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(nodeToReplace, newNode);
+        return editor.GetChangedDocument();
+    }
 
-        var newExpression = (InvocationExpressionSyntax)nodeToFix;
-        if (newExpression.Expression is MemberAccessExpressionSyntax expression)
-        {
-            editor.ReplaceNode(nodeToFix, expression.Expression);
-        }
-
+    private static async Task<Document> RemoveNode(Document document, SyntaxNode nodeToRemove, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.RemoveNode(nodeToRemove);
         return editor.GetChangedDocument();
     }
 
