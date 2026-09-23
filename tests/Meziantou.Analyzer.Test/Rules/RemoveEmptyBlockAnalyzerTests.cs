@@ -67,6 +67,94 @@ public sealed class RemoveEmptyBlockAnalyzerTests
     }
 
     [Fact]
+    public Task EmptyElseBlock_FollowedByElseOfOuterIf_NoCodeFix()
+    {
+        var test = CreateTest();
+
+        // Removing the empty else block would make the else of the outer if statement bind to the inner if statement
+        const string Code = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                        if (b)
+                            A(a, b);
+                        {|MA0090:else
+                        {
+                        }|}
+                    else
+                        A(a, b);
+                }
+            }
+            """;
+        test.TestCode = Code;
+        test.FixedCode = Code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyElseBlock_InLoop_FollowedByElseOfOuterIf_NoCodeFix()
+    {
+        var test = CreateTest();
+        const string Code = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                        while (b)
+                            if (b)
+                                A(a, b);
+                            {|MA0090:else
+                            {
+                            }|}
+                    else
+                        A(a, b);
+                }
+            }
+            """;
+        test.TestCode = Code;
+        test.FixedCode = Code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyElseBlock_NestedIfWithoutOuterElse_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                        if (b)
+                            A(a, b);
+                        {|MA0090:else
+                        {
+                        }|}
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                        if (b)
+                            A(a, b);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ElseBlockContainingABlock()
     {
         var test = CreateTest();

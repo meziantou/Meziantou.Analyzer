@@ -17,7 +17,9 @@ public sealed class RemoveEmptyBlockFixer : CodeFixProvider
         // Walking up the ancestors would pick the enclosing else clause of a nested finally clause.
         switch (root?.FindNode(context.Span, getInnermostNodeForTie: true))
         {
-            case ElseClauseSyntax { Parent: IfStatementSyntax ifStatement }:
+            // When the if statement is followed by the else clause of an outer if statement (e.g. `if (a) if (b) Foo(); else { } else Bar();`),
+            // removing the else clause would make the outer else clause bind to this if statement, which changes the behavior of the code.
+            case ElseClauseSyntax { Parent: IfStatementSyntax ifStatement } when !ifStatement.GetLastToken().GetNextToken().IsKind(SyntaxKind.ElseKeyword):
                 context.RegisterCodeFix(
                     CodeAction.Create(
                         "Remove empty else block",
