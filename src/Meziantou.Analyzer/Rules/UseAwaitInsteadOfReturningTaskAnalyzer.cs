@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
@@ -95,9 +96,13 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
             if (!awaitableTypes.IsAwaitable(value.Type, value.SemanticModel!, value.Syntax.SpanStart))
                 return;
 
-            // Do not report inside try/using (would change exception/disposal semantics) or lock/fixed
+            // Do not report inside try/using (would change exception/disposal semantics) or lock
             // (where 'await' is not even allowed).
-            if (IsInProtectedContext(returnOperation.Syntax, functionOperation.Syntax))
+            if (IsInProtectedContext(returnOperation, functionOperation))
+                return;
+
+            // 'await' cannot be used in an unsafe context (CS4004)
+            if (IsInUnsafeContext(returnOperation.Syntax))
                 return;
 
             // Awaiting an already-completed task (Task.CompletedTask, Task.FromResult(value), ...) does not
@@ -119,12 +124,55 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private static bool IsInProtectedContext(SyntaxNode returnSyntax, SyntaxNode functionSyntax)
+    private static bool IsInProtectedContext(IReturnOperation returnOperation, IOperation functionOperation)
     {
-        for (var node = returnSyntax.Parent; node is not null && node != functionSyntax; node = node.Parent)
+        IOperation child = returnOperation;
+        for (var operation = returnOperation.Parent; operation is not null && operation != functionOperation; operation = operation.Parent)
         {
-            if (node is TryStatementSyntax or UsingStatementSyntax or LockStatementSyntax or FixedStatementSyntax)
-                return true;
+            switch (operation)
+            {
+                case ITryOperation or IUsingOperation or ILockOperation:
+                    return true;
+
+                // A 'using' declaration disposes at the end of its enclosing block, so it is in scope for the statements
+                // that follow it in that block, like a 'using' statement
+                case IBlockOperation block:
+                    foreach (var statement in block.Operations)
+                    {
+                        if (statement == child)
+                            break;
+
+                        if (statement is IUsingDeclarationOperation)
+                            return true;
+                    }
+
+                    break;
+            }
+
+            child = operation;
+        }
+
+        return false;
+    }
+
+    // The unsafe context is not exposed by IOperation nor ISymbol: an 'unsafe' block is a plain IBlockOperation and
+    // the 'unsafe' modifier is not available on the symbols, so the syntax is the only way to find it. This also
+    // covers the 'fixed' statements, which are only allowed in an unsafe context.
+    private static bool IsInUnsafeContext(SyntaxNode syntax)
+    {
+        foreach (var node in syntax.Ancestors())
+        {
+            switch (node)
+            {
+                case UnsafeStatementSyntax:
+                    return true;
+
+                case MemberDeclarationSyntax member when member.Modifiers.Any(SyntaxKind.UnsafeKeyword):
+                    return true;
+
+                case LocalFunctionStatementSyntax localFunction when localFunction.Modifiers.Any(SyntaxKind.UnsafeKeyword):
+                    return true;
+            }
         }
 
         return false;

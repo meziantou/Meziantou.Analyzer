@@ -1294,4 +1294,182 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task UnsafeMethod_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static unsafe Task<int> A() => Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UnsafeType_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            unsafe class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A() => Inner();
+                static void B()
+                {
+                    Func<Task<int>> lambda = () => Inner();
+                    Task<int> Local() => Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnInsideUnsafeBlock_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A()
+                {
+                    unsafe
+                    {
+                        return Inner();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnInsideFixed_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(int[] values)
+                {
+                    unsafe
+                    {
+                        fixed (int* pointer = values)
+                        {
+                            return Inner();
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnInsideUsing_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IDisposable D() => throw null;
+                static Task<int> Inner() => throw null;
+                static Task<int> A()
+                {
+                    using (D())
+                    {
+                        return Inner();
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnAfterUsingDeclaration_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IDisposable D() => throw null;
+                static Task<int> Inner() => throw null;
+                static Task<int> A(bool condition)
+                {
+                    using var d = D();
+                    if (condition)
+                    {
+                        return Inner();
+                    }
+
+                    return Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReturnAfterUsingDeclarationInChildBlock_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IDisposable D() => throw null;
+                static Task<int> Inner() => throw null;
+                static Task<int> A()
+                {
+                    {
+                        using var d = D();
+                    }
+
+                    return {|MA0214:Inner()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IDisposable D() => throw null;
+                static Task<int> Inner() => throw null;
+                static async Task<int> A()
+                {
+                    {
+                        using var d = D();
+                    }
+
+                    return await Inner();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
