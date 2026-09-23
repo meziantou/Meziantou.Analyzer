@@ -43,6 +43,12 @@ public sealed class AvoidUsingRedundantElseFixer : CodeFixProvider
         return document;
     }
 
+    // The elastic trivia of the braces created by SyntaxFactory.Block would let the formatter remove the empty line after the 'if' statement
+    private static BlockSyntax CreateBlock(StatementSyntax statement)
+    {
+        return Block(Token(SyntaxTriviaList.Empty, SyntaxKind.OpenBraceToken, SyntaxTriviaList.Empty), SingletonList(statement), Token(SyntaxTriviaList.Empty, SyntaxKind.CloseBraceToken, SyntaxTriviaList.Empty));
+    }
+
     private static async Task<Document> RemoveRedundantElse(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
     {
         if (nodeToFix is not ElseClauseSyntax elseClause)
@@ -55,8 +61,13 @@ public sealed class AvoidUsingRedundantElseFixer : CodeFixProvider
         if (ifStatementParent is null)
             return document;
 
-        // Get all syntax nodes currently under the 'else' clause
-        var nodesAfterNewIfStatement = AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause)
+        // Get all syntax nodes currently under the 'else' clause. When moving them to the enclosing scope would make a local
+        // conflict with another identifier, the block of the else clause is kept, so the locals stay in their own scope.
+        IEnumerable<SyntaxNode> elseClauseChildren = AvoidUsingRedundantElseAnalyzerCommon.HasConflictingLocalDeclarations(elseClause) ?
+            [elseClause.Statement is BlockSyntax elseBlock ? elseBlock : CreateBlock(elseClause.Statement)] :
+            AvoidUsingRedundantElseAnalyzerCommon.GetElseClauseChildren(elseClause);
+
+        var nodesAfterNewIfStatement = elseClauseChildren
             .Select(n => n.WithAdditionalAnnotations(Formatter.Annotation))
             .ToArray();
 

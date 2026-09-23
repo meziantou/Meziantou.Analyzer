@@ -49,7 +49,8 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
             if (!IsUnreachableEndpoint(context.SemanticModel.AnalyzeControlFlow(currentIfStatement.Statement)))
                 return;
 
-            if (!HasUsingLocalDeclaration(elseClause) && !HasConflictingLocalIdentifiers(currentIfStatement.Statement, elseClause.Statement))
+            // The locals whose names conflict with other identifiers don't prevent the diagnostic, as the code fix keeps the block of the else clause
+            if (!HasUsingLocalDeclaration(elseClause))
             {
                 context.ReportDiagnostic(Rule, elseClause.ElseKeyword);
             }
@@ -82,52 +83,5 @@ public sealed partial class AvoidUsingRedundantElseAnalyzer : DiagnosticAnalyzer
         }
 
         return false;
-    }
-
-    private static bool HasConflictingLocalIdentifiers(SyntaxNode thenStatement, SyntaxNode elseStatement)
-    {
-        // In an "else if" chain the else statement holds every following branch, so walking it is expensive.
-        // The intersection is empty as soon as the 'then' branch declares nothing, which is the common case,
-        // so collect the 'then' identifiers first and only walk the else statement when one can collide.
-        HashSet<string>? thenLocalIdentifiers = null;
-        foreach (var identifier in FindLocalIdentifiersIn(thenStatement))
-        {
-            thenLocalIdentifiers ??= new HashSet<string>(System.StringComparer.Ordinal);
-            thenLocalIdentifiers.Add(identifier);
-        }
-
-        if (thenLocalIdentifiers is null)
-            return false;
-
-        foreach (var identifier in FindLocalIdentifiersIn(elseStatement))
-        {
-            if (thenLocalIdentifiers.Contains(identifier))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static IEnumerable<string> FindLocalIdentifiersIn(SyntaxNode node)
-    {
-        foreach (var child in node.DescendantNodes())
-        {
-#pragma warning disable IDE0010 // Add missing cases
-            switch (child)
-            {
-                case VariableDeclaratorSyntax variableDeclarator:
-                    yield return variableDeclarator.Identifier.Text;
-                    break;
-
-                case LocalFunctionStatementSyntax localFunction:
-                    yield return localFunction.Identifier.Text;
-                    break;
-
-                case SingleVariableDesignationSyntax singleVariableDesignation:
-                    yield return singleVariableDesignation.Identifier.Text;
-                    break;
-            }
-#pragma warning restore IDE0010 // Add missing cases
-        }
     }
 }
