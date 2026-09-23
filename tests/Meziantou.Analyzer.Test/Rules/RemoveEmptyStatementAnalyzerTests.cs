@@ -154,6 +154,183 @@ public sealed class RemoveEmptyStatementAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("if (b)")]
+    [InlineData("if (b) { } else")]
+    [InlineData("while (b)")]
+    [InlineData("lock (o)")]
+    [InlineData("using (d)")]
+    [InlineData("foreach (var (x, y) in items)")]
+    public Task EmbeddedStatement(string statement)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                public void A(bool b, object o, System.IDisposable d, (int, int)[] items)
+                {
+                    {{statement}}
+                        {|MA0037:;|}
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            class Test
+            {
+                public void A(bool b, object o, System.IDisposable d, (int, int)[] items)
+                {
+                    {{statement}}
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmbeddedStatement_SameLine()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(bool b)
+                {
+                    if (b) {|MA0037:;|}
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(bool b)
+                {
+                    if (b)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task DoStatement()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(bool b)
+                {
+                    do
+                        {|MA0037:;|}
+                    while (b);
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(bool b)
+                {
+                    do
+                    {
+                    }
+                    while (b);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FixedStatement()
+    {
+        var test = CreateTest();
+        test.SolutionTransforms.Add(static (solution, projectId) =>
+            solution.WithProjectCompilationOptions(projectId, ((CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!).WithAllowUnsafe(true)));
+        test.TestCode = """
+            unsafe class Test
+            {
+                public void A(int[] array)
+                {
+                    fixed (int* p = array)
+                        {|MA0037:;|}
+                }
+            }
+            """;
+        test.FixedCode = """
+            unsafe class Test
+            {
+                public void A(int[] array)
+                {
+                    fixed (int* p = array)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyStatementInSwitchSection()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(int value)
+                {
+                    switch (value)
+                    {
+                        case 0:
+                            {|MA0037:;|}
+                            break;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(int value)
+                {
+                    switch (value)
+                    {
+                        case 0:
+                            break;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EmptyStatementInTopLevelStatements()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            System.Console.WriteLine();
+            {|MA0037:;|}
+            """;
+        test.FixedCode = """
+            System.Console.WriteLine();
+
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task EmptyStatementInALabel()
     {

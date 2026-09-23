@@ -51,26 +51,11 @@ public sealed class RemoveEmptyStatementFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
+    // An empty statement can only be removed when it is in a list of statements.
+    // Otherwise, it is the embedded statement of another statement (if, else, while, do, for, foreach, using, lock, fixed, ...),
+    // which requires a statement.
     private static bool ShouldReplaceWithEmptyBlock(StatementSyntax statementSyntax)
     {
-        var parent = statementSyntax.Parent;
-        if (parent.IsKind(SyntaxKind.WhileStatement))
-        {
-            if (((WhileStatementSyntax)parent).Statement == statementSyntax)
-                return true;
-        }
-        else if (parent.IsKind(SyntaxKind.ForStatement))
-        {
-            if (((ForStatementSyntax)parent).Statement == statementSyntax)
-                return true;
-        }
-
-        else if (parent.IsKind(SyntaxKind.ForEachStatement))
-        {
-            if (((ForEachStatementSyntax)parent).Statement == statementSyntax)
-                return true;
-        }
-
-        return false;
+        return statementSyntax.Parent is not (BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax);
     }
 }
