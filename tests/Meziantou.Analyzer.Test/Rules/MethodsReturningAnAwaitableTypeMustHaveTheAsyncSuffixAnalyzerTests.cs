@@ -511,4 +511,35 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ConversionOperatorReturningTask_IsIgnored()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static implicit operator Task(Test t) => Task.CompletedTask;
+                public static explicit operator ValueTask(Test t) => default;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OperatorReturningTask_IsIgnored()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static Task operator +(Test a, Test b) => Task.CompletedTask;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

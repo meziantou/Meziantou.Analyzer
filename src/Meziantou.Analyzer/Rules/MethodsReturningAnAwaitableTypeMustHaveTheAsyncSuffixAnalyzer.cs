@@ -73,6 +73,11 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             var method = (IMethodSymbol)context.Symbol;
+
+            // The name of an operator is defined by the language
+            if (method.MethodKind is MethodKind.UserDefinedOperator or MethodKind.Conversion)
+                return;
+
             if (method.IsOverrideOrInterfaceImplementation())
                 return;
 
