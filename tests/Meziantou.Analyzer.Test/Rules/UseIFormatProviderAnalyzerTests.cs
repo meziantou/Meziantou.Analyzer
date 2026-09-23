@@ -537,15 +537,34 @@ public sealed class UseIFormatProviderAnalyzerTests
         return test.RunAsync();
     }
 
-    [Fact]
-    public Task CultureInfoOverload_CodeFix()
+    [Theory]
+    [InlineData(""" {|MA0011:"".ToLower()|} """, """ "".ToLowerInvariant() """)]
+    [InlineData(""" {|MA0011:"".ToUpper()|} """, """ "".ToUpperInvariant() """)]
+    [InlineData(""" {|MA0011:char.ToLower('a')|} """, """ char.ToLowerInvariant('a') """)]
+    [InlineData(""" {|MA0011:char.ToUpper(c: 'a')|} """, """ char.ToUpperInvariant(c: 'a') """)]
+    public Task ToLowerToUpper_InvariantMethod_CodeFix(string code, string fix)
     {
         var test = CreateTest();
+        test.TestCode = $$"""
+            _ = {{code}};
+            """;
+        test.FixedCode = $$"""
+            _ = {{fix}};
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ToLower_CurrentCulture_CodeFix()
+    {
+        var test = CreateTest();
+        test.CodeActionIndex = 1;
         test.TestCode = """
             _ = {|MA0011:"".ToLower()|};
             """;
         test.FixedCode = """
-            _ = "".ToLower(System.Globalization.CultureInfo.InvariantCulture);
+            _ = "".ToLower(System.Globalization.CultureInfo.CurrentCulture);
             """;
 
         return test.RunAsync();

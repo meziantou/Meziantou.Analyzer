@@ -41,7 +41,9 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
         if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderType, out var parameterIndex, out var parameterName))
         {
-            var registered = RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
+            var registered = GetInvariantMethod(invocationOperation.TargetMethod) is { } invariantMethod
+                ? RegisterInvariantMethodCodeFix(invariantMethod)
+                : RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
             registered |= RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
             if (registered)
                 return;
@@ -82,6 +84,31 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
                     title,
                     ct => FixInvocation(context.Document, invocationExpression, newInvocation, namespaceToImport, ct),
                     equivalenceKey: title),
+                context.Diagnostics);
+            return true;
+        }
+
+        bool RegisterInvariantMethodCodeFix(IMethodSymbol invariantMethod)
+        {
+            SimpleNameSyntax? methodName = invocationExpression.Expression switch
+            {
+                MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+                MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+                IdentifierNameSyntax identifierName => identifierName,
+                _ => null,
+            };
+
+            if (methodName is not IdentifierNameSyntax)
+                return false;
+
+            var newInvocation = invocationExpression.ReplaceNode(methodName, SyntaxFactory.IdentifierName(invariantMethod.Name).WithTriviaFrom(methodName));
+
+            // Use the same equivalence key as CultureInfo.InvariantCulture, so fixing all the occurrences uses the invariant methods when available
+            context.RegisterCodeFix(
+                CodeAction.Create(
+                    $"Use {invariantMethod.Name}",
+                    ct => FixInvocation(context.Document, invocationExpression, newInvocation, namespaceToImport: null, ct),
+                    equivalenceKey: "Use CultureInfo.InvariantCulture"),
                 context.Diagnostics);
             return true;
         }
@@ -140,6 +167,26 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         }
 
         return editor.GetChangedDocument();
+    }
+
+    // string.ToLower() => string.ToLowerInvariant(), char.ToUpper(char) => char.ToUpperInvariant(char)
+    private static IMethodSymbol? GetInvariantMethod(IMethodSymbol method)
+    {
+        if (method.ContainingType.SpecialType is not (SpecialType.System_String or SpecialType.System_Char) || method.Name is not ("ToLower" or "ToUpper"))
+            return null;
+
+        foreach (var member in method.ContainingType.GetMembers(method.Name + "Invariant"))
+        {
+            if (member is IMethodSymbol candidate &&
+                candidate.IsStatic == method.IsStatic &&
+                candidate.Parameters.Length == method.Parameters.Length &&
+                candidate.Parameters.Zip(method.Parameters, (a, b) => a.Type.IsEqualTo(b.Type) && a.Name == b.Name).All(match => match))
+            {
+                return candidate;
+            }
+        }
+
+        return null;
     }
 
     private static bool TryGetFormatProviderParameterInfo(IMethodSymbol method, IMethodSymbol overload, FormatProviderType formatProviderType, out int parameterIndex, out string parameterName)
