@@ -23,9 +23,12 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             return;
 
         var formatProviderSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.IFormatProvider");
+        var cultureInfoSymbol = semanticModel.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
         var stringSymbol = semanticModel.Compilation.GetSpecialType(SpecialType.System_String);
-        if (formatProviderSymbol is null || stringSymbol is null)
+        if (formatProviderSymbol is null || cultureInfoSymbol is null || stringSymbol is null)
             return;
+
+        var formatProviderType = new FormatProviderType(formatProviderSymbol, cultureInfoSymbol);
 
         // The fix only searches the extension methods declared in a namespace that is not imported when the analyzer selected one of them
         var namespaceToImport = context.Diagnostics[0].Properties.GetValueOrDefault(OverloadFinder.NamespaceToImportPropertyName);
@@ -36,7 +39,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: namespaceToImport is not null),
             [new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
-        if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderSymbol, out var parameterIndex, out var parameterName))
+        if (overload is not null && TryGetFormatProviderParameterInfo(invocationOperation.TargetMethod, overload, formatProviderType, out var parameterIndex, out var parameterName))
         {
             var registered = RegisterCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
             registered |= RegisterCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
@@ -51,7 +54,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
                 new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: namespaceToImport is not null),
                 [new OverloadParameterType(stringSymbol), new OverloadParameterType(formatProviderSymbol, AllowInherits: true)]);
 
-            if (overload is not null && CanFixToStringOverload(overload, formatProviderSymbol))
+            if (overload is not null && CanFixToStringOverload(overload, formatProviderType))
             {
                 RegisterToStringCodeFix(InvariantCultureExpression, "Use CultureInfo.InvariantCulture");
                 RegisterToStringCodeFix(CurrentCultureExpression, "Use CultureInfo.CurrentCulture");
@@ -67,7 +70,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
                 parameterIndex,
                 parameterName,
                 SyntaxFactory.ParseExpression(formatProviderExpression),
-                parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol),
+                parameter => formatProviderType.Matches(parameter.Type),
                 namespaceToImport: namespaceToImport,
                 cancellationToken: context.CancellationToken);
 
@@ -85,7 +88,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
 
         void RegisterToStringCodeFix(string formatProviderExpression, string title)
         {
-            var newInvocation = CreateToStringInvocation(semanticModel, invocationExpression, overload!, formatProviderSymbol, formatProviderExpression, namespaceToImport, context.CancellationToken);
+            var newInvocation = CreateToStringInvocation(semanticModel, invocationExpression, overload!, formatProviderType, formatProviderExpression, namespaceToImport, context.CancellationToken);
             if (newInvocation is null)
                 return;
 
@@ -98,7 +101,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         }
     }
 
-    private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, string formatProviderExpression, string? namespaceToImport, CancellationToken cancellationToken)
+    private static InvocationExpressionSyntax? CreateToStringInvocation(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, IMethodSymbol overload, FormatProviderType formatProviderType, string formatProviderExpression, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var arguments = new List<ArgumentSyntax>(capacity: overload.Parameters.Length);
         foreach (var parameter in overload.Parameters)
@@ -108,7 +111,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
             {
                 expression = SyntaxFactory.LiteralExpression(SyntaxKind.NullLiteralExpression);
             }
-            else if (parameter.Type.IsOrInheritsFrom(formatProviderSymbol))
+            else if (formatProviderType.Matches(parameter.Type))
             {
                 expression = SyntaxFactory.ParseExpression(formatProviderExpression);
             }
@@ -121,7 +124,7 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         }
 
         var candidate = ArgumentListHelper.WithArguments(invocationExpression, SyntaxFactory.SeparatedList(arguments));
-        if (ArgumentListHelper.GetTargetMethod(semanticModel, invocationExpression, candidate, namespaceToImport, cancellationToken) is { } method && method.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)))
+        if (ArgumentListHelper.GetTargetMethod(semanticModel, invocationExpression, candidate, namespaceToImport, cancellationToken) is { } method && method.Parameters.Any(parameter => formatProviderType.Matches(parameter.Type)))
             return candidate;
 
         return null;
@@ -139,15 +142,15 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static bool TryGetFormatProviderParameterInfo(IMethodSymbol method, IMethodSymbol overload, ITypeSymbol formatProviderSymbol, out int parameterIndex, out string parameterName)
+    private static bool TryGetFormatProviderParameterInfo(IMethodSymbol method, IMethodSymbol overload, FormatProviderType formatProviderType, out int parameterIndex, out string parameterName)
     {
         for (var i = 0; i < overload.Parameters.Length; i++)
         {
             var parameter = overload.Parameters[i];
-            if (!parameter.Type.IsOrInheritsFrom(formatProviderSymbol))
+            if (!formatProviderType.Matches(parameter.Type))
                 continue;
 
-            if (i >= method.Parameters.Length || !method.Parameters[i].Type.IsOrInheritsFrom(formatProviderSymbol))
+            if (i >= method.Parameters.Length || !formatProviderType.Matches(method.Parameters[i].Type))
             {
                 parameterIndex = i;
                 parameterName = parameter.Name;
@@ -160,13 +163,19 @@ public sealed class UseIFormatProviderFixer : CodeFixProvider
         return false;
     }
 
-    private static bool CanFixToStringOverload(IMethodSymbol overload, ITypeSymbol formatProviderSymbol)
+    private static bool CanFixToStringOverload(IMethodSymbol overload, FormatProviderType formatProviderType)
     {
         if (overload.Parameters.Length != 2)
             return false;
 
         return overload.Parameters.Any(parameter => parameter.Type.IsString()) &&
-               overload.Parameters.Any(parameter => parameter.Type.IsOrInheritsFrom(formatProviderSymbol)) &&
-               overload.Parameters.All(parameter => parameter.Type.IsString() || parameter.Type.IsOrInheritsFrom(formatProviderSymbol));
+               overload.Parameters.Any(parameter => formatProviderType.Matches(parameter.Type)) &&
+               overload.Parameters.All(parameter => parameter.Type.IsString() || formatProviderType.Matches(parameter.Type));
+    }
+
+    // The fix passes a CultureInfo, so the parameter must accept one. Parameters of a more derived type, such as NumberFormatInfo, cannot be used.
+    private readonly record struct FormatProviderType(ITypeSymbol FormatProviderSymbol, ITypeSymbol CultureInfoSymbol)
+    {
+        public bool Matches(ITypeSymbol type) => type.IsAssignableTo(FormatProviderSymbol) && CultureInfoSymbol.IsAssignableTo(type);
     }
 }

@@ -480,7 +480,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return CanHold(SqliteConnectionSymbol, type) || CanHold(SqliteCommandSymbol, type) || CanHold(SqliteDataReaderSymbol, type);
 
             static bool CanHold(INamedTypeSymbol? sqliteType, INamedTypeSymbol declaredType)
-                => sqliteType is not null && (sqliteType.InheritsFrom(declaredType) || sqliteType.Implements(declaredType));
+                => sqliteType is not null && sqliteType.IsAssignableTo(declaredType);
         }
 
         private bool IsSqliteSpecialCaseMethod(IInvocationOperation operation, CancellationToken cancellationToken)

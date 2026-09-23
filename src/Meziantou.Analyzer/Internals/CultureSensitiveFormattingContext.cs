@@ -654,7 +654,7 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
             {
                 foreach (var member in currentType.GetMembers(nameof(ToString)))
                 {
-                    if (member is IMethodSymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public, ReturnType.SpecialType: SpecialType.System_String, Parameters: [var param1] } && param1.Type.IsOrInheritsFrom(FormatProviderSymbol))
+                    if (member is IMethodSymbol { IsStatic: false, DeclaredAccessibility: Accessibility.Public, ReturnType.SpecialType: SpecialType.System_String, Parameters: [var param1] } && param1.Type.IsAssignableTo(FormatProviderSymbol))
                         return true;
                 }
             }

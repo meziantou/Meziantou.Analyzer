@@ -512,6 +512,63 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public Task ToString_WithCultureInfoOverload_WithoutIFormattable_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0011:new Location().ToString()|};
+
+            class Location
+            {
+                public override string ToString() => throw null;
+                public string ToString(System.Globalization.CultureInfo culture) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            _ = new Location().ToString(System.Globalization.CultureInfo.InvariantCulture);
+
+            class Location
+            {
+                public override string ToString() => throw null;
+                public string ToString(System.Globalization.CultureInfo culture) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CultureInfoOverload_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            _ = {|MA0011:"".ToLower()|};
+            """;
+        test.FixedCode = """
+            _ = "".ToLower(System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CultureInfoArgument_OverloadWithIFormatProvider_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample.M(System.Globalization.CultureInfo.InvariantCulture);
+
+            class Sample
+            {
+                public static void M(System.Globalization.CultureInfo culture) => throw null;
+                public static void M(System.Globalization.CultureInfo culture, System.IFormatProvider formatProvider) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InterpolatedStringHandler_CultureSensitiveFormat_ShouldReport()
     {
         var test = CreateTest();

@@ -322,7 +322,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             if (right.Symbol is null)
                 return false;
 
-            if (right.AllowInherits && left.IsOrInheritsFrom(right.Symbol))
+            if (right.AllowInherits && left.IsAssignableTo(right.Symbol))
                 return true;
 
             var inferredTypeArguments = new InferredTypeArguments();
@@ -564,9 +564,13 @@ internal sealed class OverloadFinder(Compilation compilation)
                     return false;
                 }
 
+                // Nullable value types cannot satisfy a type constraint, even if they box to the constraint type
+                if (!typeParameter.ConstraintTypes.IsEmpty && inferredTypeArgument.OriginalDefinition.SpecialType is SpecialType.System_Nullable_T)
+                    return false;
+
                 foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    if (!inferredTypeArgument.IsOrInheritsFrom(constraintType) && !inferredTypeArgument.Implements(constraintType))
+                    if (!inferredTypeArgument.IsAssignableTo(constraintType))
                         return false;
                 }
             }

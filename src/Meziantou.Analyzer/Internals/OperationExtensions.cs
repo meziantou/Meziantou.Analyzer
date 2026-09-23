@@ -34,7 +34,7 @@ internal static class OperationExtensions
         {
             if (inherits)
             {
-                if (arg.Value.Type is not null && arg.Value.Type.IsOrInheritsFrom(argumentTypeSymbol))
+                if (arg.Value.Type is not null && arg.Value.Type.IsAssignableTo(argumentTypeSymbol))
                     return true;
             }
             else if (argumentTypeSymbol.IsEqualTo(arg.Value.Type))
