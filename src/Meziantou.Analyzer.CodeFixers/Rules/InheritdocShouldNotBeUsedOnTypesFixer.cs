@@ -30,7 +30,7 @@ public sealed class InheritdocShouldNotBeUsedOnTypesFixer : CodeFixProvider
         if (HasBaseType(typeSymbol))
             return;
 
-        var interfaces = InheritdocOnTypesCommon.GetInterfaces(typeSymbol, context.CancellationToken);
+        var interfaces = InheritdocOnTypesCommon.GetInterfaces(typeSymbol, semanticModel.Compilation, context.CancellationToken);
         if (interfaces.Length <= 1)
             return;
 

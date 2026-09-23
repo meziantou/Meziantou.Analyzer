@@ -131,10 +131,27 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
     [Fact]
     public Task ReportDiagnostic_MA0197_WhenRecordDeclaresEquatableInterface()
     {
+        // The IEquatable<Sample> interface is written in the base list, so it is the source of the documentation,
+        // as for any other interface. The compiler merges it with the one it implements on the records.
         var test = CreateTest();
         test.TestCode = """
             /// {|MA0197:<inheritdoc />|}
             record Sample : System.IEquatable<Sample>;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenRecordDeclaresEquatableInterfaceOfAnotherType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0197:<inheritdoc />|}
+            record Sample : System.IEquatable<int>
+            {
+                public bool Equals(int other) => false;
+            }
             """;
 
         return test.RunAsync();
