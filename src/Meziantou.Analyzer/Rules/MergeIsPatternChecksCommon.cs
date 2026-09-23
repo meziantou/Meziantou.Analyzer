@@ -42,15 +42,26 @@ internal static class MergeIsPatternChecksCommon
                AreSameMergeTargetArguments(left.Arguments, right.Arguments);
     }
 
+    // Only the identity conversions are removed: the other ones can change the value or the type of the tested expression,
+    // so (int)d is 1 and d is < 1.5 do not test the same value, and (object)s is int is valid whereas s is int is not.
     private static IOperation UnwrapOperation(IOperation operation)
     {
-        operation = operation.UnwrapConversions();
-        while (operation is IParenthesizedOperation parenthesizedOperation)
+        while (true)
         {
-            operation = parenthesizedOperation.Operand.UnwrapConversions();
-        }
+            switch (operation)
+            {
+                case IConversionOperation { Conversion.IsIdentity: true } conversionOperation:
+                    operation = conversionOperation.Operand;
+                    break;
 
-        return operation;
+                case IParenthesizedOperation parenthesizedOperation:
+                    operation = parenthesizedOperation.Operand;
+                    break;
+
+                default:
+                    return operation;
+            }
+        }
     }
 
     private static bool TryGetMergeTargetArguments(ImmutableArray<IArgumentOperation> arguments, out ImmutableArray<ExpressionSyntax> mergeTargetArguments)
