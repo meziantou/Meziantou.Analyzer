@@ -241,4 +241,81 @@ public sealed class UseStringEqualsAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Equals_ConstantContexts_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+
+            class TypeName
+            {
+                const string A = "a";
+                const bool Field = A == "b";
+                const bool Negated = !(A != "b") && A == "c";
+
+                [Obsolete(A == "b" ? "message" : null)]
+                [Sample(A == "b", Value = A != "b")]
+                public void Test(bool parameter = A == "b")
+                {
+                    const bool Local = A == "b";
+                    _ = parameter is (A == "b");
+                    _ = parameter switch
+                    {
+                        A == "b" => 0,
+                        _ => 1,
+                    };
+
+                    switch (parameter)
+                    {
+                        case A == "b":
+                            break;
+                    }
+
+                    Action<bool> lambda = (bool value = A == "b") => { };
+                }
+            }
+
+            class SampleAttribute : Attribute
+            {
+                public SampleAttribute(bool value) { }
+                public bool Value { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Equals_ConstantOperands_NonConstantContext_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                const string A = "a";
+                static readonly bool Field = [|A == "b"|];
+
+                public void Test()
+                {
+                    var local = [|A == "b"|];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                const string A = "a";
+                static readonly bool Field = string.Equals(A, "b", System.StringComparison.Ordinal);
+
+                public void Test()
+                {
+                    var local = string.Equals(A, "b", System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

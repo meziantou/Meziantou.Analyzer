@@ -40,6 +40,9 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
                 if (IsStringEmpty(operation.LeftOperand) || IsStringEmpty(operation.RightOperand))
                     return;
 
+                if (IsInConstantContext(operation))
+                    return;
+
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
                 if (operationUtilities.IsInExpressionContext(operation))
@@ -48,6 +51,33 @@ public sealed class UseStringEqualsAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(Rule, operation, $"{operation.OperatorKind} operator");
             }
         }
+    }
+
+    // string.Equals is not a constant expression, so it cannot replace the operator where a constant expression is required
+    private static bool IsInConstantContext(IOperation operation)
+    {
+        if (!operation.ConstantValue.HasValue)
+            return false;
+
+        for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+        {
+            switch (parent)
+            {
+                case IFieldInitializerOperation fieldInitializer:
+                    return fieldInitializer.InitializedFields.Any(field => field.IsConst);
+
+                case IVariableInitializerOperation { Parent: IVariableDeclaratorOperation declarator }:
+                    return declarator.Symbol.IsConst;
+
+                case IParameterInitializerOperation:
+                case ISingleValueCaseClauseOperation:
+                case IPatternOperation:
+                case IAttributeOperation:
+                    return true;
+            }
+        }
+
+        return false;
     }
 
     private static bool IsNull(IOperation operation)
