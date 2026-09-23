@@ -127,8 +127,10 @@ public sealed class ConditionalCompilationBranchesAreIdenticalFixer : CodeFixPro
             return false;
         }
 
-        var duplicateBranchIndex = branchGroup.FindPreviousDuplicateBranchIndex(currentBranchIndex);
-        if (duplicateBranchIndex < 0)
+        // Only the branch right before the current branch can be merged with it. Merging it with an earlier branch
+        // would change the behavior when the condition of a branch in between is also true.
+        var duplicateBranchIndex = currentBranchIndex - 1;
+        if (!string.Equals(branchGroup.Branches[duplicateBranchIndex].Signature, branchGroup.Branches[currentBranchIndex].Signature, StringComparison.Ordinal))
         {
             fixContext = default;
             return false;

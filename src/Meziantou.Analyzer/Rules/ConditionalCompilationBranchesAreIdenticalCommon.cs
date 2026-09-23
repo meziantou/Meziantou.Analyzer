@@ -143,18 +143,6 @@ internal static class ConditionalCompilationBranchesAreIdenticalCommon
 
             return -1;
         }
-
-        internal int FindPreviousDuplicateBranchIndex(int currentBranchIndex)
-        {
-            var signature = Branches[currentBranchIndex].Signature;
-            for (var i = 0; i < currentBranchIndex; i++)
-            {
-                if (string.Equals(Branches[i].Signature, signature, StringComparison.Ordinal))
-                    return i;
-            }
-
-            return -1;
-        }
     }
 
     internal sealed class Branch(
