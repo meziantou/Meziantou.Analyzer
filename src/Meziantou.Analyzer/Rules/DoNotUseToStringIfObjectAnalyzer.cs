@@ -87,6 +87,11 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
         internal static void AnalyzeAdd(OperationAnalysisContext context)
         {
             var operation = (IBinaryOperation)context.Operation;
+
+            // Only the built-in string concatenation calls ToString on the operands
+            if (operation.OperatorKind is not BinaryOperatorKind.Add || operation.OperatorMethod is not null)
+                return;
+
             if (!operation.Type.IsString())
                 return;
 
