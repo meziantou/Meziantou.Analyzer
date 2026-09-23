@@ -472,4 +472,45 @@ public sealed class MergeIsPatternChecksAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task NumericConversion_DoNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 1.2;
+            _ = (int)value is 1 && value is < 1.5;
+            _ = value is < 1.5 && (int)value is 1;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReferenceConversion_DoNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = "";
+            _ = (object)value is 1 || value is "a";
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IdentityConversion()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            _ = {|MA0194:value is 1 || (int)value is 2|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            _ = value is 1 or 2;
+            """;
+
+        return test.RunAsync();
+    }
 }
