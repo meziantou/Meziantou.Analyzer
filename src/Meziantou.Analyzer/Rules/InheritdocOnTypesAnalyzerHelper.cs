@@ -16,7 +16,7 @@ internal static class InheritdocOnTypesAnalyzerHelper
             return;
 
         var hasBaseType = HasBaseType(symbol);
-        var interfaceCount = InheritdocOnTypesCommon.GetInterfaces(symbol, context.Compilation, context.CancellationToken).Length;
+        var interfaceCount = symbol.Interfaces.Length;
         if (!shouldReportDiagnostic(hasBaseType, interfaceCount))
             return;
 

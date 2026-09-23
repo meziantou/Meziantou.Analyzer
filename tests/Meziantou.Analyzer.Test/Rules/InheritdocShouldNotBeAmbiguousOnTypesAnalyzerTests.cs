@@ -210,15 +210,24 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
     }
 
     [Fact]
-    public Task NoDiagnostic_WhenRecordHasSingleDeclaredInterface()
+    public Task ReportDiagnostic_MA0198_WhenRecordHasDeclaredInterface()
     {
+        // The interfaces of the record are IInterface1 and the IEquatable<Sample> the compiler implements on the record
         var test = CreateTest();
         test.TestCode = """
             interface IInterface1
             {
             }
 
-            /// <inheritdoc />
+            /// {|MA0198:<inheritdoc />|}
+            record Sample : IInterface1;
+            """;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
+
+            /// <inheritdoc cref="IInterface1" />
             record Sample : IInterface1;
             """;
 
@@ -226,34 +235,16 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
     }
 
     [Fact]
-    public Task CodeFix_MA0198_RecordWithMultipleDeclaredInterfaces()
+    public Task ReportDiagnostic_MA0198_WhenRecordDeclaresEquatableInterfaceOfAnotherType()
     {
         var test = CreateTest();
         test.TestCode = """
-            interface IInterface1
-            {
-            }
-
-            interface IInterface2
-            {
-            }
-
             /// {|MA0198:<inheritdoc />|}
-            record Sample : IInterface1, IInterface2;
-            """;
-        test.FixedCode = """
-            interface IInterface1
+            record Sample : System.IEquatable<int>
             {
+                public bool Equals(int other) => false;
             }
-
-            interface IInterface2
-            {
-            }
-
-            /// <inheritdoc cref="IInterface2" />
-            record Sample : IInterface1, IInterface2;
             """;
-        test.CodeActionIndex = 1;
 
         return test.RunAsync();
     }

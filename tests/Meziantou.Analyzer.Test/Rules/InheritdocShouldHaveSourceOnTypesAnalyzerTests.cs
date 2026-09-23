@@ -153,36 +153,16 @@ public sealed class InheritdocShouldHaveSourceOnTypesAnalyzerTests
     }
 
     [Fact]
-    public Task ReportDiagnostic_MA0199_WhenRecordHasNoBaseTypeAndNoDeclaredInterface()
+    public Task NoDiagnostic_WhenRecordHasNoDeclaredInterface()
     {
-        var test = CreateTest();
-        test.TestCode = """
-            /// {|MA0199:<inheritdoc />|}
-            record Sample;
-            """;
-
-        return test.RunAsync();
-    }
-
-    [Fact]
-    public Task ReportDiagnostic_MA0199_WhenRecordStructHasNoDeclaredInterface()
-    {
-        var test = CreateTest();
-        test.TestCode = """
-            /// {|MA0199:<inheritdoc />|}
-            record struct Sample;
-            """;
-
-        return test.RunAsync();
-    }
-
-    [Fact]
-    public Task NoDiagnostic_WhenRecordDeclaresEquatableInterface()
-    {
+        // The compiler implements IEquatable<T> on the records, which is a source of the documentation
         var test = CreateTest();
         test.TestCode = """
             /// <inheritdoc />
-            record Sample : System.IEquatable<Sample>;
+            record Sample;
+
+            /// <inheritdoc />
+            record struct SampleStruct;
             """;
 
         return test.RunAsync();

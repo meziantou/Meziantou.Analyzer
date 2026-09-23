@@ -27,22 +27,18 @@ public sealed class InheritdocShouldNotBeUsedOnTypesFixer : CodeFixProvider
         if (semanticModel?.GetDeclaredSymbol(typeDeclaration, context.CancellationToken) is not INamedTypeSymbol typeSymbol)
             return;
 
-        if (HasBaseType(typeSymbol))
-            return;
-
-        var interfaces = InheritdocOnTypesCommon.GetInterfaces(typeSymbol, semanticModel.Compilation, context.CancellationToken);
-        if (interfaces.Length <= 1)
+        if (HasBaseType(typeSymbol) || typeSymbol.Interfaces.Length <= 1)
             return;
 
         if (inheritdocNode is XmlEmptyElementSyntax emptyElement)
         {
-            RegisterCodeFixes(context, interfaces, emptyElement);
+            RegisterCodeFixes(context, typeSymbol.Interfaces, emptyElement);
             return;
         }
 
         if (inheritdocNode is XmlElementStartTagSyntax startTag)
         {
-            RegisterCodeFixes(context, interfaces, startTag);
+            RegisterCodeFixes(context, typeSymbol.Interfaces, startTag);
         }
     }
 
