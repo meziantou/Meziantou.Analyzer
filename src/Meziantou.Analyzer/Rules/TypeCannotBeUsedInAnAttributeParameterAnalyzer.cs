@@ -55,7 +55,8 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
             context.RegisterSymbolAction(context =>
             {
                 var property = (IPropertySymbol)context.Symbol;
-                if (property.DeclaredAccessibility is Accessibility.Public && property.SetMethod is not null && !property.IsStatic && analyzerContext.IsAttribute(property))
+                // Only the public, non-static, and non-indexer properties with a public setter (set or init) can be used as named arguments
+                if (property.DeclaredAccessibility is Accessibility.Public && property.SetMethod is { DeclaredAccessibility: Accessibility.Public } && !property.IsStatic && !property.IsIndexer && analyzerContext.IsAttribute(property))
                 {
                     if (!analyzerContext.IsTypeValid(property.Type))
                     {
@@ -70,7 +71,6 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
     {
         private readonly ITypeSymbol? _attributeSymbol = compilation.GetTypeByMetadataName("System.Attribute");
         private readonly ITypeSymbol? _typeSymbol = compilation.GetTypeByMetadataName("System.Type");
-        private readonly ITypeSymbol? _enumSymbol = compilation.GetTypeByMetadataName("System.Enum");
 
         public bool IsValid => _attributeSymbol is not null;
 
@@ -101,14 +101,14 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzer : DiagnosticA
                     case SpecialType.System_Single:
                     case SpecialType.System_Double:
                     case SpecialType.System_Object:
-                    case SpecialType.System_Enum:
                         return true;
                 }
 
                 if (type.IsEqualTo(_typeSymbol))
                     return true;
 
-                if (type.IsOrInheritsFrom(_enumSymbol))
+                // System.Enum itself is not an enum type, so it is not a valid attribute parameter type
+                if (type.TypeKind is TypeKind.Enum)
                     return true;
 
                 if (allowArray && type is IArrayTypeSymbol array && array.Rank is 1 && IsTypeValid(array.ElementType, allowArray: false))

@@ -59,6 +59,11 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
     [Theory]
     [InlineData("System.Action")]
     [InlineData("System.DayOfWeek[,]")]
+    [InlineData("System.Enum")]
+    [InlineData("System.Enum[]")]
+    [InlineData("System.ValueType")]
+    [InlineData("decimal")]
+    [InlineData("int?")]
     public Task Ctor_Invalid(string type)
     {
         var test = CreateTest();
@@ -164,6 +169,67 @@ public sealed class TypeCannotBeUsedInAnAttributeParameterAnalyzerTests
             public class SampleAttribute : System.Attribute
             {
                 public System.Action {|MA0170:A|} { get; init; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("private set;")]
+    [InlineData("protected set;")]
+    [InlineData("internal set;")]
+    [InlineData("private init;")]
+    public Task Property_NonPublicSetter(string setter)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class SampleAttribute : System.Attribute
+            {
+                public decimal Value { get; {{setter}} }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_Init_UsedAsNamedArgument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [Sample(Value = 1)]
+            public class SampleAttribute : System.Attribute
+            {
+                public int Value { get; init; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Property_Indexer()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class SampleAttribute : System.Attribute
+            {
+                public decimal this[int index] { get => 0; set { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Field_ReadOnly()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class SampleAttribute : System.Attribute
+            {
+                public readonly decimal A;
             }
             """;
 
