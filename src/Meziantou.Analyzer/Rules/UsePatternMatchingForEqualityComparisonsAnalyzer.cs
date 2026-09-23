@@ -73,6 +73,11 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
             var operation = (IBinaryOperation)context.Operation;
             if (operation is { OperatorKind: BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals, OperatorMethod: null })
             {
+                // The operator of a dynamic operand is bound at runtime, and may be a user-defined operator,
+                // whereas a pattern is a type test or a null check
+                if (IsDynamic(operation.LeftOperand) || IsDynamic(operation.RightOperand))
+                    return;
+
                 var leftIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.LeftOperand);
                 var rightIsNull = UsePatternMatchingForEqualityComparisonsCommon.IsNull(operation.RightOperand);
                 if (leftIsNull ^ rightIsNull)
@@ -101,5 +106,7 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzer : Diagnosti
                 }
             }
         }
+
+        private static bool IsDynamic(IOperation operation) => operation.Type?.TypeKind is TypeKind.Dynamic;
     }
 }
