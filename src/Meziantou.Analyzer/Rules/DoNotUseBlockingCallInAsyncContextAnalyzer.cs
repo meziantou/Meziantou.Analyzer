@@ -35,6 +35,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
     private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportCollectionInitializersInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".report_collection_initializers", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportCollectionInitializersConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".report_collection_initializers", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, Rule2);
 
@@ -207,8 +209,9 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             var operation = (IInvocationOperation)context.Operation;
 
-            // The implicit invocations, such as the Add methods of a collection initializer, are not written in the code, so they cannot be replaced
-            if (operation.IsImplicit)
+            // The implicit invocations are not written in the code, so they cannot be replaced. The Add methods of a collection initializer
+            // are reported only when the option is enabled, as the collection initializer must be rewritten to await them.
+            if (operation.IsImplicit && !(operation.Parent is IObjectOrCollectionInitializerOperation && IsCollectionInitializersReportingEnabled(context, operation)))
                 return;
 
             var targetMethod = operation.TargetMethod;
@@ -398,6 +401,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             var defaultValue = context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesInAsyncContextConfiguration);
             return context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesConfiguration, defaultValue);
+        }
+
+        private static bool IsCollectionInitializersReportingEnabled(OperationAnalysisContext context, IOperation operation)
+        {
+            var defaultValue = context.Options.GetConfigurationValue(operation, ReportCollectionInitializersInAsyncContextConfiguration);
+            return context.Options.GetConfigurationValue(operation, ReportCollectionInitializersConfiguration, defaultValue);
         }
 
         private static HashSet<ISymbol> CreateExcludedDiagnosticSymbols(Compilation compilation)

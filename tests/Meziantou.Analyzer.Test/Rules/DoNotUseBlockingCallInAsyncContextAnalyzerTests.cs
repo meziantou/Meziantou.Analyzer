@@ -5206,6 +5206,76 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    public Task CollectionInitializer_Add_ReportCollectionInitializers_Diagnostic()
+    {
+        var code = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            class Sample : IEnumerable<int>
+            {
+                public void Add(int value) { }
+                public Task AddAsync(int value) => Task.CompletedTask;
+                public IEnumerator<int> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            class Container
+            {
+                public Sample Items { get; } = new Sample();
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    _ = new Sample { {|MA0042:1|} };
+                    _ = new Container { Items = { {|MA0042:2|} } };
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.report_collection_initializers", "true");
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionInitializer_Add_ReportCollectionInitializers_MA0045_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0045.report_collection_initializers", "true");
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            class Sample : IEnumerable<int>
+            {
+                public void Add(int value) { }
+                public Task AddAsync(int value) => Task.CompletedTask;
+                public IEnumerator<int> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            class Test
+            {
+                public void A()
+                {
+                    _ = new Sample { {|MA0045:1|} };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Async_TaskResult_ConditionalAccess_NoCodeFix()
     {
         var code = """
