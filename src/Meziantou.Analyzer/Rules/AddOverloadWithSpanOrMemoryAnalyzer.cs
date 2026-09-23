@@ -108,6 +108,12 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzer : DiagnosticAnalyzer
             if (overload.Parameters.Length != method.Parameters.Length)
                 return false;
 
+            // Match the type parameters of the methods by ordinal, so M<T>(T[]) and M<TItem>(ReadOnlySpan<TItem>) are compared using the same T
+            if (method.TypeParameters.Length > 0 && overload.TypeParameters.Length == method.TypeParameters.Length)
+            {
+                overload = overload.Construct([.. method.TypeParameters]);
+            }
+
             for (var i = 0; i < method.Parameters.Length; i++)
             {
                 var methodParameter = method.Parameters[i].Type;
