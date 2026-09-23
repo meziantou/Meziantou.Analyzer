@@ -385,9 +385,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     if (operation.Arguments.Length == templateIndex + 2)
                     {
                         var argument = operation.Arguments[templateIndex + 1];
-                        if (argument.ArgumentKind == ArgumentKind.ParamArray && argument.Value is IArrayCreationOperation arrayCreation && arrayCreation.Initializer is not null)
+                        if (argument.Parameter is { IsParams: true })
                         {
-                            argumentTypes = [.. arrayCreation.Initializer.ElementValues.Select(v => (v.UnwrapImplicitConversions().Type, v.Syntax))];
+                            // The values are in the array, whether the method is called in its expanded form (Log.Information("{A}", 1))
+                            // or in its normal form (Log.Information("{A}", new object[] { 1 })). The values of an existing array are unknown.
+                            argumentTypes = argument.Value.UnwrapImplicitConversions() is IArrayCreationOperation { Initializer: { } initializer }
+                                ? [.. initializer.ElementValues.Select(v => (v.UnwrapImplicitConversions().Type, v.Syntax))]
+                                : [];
                         }
                     }
 

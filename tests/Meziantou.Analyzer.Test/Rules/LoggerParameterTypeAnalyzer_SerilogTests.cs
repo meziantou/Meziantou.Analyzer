@@ -101,6 +101,40 @@ public sealed class LoggerParameterTypeAnalyzer_SerilogTests
     }
 
     [Fact]
+    public Task SeriLog_Log_Information_ParamsArrayInNormalForm()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Serilog;
+
+            Log.Information("{Prop}", new object[] { 1 });
+            Log.Information("{Prop}", new object[] { {|MA0139:(int?)1|} });
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SeriLog_Log_Information_ParamsArrayVariable()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Serilog;
+
+            object[] values = [1];
+            Log.Information("{Prop}", values);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Int32
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task SeriLog_Log_Information_AtPrefix()
     {
         var test = CreateTest();
