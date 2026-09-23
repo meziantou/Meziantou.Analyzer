@@ -2444,6 +2444,154 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public Task InternalClassUsedAsTypeArgumentOfTypeUsedInItself_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class Wrapper<T>
+            {
+                public static void M() { }
+            }
+
+            internal sealed class A
+            {
+                private static Wrapper<A>? _field;
+            }
+
+            public sealed class Sample
+            {
+                public void M() => Wrapper<A>.M();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ContainingTypeOfNestedTypeUsedInItself_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class Outer
+            {
+                internal sealed class Inner
+                {
+                }
+
+                private Inner? _inner;
+            }
+
+            public sealed class Sample
+            {
+                public object M() => new Outer.Inner();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalInterfaceUsedInNegatedPattern_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface IRunnable
+            {
+            }
+
+            public sealed class Sample
+            {
+                public bool M(object x) => x is not IRunnable;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalInterfaceUsedInOrPattern_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface IRunnable
+            {
+            }
+
+            public sealed class Sample
+            {
+                public bool M(object x) => x is IRunnable or string;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalInterfaceUsedInSwitchExpression_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface IRunnable
+            {
+            }
+
+            public sealed class Sample
+            {
+                public int M(object x) => x switch
+                {
+                    IRunnable => 1,
+                    _ => 0,
+                };
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalInterfaceUsedInSwitchStatement_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal interface IRunnable
+            {
+            }
+
+            public sealed class Sample
+            {
+                public int M(object x)
+                {
+                    switch (x)
+                    {
+                        case IRunnable:
+                            return 1;
+                        default:
+                            return 0;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalDelegateUsedAsEventType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal delegate void MyHandler();
+
+            public sealed class Sample
+            {
+                internal event MyHandler? E;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CodeFix_RemoveType_WithAssemblyAttribute()
     {
         var test = CreateTest();
