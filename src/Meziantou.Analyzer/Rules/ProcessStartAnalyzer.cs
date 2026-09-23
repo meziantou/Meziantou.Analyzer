@@ -186,8 +186,8 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             // The properties can also be set after the object is created:
             //   var psi = new ProcessStartInfo();
             //   psi.UseShellExecute = false;
-            var target = GetAssignmentTargetSymbol(operation);
-            if (target is not null)
+            var target = GetAssignmentTargetPath(operation);
+            if (!target.IsDefault)
             {
                 var root = GetRootOperation(operation);
                 var assignments = GetPropertyAssignments(root, operation, target);
@@ -224,7 +224,7 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             return result;
         }
 
-        private List<(IPropertyReferenceOperation PropertyReference, ISimpleAssignmentOperation Assignment)> GetPropertyAssignments(IOperation root, IObjectCreationOperation operation, ISymbol target)
+        private List<(IPropertyReferenceOperation PropertyReference, ISimpleAssignmentOperation Assignment)> GetPropertyAssignments(IOperation root, IObjectCreationOperation operation, ImmutableArray<ISymbol> target)
         {
             var result = new List<(IPropertyReferenceOperation, ISimpleAssignmentOperation)>();
             foreach (var descendant in root.Descendants())
@@ -233,7 +233,7 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
                 if (descendant is ISimpleAssignmentOperation { Target: IPropertyReferenceOperation { Instance: { } instance } propertyReference } assignment
                     && descendant.Syntax.SpanStart > operation.Syntax.SpanStart
                     && propertyReference.Property.ContainingType.IsEqualTo(_processStartInfoSymbol)
-                    && target.IsEqualTo(GetReferencedSymbol(instance)))
+                    && IsSamePath(target, GetReferencePath(instance)))
                 {
                     result.Add((propertyReference, assignment));
                 }
@@ -246,17 +246,14 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
         /// Finds the first call to Process.Start that uses the created instance, as this is where its
         /// configuration is used.
         /// </summary>
-        private IOperation? FindProcessStart(IOperation root, IObjectCreationOperation operation, ISymbol target)
+        private IOperation? FindProcessStart(IOperation root, IObjectCreationOperation operation, ImmutableArray<ISymbol> target)
         {
             foreach (var descendant in root.Descendants())
             {
                 if (descendant.Syntax.SpanStart <= operation.Syntax.SpanStart)
                     continue;
 
-                if (descendant is not IInvocationOperation invocation || !IsProcessStartInvocation(invocation))
-                    continue;
-
-                if (!invocation.Arguments.Any(argument => target.IsEqualTo(GetReferencedSymbol(argument.Value))))
+                if (descendant is not IInvocationOperation invocation || !IsProcessStartOf(invocation, target))
                     continue;
 
                 // A nested function is invoked at an unknown time, which can be before the operations that precede it
@@ -333,21 +330,64 @@ public sealed class ProcessStartAnalyzer : DiagnosticAnalyzer
             _ => PropertyValues.Unknown,
         };
 
-        private static ISymbol? GetAssignmentTargetSymbol(IObjectCreationOperation operation) => operation.Parent switch
+        /// <summary>
+        /// Indicates whether the invocation starts a process configured by the instance referenced by <paramref name="target"/>:
+        /// <c>Process.Start(target)</c>, or <c>process.Start()</c> when <paramref name="target"/> is <c>process.StartInfo</c>.
+        /// </summary>
+        private bool IsProcessStartOf(IInvocationOperation invocation, ImmutableArray<ISymbol> target)
         {
-            IVariableInitializerOperation { Parent: IVariableDeclaratorOperation declarator } => declarator.Symbol,
-            ISimpleAssignmentOperation assignment => GetReferencedSymbol(assignment.Target),
-            _ => null,
+            if (invocation.TargetMethod.Name != "Start" || !invocation.TargetMethod.ContainingType.IsEqualTo(_processSymbol))
+                return false;
+
+            if (invocation.TargetMethod.IsStatic)
+                return invocation.Arguments.Any(argument => IsSamePath(target, GetReferencePath(argument.Value)));
+
+            return target.Length > 1
+                && target[^1] is IPropertySymbol { Name: "StartInfo" } startInfoProperty
+                && startInfoProperty.ContainingType.IsEqualTo(_processSymbol)
+                && IsSamePath(target.RemoveAt(target.Length - 1), GetReferencePath(invocation.Instance));
+        }
+
+        private static ImmutableArray<ISymbol> GetAssignmentTargetPath(IObjectCreationOperation operation) => operation.Parent switch
+        {
+            IVariableInitializerOperation { Parent: IVariableDeclaratorOperation declarator } => ImmutableArray.Create<ISymbol>(declarator.Symbol),
+            ISimpleAssignmentOperation assignment => GetReferencePath(assignment.Target),
+            _ => default,
         };
 
-        private static ISymbol? GetReferencedSymbol(IOperation? operation) => operation switch
+        /// <summary>
+        /// Gets the symbols of the chain of members that references an instance, from the root.
+        /// For instance, <c>process.StartInfo</c> is <c>[process, StartInfo]</c>.
+        /// Returns a default array when the reference is not supported.
+        /// </summary>
+        private static ImmutableArray<ISymbol> GetReferencePath(IOperation? operation)
         {
-            ILocalReferenceOperation localReference => localReference.Local,
-            IParameterReferenceOperation parameterReference => parameterReference.Parameter,
-            IFieldReferenceOperation { Instance: null or IInstanceReferenceOperation } fieldReference => fieldReference.Field,
-            IPropertyReferenceOperation { Instance: null or IInstanceReferenceOperation } propertyReference => propertyReference.Property,
-            _ => null,
-        };
+            return operation switch
+            {
+                ILocalReferenceOperation localReference => ImmutableArray.Create<ISymbol>(localReference.Local),
+                IParameterReferenceOperation parameterReference => ImmutableArray.Create<ISymbol>(parameterReference.Parameter),
+                IFieldReferenceOperation fieldReference => GetMemberPath(fieldReference.Instance, fieldReference.Field),
+                IPropertyReferenceOperation { Arguments.Length: 0 } propertyReference => GetMemberPath(propertyReference.Instance, propertyReference.Property),
+                _ => default,
+            };
+
+            static ImmutableArray<ISymbol> GetMemberPath(IOperation? instance, ISymbol member)
+            {
+                var instancePath = instance switch
+                {
+                    null or IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance } => ImmutableArray<ISymbol>.Empty,
+
+                    // The member is set in an object initializer: new Process { StartInfo = ... }
+                    IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ImplicitReceiver, Parent.Parent: ISimpleAssignmentOperation { Parent: IObjectOrCollectionInitializerOperation { Parent: IObjectCreationOperation creation } } } => GetAssignmentTargetPath(creation),
+                    _ => GetReferencePath(instance),
+                };
+
+                return instancePath.IsDefault ? default : instancePath.Add(member);
+            }
+        }
+
+        private static bool IsSamePath(ImmutableArray<ISymbol> path, ImmutableArray<ISymbol> otherPath)
+            => !path.IsDefault && !otherPath.IsDefault && path.SequenceEqual(otherPath, SymbolEqualityComparer.Default);
 
         private static IOperation GetRootOperation(IOperation operation)
         {
