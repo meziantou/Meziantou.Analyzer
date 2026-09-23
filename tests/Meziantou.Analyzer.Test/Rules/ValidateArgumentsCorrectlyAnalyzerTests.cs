@@ -511,4 +511,75 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("await System.Threading.Tasks.Task.Delay(1);")]
+    [InlineData("await foreach (var item in B()) { }")]
+    [InlineData("await using (var disposable = default(System.IAsyncDisposable)) { }")]
+    [InlineData("await using var disposable = default(System.IAsyncDisposable);")]
+    public Task IAsyncEnumerable_AwaitBeforeValidation(string statement)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> A(string a)
+                {
+                    {{statement}}
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    yield return 0;
+                }
+
+                IAsyncEnumerable<int> B() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_IAsyncEnumerable_AwaitInLambdaBeforeValidation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                async IAsyncEnumerable<int> {|MA0050:A|}(string a)
+                {
+                    System.Func<System.Threading.Tasks.Task> func = async () => await System.Threading.Tasks.Task.Delay(1);
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    await func();
+                    yield return 0;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IAsyncEnumerable<int> A(string a)
+                {
+                    System.Func<System.Threading.Tasks.Task> func = async () => await System.Threading.Tasks.Task.Delay(1);
+                    if (a == null)
+                        throw new System.ArgumentNullException(nameof(a));
+
+                    return A(a);
+
+                    async IAsyncEnumerable<int> A(string a)
+                    {
+                        await func();
+                        yield return 0;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

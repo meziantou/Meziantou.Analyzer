@@ -83,6 +83,10 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
             if (lastThrowIndex is not null && firstYieldIndex is not null && lastThrowIndex < firstYieldIndex)
             {
+                // The validation cannot be done eagerly when it comes after an await, as the method that validates the arguments is not async
+                if (ContainsAwait(node, lastThrowIndex.Value))
+                    return;
+
                 var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
                     .Add(ValidateArgumentsCorrectlyAnalyzerCommon.IndexKey, lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
 
@@ -123,6 +127,33 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
             var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
             return type is not null && type.IsOrInheritsFrom(_argumentExceptionSymbol);
+        }
+
+        private static bool ContainsAwait(MethodDeclarationSyntax node, int endIndex)
+        {
+            if (!node.Modifiers.Any(SyntaxKind.AsyncKeyword))
+                return false;
+
+            // The awaits of nested functions are not executed by the method
+            foreach (var descendant in node.DescendantNodes(childNode => childNode.SpanStart < endIndex && childNode is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+            {
+                if (descendant.SpanStart >= endIndex)
+                    continue;
+
+                var isAwait = descendant switch
+                {
+                    AwaitExpressionSyntax => true,
+                    CommonForEachStatementSyntax forEachStatement => forEachStatement.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
+                    UsingStatementSyntax usingStatement => usingStatement.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
+                    LocalDeclarationStatementSyntax localDeclaration => localDeclaration.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
+                    _ => false,
+                };
+
+                if (isAwait)
+                    return true;
+            }
+
+            return false;
         }
 
         private static bool FilterDescendants(SyntaxNode node)
