@@ -292,13 +292,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (operation is IObjectCreationOperation objectCreationOperation)
         {
-            patternValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
-            regexOptionsValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+            patternValue = GetAttributeArgumentValue(generator, objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetAttributeArgumentValue(generator, objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
         else if (operation is IInvocationOperation invocationOperation)
         {
-            patternValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
-            regexOptionsValue = GetNode(invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+            patternValue = GetAttributeArgumentValue(generator, invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetAttributeArgumentValue(generator, invocationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
 
         if (timeoutValue is not null && regexOptionsValue is null)
@@ -423,13 +423,126 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         return index;
     }
 
-    private static SyntaxNode? GetNode(ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
+    private static SyntaxNode? GetAttributeArgumentValue(SyntaxGenerator generator, ImmutableArray<IArgumentOperation> args, ImmutableDictionary<string, string?> properties, string name)
     {
         var index = GetArgumentIndex(args, properties, name);
         if (index is null)
             return null;
 
-        return args[index.Value].Value.Syntax;
+        var value = args[index.Value].Value;
+        if (CanBeUsedInAttribute(value))
+            return value.Syntax;
+
+        // The value references symbols that are not in scope in the attribute, such as local constants,
+        // so the attribute uses the constant value instead
+        return CreateConstantExpression(generator, value) ?? value.Syntax;
+    }
+
+    private static bool CanBeUsedInAttribute(IOperation operation)
+    {
+        foreach (var child in operation.DescendantsAndSelf())
+        {
+            switch (child)
+            {
+                case ILiteralOperation:
+                case IFieldReferenceOperation { Instance: null }:
+                case IConversionOperation:
+                case IBinaryOperation:
+                case IUnaryOperation:
+                case IInterpolatedStringOperation:
+                case IInterpolatedStringTextOperation:
+                case IInterpolationOperation:
+                    continue;
+
+                default:
+                    return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static SyntaxNode? CreateConstantExpression(SyntaxGenerator generator, IOperation operation)
+    {
+        if (!operation.ConstantValue.HasValue)
+            return null;
+
+        return operation.ConstantValue.Value switch
+        {
+            null => generator.NullLiteralExpression(),
+            string value => CreateStringLiteral(value),
+            var value when operation.Type is INamedTypeSymbol { TypeKind: TypeKind.Enum } enumType => CreateEnumExpression(generator, enumType, value),
+            _ => null,
+        };
+    }
+
+    private static LiteralExpressionSyntax CreateStringLiteral(string value)
+    {
+        // Regex patterns often contain backslashes, which are more readable in a verbatim string
+        if (value.Contains('\\', StringComparison.Ordinal) && !value.Any(char.IsControl))
+            return LiteralExpression(SyntaxKind.StringLiteralExpression, Literal("@\"" + value.Replace("\"", "\"\"", StringComparison.Ordinal) + "\"", value));
+
+        return LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(value));
+    }
+
+    private static SyntaxNode? CreateEnumExpression(SyntaxGenerator generator, INamedTypeSymbol enumType, object value)
+    {
+        if (!TryConvertToUInt64(value, out var remaining))
+            return null;
+
+        var type = generator.TypeExpression(enumType);
+        var members = enumType.GetMembers()
+            .OfType<IFieldSymbol>()
+            .Where(field => field.HasConstantValue)
+            .Select(field => (Field: field, Value: TryConvertToUInt64(field.ConstantValue, out var fieldValue) ? fieldValue : (ulong?)null))
+            .Where(member => member.Value is not null)
+            .ToArray();
+
+        if (remaining is 0)
+        {
+            var zeroMember = members.FirstOrDefault(member => member.Value is 0).Field;
+            return zeroMember is not null ? generator.MemberAccessExpression(type, zeroMember.Name) : generator.CastExpression(type, generator.LiteralExpression(0));
+        }
+
+        // Decompose the value into its flags, from the lowest to the highest
+        var flags = new List<IFieldSymbol>();
+        foreach (var (field, fieldValue) in members.Where(member => member.Value is not 0).OrderBy(member => member.Value))
+        {
+            if ((remaining & fieldValue!.Value) == fieldValue.Value)
+            {
+                flags.Add(field);
+                remaining &= ~fieldValue.Value;
+            }
+        }
+
+        if (remaining is not 0 || flags.Count is 0)
+            return generator.CastExpression(type, generator.LiteralExpression(value));
+
+        var result = generator.MemberAccessExpression(type, flags[0].Name);
+        foreach (var flag in flags.Skip(1))
+        {
+            result = generator.BitwiseOrExpression(result, generator.MemberAccessExpression(type, flag.Name));
+        }
+
+        return result;
+    }
+
+    private static bool TryConvertToUInt64(object? value, out ulong result)
+    {
+        switch (value)
+        {
+            case byte or ushort or uint or ulong:
+                result = Convert.ToUInt64(value, CultureInfo.InvariantCulture);
+                return true;
+
+            case sbyte or short or int or long:
+                result = unchecked((ulong)Convert.ToInt64(value, CultureInfo.InvariantCulture));
+                return true;
+
+            default:
+                result = 0;
+                return false;
+        }
     }
 
     private static int? TryParseInt32(ImmutableDictionary<string, string?> properties, string name)
@@ -709,13 +822,13 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         if (operation is IObjectCreationOperation objectCreationOperation)
         {
-            patternValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
-            regexOptionsValue = GetNode(objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+            patternValue = GetAttributeArgumentValue(generator, objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetAttributeArgumentValue(generator, objectCreationOperation.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
         else if (operation is IInvocationOperation invocationOperation2)
         {
-            patternValue = GetNode(invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
-            regexOptionsValue = GetNode(invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
+            patternValue = GetAttributeArgumentValue(generator, invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName);
+            regexOptionsValue = GetAttributeArgumentValue(generator, invocationOperation2.Arguments, properties, UseRegexSourceGeneratorAnalyzerCommon.RegexOptionsIndexName);
         }
 
         if (timeoutValue is not null && regexOptionsValue is null)

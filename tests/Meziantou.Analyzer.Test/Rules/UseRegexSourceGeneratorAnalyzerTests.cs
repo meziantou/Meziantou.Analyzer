@@ -1618,4 +1618,189 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("\"ab\"", "\"ab\"")]
+    [InlineData("\"a\\\\d\"", "@\"a\\d\"")]
+    [InlineData("@\"a\\\"\"b\"", "@\"a\\\"\"b\"")]
+    [InlineData("\"a\\nb\"", "\"a\\nb\"")]
+    [InlineData("\"a\\\\\\nb\"", "\"a\\\\\\nb\"")]
+    [InlineData("\"a\" + \"b\"", "\"ab\"")]
+    public Task LocalConstantPattern(string pattern, string literal)
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = $$"""
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                void M()
+                {
+                    const string Pattern = {{pattern}};
+                    _ = {|MA0110:new Regex(Pattern)|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                void M()
+                {
+                    const string Pattern = {{pattern}};
+                    _ = MyRegex();
+                }
+
+                [GeneratedRegex({{literal}})]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalConstantInPatternExpression()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                const string Suffix = "c";
+
+                void M()
+                {
+                    const string Prefix = "a";
+                    _ = {|MA0110:Regex.IsMatch("input", Prefix + "b" + Suffix)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                const string Suffix = "c";
+
+                void M()
+                {
+                    const string Prefix = "a";
+                    _ = MyRegex().IsMatch("input");
+                }
+
+                [GeneratedRegex("abc")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConstantFieldPattern()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                const string Pattern = "a";
+
+                void M()
+                {
+                    _ = {|MA0110:new Regex(Pattern + "b", RegexOptions.IgnoreCase)|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                const string Pattern = "a";
+
+                void M()
+                {
+                    _ = MyRegex();
+                }
+
+                [GeneratedRegex(Pattern + "b", RegexOptions.IgnoreCase)]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("RegexOptions.IgnoreCase | RegexOptions.CultureInvariant", "RegexOptions.IgnoreCase | RegexOptions.CultureInvariant")]
+    [InlineData("RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", "RegexOptions.IgnoreCase | RegexOptions.CultureInvariant")]
+    [InlineData("RegexOptions.None", "RegexOptions.None")]
+    [InlineData("(RegexOptions)1", "RegexOptions.IgnoreCase")]
+    public Task LocalConstantOptions(string options, string expectedOptions)
+    {
+        var test = CreatePartialMethodTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                void M()
+                {
+                    const RegexOptions Options = {{options}};
+                    _ = {|MA0110:new Regex("a", Options, TimeSpan.FromSeconds(1))|};
+                }
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                void M()
+                {
+                    const RegexOptions Options = {{options}};
+                    _ = MyRegex();
+                }
+
+                [GeneratedRegex("a", {{expectedOptions}}, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TopLevelStatement_LocalConstantPattern()
+    {
+        var test = CreatePartialMethodTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            const string Pattern = "a";
+            _ = {|MA0110:Regex.IsMatch("input", Pattern)|};
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            const string Pattern = "a";
+            _ = MyRegex().IsMatch("input");
+
+            partial class Program
+            {
+                [GeneratedRegex("a")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
