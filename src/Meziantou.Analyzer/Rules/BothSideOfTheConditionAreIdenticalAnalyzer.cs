@@ -29,11 +29,37 @@ public class BothSideOfTheConditionAreIdenticalAnalyzer : DiagnosticAnalyzer
         var operation = (IBinaryOperation)context.Operation;
         if (operation.OperatorKind is BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr or BinaryOperatorKind.And or BinaryOperatorKind.Or or BinaryOperatorKind.Equals or BinaryOperatorKind.NotEquals)
         {
-            if (operation.Type.IsBoolean() && operation.LeftOperand.Syntax.IsEquivalentTo(operation.RightOperand.Syntax, topLevel: false))
+            if (operation.Type.IsBoolean() && operation.LeftOperand.Syntax.IsEquivalentTo(operation.RightOperand.Syntax, topLevel: false) && !MayProduceDifferentValues(operation.LeftOperand))
             {
                 context.ReportDiagnostic(Rule, operation);
             }
         }
+    }
+
+    /// <summary>
+    /// Evaluating the same code twice can produce different values when the code has side effects (e.g. <c>e.MoveNext() &amp;&amp; e.MoveNext()</c>)
+    /// or creates a new instance (e.g. <c>new object() == new object()</c>).
+    /// </summary>
+    private static bool MayProduceDifferentValues(IOperation operation)
+    {
+        foreach (var child in operation.DescendantsAndSelf())
+        {
+            if (child is IInvocationOperation
+                or IDynamicInvocationOperation
+                or IIncrementOrDecrementOperation
+                or IAssignmentOperation
+                or IEventAssignmentOperation
+                or IObjectCreationOperation
+                or IDynamicObjectCreationOperation
+                or ITypeParameterObjectCreationOperation
+                or IAnonymousObjectCreationOperation
+                or IAwaitOperation)
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private void AnalyzeBinaryPatternOperation(OperationAnalysisContext context)

@@ -58,4 +58,26 @@ public sealed class BothSideOfTheConditionAreIdenticalAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("e.MoveNext() && e.MoveNext()")]
+    [InlineData("M() == M()")]
+    [InlineData("c++ == c++")]
+    [InlineData("(c = 1) == (c = 1)")]
+    [InlineData("new object() == new object()")]
+    [InlineData("await t && await t")]
+    public Task SameCodeWithSideEffects(string expression)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            var c = 0;
+            var e = new System.Collections.Generic.List<int>().GetEnumerator();
+            var t = System.Threading.Tasks.Task.FromResult(true);
+            _ = {{expression}};
+
+            static bool M() => true;
+            """;
+
+        return test.RunAsync();
+    }
 }
