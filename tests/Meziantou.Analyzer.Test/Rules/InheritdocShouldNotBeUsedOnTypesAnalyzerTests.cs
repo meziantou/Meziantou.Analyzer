@@ -111,4 +111,44 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenRecordHasSingleDeclaredInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
+
+            /// {|MA0197:<inheritdoc />|}
+            record Sample : ITest;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenRecordDeclaresEquatableInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0197:<inheritdoc />|}
+            record Sample : System.IEquatable<Sample>;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoDiagnostic_WhenRecordHasNoBaseTypeAndNoDeclaredInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc />
+            record Sample;
+            """;
+
+        return test.RunAsync();
+    }
 }

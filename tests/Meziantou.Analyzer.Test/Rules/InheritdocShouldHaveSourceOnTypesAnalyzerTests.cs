@@ -151,4 +151,40 @@ public sealed class InheritdocShouldHaveSourceOnTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0199_WhenRecordHasNoBaseTypeAndNoDeclaredInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0199:<inheritdoc />|}
+            record Sample;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0199_WhenRecordStructHasNoDeclaredInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0199:<inheritdoc />|}
+            record struct Sample;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoDiagnostic_WhenRecordDeclaresEquatableInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <inheritdoc />
+            record Sample : System.IEquatable<Sample>;
+            """;
+
+        return test.RunAsync();
+    }
 }

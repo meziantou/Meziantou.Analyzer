@@ -208,4 +208,53 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task NoDiagnostic_WhenRecordHasSingleDeclaredInterface()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
+
+            /// <inheritdoc />
+            record Sample : IInterface1;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_MA0198_RecordWithMultipleDeclaredInterfaces()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
+
+            interface IInterface2
+            {
+            }
+
+            /// {|MA0198:<inheritdoc />|}
+            record Sample : IInterface1, IInterface2;
+            """;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
+
+            interface IInterface2
+            {
+            }
+
+            /// <inheritdoc cref="IInterface2" />
+            record Sample : IInterface1, IInterface2;
+            """;
+        test.CodeActionIndex = 1;
+
+        return test.RunAsync();
+    }
 }
