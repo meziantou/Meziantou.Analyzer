@@ -44,7 +44,7 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
     {
         var symbol = context.Symbol;
 
-        // Synthesized symbols such as the backing field of an auto-property cannot carry an attribute of their own
+        // Synthesized symbols cannot carry an attribute of their own, except the backing fields handled below
         if (symbol.IsImplicitlyDeclared)
             return;
 
@@ -52,6 +52,25 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzer : Diagno
         if (IsSecondaryVariableDeclarator(symbol, context.CancellationToken))
             return;
 
+        AnalyzeAttributes(context, symbol, obsoleteAttributeTypeSymbol);
+
+        // The backing field of an auto-property carries the attributes that target the field ([field: Obsolete]).
+        // The symbol actions are not executed for the implicitly declared symbols, so the backing fields are analyzed
+        // with their containing type. Note that the backing field of a field-like event is not part of the members.
+        if (symbol is INamedTypeSymbol namedTypeSymbol)
+        {
+            foreach (var member in namedTypeSymbol.GetMembers())
+            {
+                if (member is IFieldSymbol { IsImplicitlyDeclared: true, AssociatedSymbol: not null })
+                {
+                    AnalyzeAttributes(context, member, obsoleteAttributeTypeSymbol);
+                }
+            }
+        }
+    }
+
+    private static void AnalyzeAttributes(SymbolAnalysisContext context, ISymbol symbol, INamedTypeSymbol obsoleteAttributeTypeSymbol)
+    {
         foreach (var attribute in symbol.GetAttributes())
         {
             if (!attribute.AttributeClass.IsEqualTo(obsoleteAttributeTypeSymbol))
