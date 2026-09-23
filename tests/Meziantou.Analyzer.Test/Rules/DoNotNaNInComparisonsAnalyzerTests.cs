@@ -243,4 +243,72 @@ public sealed class DoNotNaNInComparisonsAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Comparisons_CodeFix_NaNOfAnotherType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                bool A(double value) => value == {|MA0082:float.NaN|};
+                bool B(float value) => value != {|MA0082:double.NaN|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                bool A(double value) => double.IsNaN(value);
+                bool B(float value) => !double.IsNaN(value);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Comparisons_CodeFix_NullableOperand()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                bool A(double? value) => value == {|MA0082:double.NaN|};
+                bool B(double? value) => {|MA0082:float.NaN|} != value;
+                bool C(double? a, double? b) => (a ?? b) == {|MA0082:double.NaN|};
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                bool A(double? value) => double.IsNaN(value.GetValueOrDefault());
+                bool B(double? value) => !double.IsNaN(value.GetValueOrDefault());
+                bool C(double? a, double? b) => double.IsNaN((a ?? b).GetValueOrDefault());
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Comparisons_UserDefinedOperator_NoCodeFix()
+    {
+        const string Source = """
+            class Sample
+            {
+                public static bool operator ==(Sample a, double b) => false;
+                public static bool operator !=(Sample a, double b) => true;
+                public override bool Equals(object o) => false;
+                public override int GetHashCode() => 0;
+
+                bool A(Sample value) => value == {|MA0082:double.NaN|};
+            }
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
