@@ -307,8 +307,9 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                 if (maxDepth < 0)
                     return null;
 
-                // quickly skips some basic types that are known to not contain CancellationToken
-                if ((int)symbol.SpecialType is >= 1 and <= 45)
+                // Quickly skips the types that Roslyn marks as special (System.Object, the primitives, System.String, the collection
+                // interfaces, System.Threading.Tasks.Task, ...) as none of them can contain a CancellationToken
+                if (symbol.SpecialType is not SpecialType.None)
                     return null;
 
                 if (symbol.IsEqualTo(TaskSymbol) || symbol.OriginalDefinition.IsEqualTo(TaskOfTSymbol))

@@ -168,9 +168,8 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                     return null;
 
                 // Quickly skips the types that Roslyn marks as special (System.Object, the primitives, System.String, the collection
-                // interfaces, ...) as none of them can contain a TimeProvider. The upper bound is the highest SpecialType value defined by
-                // the oldest supported Roslyn version; special types added by newer versions are simply not skipped.
-                if ((int)symbol.SpecialType is >= 1 and <= 45)
+                // interfaces, System.Threading.Tasks.Task, ...) as none of them can contain a TimeProvider
+                if (symbol.SpecialType is not SpecialType.None)
                     return null;
 
                 // A type that derives from TimeProvider can be passed as a TimeProvider
