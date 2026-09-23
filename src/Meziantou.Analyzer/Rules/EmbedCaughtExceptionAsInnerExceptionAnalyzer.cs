@@ -41,7 +41,8 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzer : DiagnosticAna
         if (catchOperation is null)
             return;
 
-        if (operation.Exception is IObjectCreationOperation objectCreationOperation)
+        // The exception is implicitly converted to System.Exception when its type is a derived type
+        if (operation.Exception.UnwrapImplicitConversions() is IObjectCreationOperation objectCreationOperation)
         {
             if (objectCreationOperation.Constructor is null)
                 return;

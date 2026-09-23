@@ -57,7 +57,9 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionFixer : CodeFixProvider
 
         var exceptionArgumentExpression = SyntaxFactory.IdentifierName(exceptionIdentifier);
         var currentArguments = objectCreationExpression.ArgumentList.Arguments;
-        var newArguments = insertionIndex > currentArguments.Count
+
+        // A positional argument cannot follow named arguments that are not in their position (CS8323), so use a named argument when the call already uses named arguments
+        var newArguments = insertionIndex > currentArguments.Count || currentArguments.Any(argument => argument.NameColon is not null)
             ? currentArguments.Add((ArgumentSyntax)generator.Argument(parameterName, RefKind.None, exceptionArgumentExpression))
             : currentArguments.Insert(insertionIndex, (ArgumentSyntax)generator.Argument(exceptionArgumentExpression));
 
