@@ -40,7 +40,20 @@ public sealed class RemoveEmptyBlockFixer : CodeFixProvider
     private static async Task<Document> RemoveElseClause(Document document, IfStatementSyntax ifStatement, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.ReplaceNode(ifStatement, ifStatement.WithElse(null).WithAdditionalAnnotations(Formatter.Annotation));
+        var newIfStatement = ifStatement.WithElse(null);
+
+        // When the if statement is followed by the else clause of an outer if statement (e.g. `if (a) if (b) Foo(); else { } else Bar();`),
+        // removing the else clause would make the outer else clause bind to this if statement, which changes the behavior of the code.
+        // Wrapping the if statement in a block keeps the outer else clause bound to the outer if statement.
+        if (ifStatement.GetLastToken().GetNextToken().IsKind(SyntaxKind.ElseKeyword))
+        {
+            editor.ReplaceNode(ifStatement, SyntaxFactory.Block(newIfStatement.WithoutLeadingTrivia()).WithLeadingTrivia(ifStatement.GetLeadingTrivia()).WithAdditionalAnnotations(Formatter.Annotation));
+        }
+        else
+        {
+            editor.ReplaceNode(ifStatement, newIfStatement.WithAdditionalAnnotations(Formatter.Annotation));
+        }
+
         return editor.GetChangedDocument();
     }
 
