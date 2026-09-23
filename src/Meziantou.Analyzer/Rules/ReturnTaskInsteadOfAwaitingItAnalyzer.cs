@@ -77,11 +77,16 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
             if (!method.IsAsync)
                 return;
 
+            // The synthesized entry point of the top-level statements cannot return the task
+            if (method.IsTopLevelStatementsEntryPointMethod())
+                return;
+
             if (!_awaitableTypes.IsAsyncBuildableAndNotVoid(method.ReturnType))
                 return;
 
             var returns = new List<IReturnOperation>();
             var awaits = new List<IAwaitOperation>();
+            var hasAsynchronousStatement = false;
 
             void Collect(IOperation operation)
             {
@@ -97,6 +102,13 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
                     case IAwaitOperation awaitOperation:
                         awaits.Add(awaitOperation);
                         break;
+
+                    // 'await foreach' and 'await using' await implicitly, so the method must stay async
+                    case IForEachLoopOperation { IsAsynchronous: true }:
+                    case IUsingOperation { IsAsynchronous: true }:
+                    case IUsingDeclarationOperation { IsAsynchronous: true }:
+                        hasAsynchronousStatement = true;
+                        break;
                 }
 
                 foreach (var child in operation.GetChildOperations())
@@ -110,7 +122,7 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzer : DiagnosticAnalyzer
                 Collect(child);
             }
 
-            if (awaits.Count == 0)
+            if (awaits.Count == 0 || hasAsynchronousStatement)
                 return;
 
             var returnsWithValue = returns.Where(r => r.ReturnedValue is not null).ToList();
