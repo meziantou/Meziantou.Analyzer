@@ -398,6 +398,70 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
     }
 
     [Fact]
+    public Task CanBeReadOnly_PropertyFullSetterWithAccessibilityReferenceField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct Test
+            {
+                int a;
+
+                public int A
+                {
+                    readonly get => a;
+                    private {|MA0102:set|} { }
+                }
+            }
+            """;
+        test.FixedCode = """
+            struct Test
+            {
+                int a;
+
+                public readonly int A
+                {
+                    get => a;
+                    private set { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CanBeReadOnly_PropertyFullGetterWithAccessibilityReferenceField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct Test
+            {
+                int a;
+
+                public int A
+                {
+                    private {|MA0102:get|} => a;
+                    readonly set { }
+                }
+            }
+            """;
+        test.FixedCode = """
+            struct Test
+            {
+                int a;
+
+                public readonly int A
+                {
+                    private get => a;
+                    set { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CanBeReadOnly_PropertyFullGetterReferenceField()
     {
         var test = CreateTest();
