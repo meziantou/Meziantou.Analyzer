@@ -157,6 +157,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
+                !IsExtensionBlockMember(symbol) &&
                 symbol.PartialDefinitionPart is null;
         }
 
@@ -167,7 +168,19 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsVirtual &&
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
-                !symbol.IsInterfaceImplementation();
+                !symbol.IsInterfaceImplementation() &&
+                !IsExtensionBlockMember(symbol);
+        }
+
+        // The instance members of an extension block are called on the receiver (value.Member()),
+        // and making them static changes the way they are called (Type.Member())
+        private static bool IsExtensionBlockMember(ISymbol symbol)
+        {
+#if CSHARP14_OR_GREATER
+            return symbol.ContainingType is { IsExtension: true };
+#else
+            return false;
+#endif
         }
 
         private static bool HasInstanceUsages(IOperation operation)
@@ -189,6 +202,10 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 switch (op)
                 {
                     case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance:
+                        return true;
+
+                    // The analyzed members are not constructors, so a constructor parameter is a captured parameter of the primary constructor
+                    case IParameterReferenceOperation { Parameter.ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Constructor } }:
                         return true;
                 }
             }

@@ -800,4 +800,69 @@ public sealed class MakeMethodStaticAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task PrimaryConstructorParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass(int value)
+            {
+                public int GetValue() => value;
+
+                public int Value => value;
+
+                public int {|MA0038:GetZero|}() => 0;
+            }
+            """;
+        test.FixedCode = """
+            class TestClass(int value)
+            {
+                public int GetValue() => value;
+
+                public int Value => value;
+
+                public static int GetZero() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrimaryConstructorParameterInLambda_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass(int value)
+            {
+                public System.Func<int> GetValue() => () => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public Task ExtensionBlockMembers_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Extensions
+            {
+                extension(int i)
+                {
+                    public int Twice() => i * 2;
+
+                    public int Zero() => 0;
+
+                    public int Value => i;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
 }
