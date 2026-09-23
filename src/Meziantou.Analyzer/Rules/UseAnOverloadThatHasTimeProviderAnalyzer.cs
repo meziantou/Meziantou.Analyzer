@@ -1,5 +1,3 @@
-using System.Collections.Concurrent;
-using System.Runtime.InteropServices;
 using Meziantou.Analyzer.Configurations;
 
 namespace Meziantou.Analyzer.Rules;
@@ -49,11 +47,18 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
-        private readonly ConcurrentDictionary<(ITypeSymbol Symbol, int MaxDepth), List<ISymbol[]>?> _membersByType = new();
-
         private readonly OverloadFinder _overloadFinder = new(compilation);
+        private readonly AvailableValueFinder _timeProviderFinder = CreateTimeProviderFinder(compilation);
 
         public INamedTypeSymbol TimeProviderSymbol { get; } = compilation.GetTypeByMetadataName("System.TimeProvider")!; // not null as we check it in the constructor
+
+        private static AvailableValueFinder CreateTimeProviderFinder(Compilation compilation)
+        {
+            var timeProviderSymbol = compilation.GetTypeByMetadataName("System.TimeProvider");
+
+            // A type that derives from TimeProvider can be passed as a TimeProvider
+            return new AvailableValueFinder(isSearchedType: type => type.IsOrInheritsFrom(timeProviderSymbol));
+        }
 
         private bool HasExplicitTimeProviderArgument(IInvocationOperation operation)
         {
@@ -120,7 +125,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             if (!HasAnOverloadWithTimeProvider(context, operation, out var parameterInfo))
                 return;
 
-            var availableTimeProviders = FindTimeProviders(operation, context.CancellationToken);
+            var availableTimeProviders = _timeProviderFinder.FindPaths(operation, context.CancellationToken);
 
             // An extension method declared in a namespace that is not imported is only included when the reported rule is configured to
             if (parameterInfo.NamespaceToImport is not null)
@@ -157,164 +162,5 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             return properties;
         }
-
-        private List<ISymbol[]>? GetMembers(ITypeSymbol symbol, int maxDepth)
-        {
-            return _membersByType.GetOrAdd((symbol, maxDepth), item =>
-            {
-                var (symbol, maxDepth) = item;
-
-                if (maxDepth < 0)
-                    return null;
-
-                // Quickly skips the types that Roslyn marks as special (System.Object, the primitives, System.String, the collection
-                // interfaces, ...) as none of them can contain a TimeProvider. The upper bound is the highest SpecialType value defined by
-                // the oldest supported Roslyn version; special types added by newer versions are simply not skipped.
-                if ((int)symbol.SpecialType is >= 1 and <= 45)
-                    return null;
-
-                // A type that derives from TimeProvider can be passed as a TimeProvider
-                if (symbol.IsOrInheritsFrom(TimeProviderSymbol))
-                    return [[]];
-
-                var result = new List<ISymbol[]>();
-                var members = symbol.GetAllMembers(includeInterfaceMembers: true);
-                foreach (var member in members)
-                {
-                    // The members are accessed through an instance, so static members cannot be used
-                    if (member.IsImplicitlyDeclared || member.IsStatic)
-                        continue;
-
-                    ITypeSymbol memberTypeSymbol;
-                    switch (member)
-                    {
-                        case IPropertySymbol { IsIndexer: false, GetMethod: not null } propertySymbol:
-                            memberTypeSymbol = propertySymbol.Type;
-                            break;
-
-                        case IFieldSymbol fieldSymbol:
-                            memberTypeSymbol = fieldSymbol.Type;
-                            break;
-
-                        default:
-                            continue;
-                    }
-
-                    if (memberTypeSymbol.IsOrInheritsFrom(TimeProviderSymbol))
-                    {
-                        result.Add([member]);
-                    }
-                    else
-                    {
-                        var typeMembers = GetMembers(memberTypeSymbol, maxDepth - 1);
-                        if (typeMembers is not null)
-                        {
-                            foreach (var objectMember in typeMembers)
-                            {
-                                result.Add([.. Prepend(member, objectMember)]);
-                            }
-                        }
-                    }
-                }
-
-                return result;
-            });
-        }
-
-        private string[] FindTimeProviders(IOperation operation, CancellationToken cancellationToken)
-        {
-            var availableSymbols = new List<NameAndType>();
-
-            foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
-            {
-                if (symbol is IMethodSymbol or ITypeSymbol)
-                    continue;
-
-                var symbolType = symbol.GetSymbolType();
-                if (symbolType is null)
-                    continue;
-
-                availableSymbols.Add(new(symbol.Name, symbolType));
-            }
-
-            // For each symbol, get their members
-            var paths = new List<string>();
-            foreach (var availableSymbol in availableSymbols)
-            {
-                if (availableSymbol.TypeSymbol is null)
-                    continue;
-
-                var members = GetMembers(availableSymbol.TypeSymbol, maxDepth: 1);
-                if (members is not null)
-                {
-                    foreach (var member in members)
-                    {
-                        if (!AreAllSymbolsAccessibleFromOperation(member, operation))
-                            continue;
-
-                        var fullPath = ComputeFullPath(availableSymbol.Name, member);
-                        paths.Add(fullPath);
-                    }
-                }
-            }
-
-            if (paths.Count == 0)
-                return [];
-
-            return [.. paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal)];
-
-            static bool AreAllSymbolsAccessibleFromOperation(IEnumerable<ISymbol> symbols, IOperation operation)
-            {
-                foreach (var item in symbols)
-                {
-                    if (!IsSymbolAccessibleFromOperation(item, operation))
-                        return false;
-                }
-
-                return true;
-            }
-
-            static string ComputeFullPath(string prefix, IEnumerable<ISymbol> symbols)
-            {
-                var suffix = string.Join('.', symbols.Select(symbol => symbol.Name));
-                if (string.IsNullOrEmpty(suffix))
-                    return prefix;
-
-                return prefix + "." + suffix;
-            }
-
-            static bool IsSymbolAccessibleFromOperation(ISymbol symbol, IOperation operation)
-            {
-                // The value of a property is read, so its getter must be accessible
-                if (symbol is IPropertySymbol { GetMethod: { } getMethod })
-                {
-                    symbol = getMethod;
-                }
-
-                return operation.SemanticModel!.IsAccessible(operation.Syntax.Span.Start, symbol);
-            }
-        }
-
-        private static IEnumerable<T> Prepend<T>(T value, IEnumerable<T> items)
-        {
-            yield return value;
-            foreach (var item in items)
-            {
-                yield return item;
-            }
-        }
-    }
-
-    [StructLayout(LayoutKind.Auto)]
-    private readonly struct NameAndType
-    {
-        public NameAndType(string name, ITypeSymbol? typeSymbol)
-        {
-            Name = name;
-            TypeSymbol = typeSymbol;
-        }
-
-        public string Name { get; }
-        public ITypeSymbol? TypeSymbol { get; }
     }
 }
