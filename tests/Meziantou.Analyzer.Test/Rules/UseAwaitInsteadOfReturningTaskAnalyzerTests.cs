@@ -1356,6 +1356,31 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
     }
 
     [Fact]
+    public Task ReturnInsideFixed_NoDiagnostic()
+    {
+        var test = CreateUnsafeTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                static Task<int> Inner() => throw null;
+                static Task<int> A(int[] values)
+                {
+                    unsafe
+                    {
+                        fixed (int* pointer = values)
+                        {
+                            return Inner();
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ReturnInsideUsing_NoDiagnostic()
     {
         var test = CreateTest();
