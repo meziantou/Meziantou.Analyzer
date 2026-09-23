@@ -26,7 +26,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
-            ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyOrFieldSymbol, SymbolKind.Property, SymbolKind.Field);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzePropertyFieldOrEventSymbol, SymbolKind.Property, SymbolKind.Field, SymbolKind.Event);
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeMethodSymbol, SymbolKind.Method);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
@@ -36,7 +36,7 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             ctx.RegisterOperationAction(analyzerContext.AnalyzeVariableDeclarator, OperationKind.VariableDeclarator);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConversion, OperationKind.Conversion);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeIsType, OperationKind.IsType);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeIsPattern, OperationKind.IsPattern);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzePattern, OperationKind.DeclarationPattern, OperationKind.TypePattern, OperationKind.RecursivePattern);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeDelegateCreation, OperationKind.DelegateCreation);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
@@ -76,6 +76,11 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
         // The used types are collected from the operations of every syntax tree, which are analyzed concurrently,
         // so a concurrent set is used instead of locking on every reference.
         private readonly ConcurrentHashSet<ITypeSymbol> _usedTypes = new(SymbolEqualityComparer.Default);
+
+        // The types whose referenced types (type arguments, containing types) are all marked as used, so they do not
+        // need to be processed again. A type is not added when a reference to the type that contains the reference was
+        // ignored while processing it, as the ignored type must be marked as used when the type is referenced elsewhere.
+        private readonly ConcurrentHashSet<ITypeSymbol> _processedTypes = new(SymbolEqualityComparer.Default);
         private readonly INamedTypeSymbol? _dynamicallyAccessedMembersAttribute = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
         private readonly INamedTypeSymbol? _moduleInitializerAttribute = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.ModuleInitializerAttribute");
 
@@ -122,13 +127,14 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
 #endif
         }
 
-        public void AnalyzePropertyOrFieldSymbol(SymbolAnalysisContext context)
+        public void AnalyzePropertyFieldOrEventSymbol(SymbolAnalysisContext context)
         {
             var symbol = context.Symbol;
             ITypeSymbol? type = symbol switch
             {
                 IPropertySymbol property => property.Type,
                 IFieldSymbol field => field.Type,
+                IEventSymbol @event => @event.Type,
                 _ => null,
             };
 
@@ -247,31 +253,22 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public void AnalyzeIsPattern(OperationAnalysisContext context)
+        public void AnalyzePattern(OperationAnalysisContext context)
         {
-            var operation = (IIsPatternOperation)context.Operation;
+            // Track types used in pattern matching. The patterns are analyzed wherever they are, so the patterns
+            // nested in other patterns (not, and, or, property patterns) and the patterns of the switch statements
+            // and switch expressions are also tracked.
+            var matchedType = context.Operation switch
+            {
+                IDeclarationPatternOperation declarationPattern => declarationPattern.MatchedType,
+                ITypePatternOperation typePattern => typePattern.MatchedType,
+                IRecursivePatternOperation recursivePattern => recursivePattern.MatchedType,
+                _ => null,
+            };
 
-            // Track types used in pattern matching
-            if (operation.Pattern is IDeclarationPatternOperation declarationPattern)
+            if (matchedType is not null)
             {
-                if (declarationPattern.MatchedType is not null)
-                {
-                    AddUsedType(declarationPattern, declarationPattern.MatchedType);
-                }
-            }
-            else if (operation.Pattern is ITypePatternOperation typePattern)
-            {
-                if (typePattern.MatchedType is not null)
-                {
-                    AddUsedType(typePattern, typePattern.MatchedType);
-                }
-            }
-            else if (operation.Pattern is IRecursivePatternOperation recursivePattern)
-            {
-                if (recursivePattern.MatchedType is not null)
-                {
-                    AddUsedType(recursivePattern, recursivePattern.MatchedType);
-                }
+                AddUsedType(context.Operation, matchedType);
             }
         }
 
@@ -329,37 +326,43 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
             AddUsedType(ref location, typeSymbol);
         }
 
-        private void AddUsedType(ref ReferenceLocation referenceLocation, ITypeSymbol typeSymbol)
+        /// <returns><see langword="true"/> if all the types referenced by <paramref name="typeSymbol"/> are marked as used, or <see langword="false"/> if the type that contains the reference was ignored.</returns>
+        private bool AddUsedType(ref ReferenceLocation referenceLocation, ITypeSymbol typeSymbol)
         {
             // The reference location is always a type of the analyzed assembly, so it can only be the type itself
             // when the type belongs to that assembly. Resolving the reference location queries the semantic model,
             // which is much more expensive than comparing the assemblies, so it is only resolved for those types.
-            if (ShouldConsiderType(typeSymbol))
+            var considerType = ShouldConsiderType(typeSymbol);
+            if (considerType)
             {
-                if (referenceLocation.Resolve().IsEqualTo(typeSymbol))
-                    return;
-
                 // Prevent re-processing already seen types
-                if (!_usedTypes.Add(typeSymbol))
-                    return;
+                if (_processedTypes.Contains(typeSymbol))
+                    return true;
+
+                if (referenceLocation.Resolve().IsEqualTo(typeSymbol))
+                    return false;
+
+                _usedTypes.Add(typeSymbol);
             }
+
+            var isComplete = true;
 
             // Also mark the original definition as used (in case of generic instantiations)
             if (!typeSymbol.IsEqualTo(typeSymbol.OriginalDefinition))
             {
-                AddUsedType(ref referenceLocation, typeSymbol.OriginalDefinition);
+                isComplete &= AddUsedType(ref referenceLocation, typeSymbol.OriginalDefinition);
             }
 
             // Handle array element types
             if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
             {
-                AddUsedType(ref referenceLocation, arrayTypeSymbol.ElementType);
+                isComplete &= AddUsedType(ref referenceLocation, arrayTypeSymbol.ElementType);
             }
 
             // Handle pointer types
             if (typeSymbol is IPointerTypeSymbol pointerTypeSymbol)
             {
-                AddUsedType(ref referenceLocation, pointerTypeSymbol.PointedAtType);
+                isComplete &= AddUsedType(ref referenceLocation, pointerTypeSymbol.PointedAtType);
             }
 
             if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
@@ -367,16 +370,23 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 // Handle generic type arguments
                 foreach (var typeArgument in namedTypeSymbol.TypeArguments)
                 {
-                    AddUsedType(ref referenceLocation, typeArgument);
+                    isComplete &= AddUsedType(ref referenceLocation, typeArgument);
                 }
 
                 // Iterate containing types (e.g. Interop.Kernel32.CreateFile)
                 var containingType = namedTypeSymbol.ContainingType;
                 if (containingType is not null)
                 {
-                    AddUsedType(ref referenceLocation, containingType);
+                    isComplete &= AddUsedType(ref referenceLocation, containingType);
                 }
             }
+
+            if (considerType && isComplete)
+            {
+                _processedTypes.Add(typeSymbol);
+            }
+
+            return isComplete;
         }
 
         private bool ShouldConsiderType(ITypeSymbol typeSymbol)
