@@ -14,6 +14,11 @@ public sealed class EventsShouldHaveProperArgumentsFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        // In a static context, the sender must be the instance declaring the event, which the fixer cannot find
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel is null || !EventsShouldHaveProperArgumentsAnalyzerCommon.CanUseThis(semanticModel, nodeToFix.SpanStart, context.CancellationToken))
+            return;
+
         var title = "Use this";
         var codeAction = CodeAction.Create(
             title,

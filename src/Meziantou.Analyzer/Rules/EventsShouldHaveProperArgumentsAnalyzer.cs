@@ -88,9 +88,10 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzer : DiagnosticAnalyzer
                 context.ReportDiagnostic(SenderStaticRule, senderArgument);
             }
         }
-        else
+        else if (!IsThis(senderArgument))
         {
-            if (!IsThis(senderArgument))
+            // 'this' is not available in a static context, so the sender is the instance declaring the event, which must not be null
+            if (IsNull(senderArgument) || EventsShouldHaveProperArgumentsAnalyzerCommon.CanUseThis(operation.SemanticModel!, operation.Syntax.SpanStart, context.CancellationToken))
             {
                 context.ReportDiagnostic(SenderInstanceRule, senderArgument.Value);
             }

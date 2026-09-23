@@ -110,6 +110,63 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
     }
 
     [Fact]
+    public Task ValidSender_InstanceEvent_StaticMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class Test
+            {
+                public event EventHandler MyEvent;
+
+                static void Raise(Test instance) => instance.MyEvent?.Invoke(instance, EventArgs.Empty);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidSender_InstanceEvent_StaticLambda()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class Test
+            {
+                public event EventHandler MyEvent;
+
+                void OnEvent()
+                {
+                    Action<Test> raise = static instance => instance.MyEvent?.Invoke(instance, EventArgs.Empty);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidSender_InstanceEvent_StaticMethod_NoCodeFix()
+    {
+        var code = """
+            using System;
+            class Test
+            {
+                public event EventHandler MyEvent;
+
+                static void Raise(Test instance) => instance.MyEvent?.Invoke({|MA0091:null|}, EventArgs.Empty);
+            }
+            """;
+
+        var test = CreateSenderFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InvalidEventArgs()
     {
         var test = CreateEventArgsFixTest();
