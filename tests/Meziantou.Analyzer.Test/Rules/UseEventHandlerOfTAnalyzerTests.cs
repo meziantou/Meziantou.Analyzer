@@ -157,6 +157,25 @@ public sealed class UseEventHandlerOfTAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task Override()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            abstract class Base
+            {
+                public abstract event System.Action {|MA0046:E|};
+            }
+
+            class Derived : Base
+            {
+                public override event System.Action E;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("System.Action")]
     [InlineData("System.Action<string>")]
