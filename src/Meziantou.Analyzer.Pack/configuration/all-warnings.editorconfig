@@ -718,3 +718,6 @@ dotnet_diagnostic.MA0240.severity = warning
 
 # MA0241: The banned syntax entry is not valid
 dotnet_diagnostic.MA0241.severity = warning
+
+# MA0242: Use a value factory to compute the value only when the key is not in the ConcurrentDictionary
+dotnet_diagnostic.MA0242.severity = warning

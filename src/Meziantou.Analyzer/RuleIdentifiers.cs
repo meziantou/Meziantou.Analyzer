@@ -241,6 +241,7 @@ internal static class RuleIdentifiers
     public const string UseTypeofInsteadOfGetTypeOnSealedType = "MA0239";
     public const string DoNotUseBannedSyntax = "MA0240";
     public const string InvalidBannedSyntaxEntry = "MA0241";
+    public const string UseValueFactoryWhenUsingConcurrentDictionary = "MA0242";
 
     public static string GetHelpUri(string identifier)
     {
