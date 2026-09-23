@@ -210,4 +210,32 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task TypesThatCannotBeMadeReadOnly()
+    {
+        var test = CreateLibraryTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(in System.DayOfWeek day) { }
+                void B(in int? value) { }
+                void C(in System.Collections.Generic.List<int>.Enumerator enumerator) { }
+                void D(in Foo foo) { }
+
+                void E<T>(in T value) { }
+                void F()
+                {
+                    E(System.DayOfWeek.Monday);
+                    E((int?)1);
+                    E(default(System.Collections.Generic.List<int>.Enumerator));
+                    E(Foo.Bar);
+                }
+            }
+
+            enum Foo { Bar }
+            """;
+
+        return test.RunAsync();
+    }
 }

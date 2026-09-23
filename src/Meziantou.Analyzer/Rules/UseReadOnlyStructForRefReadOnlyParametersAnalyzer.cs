@@ -23,7 +23,7 @@ public sealed class UseReadOnlyStructForRefReadOnlyParametersAnalyzer : Diagnost
         context.RegisterSymbolAction(context =>
         {
             var parameter = (IParameterSymbol)context.Symbol;
-            if (!IsValidParameter(parameter))
+            if (!IsValidParameter(parameter, context.Compilation.Assembly))
             {
                 context.ReportDiagnostic(Rule, parameter);
             }
@@ -36,7 +36,7 @@ public sealed class UseReadOnlyStructForRefReadOnlyParametersAnalyzer : Diagnost
             var symbol = operation.Symbol;
             foreach (var parameter in symbol.Parameters)
             {
-                if (!IsValidParameter(parameter))
+                if (!IsValidParameter(parameter, context.Compilation.Assembly))
                 {
                     context.ReportDiagnostic(Rule, parameter);
                 }
@@ -55,21 +55,22 @@ public sealed class UseReadOnlyStructForRefReadOnlyParametersAnalyzer : Diagnost
             if (SymbolEqualityComparer.Default.Equals(parameter.OriginalDefinition.Type, parameter.Type))
                 return;
 
-            if (!IsValidParameter(parameter))
+            if (!IsValidParameter(parameter, ctx.Compilation.Assembly))
             {
                 ctx.ReportDiagnostic(Rule, operation);
             }
         }, OperationKind.Argument);
     }
 
-    private static bool IsValidParameter(IParameterSymbol parameter)
+    private static bool IsValidParameter(IParameterSymbol parameter, IAssemblySymbol currentAssembly)
     {
         if (parameter.RefKind is RefKind.In or RefKind.RefReadOnlyParameter)
         {
-            if (parameter.Type is INamedTypeSymbol namedTypeSymbol)
+            // Only the structs declared in the current assembly can be made readonly. Enums cannot be readonly structs.
+            if (parameter.Type is INamedTypeSymbol { TypeKind: TypeKind.Struct, IsReadOnly: false } namedTypeSymbol &&
+                namedTypeSymbol.ContainingAssembly.IsEqualTo(currentAssembly))
             {
-                if (namedTypeSymbol.IsValueType && !namedTypeSymbol.IsReadOnly)
-                    return false;
+                return false;
             }
         }
 
