@@ -35,6 +35,8 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
     private static readonly ConfigurationDefinition<bool> EnableDbSpecialCasesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".enable_db_special_cases", defaultValue: true);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportCollectionInitializersInAsyncContextConfiguration = new(RuleIdentifiers.DoNotUseBlockingCallInAsyncContext + ".report_collection_initializers", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> ReportCollectionInitializersConfiguration = new(RuleIdentifiers.DoNotUseBlockingCall + ".report_collection_initializers", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, Rule2);
 
@@ -105,6 +107,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             ValueTaskOfTSymbol = compilation.GetTypeByMetadataName("System.Threading.Tasks.ValueTask`1");
             ValueTaskAwaiterSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter");
             ValueTaskAwaiterOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ValueTaskAwaiter`1");
+            ConfiguredTaskAwaiterSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable+ConfiguredTaskAwaiter");
+            ConfiguredTaskAwaiterOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1+ConfiguredTaskAwaiter");
+            ConfiguredValueTaskAwaiterSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable+ConfiguredValueTaskAwaiter");
+            ConfiguredValueTaskAwaiterOfTSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1+ConfiguredValueTaskAwaiter");
 
             ThreadSymbol = compilation.GetTypeByMetadataName("System.Threading.Thread");
             SemaphoreSlimSymbol = compilation.GetTypeByMetadataName("System.Threading.SemaphoreSlim");
@@ -131,11 +137,15 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             TemporaryDirectorySymbol = compilation.GetTypeByMetadataName("Meziantou.Framework.TemporaryDirectory");
 
-            var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(4);
+            var taskAwaiterLikeSymbols = new List<INamedTypeSymbol>(8);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(TaskAwaiterOfTSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterSymbol);
             taskAwaiterLikeSymbols.AddIfNotNull(ValueTaskAwaiterOfTSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ConfiguredTaskAwaiterSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ConfiguredTaskAwaiterOfTSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ConfiguredValueTaskAwaiterSymbol);
+            taskAwaiterLikeSymbols.AddIfNotNull(ConfiguredValueTaskAwaiterOfTSymbol);
             _taskAwaiterLikeSymbols = [.. taskAwaiterLikeSymbols];
             _excludedDiagnosticSymbols = CreateExcludedDiagnosticSymbols(compilation);
             _nonAsyncDisposableTypes = CreateNonAsyncDisposableTypes(compilation);
@@ -175,6 +185,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         private INamedTypeSymbol? ValueTaskAwaiterSymbol { get; }
         private INamedTypeSymbol? ValueTaskAwaiterOfTSymbol { get; }
 
+        private INamedTypeSymbol? ConfiguredTaskAwaiterSymbol { get; }
+        private INamedTypeSymbol? ConfiguredTaskAwaiterOfTSymbol { get; }
+        private INamedTypeSymbol? ConfiguredValueTaskAwaiterSymbol { get; }
+        private INamedTypeSymbol? ConfiguredValueTaskAwaiterOfTSymbol { get; }
+
         private INamedTypeSymbol? ThreadSymbol { get; }
         private INamedTypeSymbol? SemaphoreSlimSymbol { get; }
         private INamedTypeSymbol? TimeSpanSymbol { get; }
@@ -193,6 +208,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         internal void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
+
+            // The implicit invocations are not written in the code, so they cannot be replaced. The Add methods of a collection initializer
+            // are reported only when the option is enabled, as the collection initializer must be rewritten to await them.
+            if (operation.IsImplicit && !(operation.Parent is IObjectOrCollectionInitializerOperation && IsCollectionInitializersReportingEnabled(context, operation)))
+                return;
+
             var targetMethod = operation.TargetMethod;
             if (IsExcludedDiagnosticSymbol(targetMethod))
                 return;
@@ -267,6 +288,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             }
 
             // Task.GetAwaiter().GetResult()
+            // Task.ConfigureAwait(false).GetAwaiter().GetResult()
             else if (targetMethod.Name == nameof(TaskAwaiter.GetResult))
             {
                 if (targetMethod.ContainingType.OriginalDefinition.IsEqualToAny(_taskAwaiterLikeSymbols))
@@ -379,6 +401,12 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         {
             var defaultValue = context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesInAsyncContextConfiguration);
             return context.Options.GetConfigurationValue(operation, EnableDbSpecialCasesConfiguration, defaultValue);
+        }
+
+        private static bool IsCollectionInitializersReportingEnabled(OperationAnalysisContext context, IOperation operation)
+        {
+            var defaultValue = context.Options.GetConfigurationValue(operation, ReportCollectionInitializersInAsyncContextConfiguration);
+            return context.Options.GetConfigurationValue(operation, ReportCollectionInitializersConfiguration, defaultValue);
         }
 
         private static HashSet<ISymbol> CreateExcludedDiagnosticSymbols(Compilation compilation)
@@ -642,12 +670,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             return AsyncContextKind.None;
         }
 
+        /// <summary>
+        /// Indicates whether the operation is in a lock statement of its enclosing method. A lambda or a local function declared
+        /// in a lock statement is not executed while the lock is held, so it can await.
+        /// </summary>
         private static bool IsInLock(IOperation operation)
         {
             for (var current = operation.Parent; current is not null; current = current.Parent)
             {
                 if (current is ILockOperation)
                     return true;
+
+                if (current is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                    return false;
             }
 
             return false;

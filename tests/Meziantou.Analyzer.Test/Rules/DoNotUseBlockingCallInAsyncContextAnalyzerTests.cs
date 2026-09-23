@@ -4637,7 +4637,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
                 {
                     lock (this)
                     {
-                        _ = Task.FromResult(0).ContinueWith(t => t.Result);
+                        _ = Task.FromResult(0).ContinueWith(t => {|MA0045:t.Result|});
                     }
                 }
             }
@@ -5170,6 +5170,312 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             }
 
             class DerivedAsyncDisposable : BaseAsyncDisposable { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionInitializer_Add_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            class Sample : IEnumerable<int>
+            {
+                public void Add(int value) { }
+                public Task AddAsync(int value) => Task.CompletedTask;
+                public IEnumerator<int> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    _ = new Sample { 1 };
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionInitializer_Add_ReportCollectionInitializers_Diagnostic()
+    {
+        var code = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            class Sample : IEnumerable<int>
+            {
+                public void Add(int value) { }
+                public Task AddAsync(int value) => Task.CompletedTask;
+                public IEnumerator<int> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            class Container
+            {
+                public Sample Items { get; } = new Sample();
+            }
+
+            class Test
+            {
+                public async Task A()
+                {
+                    _ = new Sample { {|MA0042:1|} };
+                    _ = new Container { Items = { {|MA0042:2|} } };
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0042.report_collection_initializers", "true");
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionInitializer_Add_ReportCollectionInitializers_MA0045_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0045.report_collection_initializers", "true");
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+
+            class Sample : IEnumerable<int>
+            {
+                public void Add(int value) { }
+                public Task AddAsync(int value) => Task.CompletedTask;
+                public IEnumerator<int> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            class Test
+            {
+                public void A()
+                {
+                    _ = new Sample { {|MA0045:1|} };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Async_TaskResult_ConditionalAccess_NoCodeFix()
+    {
+        var code = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A(Task<int> t)
+                {
+                    var x = t?{|MA0042:.Result|};
+                }
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Async_TaskResult_PropertyPattern_NoCodeFix()
+    {
+        var code = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A(Task<int> t, Sample s)
+                {
+                    _ = t is { {|MA0042:Result|}: 1 };
+                    _ = s is { {|MA0042:Task.Result|}: 1 };
+                }
+            }
+
+            class Sample
+            {
+                public Task<int> Task => throw null;
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Async_Overload_ConditionalAccess_NoCodeFix()
+    {
+        var code = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A(Sample c)
+                {
+                    c?{|MA0042:.Write()|};
+                }
+            }
+
+            class Sample
+            {
+                public void Write() => throw null;
+                public Task WriteAsync() => throw null;
+            }
+            """;
+
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Async_Overload_GenericMethodWithImplicitReceiver_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
+                {
+                    {|MA0042:Write<int>()|};
+                }
+
+                public void Write<T>() => throw null;
+                public Task WriteAsync<T>() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A()
+                {
+                    await WriteAsync<int>();
+                }
+
+                public void Write<T>() => throw null;
+                public Task WriteAsync<T>() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Async_ConfiguredTaskAwaiter_GetResult_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                public async Task A(Task t1, Task<int> t2, ValueTask t3, ValueTask<int> t4)
+                {
+                    {|MA0042:t1.ConfigureAwait(false).GetAwaiter().GetResult()|};
+                    _ = {|MA0042:t2.ConfigureAwait(false).GetAwaiter().GetResult()|};
+                    {|MA0042:t3.ConfigureAwait(false).GetAwaiter().GetResult()|};
+                    _ = {|MA0042:t4.ConfigureAwait(false).GetAwaiter().GetResult()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LambdaInLock_AsyncLambda_Diagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                private readonly object _lock = new();
+
+                public void A()
+                {
+                    lock (_lock)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            {|MA0042:Thread.Sleep(1)|};
+                            await Task.Yield();
+                        });
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                private readonly object _lock = new();
+
+                public void A()
+                {
+                    lock (_lock)
+                    {
+                        _ = Task.Run(async () =>
+                        {
+                            await Task.Delay(1);
+                            await Task.Yield();
+                        });
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalFunctionInLock_AsyncLocalFunction_Diagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public void A()
+                {
+                    lock (this)
+                    {
+                        _ = Local();
+
+                        async Task Local()
+                        {
+                            {|MA0042:Thread.Sleep(1)|};
+                            await Task.Yield();
+                        }
+                    }
+                }
+            }
             """;
 
         return test.RunAsync();
