@@ -557,4 +557,23 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task DynamicOperand()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            dynamic value = 1L;
+            object obj = null;
+            _ = value == 1;
+            _ = value != 1;
+            _ = 1 == value;
+            _ = value == null;
+            _ = value != null;
+            _ = null == value;
+            _ = value == obj;
+            """;
+
+        return test.RunAsync();
+    }
 }
