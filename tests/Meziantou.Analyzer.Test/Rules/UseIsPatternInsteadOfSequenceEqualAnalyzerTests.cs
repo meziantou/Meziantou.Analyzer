@@ -223,4 +223,56 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task StringConvertedToSpan_EmptyConstant()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            string value = null;
+            _ = MemoryExtensions.SequenceEqual<char>(value, "");
+            _ = MemoryExtensions.Equals(value, "", StringComparison.Ordinal);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StringConvertedToSpan_NonEmptyConstant()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            string value = null;
+            _ = {|MA0128:MemoryExtensions.SequenceEqual<char>(value, "abc")|};
+            _ = {|MA0128:MemoryExtensions.Equals(value, "abc", StringComparison.Ordinal)|};
+            """;
+        test.FixedCode = """
+            using System;
+            string value = null;
+            _ = value is "abc";
+            _ = value is "abc";
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReadOnlySpanChar_SequenceEqual_EmptyConstant()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            ReadOnlySpan<char> value = default;
+            _ = {|MA0128:value.SequenceEqual("")|};
+            """;
+        test.FixedCode = """
+            using System;
+            ReadOnlySpan<char> value = default;
+            _ = value is "";
+            """;
+
+        return test.RunAsync();
+    }
 }

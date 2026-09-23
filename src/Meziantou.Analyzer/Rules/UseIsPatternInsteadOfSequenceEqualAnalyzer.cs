@@ -47,23 +47,26 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
 
         if (method.Name is "SequenceEqual" && method.Parameters.Length == 2 && method.Parameters[0].Type.IsEqualToAny(readOnlySpanCharSymbol, spanCharSymbol))
         {
-            if (IsConstantValue(operation.Arguments[1].Value))
+            if (CanUseIsPattern(operation.Arguments[0].Value, operation.Arguments[1].Value))
             {
                 context.ReportDiagnostic(Rule, operation, method.Name);
             }
         }
         else if (method.Name is "Equals" && method.Parameters.Length == 3 && method.Parameters[0].Type.IsEqualTo(readOnlySpanCharSymbol))
         {
-            if (IsConstantValue(operation.Arguments[1].Value) && IsStringComparisonOrdinal(operation.Arguments[2].Value, stringComparisonSymbol))
+            if (CanUseIsPattern(operation.Arguments[0].Value, operation.Arguments[1].Value) && IsStringComparisonOrdinal(operation.Arguments[2].Value, stringComparisonSymbol))
             {
                 context.ReportDiagnostic(Rule, operation, method.Name);
             }
         }
 
-        static bool IsConstantValue(IOperation operation)
+        static bool CanUseIsPattern(IOperation span, IOperation value)
         {
-            operation = operation.UnwrapImplicitConversions();
-            return operation is { ConstantValue: { HasValue: true, Value: string } };
+            if (value.UnwrapImplicitConversions() is not { ConstantValue: { HasValue: true, Value: string constantValue } })
+                return false;
+
+            // A null string is converted to an empty span, so it is equal to "", whereas the 'is ""' pattern is false for null
+            return constantValue.Length > 0 || span.UnwrapImplicitConversions().Type is not { SpecialType: SpecialType.System_String };
         }
 
         static bool IsStringComparisonOrdinal(IOperation operation, INamedTypeSymbol stringComparisonSymbol)
