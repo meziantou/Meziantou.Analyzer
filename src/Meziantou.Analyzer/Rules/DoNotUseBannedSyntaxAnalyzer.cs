@@ -810,7 +810,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
             if (_queries.Count > 0)
             {
                 var forest = new SyntaxForest(root, semanticModel: null, _queryFilter, cancellationToken);
-                Evaluate(_queries, new SyntaxNodeXPathNavigator(forest), sink);
+                Evaluate(_queries, new SyntaxNodeXPathNavigator(forest), sink, new BannedSyntaxXsltContext(syntaxNavigatorFactory: null, symbolNavigatorFactory: null, root.SyntaxTree, semanticModel: null, cancellationToken));
             }
 
             if (_semanticQueries.Count > 0 && semanticModel is not null)
@@ -821,7 +821,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // The symbols are only built when an entry uses the 'symbol' function. The 'syntax' function goes back
                 // to the same tree, so the semantic attributes are still available after a round trip.
                 SymbolXPathNavigator? symbolNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => navigator, () => symbolNavigator ??= new SymbolXPathNavigator(SymbolForest.Create(root, semanticModel, _semanticQueryFilter, cancellationToken)), semanticModel, cancellationToken);
+                var context = new BannedSyntaxXsltContext(() => navigator, () => symbolNavigator ??= new SymbolXPathNavigator(SymbolForest.Create(root, semanticModel, _semanticQueryFilter, cancellationToken)), root.SyntaxTree, semanticModel, cancellationToken);
                 Evaluate(_semanticQueries, navigator, sink, context);
             }
 
@@ -833,7 +833,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // The navigator of the syntax tree is only built when an entry uses the 'syntax' function. It has no
                 // semantic model, as the semantic attributes are not available in a query on the operations.
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)), symbolNavigatorFactory: null, semanticModel, cancellationToken);
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _operationQueryFilter, cancellationToken)), symbolNavigatorFactory: null, root.SyntaxTree, semanticModel, cancellationToken);
                 Evaluate(_operationQueries, new OperationXPathNavigator(forest, cancellationToken), sink, context);
             }
 
@@ -845,7 +845,7 @@ public sealed class DoNotUseBannedSyntaxAnalyzer : DiagnosticAnalyzer
                 // Like for the operations, the navigator of the syntax tree is only built when an entry uses the
                 // 'syntax' function, and it has no semantic model
                 SyntaxNodeXPathNavigator? syntaxNavigator = null;
-                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _symbolQueryFilter, cancellationToken)), symbolNavigatorFactory: null, semanticModel, cancellationToken);
+                var context = new BannedSyntaxXsltContext(() => syntaxNavigator ??= new SyntaxNodeXPathNavigator(new SyntaxForest(root, semanticModel: null, _symbolQueryFilter, cancellationToken)), symbolNavigatorFactory: null, root.SyntaxTree, semanticModel, cancellationToken);
                 Evaluate(_symbolQueries, new SymbolXPathNavigator(forest), sink, context);
             }
         }

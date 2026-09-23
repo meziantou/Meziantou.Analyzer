@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Xml;
 using System.Xml.XPath;
 using System.Xml.Xsl;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Internals;
 
@@ -41,13 +42,32 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
     /// <summary>The name of the function that indicates whether the symbol of a node is declared in the compilation.</summary>
     public const string IsFromCurrentAssemblyFunctionName = "is-from-current-assembly";
 
+    /// <summary>The name of the function that returns or tests the namespace that contains the symbol of a node.</summary>
+    public const string ContainingNamespaceFunctionName = "containing-namespace";
+
+    /// <summary>The name of the function that indicates whether the symbol of a node overrides a member.</summary>
+    public const string OverridesFunctionName = "overrides";
+
+    /// <summary>The name of the function that indicates whether the symbol of a node implements a member of an interface.</summary>
+    public const string ImplementsMemberFunctionName = "implements-member";
+
+    /// <summary>The name of the function that indicates whether the symbol of a node is visible outside of its assembly.</summary>
+    public const string IsExternallyVisibleFunctionName = "is-externally-visible";
+
+    /// <summary>The name of the function that indicates whether the local or the parameter of a node is captured by a lambda or a local function.</summary>
+    public const string IsCapturedFunctionName = "is-captured";
+
+    /// <summary>The name of the function that returns the path of the file that is analyzed.</summary>
+    public const string FilePathFunctionName = "file-path";
+
     /// <summary>
     /// A context whose functions return nothing, which is used to validate a query without a compilation.
     /// </summary>
-    public static readonly BannedSyntaxXsltContext Empty = new(syntaxNavigatorFactory: null, symbolNavigatorFactory: null, semanticModel: null, CancellationToken.None);
+    public static readonly BannedSyntaxXsltContext Empty = new(syntaxNavigatorFactory: null, symbolNavigatorFactory: null, syntaxTree: null, semanticModel: null, CancellationToken.None);
 
     private readonly Func<SyntaxNodeXPathNavigator>? _syntaxNavigatorFactory;
     private readonly Func<SymbolXPathNavigator>? _symbolNavigatorFactory;
+    private readonly SyntaxTree? _syntaxTree;
     private readonly SemanticModel? _semanticModel;
     private readonly CancellationToken _cancellationToken;
 
@@ -58,8 +78,16 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
     private readonly Dictionary<SyntaxNode, ITypeSymbol?> _nodeTypes = new(ReferenceComparer<SyntaxNode>.Instance);
     private readonly Dictionary<(string Name, string? Format), XPathTypeNameMatcher?> _typeNameMatchers = [];
     private readonly Dictionary<ISymbol, AttributeDataForest> _attributeForests = new(SymbolEqualityComparer.Default);
+    private readonly Dictionary<string, XPathMemberNameMatcher> _memberNameMatchers = new(StringComparer.Ordinal);
+    private readonly Dictionary<SyntaxNode, ImmutableArray<ISymbol>> _capturedSymbols = new(ReferenceComparer<SyntaxNode>.Instance);
+    private string? _filePath;
 
-    public BannedSyntaxXsltContext(Func<SyntaxNodeXPathNavigator>? syntaxNavigatorFactory, Func<SymbolXPathNavigator>? symbolNavigatorFactory, SemanticModel? semanticModel, CancellationToken cancellationToken)
+    /// <param name="syntaxNavigatorFactory">The navigator the <c>syntax</c> function returns the nodes of.</param>
+    /// <param name="symbolNavigatorFactory">The navigator the <c>symbol</c> function returns the symbols of.</param>
+    /// <param name="syntaxTree">The file that is analyzed.</param>
+    /// <param name="semanticModel">The semantic model of the file, which the semantic functions need.</param>
+    /// <param name="cancellationToken">The cancellation token of the analysis.</param>
+    public BannedSyntaxXsltContext(Func<SyntaxNodeXPathNavigator>? syntaxNavigatorFactory, Func<SymbolXPathNavigator>? symbolNavigatorFactory, SyntaxTree? syntaxTree, SemanticModel? semanticModel, CancellationToken cancellationToken)
         : base(new NameTable())
     {
         // The context resolves the prefixes when the expression is evaluated, so it defines the same ones as the
@@ -69,6 +97,7 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
         AddNamespace(XPathNamespaces.SymbolPrefix, XPathNamespaces.SymbolNamespaceUri);
         _syntaxNavigatorFactory = syntaxNavigatorFactory;
         _symbolNavigatorFactory = symbolNavigatorFactory;
+        _syntaxTree = syntaxTree;
         _semanticModel = semanticModel;
         _cancellationToken = cancellationToken;
     }
@@ -80,7 +109,9 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
     /// </summary>
     public static bool IsSemanticFunctionName(string name) => name switch
     {
-        ImplementsFunctionName or InheritsFromFunctionName or IsAssignableToFunctionName or HasAttributeFunctionName or AttributesFunctionName or ContainingAssemblyFunctionName or IsFromCurrentAssemblyFunctionName => true,
+        ImplementsFunctionName or InheritsFromFunctionName or IsAssignableToFunctionName or HasAttributeFunctionName or AttributesFunctionName
+            or ContainingAssemblyFunctionName or IsFromCurrentAssemblyFunctionName or ContainingNamespaceFunctionName or OverridesFunctionName
+            or ImplementsMemberFunctionName or IsExternallyVisibleFunctionName or IsCapturedFunctionName => true,
         _ => false,
     };
 
@@ -116,6 +147,12 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
             // A function has a single return type, so the name of the assembly and the test of the name are two functions
             ContainingAssemblyFunctionName => argTypes.Length is 0 ? new ContainingAssemblyNameFunction(this) : new ContainingAssemblyTestFunction(this),
             IsFromCurrentAssemblyFunctionName => new IsFromCurrentAssemblyFunction(this),
+            ContainingNamespaceFunctionName => argTypes.Length is 0 ? new ContainingNamespaceNameFunction(this) : new ContainingNamespaceTestFunction(this),
+            OverridesFunctionName => new MemberRelationFunction(this, MemberRelation.Overrides),
+            ImplementsMemberFunctionName => new MemberRelationFunction(this, MemberRelation.ImplementsMember),
+            IsExternallyVisibleFunctionName => new IsExternallyVisibleFunction(this),
+            IsCapturedFunctionName => new IsCapturedFunction(this),
+            FilePathFunctionName => new FilePathFunction(this),
             _ => null,
         };
 
@@ -240,11 +277,167 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
     {
         if (!_attributeForests.TryGetValue(symbol, out var forest))
         {
-            forest = AttributeDataForest.Create(symbol, _semanticModel?.SyntaxTree, _cancellationToken);
+            forest = AttributeDataForest.Create(symbol, _syntaxTree, _cancellationToken);
             _attributeForests.Add(symbol, forest);
         }
 
         return forest;
+    }
+
+    private XPathMemberNameMatcher? GetMemberNameMatcher(object[] args)
+    {
+        if (args is not [var value])
+            return null;
+
+        var name = ToXPathString(value);
+        if (!_memberNameMatchers.TryGetValue(name, out var matcher))
+        {
+            matcher = new XPathMemberNameMatcher(name);
+            _memberNameMatchers.Add(name, matcher);
+        }
+
+        return matcher;
+    }
+
+    // The path uses '/' whatever the operating system, so a query works on every machine
+    private string GetFilePath() => _filePath ??= _syntaxTree?.FilePath.Replace('\\', '/') ?? "";
+
+    // A local or a parameter is captured when a lambda or a local function of the body that declares it uses it. The
+    // captured symbols are computed once per body, as the data flow analysis walks the whole body.
+    private bool IsCaptured(ISymbol symbol)
+    {
+        if (symbol is not (ILocalSymbol or IParameterSymbol { IsThis: false }) || symbol.ContainingSymbol is not IMethodSymbol method)
+            return false;
+
+        foreach (var reference in method.DeclaringSyntaxReferences)
+        {
+            if (reference.SyntaxTree != _syntaxTree)
+                continue;
+
+            var node = reference.GetSyntax(_cancellationToken);
+            if (!_capturedSymbols.TryGetValue(node, out var capturedSymbols))
+            {
+                capturedSymbols = GetCapturedSymbols(node);
+                _capturedSymbols.Add(node, capturedSymbols);
+            }
+
+            foreach (var capturedSymbol in capturedSymbols)
+            {
+                if (SymbolEqualityComparer.Default.Equals(capturedSymbol, symbol))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    private ImmutableArray<ISymbol> GetCapturedSymbols(SyntaxNode node)
+    {
+        // The data flow analysis needs a statement or an expression, which is the body of the declaration
+        var body = node switch
+        {
+            BaseMethodDeclarationSyntax declaration => (SyntaxNode?)declaration.Body ?? declaration.ExpressionBody?.Expression,
+            LocalFunctionStatementSyntax localFunction => (SyntaxNode?)localFunction.Body ?? localFunction.ExpressionBody?.Expression,
+            AccessorDeclarationSyntax accessor => (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody?.Expression,
+            AnonymousFunctionExpressionSyntax anonymousFunction => anonymousFunction.Body,
+            ArrowExpressionClauseSyntax arrowExpression => arrowExpression.Expression,
+            _ => null,
+        };
+
+        if (body is null)
+        {
+            // The locals of the top-level statements are declared by the compilation unit, and each statement is analyzed
+            if (node is not CompilationUnitSyntax compilationUnit)
+                return [];
+
+            var result = ImmutableArray.CreateBuilder<ISymbol>();
+            foreach (var member in compilationUnit.Members)
+            {
+                if (member is GlobalStatementSyntax globalStatement)
+                {
+                    AddCapturedSymbols(result, globalStatement.Statement);
+                }
+            }
+
+            return result.ToImmutable();
+        }
+
+        var symbols = ImmutableArray.CreateBuilder<ISymbol>();
+        AddCapturedSymbols(symbols, body);
+        return symbols.ToImmutable();
+    }
+
+    private void AddCapturedSymbols(ImmutableArray<ISymbol>.Builder symbols, SyntaxNode node)
+    {
+        var dataFlow = node switch
+        {
+            StatementSyntax statement => _semanticModel!.AnalyzeDataFlow(statement),
+            ExpressionSyntax expression => _semanticModel!.AnalyzeDataFlow(expression),
+            _ => null,
+        };
+
+        if (dataFlow is { Succeeded: true })
+        {
+            symbols.AddRange(dataFlow.Captured);
+        }
+    }
+
+    // A member overrides the members its overridden member overrides
+    private static bool Overrides(ISymbol symbol, XPathMemberNameMatcher matcher)
+    {
+        for (var overriddenMember = GetOverriddenMember(symbol); overriddenMember is not null; overriddenMember = GetOverriddenMember(overriddenMember))
+        {
+            if (matcher.Matches(overriddenMember))
+                return true;
+        }
+
+        return false;
+
+        static ISymbol? GetOverriddenMember(ISymbol symbol) => symbol switch
+        {
+            IMethodSymbol method => method.OverriddenMethod,
+            IPropertySymbol property => property.OverriddenProperty,
+            IEventSymbol @event => @event.OverriddenEvent,
+            _ => null,
+        };
+    }
+
+    // A member implements the members of the interfaces of its containing type it is the implementation of, implicitly
+    // or explicitly. The names are the ones of the definitions, so the definition is used for a constructed member.
+    private static bool ImplementsMember(ISymbol symbol, XPathMemberNameMatcher matcher)
+    {
+        symbol = symbol.OriginalDefinition;
+        if (symbol.Kind is not (SymbolKind.Method or SymbolKind.Property or SymbolKind.Event) || symbol.ContainingType is not { } containingType)
+            return false;
+
+        foreach (var @interface in containingType.AllInterfaces)
+        {
+            foreach (var member in @interface.GetMembers())
+            {
+                if (member.Kind == symbol.Kind && matcher.Matches(member) && SymbolEqualityComparer.Default.Equals(containingType.FindImplementationForInterfaceMember(member), symbol))
+                    return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A symbol is visible outside of its assembly when it and all its containing types are public or protected. A
+    // parameter or a type parameter is visible when the symbol that declares it is, and a local never is.
+    private static bool IsExternallyVisible(ISymbol symbol)
+    {
+        if (symbol is IParameterSymbol or ITypeParameterSymbol)
+        {
+            symbol = symbol.ContainingSymbol;
+        }
+
+        for (var current = symbol; current is not null and not INamespaceSymbol; current = current.ContainingSymbol)
+        {
+            if (current.DeclaredAccessibility is not (Accessibility.Public or Accessibility.Protected or Accessibility.ProtectedOrInternal))
+                return false;
+        }
+
+        return true;
     }
 
     // The arguments are not converted to the types the function declares, so a node-set is converted to the value of
@@ -576,6 +769,117 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
 
             return SymbolEqualityComparer.Default.Equals(assembly, context._semanticModel.Compilation.Assembly);
         }
+    }
+
+    // containing-namespace() returns the namespace, such as 'System.Collections.Generic', or an empty string for the
+    // global namespace
+    private sealed class ContainingNamespaceNameFunction(BannedSyntaxXsltContext context) : IXsltContextFunction
+    {
+        public int Minargs => 0;
+
+        public int Maxargs => 0;
+
+        public XPathResultType ReturnType => XPathResultType.String;
+
+        public XPathResultType[] ArgTypes { get; } = [];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
+        {
+            return SymbolNameFormatter.GetSymbolName(context.GetContextSymbol(docContext)?.ContainingNamespace) ?? "";
+        }
+    }
+
+    // containing-namespace(name) is only true for this namespace, not for the namespaces it contains, like the
+    // namespace a type is declared in
+    private sealed class ContainingNamespaceTestFunction(BannedSyntaxXsltContext context) : IXsltContextFunction
+    {
+        public int Minargs => 1;
+
+        public int Maxargs => 1;
+
+        public XPathResultType ReturnType => XPathResultType.Boolean;
+
+        public XPathResultType[] ArgTypes { get; } = [XPathResultType.String];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
+        {
+            if (args is not [var name] || context.GetContextSymbol(docContext) is not { ContainingNamespace: { } containingNamespace })
+                return false;
+
+            return string.Equals(SymbolNameFormatter.GetSymbolName(containingNamespace) ?? "", ToXPathString(name), StringComparison.Ordinal);
+        }
+    }
+
+    private enum MemberRelation
+    {
+        Overrides,
+        ImplementsMember,
+    }
+
+    // overrides(member) and implements-member(member)
+    private sealed class MemberRelationFunction(BannedSyntaxXsltContext context, MemberRelation relation) : IXsltContextFunction
+    {
+        public int Minargs => 1;
+
+        public int Maxargs => 1;
+
+        public XPathResultType ReturnType => XPathResultType.Boolean;
+
+        public XPathResultType[] ArgTypes { get; } = [XPathResultType.String];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
+        {
+            if (context.GetContextSymbol(docContext) is not { } symbol || context.GetMemberNameMatcher(args) is not { } matcher)
+                return false;
+
+            return relation is MemberRelation.Overrides ? Overrides(symbol, matcher) : ImplementsMember(symbol, matcher);
+        }
+    }
+
+    private sealed class IsExternallyVisibleFunction(BannedSyntaxXsltContext context) : IXsltContextFunction
+    {
+        public int Minargs => 0;
+
+        public int Maxargs => 0;
+
+        public XPathResultType ReturnType => XPathResultType.Boolean;
+
+        public XPathResultType[] ArgTypes { get; } = [];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
+        {
+            return context.GetContextSymbol(docContext) is { } symbol && IsExternallyVisible(symbol);
+        }
+    }
+
+    private sealed class IsCapturedFunction(BannedSyntaxXsltContext context) : IXsltContextFunction
+    {
+        public int Minargs => 0;
+
+        public int Maxargs => 0;
+
+        public XPathResultType ReturnType => XPathResultType.Boolean;
+
+        public XPathResultType[] ArgTypes { get; } = [];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext)
+        {
+            return context.GetContextSymbol(docContext) is { } symbol && context.IsCaptured(symbol);
+        }
+    }
+
+    // file-path() does not depend on the node, so it does not need the semantic model
+    private sealed class FilePathFunction(BannedSyntaxXsltContext context) : IXsltContextFunction
+    {
+        public int Minargs => 0;
+
+        public int Maxargs => 0;
+
+        public XPathResultType ReturnType => XPathResultType.String;
+
+        public XPathResultType[] ArgTypes { get; } = [];
+
+        public object Invoke(XsltContext xsltContext, object[] args, XPathNavigator docContext) => context.GetFilePath();
     }
 
     // The navigators of the list are never moved, as each iterator exposes its own copy of the current one
