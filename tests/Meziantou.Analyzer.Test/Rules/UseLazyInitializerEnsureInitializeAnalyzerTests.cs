@@ -354,4 +354,48 @@ public sealed class UseLazyInitializerEnsureInitializeAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task Await()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            System.Threading.Interlocked.CompareExchange(ref a, new Sample(await System.Threading.Tasks.Task.FromResult(1)), null);
+            class Sample { public Sample(int value) { } }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitInNestedLambda()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            {|MA0173:System.Threading.Interlocked.CompareExchange(ref a, new Sample(async () => await System.Threading.Tasks.Task.FromResult(1)), null)|};
+            class Sample { public Sample(System.Func<System.Threading.Tasks.Task<int>> value) { } }
+            """;
+        test.FixedCode = """
+            Sample a = default;
+            System.Threading.LazyInitializer.EnsureInitialized(ref a, () => new Sample(async () => await System.Threading.Tasks.Task.FromResult(1)));
+            class Sample { public Sample(System.Func<System.Threading.Tasks.Task<int>> value) { } }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OutVariableDeclaration()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            Sample a = default;
+            System.Threading.Interlocked.CompareExchange(ref a, new Sample(out var value), null);
+            System.Console.WriteLine(value);
+            class Sample { public Sample(out int value) => value = 0; }
+            """;
+
+        return test.RunAsync();
+    }
 }

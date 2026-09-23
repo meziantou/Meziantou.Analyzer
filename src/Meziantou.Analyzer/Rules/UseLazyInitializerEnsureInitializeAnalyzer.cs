@@ -70,14 +70,20 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
     {
         foreach (var descendant in operation.DescendantsAndSelf())
         {
-            if (CannotBeCapturedByLambda(descendant))
+            if (CannotBeCapturedByLambda(descendant, operation))
                 return false;
         }
 
         return true;
 
-        static bool CannotBeCapturedByLambda(IOperation operation) => operation switch
+        static bool CannotBeCapturedByLambda(IOperation operation, IOperation value) => operation switch
         {
+            // The lambda is not async, so it cannot contain an await (CS4034)
+            IAwaitOperation => !IsInNestedFunction(operation, value),
+
+            // A variable declared by an out argument would be scoped to the lambda (CS0103 when used after the call)
+            IDeclarationExpressionOperation => !IsInNestedFunction(operation, value),
+
             // ref, out and in parameters cannot be used inside a lambda (CS1628)
             IParameterReferenceOperation { Parameter.RefKind: not RefKind.None } => true,
 
@@ -92,5 +98,16 @@ public class UseLazyInitializerEnsureInitializeAnalyzer : DiagnosticAnalyzer
 
             _ => false,
         };
+
+        static bool IsInNestedFunction(IOperation operation, IOperation value)
+        {
+            for (var parent = operation.Parent; parent is not null && parent != value; parent = parent.Parent)
+            {
+                if (parent is IAnonymousFunctionOperation)
+                    return true;
+            }
+
+            return false;
+        }
     }
 }
