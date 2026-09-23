@@ -47,7 +47,8 @@ public sealed class UseEventHandlerOfTAnalyzer : DiagnosticAnalyzer
             if (IsValidSignature(method, out var message))
                 return;
 
-            if (symbol.IsInterfaceImplementation())
+            // The type of the event is imposed by the base member, which is reported instead
+            if (symbol.IsOverride || symbol.IsInterfaceImplementation())
                 return;
 
             context.ReportDiagnostic(Rule, symbol, message);
