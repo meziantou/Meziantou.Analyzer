@@ -215,6 +215,25 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task Concat_UserDefinedOperator_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Foo
+            {
+                public static string operator +(Foo x, System.DateTime y) => "";
+
+                void M(Foo f, System.DateTime d)
+                {
+                    _ = f + d;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("abc{|MA0076:{(sbyte)-1}|}")]
     [InlineData("abc{|MA0076:{(short)-1}|}")]

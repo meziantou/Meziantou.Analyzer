@@ -89,6 +89,10 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             if (operation.OperatorKind != BinaryOperatorKind.Add)
                 return;
 
+            // Only the built-in string concatenation calls ToString on the operands
+            if (operation.OperatorMethod is not null)
+                return;
+
             if (!operation.Type.IsString())
                 return;
 
