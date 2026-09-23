@@ -163,4 +163,76 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Field()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                int a;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <summary><see langword="null"/></summary>
+                int a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FieldWithMultipleVariables()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                int a, b;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <summary><see langword="null"/></summary>
+                int a, b;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordWithPrimaryConstructor()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>{|MA0154:<c>null</c>|}</summary>
+            record Sample(int A);
+            """;
+        test.FixedCode = """
+            /// <summary><see langword="null"/></summary>
+            record Sample(int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ClassWithPrimaryConstructor_MissingLanguageAttribute()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>{|MA0219:<c>test</c>|}</summary>
+            class Sample(int a);
+            """;
+
+        return test.RunAsync();
+    }
 }

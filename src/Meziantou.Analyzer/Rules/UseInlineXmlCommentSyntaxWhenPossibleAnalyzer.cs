@@ -40,13 +40,8 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzer : DiagnosticAn
         foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
         {
             var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-            var syntaxToAnalyze = syntax switch
-            {
-                VariableDeclaratorSyntax { Parent.Parent: BaseFieldDeclarationSyntax fieldDeclaration } => fieldDeclaration,
-                _ => syntax,
-            };
-
-            if (!syntaxToAnalyze.HasStructuredTrivia)
+            var syntaxToAnalyze = XmlDocumentationCommentHelper.GetDocumentedNode(symbol, syntax);
+            if (syntaxToAnalyze is null || !syntaxToAnalyze.HasStructuredTrivia)
                 continue;
 
             foreach (var trivia in syntaxToAnalyze.GetLeadingTrivia())
