@@ -175,4 +175,68 @@ public sealed class AddOverloadWithSpanOrMemoryAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("System.Span<T>")]
+    [InlineData("System.ReadOnlySpan<T>")]
+    [InlineData("System.Memory<T>")]
+    [InlineData("System.ReadOnlyMemory<T>")]
+    public Task GenericArrayWithSpanOverload(string overloadType)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            public class Sample
+            {
+                public void M<T>(T[] values) { }
+                public void M<T>({{overloadType}} values) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericArrayWithSpanOverload_DifferentTypeParameterNames()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public void M<T>(T[] values, T value) { }
+                public void M<TItem>(System.ReadOnlySpan<TItem> values, TItem value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericArrayWithNonGenericSpanOverload()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public void {|MA0109:M|}<T>(T[] values) { }
+                public void M(System.ReadOnlySpan<int> values) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericArrayWithSpanOverloadOfAnotherTypeParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public void {|MA0109:M|}<T1, T2>(T1[] values, T2 value) { }
+                public void M<T1, T2>(System.ReadOnlySpan<T2> values, T2 value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
