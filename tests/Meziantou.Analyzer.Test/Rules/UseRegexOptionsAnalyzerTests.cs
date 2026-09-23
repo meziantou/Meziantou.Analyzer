@@ -77,6 +77,24 @@ public sealed class UseRegexOptionsAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task IsMatch_RegexOptions_NamedArguments()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    Regex.IsMatch(pattern: "([a-z]+)", input: "test", {|MA0023:options: RegexOptions.None|}, matchTimeout: default);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("([a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", false)]
     [InlineData("(?<test>[a-z]+)", "RegexOptions.CultureInvariant | RegexOptions.IgnoreCase", true)]

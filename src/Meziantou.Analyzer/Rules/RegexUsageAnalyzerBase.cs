@@ -69,8 +69,9 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                     }
                 }
 
-                // Timeout
-                if (!HasNonBacktracking(regexOptions) && attribute.ConstructorArguments.Length < 3)
+                // Timeout: the constructors that accept a timeout have a matchTimeoutMilliseconds parameter.
+                // The number of arguments is not enough, as a constructor accepts the culture name instead of the timeout.
+                if (!HasNonBacktracking(regexOptions) && !HasTimeoutParameter(attribute.AttributeConstructor))
                 {
                     context.ReportDiagnostic(TimeoutRule, attribute);
                 }
@@ -78,6 +79,8 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
         }
 
         private static bool HasNonBacktracking(RegexOptions options) => ((int)options & 1024) == 1024;
+
+        private static bool HasTimeoutParameter(IMethodSymbol? constructor) => constructor is not null && constructor.Parameters.Any(parameter => parameter is { Name: "matchTimeoutMilliseconds", Type.SpecialType: SpecialType.System_Int32 });
 
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
@@ -97,7 +100,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             if (op.Arguments.Length == 0)
                 return;
 
-            var regexOptions = CheckRegexOptionsArgument(context, op.TargetMethod.IsStatic ? 1 : 0, op.Arguments, _regexOptionsSymbol);
+            var regexOptions = CheckRegexOptionsArgument(context, op.Arguments, _regexOptionsSymbol);
             if (!HasNonBacktracking(regexOptions) && !CheckTimeout(op.Arguments))
             {
                 context.ReportDiagnostic(TimeoutRule, op);
@@ -116,7 +119,7 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             if (!op.Type.IsEqualTo(_regexSymbol))
                 return;
 
-            var regexOptions = CheckRegexOptionsArgument(context, 0, op.Arguments, _regexOptionsSymbol);
+            var regexOptions = CheckRegexOptionsArgument(context, op.Arguments, _regexOptionsSymbol);
             if (!HasNonBacktracking(regexOptions) && !CheckTimeout(op.Arguments))
             {
                 context.ReportDiagnostic(TimeoutRule, op);
@@ -128,10 +131,11 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
             if (_timeSpanSymbol is null)
                 return false;
 
-            return args.Last().Value.Type.IsEqualTo(_timeSpanSymbol);
+            // The arguments are in the order of the source code, so the named arguments can be in any position
+            return args.Any(arg => arg.Parameter is not null && arg.Parameter.Type.IsEqualTo(_timeSpanSymbol));
         }
 
-        private static RegexOptions CheckRegexOptionsArgument(OperationAnalysisContext context, int patternArgumentIndex, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
+        private static RegexOptions CheckRegexOptionsArgument(OperationAnalysisContext context, ImmutableArray<IArgumentOperation> arguments, ITypeSymbol? regexOptionsSymbol)
         {
             var pattern = GetPattern();
             var (regexOptions, regexOptionsArgument) = GetRegexOptions();
@@ -147,12 +151,10 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
 
             string? GetPattern()
             {
-                if (patternArgumentIndex < arguments.Length)
-                {
-                    var argument = arguments[patternArgumentIndex];
-                    if (argument.Value is not null && argument.Value.TryGetConstantValue(out var value, context.CancellationToken) && value is string pattern)
-                        return pattern;
-                }
+                // The arguments are in the order of the source code, so the named arguments can be in any position
+                var argument = arguments.FirstOrDefault(a => a.Parameter is { Name: "pattern", Type.SpecialType: SpecialType.System_String });
+                if (argument?.Value is not null && argument.Value.TryGetConstantValue(out var value, context.CancellationToken) && value is string pattern)
+                    return pattern;
 
                 return null;
             }

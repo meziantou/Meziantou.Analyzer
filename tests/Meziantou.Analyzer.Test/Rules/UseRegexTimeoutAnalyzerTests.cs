@@ -57,6 +57,24 @@ public sealed class UseRegexTimeoutAnalyzerTests
     }
 
     [Fact]
+    public Task IsMatch_WithTimeout_NamedArguments_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    Regex.IsMatch(pattern: "[a-z]+", matchTimeout: System.TimeSpan.FromSeconds(1), input: "test", options: RegexOptions.None);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task IsMatch_NonBacktracking_WithoutTimeout_ShouldNotReportError()
     {
         var test = CreateTest();
@@ -103,6 +121,24 @@ public sealed class UseRegexTimeoutAnalyzerTests
                 void Test()
                 {
                     new Regex("[a-z]+", RegexOptions.ExplicitCapture, System.TimeSpan.FromSeconds(1));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Ctor_WithTimeout_NamedArguments_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            class TestClass
+            {
+                void Test()
+                {
+                    new Regex(pattern: "[a-z]+", matchTimeout: System.TimeSpan.FromSeconds(1), options: RegexOptions.None);
                 }
             }
             """;
@@ -174,6 +210,42 @@ public sealed class UseRegexTimeoutAnalyzerTests
             partial class TestClass
             {
                 [GeneratedRegex("pattern", RegexOptions.None, matchTimeoutMilliseconds: 1000)]
+                private static partial Regex Test();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GeneratedRegex_WithCultureName_WithoutTimeout()
+    {
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [{|MA0009:GeneratedRegex("pattern", RegexOptions.None, "en-US")|}]
+                private static partial Regex Test();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GeneratedRegex_WithCultureName_WithTimeout()
+    {
+        var test = CreateTest();
+        test.UseFrameworkSourceGenerators = true;
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [GeneratedRegex("pattern", RegexOptions.None, 1000, "en-US")]
                 private static partial Regex Test();
             }
             """;
