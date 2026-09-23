@@ -61,8 +61,11 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
         /// </summary>
         private bool IsInUsingOperation(IOperation operation)
         {
-            foreach (var parent in operation.Ancestors().Select(operation => operation.UnwrapLabels()))
+            // The ancestor that contains the operation, so the using declarations that follow it in a block are ignored
+            var child = operation;
+            foreach (var ancestor in operation.Ancestors())
             {
+                var parent = ancestor.UnwrapLabels();
                 if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                     return false;
 
@@ -78,12 +81,12 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
 
                 if (parent is IBlockOperation block)
                 {
-                    foreach (var blockOperation in block.Operations.Select(operation => operation.UnwrapLabels()))
+                    foreach (var blockOperation in block.Operations)
                     {
-                        if (blockOperation == operation)
+                        if (blockOperation == child)
                             break;
 
-                        if (blockOperation is IUsingDeclarationOperation usingDecl)
+                        if (blockOperation.UnwrapLabels() is IUsingDeclarationOperation usingDecl)
                         {
                             // Exception: ExecutionContext.SuppressFlow() returns AsyncFlowControl
                             // The task doesn't need to be awaited before the using block ends
@@ -94,6 +97,8 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                         }
                     }
                 }
+
+                child = ancestor;
             }
 
             return false;
