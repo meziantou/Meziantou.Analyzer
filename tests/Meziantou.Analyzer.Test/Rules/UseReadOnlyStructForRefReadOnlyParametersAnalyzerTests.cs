@@ -212,28 +212,47 @@ public class UseReadOnlyStructForRefReadOnlyParametersAnalyzerTests
     }
 
     [Fact]
-    public Task TypesThatCannotBeMadeReadOnly()
+    public Task Enum_NoDiagnostic()
     {
         var test = CreateLibraryTest();
         test.TestCode = """
             class Test
             {
                 void A(in System.DayOfWeek day) { }
-                void B(in int? value) { }
-                void C(in System.Collections.Generic.List<int>.Enumerator enumerator) { }
-                void D(in Foo foo) { }
+                void B(ref readonly Foo foo) { }
 
                 void E<T>(in T value) { }
                 void F()
                 {
                     E(System.DayOfWeek.Monday);
-                    E((int?)1);
-                    E(default(System.Collections.Generic.List<int>.Enumerator));
                     E(Foo.Bar);
                 }
             }
 
             enum Foo { Bar }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StructNotReadOnly_DeclaredInAnotherAssembly()
+    {
+        var test = CreateLibraryTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(in int? {|MA0168:value|}) { }
+                void B(in System.Collections.Generic.List<int>.Enumerator {|MA0168:enumerator|}) { }
+                void C(in System.DateTime value) { }
+
+                void E<T>(in T value) { }
+                void F()
+                {
+                    E({|MA0168:default(System.Collections.Generic.List<int>.Enumerator)|});
+                    E(System.DateTime.Now);
+                }
+            }
             """;
 
         return test.RunAsync();
