@@ -102,7 +102,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
             var equalsExpression = BinaryExpression(
                 SyntaxKind.EqualsExpression,
                 InvocationExpression(
-                    IdentifierName(nameof(IComparable.CompareTo)))
+                    CreateCompareToExpression(editor.Generator, semanticModel.Compilation, declaredTypeSymbol))
                 .WithArgumentList(
                     ArgumentList(
                         SingletonSeparatedList(
@@ -125,6 +125,31 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         }
 
         return editor.GetChangedDocument();
+    }
+
+    /// <summary>
+    /// Creates the expression to call <c>IComparable&lt;T&gt;.CompareTo</c>: <c>CompareTo</c>, or <c>((IComparable&lt;T&gt;)this).CompareTo</c>
+    /// when the method is implemented explicitly, as it cannot be called by its name.
+    /// </summary>
+    private static ExpressionSyntax CreateCompareToExpression(SyntaxGenerator generator, Compilation compilation, INamedTypeSymbol declaredTypeSymbol)
+    {
+        var compareToName = IdentifierName(nameof(IComparable.CompareTo));
+        var comparableOfTSymbol = compilation.GetTypeByMetadataName("System.IComparable`1")?.Construct(declaredTypeSymbol);
+        if (comparableOfTSymbol is null)
+            return compareToName;
+
+        var comparableInterface = declaredTypeSymbol.AllInterfaces.FirstOrDefault(interfaceSymbol => interfaceSymbol.IsEqualTo(comparableOfTSymbol));
+        if (comparableInterface?.GetMembers(nameof(IComparable.CompareTo)).FirstOrDefault() is not IMethodSymbol interfaceMethod)
+            return compareToName;
+
+        if (declaredTypeSymbol.FindImplementationForInterfaceMember(interfaceMethod) is not IMethodSymbol { MethodKind: MethodKind.ExplicitInterfaceImplementation })
+            return compareToName;
+
+        var interfaceTypeSyntax = ((TypeSyntax)generator.TypeExpression(comparableInterface)).WithAdditionalAnnotations(Simplifier.Annotation);
+        return MemberAccessExpression(
+            SyntaxKind.SimpleMemberAccessExpression,
+            ParenthesizedExpression(CastExpression(interfaceTypeSyntax, ThisExpression())),
+            compareToName);
     }
 
     private static async Task<Document> ImplementIEquatable(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
