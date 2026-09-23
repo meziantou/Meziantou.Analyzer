@@ -668,6 +668,106 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task ImplicitCtor_InExcludedMethod_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(System.Collections.Generic.List<TypeName> list)
+                {
+                    list.Add(new({|MA0003:true|}));
+                }
+
+                TypeName(bool value) { }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test(System.Collections.Generic.List<TypeName> list)
+                {
+                    list.Add(new(value: true));
+                }
+
+                TypeName(bool value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitCtor_ExcludedCtor_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    M(new("key", null), {|MA0003:true|});
+                }
+
+                void M(System.Collections.Generic.KeyValuePair<string, object> item, bool value) { }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    M(new("key", null), value: true);
+                }
+
+                void M(System.Collections.Generic.KeyValuePair<string, object> item, bool value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethodCalledAsInstanceMethod_ExcludedMethod_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    this.IsValid(true);
+                }
+            }
+
+            static class Extensions
+            {
+                public static bool IsValid(this TypeName instance, bool value) => value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IndexerInObjectInitializer_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = new TypeName { [{|MA0003:true|}, {|MA0003:false|}] = 0 };
+                }
+
+                public int this[bool a, bool b] { get => 0; set { } }
+            }
+            """;
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ImplicitCtor_ShouldUseTheRightParameterName()
     {
         var test = CreateTest();
