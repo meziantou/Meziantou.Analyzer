@@ -815,4 +815,138 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Test_ElseLocalConflictsWithLocalOfSiblingScope_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(bool a)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+                    else
+                    {
+                        var i = 1;
+                        _ = i;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_ElseLocalConflictsWithFieldUsedInEnclosingScope_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                int i;
+
+                void Test(bool a)
+                {
+                    _ = i;
+                    if (a)
+                        return;
+                    else
+                    {
+                        var i = 1;
+                        _ = i;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_ElseLocalOfNestedElseConflictsWithLocalOfSiblingScope_OnlyNestedElseRemoved()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(bool a, bool b)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+                    else
+                    {
+                        if (b)
+                            return;
+                        {|MA0071:else|}
+                        {
+                            var i = 1;
+                            _ = i;
+                        }
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(bool a, bool b)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+                    else
+                    {
+                        if (b)
+                            return;
+
+                        var i = 1;
+                        _ = i;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_ElseNestedLocalWithSameNameAsLocalOfSiblingScope_ElseRemoved()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(bool a)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+                    {|MA0071:else|}
+                    {
+                        for (var i = 0; i < 10; i++) { }
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(bool a)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+
+                    for (var i = 0; i < 10; i++) { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
