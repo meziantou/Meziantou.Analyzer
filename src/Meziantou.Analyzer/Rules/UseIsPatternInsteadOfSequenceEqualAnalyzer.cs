@@ -45,6 +45,10 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzer : DiagnosticAnaly
         if (!method.ContainingType.IsEqualTo(memoryExtensionsSymbol))
             return;
 
+        // A null string is converted to an empty span, so it is equal to an empty string, whereas the 'is' pattern is false for null
+        if (operation.Arguments.Length > 0 && operation.Arguments[0].Value.UnwrapImplicitConversions().Type is { SpecialType: SpecialType.System_String })
+            return;
+
         if (method.Name is "SequenceEqual" && method.Parameters.Length == 2 && method.Parameters[0].Type.IsEqualToAny(readOnlySpanCharSymbol, spanCharSymbol))
         {
             if (IsConstantValue(operation.Arguments[1].Value))

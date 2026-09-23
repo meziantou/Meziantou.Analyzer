@@ -223,4 +223,18 @@ public sealed class UseIsPatternInsteadOfSequenceEqualAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task StringConvertedToSpan()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            string value = null;
+            _ = MemoryExtensions.SequenceEqual<char>(value, "");
+            _ = MemoryExtensions.Equals(value, "", StringComparison.Ordinal);
+            """;
+
+        return test.RunAsync();
+    }
 }
