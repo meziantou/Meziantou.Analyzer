@@ -115,179 +115,160 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 }
 
                 // Exclude in some methods such as ConfigureAwait(false)
-                // A target-typed new expression (new(...)) is an invocation on its own, so the exclusions of the enclosing invocation don't apply to its arguments
-                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ImplicitObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
-                if (invocationExpression is not null)
+                var invokedMethodSymbol = GetInvokedSymbol(argumentOperation);
+                if (invokedMethodSymbol is not null)
                 {
-                    BaseArgumentListSyntax? argumentList = invocationExpression switch
+                    var invokedMethodParameters = invokedMethodSymbol switch
                     {
-                        InvocationExpressionSyntax invocationExpressionSyntax => invocationExpressionSyntax.ArgumentList,
-                        BaseObjectCreationExpressionSyntax objectCreationExpressionSyntax => objectCreationExpressionSyntax.ArgumentList,
-                        ElementAccessExpressionSyntax elementAccessExpressionSyntax => elementAccessExpressionSyntax.ArgumentList,
-                        _ => null,
+                        IMethodSymbol methodSymbol => methodSymbol.Parameters,
+                        IPropertySymbol propertySymbol => propertySymbol.Parameters,
+                        _ => ImmutableArray<IParameterSymbol>.Empty,
                     };
 
-                    if (argumentList is null)
+                    if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(operationContext.Options, expression))
                         return;
 
-                    var invokedMethodSymbol = argumentOperation.SemanticModel!.GetSymbolInfo(invocationExpression, operationContext.CancellationToken).Symbol;
-                    if (invokedMethodSymbol is null && invocationExpression.IsKind(SyntaxKind.ElementAccessExpression))
-                        return; // Skip Array[index]
+                    var argumentIndex = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
 
-                    if (invokedMethodSymbol is not null)
+                    bool IsParams(SyntaxNode node)
                     {
-                        var invokedMethodParameters = invokedMethodSymbol switch
+                        if (argumentIndex > invokedMethodParameters.Length - 1)
+                            return true;
+
+                        if (invokedMethodParameters.Length == 0)
+                            return false;
+
+                        var lastParameter = invokedMethodParameters[^1];
+                        if (argumentIndex == invokedMethodParameters.Length - 1 && lastParameter.IsParams)
                         {
-                            IMethodSymbol methodSymbol => methodSymbol.Parameters,
-                            IPropertySymbol propertySymbol => propertySymbol.Parameters,
-                            _ => ImmutableArray<IParameterSymbol>.Empty,
-                        };
-
-                        if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(operationContext.Options, expression))
-                            return;
-
-                        var argumentIndex = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
-
-                        bool IsParams(SyntaxNode node)
-                        {
-                            if (argumentIndex > invokedMethodParameters.Length - 1)
+                            if (argument.Parent is BaseArgumentListSyntax argumentList && argumentList.Arguments.Count > invokedMethodParameters.Length)
                                 return true;
 
-                            if (invokedMethodParameters.Length == 0)
+                            if (expression.IsKind(SyntaxKind.NullLiteralExpression))
                                 return false;
 
-                            var lastParameter = invokedMethodParameters[^1];
-                            if (argumentIndex == invokedMethodParameters.Length - 1 && lastParameter.IsParams)
+                            var type = argumentOperation.SemanticModel!.GetTypeInfo(node, operationContext.CancellationToken).ConvertedType;
+                            return !type.IsEqualTo(lastParameter.Type);
+                        }
+
+                        return false;
+                    }
+
+                    if (IsParams(argument))
+                        return;
+
+                    if (invokedMethodParameters.Length == 1)
+                    {
+                        if (invokedMethodSymbol.Name.StartsWith("Is", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name.StartsWith("Add", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name.StartsWith("Remove", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name.StartsWith("Contains", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) ||
+                            invokedMethodSymbol.Name == "IndexOf" ||
+                            invokedMethodSymbol.Name == "IndexOfAny" ||
+                            invokedMethodSymbol.Name == "LastIndexOf" ||
+                            invokedMethodSymbol.Name == nameof(Task.ConfigureAwait))
+                        {
+                            return;
+                        }
+                    }
+
+                    if (IsMethod(invokedMethodSymbol, objectType, nameof(object.Equals)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, objectType, nameof(object.ReferenceEquals)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, taskTokenType, nameof(Task.FromResult)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, valueTaskTokenType, nameof(Task.FromResult)))
+                        return;
+
+                    // new KeyValuePair<TKey, TValue>(key, value)
+                    if (IsMethod(invokedMethodSymbol, keyValuePairTokenType, WellKnownMemberNames.InstanceConstructorName))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Read)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Write)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.SetResult)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.TrySetResult)))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, msTestAssertTokenType, "*"))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, nunitAssertTokenType, "*"))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, xunitAssertTokenType, "*"))
+                        return;
+
+                    if (IsMethod(invokedMethodSymbol, expressionType, nameof(Expression.Constant)))
+                        return;
+
+                    if ((string.Equals(invokedMethodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(invokedMethodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
+                        return;
+
+                    // Indexer with only 1 argument
+                    if (invokedMethodSymbol is IPropertySymbol && invokedMethodParameters.Length == 1)
+                        return;
+
+                    // e.g. SyntaxNode.WithElse
+                    if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritsFrom(syntaxNodeType))
+                        return;
+
+                    if (!argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
+                        return;
+
+                    // Building the declaration id of a method is expensive, so it is only built once for
+                    // the two options that use it, and only when one of them is configured.
+                    operationContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex);
+                    operationContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods);
+
+                    string? declarationId = null;
+                    if (excludedMethodsRegex is not null || excludedMethods is not null)
+                    {
+                        declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
+                    }
+
+                    if (excludedMethodsRegex is not null)
+                    {
+                        if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, declarationId, defaultValue: false))
+                            return;
+                    }
+
+                    if (excludedMethods is not null)
+                    {
+                        if (declarationId is not null)
+                        {
+                            var types = excludedMethods.Split('|');
+                            foreach (var type in types)
                             {
-                                if (argumentList.Arguments.Count > invokedMethodParameters.Length)
-                                    return true;
-
-                                if (expression.IsKind(SyntaxKind.NullLiteralExpression))
-                                    return false;
-
-                                var type = argumentOperation.SemanticModel!.GetTypeInfo(node, operationContext.CancellationToken).ConvertedType;
-                                return !type.IsEqualTo(lastParameter.Type);
-                            }
-
-                            return false;
-                        }
-
-                        if (IsParams(argument))
-                            return;
-
-                        if (invokedMethodParameters.Length == 1)
-                        {
-                            if (invokedMethodSymbol.Name.StartsWith("Is", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name.StartsWith("Enable", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name.StartsWith("Add", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name.StartsWith("Remove", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name.StartsWith("Contains", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) ||
-                                invokedMethodSymbol.Name == "IndexOf" ||
-                                invokedMethodSymbol.Name == "IndexOfAny" ||
-                                invokedMethodSymbol.Name == "LastIndexOf" ||
-                                invokedMethodSymbol.Name == nameof(Task.ConfigureAwait))
-                            {
-                                return;
-                            }
-                        }
-
-                        if (IsMethod(invokedMethodSymbol, objectType, nameof(object.Equals)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, objectType, nameof(object.ReferenceEquals)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, taskTokenType, nameof(Task.FromResult)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, valueTaskTokenType, nameof(Task.FromResult)))
-                            return;
-
-                        // new KeyValuePair<TKey, TValue>(key, value)
-                        if (IsMethod(invokedMethodSymbol, keyValuePairTokenType, WellKnownMemberNames.InstanceConstructorName))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Read)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, volatileType, nameof(System.Threading.Volatile.Write)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.SetResult)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, taskCompletionSourceType, nameof(TaskCompletionSource<>.TrySetResult)))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, methodBaseTokenType, nameof(MethodBase.Invoke)) && argumentIndex == 0)
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, fieldInfoTokenType, nameof(FieldInfo.SetValue)) && argumentIndex == 0)
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, fieldInfoTokenType, nameof(FieldInfo.GetValue)) && argumentIndex == 0)
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, propertyInfoTokenType, nameof(PropertyInfo.SetValue)) && argumentIndex == 0)
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, propertyInfoTokenType, nameof(PropertyInfo.GetValue)) && argumentIndex == 0)
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, msTestAssertTokenType, "*"))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, nunitAssertTokenType, "*"))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, xunitAssertTokenType, "*"))
-                            return;
-
-                        if (IsMethod(invokedMethodSymbol, expressionType, nameof(Expression.Constant)))
-                            return;
-
-                        if ((string.Equals(invokedMethodSymbol.Name, "Parse", StringComparison.Ordinal) || string.Equals(invokedMethodSymbol.Name, "TryParse", StringComparison.Ordinal)) && argumentIndex == 0)
-                            return;
-
-                        // Indexer with only 1 argument
-                        if (invocationExpression is ElementAccessExpressionSyntax && invokedMethodParameters.Length == 1)
-                            return;
-
-                        // e.g. SyntaxNode.WithElse
-                        if (invokedMethodSymbol.Name.StartsWith("With", StringComparison.Ordinal) && invokedMethodSymbol.ContainingType.IsOrInheritsFrom(syntaxNodeType))
-                            return;
-
-                        if (!argumentOperation.GetCSharpLanguageVersion().IsCSharp14OrGreater() && operationUtilities.IsInExpressionContext(argumentOperation))
-                            return;
-
-                        // Building the declaration id of a method is expensive, so it is only built once for
-                        // the two options that use it, and only when one of them is configured.
-                        operationContext.Options.TryGetConfigurationRegex(expression.SyntaxTree, ExcludedMethodsRegexConfiguration, out var excludedMethodsRegex);
-                        operationContext.Options.TryGetConfigurationValue(expression.SyntaxTree, ExcludedMethodsConfiguration, out var excludedMethods);
-
-                        string? declarationId = null;
-                        if (excludedMethodsRegex is not null || excludedMethods is not null)
-                        {
-                            declarationId = DocumentationCommentId.CreateDeclarationId(invokedMethodSymbol);
-                        }
-
-                        if (excludedMethodsRegex is not null)
-                        {
-                            if (declarationId is not null && RegexCache.IsMatch(excludedMethodsRegex, declarationId, defaultValue: false))
-                                return;
-                        }
-
-                        if (excludedMethods is not null)
-                        {
-                            if (declarationId is not null)
-                            {
-                                var types = excludedMethods.Split('|');
-                                foreach (var type in types)
-                                {
-                                    if (type == declarationId)
-                                        return;
-                                }
+                                if (type == declarationId)
+                                    return;
                             }
                         }
                     }
@@ -307,6 +288,39 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
         SyntaxKind.StringLiteralExpression or SyntaxKind.InterpolatedStringExpression => ArgumentExpressionKinds.String,
         _ => ArgumentExpressionKinds.None,
     };
+
+    private static ISymbol? GetInvokedSymbol(IArgumentOperation argument)
+    {
+        return argument.Parent switch
+        {
+            IInvocationOperation invocation => GetInvokedMethod(invocation),
+            IObjectCreationOperation objectCreation => objectCreation.Constructor,
+            IPropertyReferenceOperation propertyReference => propertyReference.Property,
+            _ => null,
+        };
+
+        // An extension method called as an instance method (value.Method()) is bound to the method that takes the receiver
+        // as its first parameter, whereas the arguments written in the code match the parameters of the reduced method
+        static IMethodSymbol GetInvokedMethod(IInvocationOperation invocation)
+        {
+            var method = invocation.TargetMethod;
+            if (method is { IsExtensionMethod: true, ReducedFrom: null })
+            {
+                foreach (var argument in invocation.Arguments)
+                {
+                    if (argument.Parameter?.Ordinal is 0)
+                    {
+                        if (argument.Syntax is not ArgumentSyntax && argument.Value.Type is { } receiverType)
+                            return method.ReduceExtensionMethod(receiverType) ?? method;
+
+                        break;
+                    }
+                }
+            }
+
+            return method;
+        }
+    }
 
     private static bool IsMethod(ISymbol? method, ITypeSymbol? containingType, string methodName)
     {
