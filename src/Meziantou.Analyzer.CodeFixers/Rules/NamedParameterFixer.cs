@@ -25,11 +25,7 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (semanticModel is null)
             return;
 
-        if (FindParameters(semanticModel, argument, context.CancellationToken) is not { } parameters)
-            return;
-
-        var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
-        if (index < 0 || index >= parameters.Length)
+        if (FindParameter(semanticModel, argument, context.CancellationToken) is null)
             return;
 
         var title = "Add parameter name";
@@ -54,17 +50,10 @@ public sealed class NamedParameterFixer : CodeFixProvider
         if (argument is null || argument.NameColon is not null)
             return document;
 
-        if (FindParameters(semanticModel, argument, cancellationToken) is not { } parameters)
+        if (FindParameter(semanticModel, argument, cancellationToken) is not { } parameter)
             return document;
 
-        var index = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
-        if (index < 0 || index >= parameters.Length)
-            return document;
-
-        var parameter = parameters[index];
-        var argumentName = parameter.Name;
-
-        editor.ReplaceNode(argument, argument.WithNameColon(SyntaxFactory.NameColon(argumentName)));
+        editor.ReplaceNode(argument, argument.WithNameColon(SyntaxFactory.NameColon(parameter.Name)));
         return editor.GetChangedDocument();
     }
 
@@ -76,32 +65,9 @@ public sealed class NamedParameterFixer : CodeFixProvider
         return nodeToFix.FirstAncestorOrSelf<ArgumentSyntax>();
     }
 
-    private static ImmutableArray<IParameterSymbol>? FindParameters(SemanticModel semanticModel, SyntaxNode? node, CancellationToken cancellationToken)
+    private static IParameterSymbol? FindParameter(SemanticModel semanticModel, ArgumentSyntax argument, CancellationToken cancellationToken)
     {
-        while (node is not null)
-        {
-            switch (node)
-            {
-                case InvocationExpressionSyntax invocationExpression:
-                    var method = (IMethodSymbol?)semanticModel.GetSymbolInfo(invocationExpression, cancellationToken).Symbol;
-                    return method?.Parameters;
-
-                case ObjectCreationExpressionSyntax objectCreationExpression:
-                    var ctor = (IMethodSymbol?)semanticModel.GetSymbolInfo(objectCreationExpression, cancellationToken).Symbol;
-                    return ctor?.Parameters;
-
-                case ImplicitObjectCreationExpressionSyntax implicitObjectCreationExpression:
-                    var implicitCtor = (IMethodSymbol?)semanticModel.GetSymbolInfo(implicitObjectCreationExpression, cancellationToken).Symbol;
-                    return implicitCtor?.Parameters;
-
-                case ConstructorInitializerSyntax constructorInitializerSyntax:
-                    var ctor2 = (IMethodSymbol?)semanticModel.GetSymbolInfo(constructorInitializerSyntax, cancellationToken).Symbol;
-                    return ctor2?.Parameters;
-            }
-
-            node = node.Parent;
-        }
-
-        return null;
+        // The argument is bound to its parameter for all the kinds of invocations (methods, constructors, indexers, ...)
+        return semanticModel.GetOperation(argument, cancellationToken) is IArgumentOperation { Parameter: { } parameter } ? parameter : null;
     }
 }

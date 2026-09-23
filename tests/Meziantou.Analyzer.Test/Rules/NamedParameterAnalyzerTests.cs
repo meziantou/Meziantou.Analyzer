@@ -764,6 +764,18 @@ public sealed class NamedParameterAnalyzerTests
                 public int this[bool a, bool b] { get => 0; set { } }
             }
             """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    _ = new TypeName { [a: true, b: false] = 0 };
+                }
+
+                public int this[bool a, bool b] { get => 0; set { } }
+            }
+            """;
+
         return test.RunAsync();
     }
 
@@ -1300,6 +1312,96 @@ public sealed class NamedParameterAnalyzerTests
                 void A()
                 {
                     _ = this[{|MA0003:0|}, {|MA0003:0|}];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Indexer_MultipleArgument_Fix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public int this[bool a, bool b] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c[{|MA0003:true|}, {|MA0003:false|}];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public int this[bool a, bool b] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c[a: true, b: false];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConditionalIndexer_MultipleArgument_Fix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public int this[bool a, bool b] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c?[{|MA0003:true|}, {|MA0003:false|}];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public int this[bool a, bool b] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c?[a: true, b: false];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ParamsIndexer_ShouldNotReportParamsArguments()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public int this[bool a, params bool[] values] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c[{|MA0003:true|}, false, true];
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public int this[bool a, params bool[] values] => 0;
+
+                void Test(TypeName c)
+                {
+                    _ = c[a: true, false, true];
                 }
             }
             """;

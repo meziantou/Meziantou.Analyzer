@@ -128,7 +128,9 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                     if (invokedMethodParameters.Length < GetMinimumMethodArgumentsConfiguration(operationContext.Options, expression))
                         return;
 
-                    var argumentIndex = NamedParameterAnalyzerCommon.ArgumentIndex(argument);
+                    // The argument list is an ArgumentListSyntax for the invocations and a BracketedArgumentListSyntax for the indexers
+                    var argumentList = argument.Parent as BaseArgumentListSyntax;
+                    var argumentIndex = argumentList?.Arguments.IndexOf(argument) ?? -1;
 
                     bool IsParams(SyntaxNode node)
                     {
@@ -141,7 +143,7 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                         var lastParameter = invokedMethodParameters[^1];
                         if (argumentIndex == invokedMethodParameters.Length - 1 && lastParameter.IsParams)
                         {
-                            if (argument.Parent is BaseArgumentListSyntax argumentList && argumentList.Arguments.Count > invokedMethodParameters.Length)
+                            if (argumentList is not null && argumentList.Arguments.Count > invokedMethodParameters.Length)
                                 return true;
 
                             if (expression.IsKind(SyntaxKind.NullLiteralExpression))
