@@ -1,4 +1,5 @@
 using Microsoft.CodeAnalysis.Formatting;
+using Microsoft.CodeAnalysis.Simplification;
 
 namespace Meziantou.Analyzer.Rules;
 
@@ -41,7 +42,7 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
         var generator = editor.Generator;
 
         var newExpression = generator.InvocationExpression(
-            generator.MemberAccessExpression(operation.LeftOperand.Syntax, "SequenceEqual"), operation.RightOperand.Syntax);
+            generator.MemberAccessExpression(GetReceiver(generator, operation.LeftOperand), "SequenceEqual"), operation.RightOperand.Syntax);
 
         if (operation.OperatorKind == BinaryOperatorKind.NotEquals)
         {
@@ -50,5 +51,20 @@ public class DoNotUseEqualityOperatorsForSpanOfCharFixer : CodeFixProvider
 
         editor.ReplaceNode(operation.Syntax, newExpression.WithAdditionalAnnotations(Formatter.Annotation));
         return editor.GetChangedDocument();
+    }
+
+    /// <summary>
+    /// The receiver of an extension method is not implicitly converted to a span before C# 14, so the conversion of the
+    /// left operand ("a" == span) must be explicit: "a".AsSpan().SequenceEqual(span).
+    /// </summary>
+    private static SyntaxNode GetReceiver(SyntaxGenerator generator, IOperation operand)
+    {
+        if (operand is not IConversionOperation { IsImplicit: true, Operand: var convertedOperand, Type: { } spanType })
+            return operand.Syntax;
+
+        if (convertedOperand.Type is { SpecialType: SpecialType.System_String })
+            return generator.InvocationExpression(generator.MemberAccessExpression(convertedOperand.Syntax, "AsSpan"));
+
+        return generator.CastExpression(spanType, convertedOperand.Syntax).WithAdditionalAnnotations(Simplifier.Annotation);
     }
 }
