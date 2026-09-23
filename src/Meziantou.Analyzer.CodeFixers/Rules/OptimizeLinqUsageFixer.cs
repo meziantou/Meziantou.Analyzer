@@ -37,7 +37,19 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (diagnostic.Id == RuleIdentifiers.OptimizeEnumerable_UseCountInsteadOfAny)
         {
             const string CodeFixTitle = "Optimize linq usage";
-            context.RegisterCodeFix(CodeAction.Create(CodeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, ct), equivalenceKey: CodeFixTitle), context.Diagnostics);
+            var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+            if (semanticModel?.GetOperation(nodeToFix, context.CancellationToken) is not IInvocationOperation { Arguments: [var source] })
+                return;
+
+            // The Count property of arrays is an explicit implementation of ICollection<T>
+            var propertyName = source.Value.GetActualType() is { TypeKind: TypeKind.Array } ? "Length" : "Count";
+
+            // 'items?.Any()' cannot be replaced by a comparison, as the result of the conditional access is nullable
+            var countExpression = CreatePropertyAccess(SyntaxGenerator.GetGenerator(context.Document), nodeToFix, propertyName, allowConditionalAccess: false);
+            if (countExpression is null)
+                return;
+
+            context.RegisterCodeFix(CodeAction.Create(CodeFixTitle, ct => UseCountGreaterThanZero(context.Document, nodeToFix, countExpression, ct), equivalenceKey: CodeFixTitle), context.Diagnostics);
             return;
         }
 
@@ -53,15 +65,20 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         switch (data)
         {
             case OptimizeLinqUsageData.UseLengthProperty:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseLengthProperty(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
-                break;
-
             case OptimizeLinqUsageData.UseLongLengthProperty:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseLongLengthProperty(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
-                break;
-
             case OptimizeLinqUsageData.UseCountProperty:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseCountProperty(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                var propertyName = data switch
+                {
+                    OptimizeLinqUsageData.UseLengthProperty => "Length",
+                    OptimizeLinqUsageData.UseLongLengthProperty => "LongLength",
+                    _ => "Count",
+                };
+
+                var propertyAccess = CreatePropertyAccess(SyntaxGenerator.GetGenerator(context.Document), nodeToFix, propertyName, allowConditionalAccess: true);
+                if (propertyAccess is null)
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceNode(context.Document, nodeToFix, propertyAccess.WithTriviaFrom(nodeToFix), ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseFindMethod:
@@ -113,7 +130,24 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 if (!diagnostic.Properties.TryGetValue(OptimizeLinqUsageAnalyzerCommon.MethodNameKey, out var methodName) || methodName is null)
                     return;
 
-                context.RegisterCodeFix(CodeAction.Create("Use " + expectedMethodName, ct => UseThenBy(context.Document, orderByLastSpan, expectedMethodName, ct), equivalenceKey: "UseThenBy"), context.Diagnostics);
+                if (root?.FindNode(orderByLastSpan, getInnermostNodeForTie: true) is InvocationExpressionSyntax lastInvocation && GetMethodNameSyntax(lastInvocation) is { } lastMethodName)
+                {
+                    // Order() and OrderDescending() have no key selector, so ThenBy(x => x) must use the element as the key
+                    string? keySelectorParameterName = null;
+                    if (methodName is "Order" or "OrderDescending")
+                    {
+                        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                        if (semanticModel is null)
+                            return;
+
+                        keySelectorParameterName = GetUniqueParameterName(semanticModel, lastInvocation.SpanStart, _ => true);
+                        if (keySelectorParameterName is null)
+                            return;
+                    }
+
+                    context.RegisterCodeFix(CodeAction.Create("Use " + expectedMethodName, ct => UseThenBy(context.Document, lastInvocation, lastMethodName, expectedMethodName, keySelectorParameterName, ct), equivalenceKey: "UseThenBy"), context.Diagnostics);
+                }
+
                 context.RegisterCodeFix(CodeAction.Create("Remove " + methodName, ct => RemoveDuplicatedOrderBy(context.Document, orderByFirstSpan, orderByLastSpan, ct), equivalenceKey: "RemoveOrderBy"), context.Diagnostics);
                 break;
 
@@ -127,7 +161,20 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 }
                 else
                 {
-                    context.RegisterCodeFix(CodeAction.Create(title, ct => CombineWhereWithNextMethod(context.Document, whereFirstSpan, whereLastSpan, ct), equivalenceKey: title), context.Diagnostics);
+                    var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                    var whereNode = root?.FindNode(whereFirstSpan, getInnermostNodeForTie: true);
+                    var nextNode = root?.FindNode(whereLastSpan, getInnermostNodeForTie: true);
+                    if (semanticModel is null || whereNode is null || nextNode is null)
+                        return;
+
+                    if (semanticModel.GetOperation(whereNode, context.CancellationToken) is not IInvocationOperation whereOperation || semanticModel.GetOperation(nextNode, context.CancellationToken) is not IInvocationOperation nextOperation)
+                        return;
+
+                    var combinedExpression = CombineWhereWithNextMethod(SyntaxGenerator.GetGenerator(context.Document), semanticModel, whereOperation, nextOperation, context.CancellationToken);
+                    if (combinedExpression is null)
+                        return;
+
+                    context.RegisterCodeFix(CodeAction.Create(title, ct => ReplaceNode(context.Document, nextOperation.Syntax, combinedExpression, ct), equivalenceKey: title), context.Diagnostics);
                 }
 
                 break;
@@ -169,7 +216,18 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 break;
 
             case OptimizeLinqUsageData.UseOrder:
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseOrderInsteadOfOrderBy(context.Document, nodeToFix, ct), equivalenceKey: title), context.Diagnostics);
+                if (nodeToFix is not InvocationExpressionSyntax orderByInvocation || GetMethodNameSyntax(orderByInvocation) is not { } orderByMethodName)
+                    return;
+
+                var orderBySemanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                if (orderBySemanticModel?.GetOperation(orderByInvocation, context.CancellationToken) is not IInvocationOperation orderByOperation)
+                    return;
+
+                // The key selector is the first argument of 'items.OrderBy(x => x)', but the second one of 'Enumerable.OrderBy(items, x => x)'
+                if (orderByOperation.Arguments.FirstOrDefault(argument => argument.Parameter?.Ordinal == 1)?.Syntax is not ArgumentSyntax keySelectorArgument)
+                    return;
+
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseOrderInsteadOfOrderBy(context.Document, orderByMethodName, keySelectorArgument, ct), equivalenceKey: title), context.Diagnostics);
                 break;
         }
     }
@@ -242,17 +300,10 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseCountGreaterThanZero(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseCountGreaterThanZero(Document document, SyntaxNode nodeToFix, ExpressionSyntax countExpression, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation invocation)
-            return document;
-
-        if (invocation.Arguments.Length != 1)
-            return document;
-
         var generator = editor.Generator;
-        var countExpression = generator.MemberAccessExpression(invocation.Arguments[0].Syntax, "Count");
 
         // The invocation may be the operand of an operator or the target of a member access, both of which bind
         // tighter than '!=', so the comparison must be parenthesized. Simplifier removes the useless parentheses.
@@ -423,63 +474,71 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseOrderInsteadOfOrderBy(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> UseOrderInsteadOfOrderBy(Document document, SimpleNameSyntax methodName, ArgumentSyntax keySelectorArgument, CancellationToken cancellationToken)
+    {
+        var newName = methodName.Identifier.ValueText is "OrderBy" ? "Order" : "OrderDescending";
+
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.RemoveNode(keySelectorArgument);
+        editor.ReplaceNode(methodName, IdentifierName(newName).WithTriviaFrom(methodName));
+        return editor.GetChangedDocument();
+    }
+
+    private static async Task<Document> ReplaceNode(Document document, SyntaxNode nodeToReplace, SyntaxNode newNode, CancellationToken cancellationToken)
+    {
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        editor.ReplaceNode(nodeToReplace, newNode);
+        return editor.GetChangedDocument();
+    }
+
+    /// <summary>
+    /// Creates the access to the property replacing a method without argument, such as 'items.Count' for 'items.Count()',
+    /// 'Enumerable.Count(items)', or 'items?.Count()'. The trivia of the invocation are not copied.
+    /// </summary>
+    private static ExpressionSyntax? CreatePropertyAccess(SyntaxGenerator generator, SyntaxNode nodeToFix, string propertyName, bool allowConditionalAccess)
     {
         if (nodeToFix is not InvocationExpressionSyntax invocation)
-            return document;
+            return null;
 
-        var member = GetMemberAccessExpression(nodeToFix);
-        if (member is null)
-            return document;
+        return invocation switch
+        {
+            // Enumerable.Count(items)
+            { ArgumentList.Arguments: [var source] } => (ExpressionSyntax)generator.MemberAccessExpression(source.Expression, propertyName),
 
-        var newName = member.Name.Identifier.ValueText is "OrderBy" ? "Order" : "OrderDescending";
+            // items.Count()
+            { ArgumentList.Arguments: [], Expression: MemberAccessExpressionSyntax memberAccess } => memberAccess.WithName(IdentifierName(propertyName).WithTriviaFrom(memberAccess.Name)),
 
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.RemoveNode(invocation.ArgumentList.Arguments.First());
-        editor.ReplaceNode(member, member.WithName(IdentifierName(newName)));
-        return editor.GetChangedDocument();
+            // items?.Count()
+            { ArgumentList.Arguments: [], Expression: MemberBindingExpressionSyntax memberBinding } when allowConditionalAccess => memberBinding.WithName(IdentifierName(propertyName).WithTriviaFrom(memberBinding.Name)),
+
+            _ => null,
+        };
     }
 
-    private static async Task<Document> UseLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static SimpleNameSyntax? GetMethodNameSyntax(InvocationExpressionSyntax invocation)
     {
-        var expression = GetParentMemberExpression(nodeToFix);
-        if (expression is null)
-            return document;
-
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-        var propertyAccess = generator.MemberAccessExpression(expression, "Length");
-
-        editor.ReplaceNode(nodeToFix, propertyAccess);
-        return editor.GetChangedDocument();
+        return invocation.Expression switch
+        {
+            MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
+            MemberBindingExpressionSyntax memberBinding => memberBinding.Name,
+            SimpleNameSyntax name => name,
+            _ => null,
+        };
     }
 
-    private static async Task<Document> UseLongLengthProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    /// <summary>
+    /// Returns 'x', or 'x1', 'x2', ... when a symbol named 'x' is in scope, as a lambda parameter could hide it or conflict with it.
+    /// </summary>
+    private static string? GetUniqueParameterName(SemanticModel semanticModel, int position, Func<string, bool> isValid)
     {
-        var expression = GetParentMemberExpression(nodeToFix);
-        if (expression is null)
-            return document;
+        for (var i = 0; i < 1000; i++)
+        {
+            var name = i == 0 ? "x" : "x" + i.ToString(CultureInfo.InvariantCulture);
+            if (semanticModel.LookupSymbols(position, name: name).IsEmpty && isValid(name))
+                return name;
+        }
 
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-        var propertyAccess = generator.MemberAccessExpression(expression, "LongLength");
-
-        editor.ReplaceNode(nodeToFix, propertyAccess);
-        return editor.GetChangedDocument();
-    }
-
-    private static async Task<Document> UseCountProperty(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
-    {
-        var expression = GetParentMemberExpression(nodeToFix);
-        if (expression is null)
-            return document;
-
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-        var propertyAccess = generator.MemberAccessExpression(expression, "Count");
-
-        editor.ReplaceNode(nodeToFix, propertyAccess);
-        return editor.GetChangedDocument();
+        return null;
     }
 
     private static async Task<Document> UseListMethod(Document document, SyntaxNode nodeToFix, string methodName, bool convertPredicate, CancellationToken cancellationToken)
@@ -647,104 +706,138 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseThenBy(Document document, TextSpan lastOperationSpan, string expectedMethodName, CancellationToken cancellationToken)
+    private static async Task<Document> UseThenBy(Document document, InvocationExpressionSyntax invocation, SimpleNameSyntax methodName, string expectedMethodName, string? keySelectorParameterName, CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
-            return document;
-
-        var expression = GetMemberAccessExpression(nodeToFix);
-        if (expression is null)
-            return document;
-
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
 
-        var newExpression = expression.WithName(IdentifierName(expectedMethodName));
+        var newInvocation = invocation.ReplaceNode(methodName, IdentifierName(expectedMethodName).WithTriviaFrom(methodName));
+        if (keySelectorParameterName is not null)
+        {
+            var keySelector = (ExpressionSyntax)generator.ValueReturningLambdaExpression(keySelectorParameterName, generator.IdentifierName(keySelectorParameterName));
+            newInvocation = newInvocation.AddArgumentListArguments(Argument(keySelector));
+        }
 
-        editor.ReplaceNode(expression, newExpression);
+        editor.ReplaceNode(invocation, newInvocation);
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> CombineWhereWithNextMethod(Document document, TextSpan firstOperationSpan, TextSpan lastOperationSpan, CancellationToken cancellationToken)
+    private static SyntaxNode? CombineWhereWithNextMethod(SyntaxGenerator generator, SemanticModel semanticModel, IInvocationOperation whereOperation, IInvocationOperation nextOperation, CancellationToken cancellationToken)
     {
-        // enumerable.Where(x=> x).C() => enumerable.C(x=> x)
-        // enumerable.Where(x=> x).C(y=>y) => enumerable.C(y=> y && y)
-        // enumerable.Where(Condition).C(y=>y) => enumerable.C(y=> Condition(y) && y)
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        var firstNode = root?.FindNode(firstOperationSpan, getInnermostNodeForTie: true);
-        var lastNode = root?.FindNode(lastOperationSpan, getInnermostNodeForTie: true);
-        if (firstNode is null || lastNode is null)
-            return document;
+        // enumerable.Where(x => x).C() => enumerable.C(x => x)
+        // enumerable.Where(x => x).C(y => y) => enumerable.C(x => x && x)
+        // enumerable.Where(Condition).C(y => y) => enumerable.C(y => Condition(y) && y)
+        // enumerable.Where(condition1).C(condition2) => enumerable.C(x => condition1(x) && condition2(x))
+        if (whereOperation.Arguments.Length != 2)
+            return null;
 
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var semanticModel = editor.SemanticModel;
-        if (semanticModel?.GetOperation(firstNode, cancellationToken) is not IInvocationOperation firstOperation || semanticModel?.GetOperation(lastNode, cancellationToken) is not IInvocationOperation lastOperation)
-            return document;
+        var method = generator.MemberAccessExpression(GetSourceSyntax(whereOperation), nextOperation.TargetMethod.Name);
+        var whereArgument = whereOperation.Arguments[1];
+        if (nextOperation.Arguments.Length == 1)
+            return generator.InvocationExpression(method, whereArgument.Syntax);
 
-        var generator = editor.Generator;
-        var method = generator.MemberAccessExpression(firstOperation.Arguments[0].Syntax, lastOperation.TargetMethod.Name);
-        var argument = CombineArguments(firstOperation.Arguments.ElementAtOrDefault(1), lastOperation.Arguments.ElementAtOrDefault(1));
-        var newExpression = argument is null ? generator.InvocationExpression(method) : generator.InvocationExpression(method, argument);
+        if (nextOperation.Arguments.Length != 2)
+            return null;
 
-        editor.ReplaceNode(lastOperation.Syntax, newExpression);
-        return editor.GetChangedDocument();
+        var wherePredicate = GetCombinablePredicate(whereArgument.Value);
+        var nextPredicate = GetCombinablePredicate(nextOperation.Arguments[1].Value);
+        if (wherePredicate is null || nextPredicate is null)
+            return null;
 
-        SyntaxNode? CombineArguments(IArgumentOperation? argument1, IArgumentOperation? argument2)
+        var parameterName = GetCombinedParameterName(semanticModel, nextOperation.Syntax.SpanStart, wherePredicate, nextPredicate, cancellationToken);
+        if (parameterName is null)
+            return null;
+
+        var left = CreatePredicateBody(generator, wherePredicate, parameterName);
+        var right = CreatePredicateBody(generator, nextPredicate, parameterName);
+        return generator.InvocationExpression(method, generator.ValueReturningLambdaExpression(parameterName, generator.LogicalAndExpression(left, right)));
+
+        static SyntaxNode GetSourceSyntax(IInvocationOperation operation)
         {
-            if (argument2 is null)
-                return argument1?.Syntax;
+            // 'Enumerable.Where(items, predicate)' uses an argument, while 'items.Where(predicate)' uses the expression
+            var syntax = operation.Arguments[0].Syntax;
+            return syntax is ArgumentSyntax argument ? argument.Expression : syntax;
+        }
 
-            if (argument1 is null)
-                return argument2?.Syntax;
-            if (argument1.Value is IDelegateCreationOperation value1 && argument2.Value is IDelegateCreationOperation value2)
+        static CombinablePredicate? GetCombinablePredicate(IOperation operation)
+        {
+            // Queryable methods convert the lambda to an Expression<Func<...>>
+            operation = operation.UnwrapImplicitConversions();
+
+            var lambda = operation switch
             {
-                var anonymousMethod1 = value1.Target as IAnonymousFunctionOperation;
-                var anonymousMethod2 = value2.Target as IAnonymousFunctionOperation;
+                IDelegateCreationOperation { Target: IAnonymousFunctionOperation anonymousFunction } => anonymousFunction,
+                IAnonymousFunctionOperation anonymousFunction => anonymousFunction,
+                _ => null,
+            };
 
-                var newParameterName =
-                    anonymousMethod1?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                    anonymousMethod2?.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                    "x";
-
-                var left = PrepareSyntaxNode(generator, value1, newParameterName);
-                var right = PrepareSyntaxNode(generator, value2, newParameterName);
-
-                return generator.ValueReturningLambdaExpression(newParameterName,
-                    generator.LogicalAndExpression(left, right));
-            }
-            else if (argument1.Value.UnwrapConversions() is IAnonymousFunctionOperation anonymousMethod1 && argument2.Value.UnwrapImplicitConversions() is IAnonymousFunctionOperation anonymousMethod2)
+            if (lambda is not null)
             {
-                var newParameterName =
-                    anonymousMethod1.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                    anonymousMethod2.Symbol.Parameters.ElementAtOrDefault(0)?.Name ??
-                    "x";
+                // The body of 'x => { return x > 0; }' or 'delegate (int x) { return x > 0; }' cannot be combined with another condition
+                if (lambda.Symbol.Parameters.Length != 1 || lambda.Syntax is not LambdaExpressionSyntax { ExpressionBody: { } body })
+                    return null;
 
-                var left = ReplaceParameter(anonymousMethod1, newParameterName);
-                var right = ReplaceParameter(anonymousMethod2, newParameterName);
-
-                return generator.ValueReturningLambdaExpression(newParameterName,
-                    generator.LogicalAndExpression(left, right));
+                return new CombinablePredicate(lambda, body);
             }
+
+            if (operation.Syntax is not ExpressionSyntax expression)
+                return null;
+
+            // 'Filter' => 'Filter(x)'. The instance of the method is evaluated for each element instead of once.
+            if (operation is IDelegateCreationOperation { Target: IMethodReferenceOperation methodReference })
+            {
+                if (methodReference.Instance is not null && !CanBeEvaluatedTwice(methodReference.Instance))
+                    return null;
+
+                return new CombinablePredicate(Lambda: null, expression);
+            }
+
+            // 'predicate' => 'predicate(x)'. The delegate is evaluated for each element instead of once.
+            if (operation.Type is { TypeKind: TypeKind.Delegate } && CanBeEvaluatedTwice(operation))
+                return new CombinablePredicate(Lambda: null, expression);
 
             return null;
         }
 
-        static SyntaxNode PrepareSyntaxNode(SyntaxGenerator generator, IDelegateCreationOperation delegateCreationOperation, string parameterName)
+        static string? GetCombinedParameterName(SemanticModel semanticModel, int position, CombinablePredicate predicate1, CombinablePredicate predicate2, CancellationToken cancellationToken)
         {
-            if (delegateCreationOperation.Target is IAnonymousFunctionOperation anonymousMethod)
+            // Prefer the names chosen by the user. They are already valid at this location, as the lambdas are declared in the same scope.
+            foreach (var predicate in new[] { predicate1, predicate2 })
             {
-                return ReplaceParameter(anonymousMethod, parameterName);
+                var name = predicate.Lambda?.Symbol.Parameters[0].Name;
+                if (name is not null and not "_" && IsValid(name))
+                    return name;
             }
 
-            if (delegateCreationOperation.Target is IMethodReferenceOperation)
-            {
-                return generator.InvocationExpression(
-                    delegateCreationOperation.Syntax,
-                    generator.IdentifierName("x"));
-            }
+            return GetUniqueParameterName(semanticModel, position, IsValid);
 
-            return delegateCreationOperation.Syntax;
+            bool IsValid(string name) => !UsesName(predicate1, name) && !UsesName(predicate2, name);
+
+            // The new parameter must not hide a symbol used by one of the predicates, nor conflict with a local declared in one of them
+            bool UsesName(CombinablePredicate predicate, string name)
+            {
+                foreach (var token in predicate.Syntax.DescendantTokens())
+                {
+                    if (!token.IsKind(SyntaxKind.IdentifierToken) || token.ValueText != name)
+                        continue;
+
+                    // The references to the parameter of the lambda are renamed
+                    if (predicate.Lambda is not null && token.Parent is IdentifierNameSyntax identifierName && semanticModel.GetSymbolInfo(identifierName, cancellationToken).Symbol.IsEqualTo(predicate.Lambda.Symbol.Parameters[0]))
+                        continue;
+
+                    return true;
+                }
+
+                return false;
+            }
+        }
+
+        static SyntaxNode CreatePredicateBody(SyntaxGenerator generator, CombinablePredicate predicate, string parameterName)
+        {
+            if (predicate.Lambda is not null)
+                return ReplaceParameter(predicate.Lambda, predicate.Syntax, parameterName);
+
+            return generator.InvocationExpression(predicate.Syntax, generator.IdentifierName(parameterName));
         }
     }
 
@@ -774,11 +867,14 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static SyntaxNode ReplaceParameter(IAnonymousFunctionOperation method, string newParameterName)
+    private static SyntaxNode ReplaceParameter(IAnonymousFunctionOperation method, ExpressionSyntax body, string newParameterName)
     {
         var semanticModel = method.SemanticModel!;
         var parameterSymbol = method.Symbol.Parameters[0];
-        return new ParameterRewriter(semanticModel, parameterSymbol, newParameterName).Visit(method.Body.Syntax);
+        if (parameterSymbol.Name == newParameterName)
+            return body;
+
+        return new ParameterRewriter(semanticModel, parameterSymbol, newParameterName).Visit(body);
     }
 
     private static MemberAccessExpressionSyntax? GetMemberAccessExpression(SyntaxNode invocationExpressionSyntax)
@@ -798,6 +894,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return memberAccessExpression.Expression;
     }
 
+    /// <summary>
+    /// A predicate that can be inlined in a lambda: the expression body of a lambda, or a delegate to invoke.
+    /// </summary>
+    private sealed record CombinablePredicate(IAnonymousFunctionOperation? Lambda, ExpressionSyntax Syntax);
+
     private sealed class ParameterRewriter(SemanticModel semanticModel, IParameterSymbol parameterSymbol, string newParameterName) : CSharpSyntaxRewriter
     {
         public override SyntaxNode? VisitIdentifierName(IdentifierNameSyntax node)
@@ -805,7 +906,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             var symbol = semanticModel.GetSymbolInfo(node).Symbol;
             if (symbol is not null && symbol.IsEqualTo(parameterSymbol))
             {
-                return IdentifierName(newParameterName);
+                return IdentifierName(newParameterName).WithTriviaFrom(node);
             }
 
             return base.VisitIdentifierName(node);
