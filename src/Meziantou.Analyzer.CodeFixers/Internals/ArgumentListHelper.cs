@@ -107,13 +107,23 @@ internal static class ArgumentListHelper
     /// Binds the new invocations at the position of the original invocation. When the fix imports a namespace, the invocations are
     /// bound in a copy of the compilation where the document imports the namespace, as the new overload is not in scope otherwise.
     /// The copy is only created when an invocation is bound, and is shared by the invocations bound with the same context.
+    /// When the original invocation is part of a conditional access (<c>x?.M()</c>), its receiver is only known in the conditional
+    /// access expression, so it cannot be bound speculatively: each new invocation is bound in a copy of the compilation where it
+    /// replaces the original invocation.
     /// </summary>
     private sealed class BindingContext(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, string? namespaceToImport, CancellationToken cancellationToken)
     {
+        private readonly bool _isInConditionalAccess = IsInConditionalAccess(invocationExpression.Expression);
         private (SemanticModel SemanticModel, int Position)? _bindingLocation;
 
         public IMethodSymbol? GetTargetMethod(InvocationExpressionSyntax newInvocation)
         {
+            if (_isInConditionalAccess)
+            {
+                var (newSemanticModel, newNode) = ReplaceInvocation(newInvocation);
+                return newSemanticModel.GetSymbolInfo(newNode, cancellationToken).Symbol as IMethodSymbol;
+            }
+
             var (bindingSemanticModel, position) = _bindingLocation ??= CreateBindingLocation();
             return bindingSemanticModel.GetSpeculativeSymbolInfo(position, newInvocation, SpeculativeBindingOption.BindAsExpression).Symbol as IMethodSymbol;
         }
@@ -123,14 +133,45 @@ internal static class ArgumentListHelper
             if (namespaceToImport is null)
                 return (semanticModel, invocationExpression.SpanStart);
 
+            var (newSemanticModel, newNode) = ReplaceInvocation(invocationExpression);
+            return (newSemanticModel, newNode.SpanStart);
+        }
+
+        /// <summary>
+        /// Creates a copy of the compilation where <paramref name="newInvocation"/> replaces the original invocation, and the document
+        /// imports <c>namespaceToImport</c> if any, and returns the node of <paramref name="newInvocation"/> in the new syntax tree.
+        /// </summary>
+        private (SemanticModel SemanticModel, SyntaxNode Node) ReplaceInvocation(InvocationExpressionSyntax newInvocation)
+        {
             var syntaxTree = invocationExpression.SyntaxTree;
             var annotation = new SyntaxAnnotation();
-            var root = syntaxTree.GetRoot(cancellationToken).ReplaceNode(invocationExpression, invocationExpression.WithAdditionalAnnotations(annotation));
-            root = UsingDirectiveHelper.AddUsingDirective(root, root.GetAnnotatedNodes(annotation).First(), namespaceToImport);
+            var root = syntaxTree.GetRoot(cancellationToken).ReplaceNode(invocationExpression, newInvocation.WithAdditionalAnnotations(annotation));
+            if (namespaceToImport is not null)
+            {
+                root = UsingDirectiveHelper.AddUsingDirective(root, root.GetAnnotatedNodes(annotation).First(), namespaceToImport);
+            }
 
             var newSyntaxTree = syntaxTree.WithRootAndOptions(root, syntaxTree.Options);
             var newSemanticModel = semanticModel.Compilation.ReplaceSyntaxTree(syntaxTree, newSyntaxTree).GetSemanticModel(newSyntaxTree);
-            return (newSemanticModel, newSyntaxTree.GetRoot(cancellationToken).GetAnnotatedNodes(annotation).First().SpanStart);
+            return (newSemanticModel, newSyntaxTree.GetRoot(cancellationToken).GetAnnotatedNodes(annotation).First());
+        }
+
+        /// <summary>
+        /// Indicates whether <paramref name="expression"/> starts with a member binding (<c>.M</c>) or an element binding (<c>[0]</c>),
+        /// whose receiver is the expression of the enclosing conditional access.
+        /// </summary>
+        private static bool IsInConditionalAccess(ExpressionSyntax expression)
+        {
+            return expression switch
+            {
+                MemberBindingExpressionSyntax or ElementBindingExpressionSyntax => true,
+                MemberAccessExpressionSyntax memberAccess => IsInConditionalAccess(memberAccess.Expression),
+                InvocationExpressionSyntax invocation => IsInConditionalAccess(invocation.Expression),
+                ElementAccessExpressionSyntax elementAccess => IsInConditionalAccess(elementAccess.Expression),
+                ConditionalAccessExpressionSyntax conditionalAccess => IsInConditionalAccess(conditionalAccess.Expression),
+                PostfixUnaryExpressionSyntax postfixUnary => IsInConditionalAccess(postfixUnary.Operand),
+                _ => false,
+            };
         }
     }
 
