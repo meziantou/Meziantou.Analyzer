@@ -53,9 +53,13 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Result:
                 {
+                    // The conditional access (t?.Result) and the property patterns (t is { Result: 1 }) cannot be replaced by an await expression
+                    if (nodeToFix is not MemberAccessExpressionSyntax taskResultMemberAccess || nodeToFix.FirstAncestorOrSelf<SubpatternSyntax>() is not null)
+                        break;
+
                     var codeAction = CodeAction.Create(
                         "Use await",
-                        ct => ReplaceTaskResultWithAwait(context.Document, nodeToFix, ct),
+                        ct => ReplaceTaskResultWithAwait(context.Document, taskResultMemberAccess, ct),
                         equivalenceKey: "Task_Result");
 
                     context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -67,10 +71,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     if (!properties.TryGetValue(DoNotUseBlockingCallInAsyncContextAnalyzerCommon.MethodNameKey, out var methodName) || methodName is null)
                         return;
 
+                    // The conditional access (c?.Write()) cannot be awaited without changing the behavior when the instance is null
+                    if (nodeToFix is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or SimpleNameSyntax } overloadInvocation)
+                        return;
+
                     properties.TryGetValue(OverloadFinder.NamespaceToImportPropertyName, out var namespaceToImport);
                     var codeAction = CodeAction.Create(
                         $"Use '{methodName}'",
-                        ct => ReplaceWithMethodName(context.Document, nodeToFix, methodName, namespaceToImport, ct),
+                        ct => ReplaceWithMethodName(context.Document, overloadInvocation, methodName, namespaceToImport, ct),
                         equivalenceKey: "Overload");
 
                     context.RegisterCodeFix(codeAction, context.Diagnostics);
@@ -117,28 +125,23 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         return SyntaxFactory.Token(usingKeyword.LeadingTrivia, SyntaxKind.AwaitKeyword, SyntaxFactory.TriviaList(SyntaxFactory.Space));
     }
 
-    private static async Task<Document> ReplaceWithMethodName(Document document, SyntaxNode nodeToFix, string methodName, string? namespaceToImport, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceWithMethodName(Document document, InvocationExpressionSyntax invocation, string methodName, string? namespaceToImport, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var invocation = (InvocationExpressionSyntax)nodeToFix;
         var nodeToReplace = invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
-            IdentifierNameSyntax identifier => identifier,
-            _ => null,
+            _ => (SimpleNameSyntax)invocation.Expression,
         };
-
-        if (nodeToReplace is null)
-            return document;
 
         var newMethodName = nodeToReplace switch
         {
             GenericNameSyntax genericName => generator.GenericName(methodName, genericName.TypeArgumentList.Arguments),
             _ => generator.IdentifierName(methodName),
         };
-        var newNode = nodeToFix.ReplaceNode(nodeToReplace, newMethodName);
+        var newNode = invocation.ReplaceNode(nodeToReplace, newMethodName);
 
         // An extension method cannot be called with a simple name, so the implicit receiver must be explicit: Do() => this.DoAsync()
         if (nodeToReplace == invocation.Expression && !editor.SemanticModel.LookupSymbols(invocation.SpanStart, name: methodName).OfType<IMethodSymbol>().Any())
@@ -147,24 +150,23 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         }
 
         var newExpression = generator.AwaitExpression(newNode).Parenthesize();
-        editor.ReplaceNode(nodeToFix, newExpression);
+        editor.ReplaceNode(invocation, newExpression);
 
         if (namespaceToImport is not null)
         {
-            UsingDirectiveHelper.AddUsingDirective(editor, nodeToFix, namespaceToImport);
+            UsingDirectiveHelper.AddUsingDirective(editor, invocation, namespaceToImport);
         }
 
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> ReplaceTaskResultWithAwait(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static async Task<Document> ReplaceTaskResultWithAwait(Document document, MemberAccessExpressionSyntax memberAccess, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
 
-        var expr = ((MemberAccessExpressionSyntax)nodeToFix).Expression;
-        var newExpression = generator.AwaitExpression(expr).Parenthesize();
-        editor.ReplaceNode(nodeToFix, newExpression);
+        var newExpression = generator.AwaitExpression(memberAccess.Expression).Parenthesize();
+        editor.ReplaceNode(memberAccess, newExpression);
 
         return editor.GetChangedDocument();
     }
