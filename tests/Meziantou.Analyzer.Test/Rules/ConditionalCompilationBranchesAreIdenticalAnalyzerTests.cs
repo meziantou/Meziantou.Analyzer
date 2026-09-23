@@ -285,6 +285,56 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
     }
 
     [Fact]
+    public Task Fix_ElifElif_SameCode_MergesConditions()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            _ = 0;
+            #elif B
+            _ = 1;
+            {|MA0202:#elif C|}
+            _ = 1;
+            #else
+            _ = 2;
+            #endif
+            """;
+        test.FixedCode = """
+            #if A
+            _ = 0;
+            #elif (B) || (C)
+            _ = 1;
+            #else
+            _ = 2;
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Fix_NonAdjacentElif_SameCode_NoCodeFix()
+    {
+        const string Source = """
+            #if A
+            _ = 0;
+            #elif B
+            _ = 1;
+            {|MA0202:#elif C|}
+            _ = 0;
+            #else
+            _ = 2;
+            #endif
+            """;
+
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Fix_IfElse_SameCode_RemovesPreprocessor()
     {
         var test = CreateTest();
