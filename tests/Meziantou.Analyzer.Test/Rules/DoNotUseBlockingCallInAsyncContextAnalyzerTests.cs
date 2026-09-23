@@ -2303,6 +2303,61 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    public Task GenericArgument_VariantConstraint_ShouldReport()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public void A(List<List<string>> value) => throw null;
+                public Task AAsync<T>(IReadOnlyCollection<T> value, CancellationToken token = default) where T : IEnumerable<object> => throw null;
+            }
+
+            class Demo
+            {
+                public async Task M()
+                {
+                    {|MA0042:new Test().A(new List<List<string>>())|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task GenericArgument_NullableValueTypeWithInterfaceConstraint_ShouldNotReport()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public void A(List<int?> value) => throw null;
+                public Task AAsync<T>(IReadOnlyCollection<T> value, CancellationToken token = default) where T : IComparable => throw null;
+            }
+
+            class Demo
+            {
+                public async Task M()
+                {
+                    new Test().A(new List<int?>());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task GenericArgument_DifferentArity_ShouldNotReport()
     {
         var test = new CodeFixTest();
