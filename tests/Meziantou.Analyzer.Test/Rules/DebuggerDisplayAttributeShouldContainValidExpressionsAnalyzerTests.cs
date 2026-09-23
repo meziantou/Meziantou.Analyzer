@@ -582,4 +582,70 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task CallStaticMethodOnTypeOfContainingNamespace()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            namespace N
+            {
+                [DebuggerDisplay("{Helper.Format(Value)}")]
+                public class Dummy
+                {
+                    public int Value { get; set; }
+                }
+
+                public static class Helper
+                {
+                    public static string Format(int value) => value.ToString();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StaticMemberOfContainingType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            public class Outer
+            {
+                private static string Prefix => "";
+
+                [DebuggerDisplay("{Prefix.Length}")]
+                public class Dummy
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UnknownMemberOfContainingNamespace()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Diagnostics;
+            namespace N
+            {
+                [{|MA0151:DebuggerDisplay("{Helper.Unknown()}")|}]
+                public class Dummy
+                {
+                }
+
+                public static class Helper
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
