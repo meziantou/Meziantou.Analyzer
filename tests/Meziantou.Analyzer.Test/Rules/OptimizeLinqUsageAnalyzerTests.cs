@@ -2611,4 +2611,664 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task CombineWhereWithAny_DelegateVariables()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, Func<int, bool> f, Func<int, bool> g) => {|MA0029:items.Where(f).Any(g)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, Func<int, bool> f, Func<int, bool> g) => items.Any(x => f(x) && g(x));
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithAny_DelegateVariables_ParameterNameConflict()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, Func<int, bool> x, Func<int, bool> x1) => {|MA0029:items.Where(x).Any(x1)|};
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, Func<int, bool> x, Func<int, bool> x1) => items.Any(x2 => x(x2) && x1(x2));
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithAny_DelegateReturnedByMethod_NoCodeFix()
+    {
+        var code = """
+            using System;
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => {|MA0029:items.Where(GetFilter()).Any(x => x > 0)|};
+
+                static Func<int, bool> GetFilter() => _ => true;
+            }
+            """;
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithAny_LambdaWithBlockBody_NoCodeFix()
+    {
+        var code = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => {|MA0029:items.Where(x => { return x > 0; }).Any(x => x < 10)|};
+            }
+            """;
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithAny_LambdaParameterShadowsOuterVariable()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, int x) => {|MA0029:items.Where(x => x > 0).Any(y => y > x)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items, int x) => items.Any(y => y > 0 && y > x);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithAny_MethodGroupWithLambda_UsesLambdaParameterName()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => {|MA0029:items.Where(Filter).Any(item => item > 0)|};
+
+                static bool Filter(int value) => true;
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => items.Any(item => Filter(item) && item > 0);
+
+                static bool Filter(int value) => true;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("FirstOrDefault")]
+    [InlineData("LastOrDefault")]
+    [InlineData("SingleOrDefault")]
+    public Task CombineWhereWithOrDefault_DefaultValue_NoDiagnostic(string methodName)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                int M(int[] items) => items.Where(x => x > 10).{{methodName}}(5);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhereWithIndexedPredicate_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => items.Where(x => x > 0).Where((x, i) => i % 2 == 0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CombineWhere_WhereIsNotTheSourceOfTheNextMethod_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                IEnumerable<int> M(IEnumerable<IEnumerable<int>> seqs, int[] items) => seqs.FirstOrDefault(items.Where(x => x > 0));
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("OrderBy(x => -x)", "Order", "ThenBy")]
+    [InlineData("OrderByDescending(x => -x)", "OrderDescending", "ThenByDescending")]
+    [InlineData("Order()", "Order", "ThenBy")]
+    [InlineData("OrderDescending()", "OrderDescending", "ThenByDescending")]
+    public Task OrderFollowedByOrder_FixWithThenBy(string first, string second, string expectedMethod)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = {|MA0030:items.{{first}}.{{second}}()|};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.{{first}}.{{expectedMethod}}(x => x);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OrderFollowedByOrder_FixWithThenBy_ParameterNameConflict()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items, int x) => _ = {|MA0030:items.OrderBy(y => -y).Order()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items, int x) => _ = items.OrderBy(y => -y).ThenBy(x1 => x1);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OrderFollowedByOrderBy_FixWithThenBy()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = {|MA0030:items.Order().OrderBy(x => -x)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.Order().ThenBy(x => -x);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OrderFollowedByOrder_FixRemoveDuplicate()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = {|MA0030:items.OrderBy(x => -x).Order()|};
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.Order();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseOrder_StaticInvocation()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = Enumerable.{|MA0159:OrderBy|}(items, x => x);
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = Enumerable.Order(items);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseOrderDescending_StaticInvocation()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = Enumerable.{|MA0159:OrderByDescending|}(items, x => x);
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = Enumerable.OrderDescending(items);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("int[]", "Count", "Length")]
+    [InlineData("int[]", "LongCount", "LongLength")]
+    [InlineData("System.Collections.Generic.List<int>", "Count", "Count")]
+    public Task CountProperty_StaticInvocation(string type, string method, string property)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                long M({{type}} items) => Enumerable.{|MA0020:{{method}}|}(items);
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                long M({{type}} items) => items.{{property}};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("int[]", "Count", "Length")]
+    [InlineData("int[]", "LongCount", "LongLength")]
+    [InlineData("System.Collections.Generic.List<int>", "Count", "Count")]
+    public Task CountProperty_ConditionalAccess(string type, string method, string property)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                long? M({{type}} items) => items?{|MA0020:.{{method}}()|};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                long? M({{type}} items) => items?.{{property}};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_Array_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => {|MA0112:items.Any()|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                bool M(int[] items) => items.Length != 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_StaticInvocation_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => {|MA0112:Enumerable.Any(items)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => items.Count != 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_ConditionalAccess_NoCodeFix()
+    {
+        var code = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool? M(List<int> items) => items?{|MA0112:.Any()|};
+            }
+            """;
+        var test = new CodeFixTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Any_ICollectionExplicitImplementation_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(Collection<int> items) => items.Any();
+
+                class Collection<T> : ICollection<T>
+                {
+                    int ICollection<T>.Count => throw null;
+                    bool ICollection<T>.IsReadOnly => throw null;
+                    void ICollection<T>.Add(T item) => throw null;
+                    void ICollection<T>.Clear() => throw null;
+                    bool ICollection<T>.Contains(T item) => throw null;
+                    void ICollection<T>.CopyTo(T[] array, int arrayIndex) => throw null;
+                    IEnumerator<T> IEnumerable<T>.GetEnumerator() => throw null;
+                    IEnumerator IEnumerable.GetEnumerator() => throw null;
+                    bool ICollection<T>.Remove(T item) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("long?")]
+    [InlineData("long")]
+    [InlineData("E")]
+    [InlineData("E?")]
+    public Task OptimizeLinq_CastChangesTheRepresentation_NoDiagnostic(string type)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.Select(x => ({{type}})x);
+            }
+
+            enum E : byte { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("int?")]
+    [InlineData("E")]
+    [InlineData("E?")]
+    public Task OptimizeLinq_CastKeepsTheRepresentation(string type)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.{|MA0078:Select|}(x => ({{type}})x);
+            }
+
+            enum E { }
+            """;
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                void M(int[] items) => _ = items.Cast<{{type}}>();
+            }
+
+            enum E { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task OptimizeLinq_Unboxing()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(object[] items) => _ = items.{|MA0078:Select|}(x => (int)x);
+            }
+            """;
+        test.FixedCode = """
+            using System.Linq;
+            class Test
+            {
+                void M(object[] items) => _ = items.Cast<int>();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterfaceReceivers()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void M(IList<int> a, ICollection<int> b, IReadOnlyList<int> c, IReadOnlyCollection<int> d)
+                {
+                    _ = a.{|MA0098:First|}();
+                    _ = b.{|MA0020:Count|}();
+                    _ = c.{|MA0098:Last|}();
+                    _ = a.{|MA0020:Count|}();
+                    _ = c.{|MA0098:ElementAt|}(1);
+                    _ = d.{|MA0020:Count|}();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void M(IList<int> a, ICollection<int> b, IReadOnlyList<int> c, IReadOnlyCollection<int> d)
+                {
+                    _ = a[0];
+                    _ = b.Count;
+                    _ = c[^1];
+                    _ = a.Count;
+                    _ = c[1];
+                    _ = d.Count;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterfaceReceivers_CSharp7_3()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp7_3;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void M(IList<int> a, IReadOnlyList<int> b)
+                {
+                    _ = a.{|MA0098:Last|}();
+                    _ = b.{|MA0098:Last|}();
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void M(IList<int> a, IReadOnlyList<int> b)
+                {
+                    _ = a[a.Count - 1];
+                    _ = b[b.Count - 1];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InterfaceReceivers_AmbiguousMembers_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                void M(IMyList a)
+                {
+                    _ = a.First();
+                    _ = a.Last();
+                    _ = a.ElementAt(1);
+                    _ = a.Count();
+                }
+            }
+
+            interface IMyList : IList<int>, IReadOnlyList<int> { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Count_ClassDerivedFromList()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(MyList items) => items.{|MA0020:Count|}();
+            }
+
+            class MyList : List<int> { }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(MyList items) => items.Count;
+            }
+
+            class MyList : List<int> { }
+            """;
+
+        return test.RunAsync();
+    }
 }

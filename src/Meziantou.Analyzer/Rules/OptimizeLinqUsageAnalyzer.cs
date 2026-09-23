@@ -278,28 +278,15 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(ICollectionOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyCollectionOfTSymbol)))
+                // The type itself is one of the interfaces when the expression is typed as ICollection<T> or IReadOnlyCollection<T>
+                if (actualType.GetAllInterfacesIncludingSelf().Any(i => i.OriginalDefinition.IsEqualTo(ICollectionOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyCollectionOfTSymbol)))
                 {
-                    // Ensure the Count property is not an explicit implementation
-                    if (HasNonExplicitCountMethod(actualType))
+                    // Ensure the Count property can be used, i.e. it is not an explicit implementation nor ambiguous
+                    if (HasCountProperty(operation, actualType))
                     {
                         var properties = CreateProperties(OptimizeLinqUsageData.UseCountProperty);
                         context.ReportDiagnostic(ListMethodsRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "Count", operation.TargetMethod.Name);
                         return;
-                    }
-
-                    static bool HasNonExplicitCountMethod(ITypeSymbol type)
-                    {
-                        foreach (var member in type.GetMembers("Count"))
-                        {
-                            if (member.Kind != SymbolKind.Property)
-                                continue;
-
-                            if (((IPropertySymbol)member).ExplicitInterfaceImplementations.Length == 0)
-                                return true;
-                        }
-
-                        return false;
                     }
                 }
             }
@@ -453,10 +440,22 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (actualType is null)
                 return;
 
-            if (actualType.AllInterfaces.Any(i => i.OriginalDefinition.IsEqualTo(IListOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyListOfTSymbol)))
+            // The type itself is one of the interfaces when the expression is typed as IList<T> or IReadOnlyList<T>
+            if (!actualType.GetAllInterfacesIncludingSelf().Any(i => i.OriginalDefinition.IsEqualTo(IListOfTSymbol) || i.OriginalDefinition.IsEqualTo(IReadOnlyListOfTSymbol)))
+                return;
+
+            // Ensure the members used by the code fix can be used, i.e. they are not explicit implementations nor ambiguous
+            if (actualType.TypeKind != TypeKind.Array)
             {
-                context.ReportDiagnostic(IndexerInsteadOfElementAtRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "[]", operation.TargetMethod.Name);
+                if (!HasInt32Indexer(operation, actualType))
+                    return;
+
+                // list[^1] and list[list.Count - 1] use the Count property
+                if (operation.TargetMethod.Name == nameof(Enumerable.Last) && !HasCountProperty(operation, actualType))
+                    return;
             }
+
+            context.ReportDiagnostic(IndexerInsteadOfElementAtRule, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, "[]", operation.TargetMethod.Name);
         }
 
         private static readonly HashSet<string> CombinableLinqMethods = new(StringComparer.Ordinal)
@@ -474,7 +473,7 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (operation.TargetMethod.Name == nameof(Enumerable.Where))
             {
                 // Cannot replace Where when using Func<TSource,int,bool>
-                if (IsIndexedPredicateOverload(operation.TargetMethod))
+                if (!IsPredicateOverload(operation))
                     return;
 
                 // Check parent methods
@@ -483,6 +482,11 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (CombinableLinqMethods.Contains(parent.TargetMethod.Name))
                     {
+                        // The next method must only take the source, or the source and a predicate. The predicate cannot be combined
+                        // with the other overloads, such as FirstOrDefault(TSource defaultValue) or Where(Func<TSource,int,bool>).
+                        if (parent.Arguments.Length != 1 && !IsPredicateOverload(parent))
+                            return;
+
                         // Do not report on IQueryable<T> since combining Where clauses has no performance benefit
                         // (the generated query is identical) and splitting them can improve readability
                         if (QueryableSymbol is not null && operation.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol) && parent.TargetMethod.ContainingType.IsEqualTo(QueryableSymbol))
@@ -500,6 +504,34 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
+        }
+
+        /// <summary>
+        /// Detects the overloads taking the source and a predicate, such as <c>Where(Func&lt;TSource,bool&gt;)</c> or <c>Any(Expression&lt;Func&lt;TSource,bool&gt;&gt;)</c>.
+        /// The parameters of the original definition are used, so <c>FirstOrDefault(TSource defaultValue)</c> is not a predicate overload even when <c>TSource</c> is a delegate type.
+        /// </summary>
+        private bool IsPredicateOverload(IInvocationOperation operation)
+        {
+            if (operation.Arguments.Length != 2)
+                return false;
+
+            var parameters = operation.TargetMethod.OriginalDefinition.Parameters;
+            if (parameters.Length != 2)
+                return false;
+
+            if (parameters[1].Type is not INamedTypeSymbol type)
+                return false;
+
+            // Queryable methods take an Expression<Func<...>>
+            if (type.OriginalDefinition.IsEqualTo(ExpressionOfTSymbol))
+            {
+                if (type.TypeArguments is not [INamedTypeSymbol delegateType])
+                    return false;
+
+                type = delegateType;
+            }
+
+            return type.DelegateInvokeMethod is { Parameters.Length: 1, ReturnType.SpecialType: SpecialType.System_Boolean };
         }
 
         /// <summary>
@@ -906,22 +938,33 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             var castType = castOp.Type.ToMinimalDisplayString(semanticModel, nullableFlowState, operation.Syntax.SpanStart);
             context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCastInsteadOfSelect, properties, operation, DiagnosticInvocationReportOptions.ReportOnMember, castType);
 
-            bool CanReplaceByCast(IConversionOperation op)
+            static bool CanReplaceByCast(IConversionOperation op)
             {
-                if (op.Conversion.IsUserDefined || op.Conversion.IsNumeric)
+                // Cast<T>() boxes the value and casts the object to T, so it only supports the conversions
+                // that do not change the representation of the value
+                var conversion = op.GetConversion();
+                if (conversion.IsUserDefined)
                     return false;
 
-                // Handle enums: source.Select<MyEnum, byte>(item => (byte)item);
-                // Using Cast<T> is only possible when the enum underlying type is the same as the conversion type
-                var operandActualType = op.Operand.GetActualType(context.CancellationToken);
-                var enumerationType = operandActualType.GetEnumUnderlyingType();
-                if (enumerationType is not null)
-                {
-                    if (!enumerationType.IsEqualTo(op.Type))
-                        return false;
-                }
+                if (conversion.IsIdentity || conversion.IsReference || conversion.IsBoxing || conversion.IsUnboxing)
+                    return true;
 
-                return true;
+                // Unboxing supports the conversions between an enum, its underlying type, and their nullable types:
+                // source.Select<MyEnum, byte>(item => (byte)item) or source.Select<int, int?>(item => (int?)item);
+                if (conversion.IsNullable || conversion.IsEnumeration)
+                    return GetUnboxingType(op.Operand.Type).IsEqualTo(GetUnboxingType(op.Type));
+
+                return false;
+
+                static ITypeSymbol? GetUnboxingType(ITypeSymbol? type)
+                {
+                    if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlyingType] })
+                    {
+                        type = underlyingType;
+                    }
+
+                    return type.GetEnumUnderlyingType() ?? type;
+                }
             }
         }
 
@@ -941,9 +984,54 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                 var implementedInterfaces = operandType.GetAllInterfacesIncludingSelf().Select(i => i.OriginalDefinition);
                 if (implementedInterfaces.Any(i => i.IsEqualTo(ICollectionOfTSymbol) || i.IsEqualTo(ICollectionSymbol) || i.IsEqualTo(IReadOnlyCollectionOfTSymbol)))
                 {
+                    // The code fix uses the Length property of arrays, and the Count property of the other types,
+                    // which may be an explicit implementation of the interface or be ambiguous
+                    if (operandType.TypeKind != TypeKind.Array && !HasCountProperty(operation, operandType))
+                        return;
+
                     context.ReportDiagnostic(OptimizeLinqUsageAnalyzer.UseCountInsteadOfAny, operation);
                 }
             }
+        }
+
+        /// <summary>
+        /// Indicates whether <c>expression.Count</c> binds to an accessible <see cref="int"/> property of the type. The member lookup
+        /// finds the members inherited from the base types and the base interfaces, and excludes the explicit implementations.
+        /// </summary>
+        private static bool HasCountProperty(IOperation operation, ITypeSymbol type)
+        {
+            var semanticModel = operation.SemanticModel;
+            if (semanticModel is null)
+                return false;
+
+            var position = operation.Syntax.SpanStart;
+            return semanticModel.LookupSymbols(position, type, "Count") is [IPropertySymbol { IsStatic: false, IsIndexer: false, Type.SpecialType: SpecialType.System_Int32, GetMethod: { } getMethod }]
+                && semanticModel.IsAccessible(position, getMethod);
+        }
+
+        /// <summary>
+        /// Indicates whether <c>expression[int]</c> binds to a single accessible indexer of the type.
+        /// </summary>
+        private static bool HasInt32Indexer(IOperation operation, ITypeSymbol type)
+        {
+            var semanticModel = operation.SemanticModel;
+            if (semanticModel is null)
+                return false;
+
+            var position = operation.Syntax.SpanStart;
+            IPropertySymbol? result = null;
+            foreach (var symbol in semanticModel.LookupSymbols(position, type, WellKnownMemberNames.Indexer))
+            {
+                if (symbol is not IPropertySymbol { IsIndexer: true, IsStatic: false, Parameters: [{ Type.SpecialType: SpecialType.System_Int32 }], GetMethod: { } getMethod } indexer)
+                    continue;
+
+                if (result is not null || !semanticModel.IsAccessible(position, getMethod))
+                    return false;
+
+                result = indexer;
+            }
+
+            return result is not null;
         }
 
         private static IInvocationOperation? GetParentLinqOperation(IOperation op)
@@ -957,10 +1045,9 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
             if (parent is IInvocationOperation invocationOperation)
                 return invocationOperation;
 
-            if (parent is IArgumentOperation)
-            {
-                return GetParentLinqOperation(parent);
-            }
+            // Only follow the source of the extension method: 'items.Where(...).Any()', but not 'seqs.FirstOrDefault(items.Where(...))'
+            if (parent is IArgumentOperation { Parameter.Ordinal: 0, Parent: IInvocationOperation { TargetMethod.IsExtensionMethod: true } parentInvocation })
+                return parentInvocation;
 
             return null;
         }
