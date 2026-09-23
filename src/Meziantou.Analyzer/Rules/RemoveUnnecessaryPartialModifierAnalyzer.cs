@@ -75,6 +75,11 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
         if (partialToken == default)
             return;
 
+        // The partial members (methods, properties, indexers, events, constructors) can only be declared in a partial type.
+        // The type has a single declaration, so all its members are declared in this syntax node.
+        if (HasPartialMember(typeDeclaration))
+            return;
+
         if (InheritsFromExcludedType(symbol, excludedBaseTypes))
             return;
 
@@ -82,6 +87,21 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzer : DiagnosticAnalyze
             return;
 
         context.ReportDiagnostic(Rule, partialToken.GetLocation());
+    }
+
+    private static bool HasPartialMember(TypeDeclarationSyntax typeDeclaration)
+    {
+        foreach (var member in typeDeclaration.Members)
+        {
+            // The nested types are independent of the containing type, so a nested partial type doesn't require the containing type to be partial
+            if (member is BaseTypeDeclarationSyntax)
+                continue;
+
+            if (member.Modifiers.Any(SyntaxKind.PartialKeyword))
+                return true;
+        }
+
+        return false;
     }
 
     private static bool InheritsFromExcludedType(INamedTypeSymbol symbol, ImmutableArray<INamedTypeSymbol?> excludedBaseTypes)
