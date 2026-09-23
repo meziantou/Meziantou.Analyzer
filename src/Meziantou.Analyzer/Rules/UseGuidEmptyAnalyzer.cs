@@ -40,6 +40,10 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
 
         if (operation.Arguments.Length == 0)
         {
+            // Guid.Empty is not a compile-time constant, so it cannot replace the default value of a parameter
+            if (operation.Parent is IParameterInitializerOperation)
+                return;
+
             context.ReportDiagnostic(Rule, operation);
             return;
         }
