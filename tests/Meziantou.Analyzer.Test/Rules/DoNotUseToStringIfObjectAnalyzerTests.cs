@@ -679,6 +679,25 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
     }
 
     [Fact]
+    public Task UserDefinedOperatorReturningString()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var a = new Foo();
+            _ = a - a;
+            _ = a + a;
+
+            sealed class Foo
+            {
+                public static string operator -(Foo x, Foo y) => "";
+                public static string operator +(Foo x, Foo y) => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task SealedRecord_Concat()
     {
         var test = CreateTest();
