@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
@@ -100,6 +101,10 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
             if (IsInProtectedContext(returnOperation.Syntax, functionOperation.Syntax))
                 return;
 
+            // 'await' cannot be used in an unsafe context (CS4004)
+            if (IsInUnsafeContext(returnOperation.Syntax))
+                return;
+
             // Awaiting an already-completed task (Task.CompletedTask, Task.FromResult(value), ...) does not
             // bring any benefit. Functions whose returns are all synchronous, such as the ones implementing an
             // asynchronous interface synchronously, are not reported.
@@ -121,10 +126,47 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzer : DiagnosticAnalyzer
 
     private static bool IsInProtectedContext(SyntaxNode returnSyntax, SyntaxNode functionSyntax)
     {
+        var child = returnSyntax;
         for (var node = returnSyntax.Parent; node is not null && node != functionSyntax; node = node.Parent)
         {
             if (node is TryStatementSyntax or UsingStatementSyntax or LockStatementSyntax or FixedStatementSyntax)
                 return true;
+
+            // A 'using' declaration disposes at the end of its enclosing block, so it is in scope for the statements
+            // that follow it in that block, like a 'using' statement
+            if (node is BlockSyntax block)
+            {
+                foreach (var statement in block.Statements)
+                {
+                    if (statement == child)
+                        break;
+
+                    if (statement is LocalDeclarationStatementSyntax localDeclaration && localDeclaration.UsingKeyword.IsKind(SyntaxKind.UsingKeyword))
+                        return true;
+                }
+            }
+
+            child = node;
+        }
+
+        return false;
+    }
+
+    private static bool IsInUnsafeContext(SyntaxNode syntax)
+    {
+        foreach (var node in syntax.Ancestors())
+        {
+            switch (node)
+            {
+                case UnsafeStatementSyntax:
+                    return true;
+
+                case MemberDeclarationSyntax member when member.Modifiers.Any(SyntaxKind.UnsafeKeyword):
+                    return true;
+
+                case LocalFunctionStatementSyntax localFunction when localFunction.Modifiers.Any(SyntaxKind.UnsafeKeyword):
+                    return true;
+            }
         }
 
         return false;
