@@ -90,7 +90,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return new AvailableValueFinder(
                 isSearchedType: type => type.IsEqualTo(cancellationTokenSymbol),
                 isIgnoredType: type => type.IsEqualTo(taskSymbol) || type.OriginalDefinition.IsEqualTo(taskOfTSymbol),
-                additionalPaths: xunitTestContextSymbol is not null ? ["Xunit.TestContext.Current.CancellationToken"] : default);
+                additionalPaths: xunitTestContextSymbol is not null ? ImmutableArray.Create("Xunit.TestContext.Current.CancellationToken") : default);
         }
 
         private bool IsExcluded(IMethodSymbol method)
