@@ -1915,4 +1915,42 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ConditionalAccess_CodeFix()
+    {
+        var test = CreateArgumentFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample?{|MA0040:.Run()|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+                public void Run(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample?.Run(cancellationToken);
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+                public void Run(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

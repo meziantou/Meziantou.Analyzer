@@ -582,4 +582,23 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ThrowInLambdaBeforeYield()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            class TypeName
+            {
+                IEnumerable<int> A(string a)
+                {
+                    System.Func<int> func = () => throw new System.ArgumentNullException(nameof(a));
+                    yield return func();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

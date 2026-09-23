@@ -1016,6 +1016,61 @@ public sealed class UseIFormatProviderAnalyzerTests
     }
 
     [Fact]
+    public Task ConditionalAccess_NullableValueType_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            System.DateTime? dt = null;
+            _ = dt?{|MA0011:.ToString()|};
+            """;
+        test.FixedCode = """
+            System.DateTime? dt = null;
+            _ = dt?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConditionalAccess_ElementBinding_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            System.DateTime[] values = null;
+            _ = values?{|MA0011:[0].ToString()|};
+            """;
+        test.FixedCode = """
+            System.DateTime[] values = null;
+            _ = values?[0].ToString(System.Globalization.CultureInfo.InvariantCulture);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConditionalAccess_FieldInitializer_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Sample
+            {
+                private static readonly System.DateTime? Value = null;
+                private readonly string _text = Value?{|MA0011:.ToString()|};
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                private static readonly System.DateTime? Value = null;
+                private readonly string _text = Value?.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Enum_ParseWithoutFormatProvider_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();

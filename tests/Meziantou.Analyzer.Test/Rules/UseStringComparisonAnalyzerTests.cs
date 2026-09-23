@@ -905,4 +905,121 @@ public sealed class UseStringComparisonAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ConditionalAccess_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(string value)
+                {
+                    _ = value?{|MA0074:.IndexOf("v")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(string value)
+                {
+                    _ = value?.IndexOf("v", System.StringComparison.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConditionalAccess_MemberAccessChain_CodeFix()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    _ = sample?{|MA0074:.Value.IndexOf("v")|}.ToString();
+                }
+            }
+
+            public class Sample
+            {
+                public string Value { get; }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    _ = sample?.Value.IndexOf("v", System.StringComparison.Ordinal).ToString();
+                }
+            }
+
+            public class Sample
+            {
+                public string Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ConditionalAccess_ExtensionMethod_NamespaceNotImported_AddUsingDirective()
+    {
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0074.include_extension_methods_from_not_imported_namespaces", "true");
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample?{|MA0074:.Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample?.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
