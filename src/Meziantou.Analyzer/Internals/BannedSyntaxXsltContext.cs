@@ -348,7 +348,7 @@ internal sealed class BannedSyntaxXsltContext : XsltContext
         {
             // The locals of the top-level statements are declared by the compilation unit, and each statement is analyzed
             if (node is not CompilationUnitSyntax compilationUnit)
-                return [];
+                return ImmutableArray<ISymbol>.Empty;
 
             var result = ImmutableArray.CreateBuilder<ISymbol>();
             foreach (var member in compilationUnit.Members)
