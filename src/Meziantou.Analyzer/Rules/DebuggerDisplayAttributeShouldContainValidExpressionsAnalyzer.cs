@@ -200,7 +200,7 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
         }
 
         var firstMember = syntax[0];
-        var current = FindSymbol(compilation, rootSymbol, firstMember) ?? FindGlobalSymbol(compilation, firstMember);
+        var current = FindFirstSymbol(compilation, rootSymbol, firstMember);
         if (current is null)
         {
             invalidMember = firstMember;
@@ -257,6 +257,20 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             }
 
             return null;
+        }
+
+        static ISymbol? FindFirstSymbol(Compilation compilation, ISymbol rootSymbol, string name)
+        {
+            // The name is looked up in the type, then in its containing types and its containing namespaces
+            for (var symbol = rootSymbol; symbol is not null and not INamespaceSymbol { IsGlobalNamespace: true }; symbol = symbol.ContainingSymbol)
+            {
+                // The namespace of a type declared in the compilation only contains the types of the compilation
+                var scope = symbol is INamespaceSymbol namespaceSymbol ? compilation.GetCompilationNamespace(namespaceSymbol) ?? symbol : symbol;
+                if (FindSymbol(compilation, scope, name) is { } result)
+                    return result;
+            }
+
+            return FindGlobalSymbol(compilation, name);
         }
 
         static ISymbol? FindGlobalSymbol(Compilation compilation, string name)
