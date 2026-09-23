@@ -155,7 +155,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
     {
         var test = CreateTest();
         test.TestCode = """
-            {|MA0204:partial|} class Sample
+            partial class Sample
             {
                 partial void M();
             }
@@ -163,6 +163,85 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task PartialStruct_WithPartialMethodImplementation_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial struct Sample
+            {
+                partial void M();
+                partial void M() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP13_OR_GREATER
+    [Fact]
+    public Task PartialClass_WithPartialProperty_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                public partial int P { get; }
+                public partial int P { get => 1; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PartialClass_WithPartialIndexer_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                public partial int this[int index] { get; }
+                public partial int this[int index] { get => index; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public Task PartialClass_WithPartialEvent_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                public partial event System.EventHandler E;
+                public partial event System.EventHandler E { add { } remove { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PartialClass_WithPartialConstructor_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Sample
+            {
+                public partial Sample();
+                public partial Sample() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
 
     [Fact]
     public Task PartialClass_WithNestedPartialType_ReportsDiagnostic()
