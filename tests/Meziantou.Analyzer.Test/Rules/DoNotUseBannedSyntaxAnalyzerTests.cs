@@ -3453,4 +3453,909 @@ public sealed class DoNotUseBannedSyntaxAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Implements_Symbol()
+    {
+        var test = CreateTest("//symbol:NamedType[implements('System.IDisposable')]");
+        test.TestCode = """
+            using System;
+
+            class {|#0:A|} : IDisposable { public void Dispose() { } }
+            class {|#1:B|} : A { }
+            interface {|#2:I|} : IDisposable { }
+            class C { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:NamedType", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(2, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Implements_TypeItselfIsExcluded()
+    {
+        var test = CreateTest("//IdentifierName[implements('System.IDisposable')]");
+        test.TestCode = """
+            class Sample
+            {
+                System.IDisposable a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//ObjectCreationExpression[implements('System.IDisposable')]", "ObjectCreationExpression")]
+    [InlineData("//operation:ObjectCreation[implements('T:System.IDisposable')]", "operation:ObjectCreation")]
+    public Task Implements_TypeOfTheExpression(string query, string name)
+    {
+        var test = CreateTest(query);
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    _ = {|#0:new System.IO.MemoryStream()|};
+                    _ = new object();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, name, ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Implements_TypeParameterConstraint()
+    {
+        var test = CreateTest("//symbol:Parameter[implements('System.IDisposable')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M<T, U>(T {|#0:a|}, U b) where T : System.IDisposable { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InheritsFrom_BaseClasses()
+    {
+        var test = CreateTest("//symbol:NamedType[inherits-from('N.Base')]");
+        test.TestCode = """
+            namespace N;
+
+            class Base { }
+            class {|#0:Derived|} : Base { }
+            class {|#1:Derived2|} : Derived { }
+            interface I { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InheritsFrom_InterfaceIsNotABaseClass()
+    {
+        var test = CreateTest("//symbol:NamedType[inherits-from('System.IDisposable')]");
+        test.TestCode = """
+            class Sample : System.IDisposable { public void Dispose() { } }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InheritsFrom_NestedType()
+    {
+        var test = CreateTest("//symbol:NamedType[inherits-from('Outer+Base')]");
+        test.TestCode = """
+            class Outer
+            {
+                public class Base { }
+            }
+
+            class {|#0:Derived|} : Outer.Base { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsAssignableTo_GenericDefinition()
+    {
+        var test = CreateTest("//symbol:Parameter[is-assignable-to('System.Collections.Generic.IEnumerable`1')]");
+        test.TestCode = """
+            using System.Collections.Generic;
+
+            class Sample
+            {
+                void M(List<int> {|#0:a|}, IEnumerable<string> {|#1:b|}, string {|#2:c|}, int d) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Parameter", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(2, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsAssignableTo_ReferenceId_SelectsTheTypeArguments()
+    {
+        var test = CreateTest("//symbol:Parameter[is-assignable-to('System.Collections.Generic.IEnumerable{System.String}')]");
+        test.TestCode = """
+            using System.Collections.Generic;
+
+            class Sample
+            {
+                void M(List<string> {|#0:a|}, List<int> b, string[] {|#1:c|}) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("System.String", "MetadataName")]
+    [InlineData("T:System.String", "DocumentationDeclarationId")]
+    [InlineData("System.String", "DocumentationReferenceId")]
+    public Task IsAssignableTo_ExplicitFormat(string name, string format)
+    {
+        var test = CreateTest($"//symbol:Parameter[is-assignable-to('{name}', '{format}')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M(string {|#0:a|}, object b) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsAssignableTo_ExplicitFormatDoesNotMatchTheOtherFormats()
+    {
+        var test = CreateTest("//symbol:Parameter[is-assignable-to('T:System.String', 'MetadataName')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M(string a) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasAttribute_DerivedAttributeClass()
+    {
+        var test = CreateTest("//symbol:Method[has-attribute('BaseAttribute')]");
+        test.TestCode = """
+            using System;
+
+            class BaseAttribute : Attribute { }
+            class DerivedAttribute : BaseAttribute { }
+
+            class Sample
+            {
+                [Base] void {|#0:A|}() { }
+                [Derived] void {|#1:B|}() { }
+                void C() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//InvocationExpression[has-attribute('T:System.ObsoleteAttribute')]", "InvocationExpression")]
+    [InlineData("//operation:Invocation[has-attribute('System.ObsoleteAttribute')]", "operation:Invocation")]
+    public Task HasAttribute_CalledMethod(string query, string name)
+    {
+        var test = CreateTest(query);
+        test.TestCode = """
+            class Sample
+            {
+                [System.Obsolete]
+                void Old() { }
+
+                void New() { }
+
+                void M()
+                {
+                    {|#0:Old()|};
+                    New();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, name, ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_ConstructorArgument()
+    {
+        var test = CreateTest("//symbol:Method[attributes()[@AttributeClassName='ObsoleteAttribute']/ConstructorArgument[@Position='0' and @Value='Use N']]");
+        test.TestCode = """
+            using System;
+
+            class Sample
+            {
+                [Obsolete("Use N")] void {|#0:M|}() { }
+                [Obsolete("Other")] void O() { }
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_EmptyStringHasNoValue()
+    {
+        var test = CreateTest("//symbol:Method[attributes()/ConstructorArgument[@IsNull='false' and not(@Value)]]");
+        test.TestCode = """
+            using System;
+
+            class Sample
+            {
+                [Obsolete("")] void {|#0:M|}() { }
+                [Obsolete(null)] void N() { }
+                [Obsolete("a")] void O() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_NamedArgument()
+    {
+        var test = CreateTest("//symbol:NamedType[attributes()/NamedArgument[@Name='AllowMultiple' and @Value='true']]");
+        test.TestCode = """
+            using System;
+
+            [AttributeUsage(AttributeTargets.All, AllowMultiple = true)]
+            class {|#0:AAttribute|} : Attribute { }
+
+            [AttributeUsage(AttributeTargets.All)]
+            class BAttribute : Attribute { }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_ArrayItems()
+    {
+        var test = CreateTest("//symbol:Method[attributes()/ConstructorArgument/Item[@Value='2']]");
+        test.TestCode = """
+            using System;
+
+            class MyAttribute : Attribute
+            {
+                public MyAttribute(params int[] values) { }
+            }
+
+            class Sample
+            {
+                [My(1, 2)] void {|#0:M|}() { }
+                [My(3)] void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_TypeArgument()
+    {
+        var test = CreateTest("//symbol:Method[attributes()/ConstructorArgument[@Kind='Type' and @Value='System.String']]");
+        test.TestCode = """
+            using System;
+
+            class MyAttribute : Attribute
+            {
+                public MyAttribute(Type type) { }
+            }
+
+            class Sample
+            {
+                [My(typeof(string))] void {|#0:M|}() { }
+                [My(typeof(int))] void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_ReportedOnTheAttribute()
+    {
+        var test = CreateTest("attributes(//symbol:Method)[@AttributeClassMetadataName='System.ObsoleteAttribute']");
+        test.TestCode = """
+            using System;
+
+            class Sample
+            {
+                [{|#0:Obsolete|}, CLSCompliant(false)]
+                void M() { }
+
+                [{|#1:Obsolete("a")|}]
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "AttributeData", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "AttributeData", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_SyntaxFunction()
+    {
+        var test = CreateTest("syntax(attributes(//symbol:Method))");
+        test.TestCode = """
+            class Sample
+            {
+                [{|#0:System.Obsolete|}]
+                void M() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "Attribute", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attributes_FromMetadata_NotReported()
+    {
+        var test = CreateTest("attributes(//IdentifierName[@Identifier='Obsolete' and @semantic:SymbolName='ObsoleteAttribute'])");
+        test.TestCode = """
+            class Sample
+            {
+                [System.Obsolete]
+                void M() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ContainingAssembly_Name()
+    {
+        var test = CreateTest("//InvocationExpression[starts-with(containing-assembly(), 'System.')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine()|};
+                    N();
+                }
+
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ContainingAssembly_Test_IgnoresTheCase()
+    {
+        var test = CreateTest("//operation:Invocation[containing-assembly('system.console')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine()|};
+                    N();
+                }
+
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsFromCurrentAssembly()
+    {
+        var test = CreateTest("//InvocationExpression[not(is-from-current-assembly())]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.Console.WriteLine()|};
+                    N();
+                }
+
+                void N() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsFromCurrentAssembly_Symbols()
+    {
+        var test = CreateTest("//symbol:NamedType[is-from-current-assembly()]");
+        test.TestCode = """
+            class {|#0:Sample|}
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SemanticFunction_OnTheSyntaxOfAnOperation()
+    {
+        var test = CreateTest("syntax(//operation:Invocation)[has-attribute('System.ObsoleteAttribute')]");
+        test.TestCode = """
+            class Sample
+            {
+                [System.Obsolete]
+                void Old() { }
+
+                void M()
+                {
+                    {|#0:Old()|};
+                    M();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//GotoStatement[contains(file-path(), '/Migrations/')]")]
+    [InlineData("//GotoStatement[substring(file-path(), string-length(file-path()) - 8) = 'Legacy.cs']")]
+    public Task FilePath_SyntaxQuery(string query)
+    {
+        var test = CreateTest(query);
+        test.TestState.Sources.Add(("/src/Migrations/Legacy.cs", """
+            class A
+            {
+                void M()
+                {
+                    {|#0:goto end;|}
+                end:
+                    return;
+                }
+            }
+            """));
+        test.TestState.Sources.Add(("/src/B.cs", """
+            class B
+            {
+                void M()
+                {
+                    goto end;
+                end:
+                    return;
+                }
+            }
+            """));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "GotoStatement", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FilePath_SymbolQuery()
+    {
+        var test = CreateTest("//symbol:NamedType[not(contains(file-path(), '/Tests/'))]");
+        test.TestState.Sources.Add(("/src/Tests/A.cs", """
+            class A { }
+            """));
+        test.TestState.Sources.Add(("/src/B.cs", """
+            class {|#0:B|} { }
+            """));
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//symbol:Method[overrides('M:System.Object.ToString')]")]
+    [InlineData("//symbol:Method[overrides('System.Object.ToString')]")]
+    public Task Overrides_Transitively(string query)
+    {
+        var test = CreateTest(query);
+        test.TestCode = """
+            class A
+            {
+                public override string {|#0:ToString|}() => "";
+            }
+
+            class B : A
+            {
+                public override string {|#1:ToString|}() => "";
+                public override int GetHashCode() => 0;
+            }
+
+            class C
+            {
+                public new string ToString() => "";
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Overrides_DocumentationIdSelectsASingleOverload()
+    {
+        var test = CreateTest("//MethodDeclaration[overrides('M:System.Object.Equals(System.Object)')]/@Identifier");
+        test.TestCode = """
+            class Sample
+            {
+                public override bool {|#0:Equals|}(object obj) => false;
+                public bool Equals(Sample other) => false;
+                public override int GetHashCode() => 0;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "MethodDeclaration/@Identifier", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Overrides_Property()
+    {
+        var test = CreateTest("//symbol:Property[overrides('P:A.Value')]");
+        test.TestCode = """
+            abstract class A
+            {
+                public abstract int Value { get; }
+            }
+
+            class B : A
+            {
+                public override int {|#0:Value|} => 0;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Property", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplementsMember_ImplicitAndExplicit()
+    {
+        var test = CreateTest("//symbol:Method[implements-member('M:System.IDisposable.Dispose')]");
+        test.TestCode = """
+            using System;
+
+            class A : IDisposable
+            {
+                public void {|#0:Dispose|}() { }
+            }
+
+            class B : IDisposable
+            {
+                void IDisposable.{|#1:Dispose|}() { }
+                public void Dispose(bool disposing) { }
+            }
+
+            class C
+            {
+                public void Dispose() { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplementsMember_GenericInterface()
+    {
+        var test = CreateTest("//symbol:Method[implements-member('System.IEquatable`1.Equals')]");
+        test.TestCode = """
+            class Sample : System.IEquatable<Sample>
+            {
+                public bool {|#0:Equals|}(Sample other) => false;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplementsMember_Invocation()
+    {
+        var test = CreateTest("//operation:Invocation[implements-member('M:System.IDisposable.Dispose')]");
+        test.TestCode = """
+            class Sample
+            {
+                void M(System.IO.MemoryStream stream)
+                {
+                    {|#0:stream.Dispose()|};
+                    stream.Flush();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:Invocation", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//InvocationExpression[containing-namespace('System.IO')]")]
+    [InlineData("//InvocationExpression[starts-with(containing-namespace(), 'System.I')]")]
+    public Task ContainingNamespace(string query)
+    {
+        var test = CreateTest(query);
+        test.TestCode = """
+            namespace N;
+
+            class Sample
+            {
+                void M()
+                {
+                    {|#0:System.IO.File.Exists("")|};
+                    System.Console.WriteLine();
+                    System.Collections.Generic.EqualityComparer<int>.Default.GetHashCode(0);
+                    M();
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "InvocationExpression", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ContainingNamespace_GlobalNamespaceIsEmpty()
+    {
+        var test = CreateTest("//symbol:NamedType[containing-namespace() = '']");
+        test.TestCode = """
+            class {|#0:A|} { }
+
+            namespace N
+            {
+                class B { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:NamedType", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsExternallyVisible()
+    {
+        var test = CreateTest("//symbol:Method[is-externally-visible()]");
+        test.TestCode = """
+            public class A
+            {
+                public void {|#0:M1|}() { }
+                protected void {|#1:M2|}() { }
+                protected internal void {|#2:M3|}() { }
+                private protected void M4() { }
+                internal void M5() { }
+                void M6() { }
+            }
+
+            internal class B
+            {
+                public void M() { }
+            }
+
+            public class C
+            {
+                private class D
+                {
+                    public void M() { }
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Method", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(2, "symbol:Method", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsExternallyVisible_Parameter()
+    {
+        var test = CreateTest("//symbol:Parameter[is-externally-visible()]");
+        test.TestCode = """
+            public class A
+            {
+                public void M(int {|#0:a|}) { }
+                internal void N(int b) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsCaptured_Symbols()
+    {
+        var test = CreateTest("//symbol:*[is-captured()]");
+        test.TestCode = """
+            using System;
+
+            class Sample
+            {
+                void M(int {|#0:a|}, int b)
+                {
+                    var {|#1:c|} = 0;
+                    var {|#2:d|} = b;
+                    Func<int> f = () => a + c;
+                    int Local() => d;
+                    Func<int, int> g = x => x;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Parameter", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "symbol:Local", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(2, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsCaptured_LocalFunction()
+    {
+        var test = CreateTest("//symbol:Local[is-captured()]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    var {|#0:a|} = 0;
+                    var b = 0;
+                    int Local() => a;
+                    static int Static(int b) => b;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsCaptured_References()
+    {
+        var test = CreateTest("//operation:LocalReference[is-captured()]");
+        test.TestCode = """
+            class Sample
+            {
+                void M()
+                {
+                    var a = 0;
+                    System.Func<int> f = () => {|#0:a|};
+                    {|#1:a|}++;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "operation:LocalReference", ""));
+        test.ExpectedDiagnostics.Add(Diagnostic(1, "operation:LocalReference", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsCaptured_NestedLambda()
+    {
+        var test = CreateTest("//symbol:Local[is-captured()]");
+        test.TestCode = """
+            using System;
+
+            class Sample
+            {
+                Func<Func<int>> F = () =>
+                {
+                    var {|#0:a|} = 0;
+                    var b = 0;
+                    return () => a;
+                };
+            }
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IsCaptured_TopLevelStatements()
+    {
+        var test = CreateTest("//symbol:Local[is-captured()]");
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var {|#0:a|} = 0;
+            var b = 0;
+            System.Func<int> f = () => a;
+            """;
+        test.ExpectedDiagnostics.Add(Diagnostic(0, "symbol:Local", ""));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//symbol:NamedType[implements('System.IDisposable', 'Typo')]", "'Typo' is not a valid type name format. The valid formats are 'MetadataName', 'DocumentationDeclarationId' and 'DocumentationReferenceId'")]
+    [InlineData("//ClassDeclaration[has-attribute(concat('a', 'b'), \"typo\")]", "'typo' is not a valid type name format. The valid formats are 'MetadataName', 'DocumentationDeclarationId' and 'DocumentationReferenceId'")]
+    public Task InvalidEntry_UnknownTypeNameFormat_Reported(string query, string message)
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", "{|#0:" + query + "|}"));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0).WithArguments(query, message));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("//symbol:NamedType[implements()]")]
+    [InlineData("//symbol:NamedType[implements('a', 'MetadataName', 'b')]")]
+    [InlineData("//symbol:NamedType[containing-assembly('a', 'b')]")]
+    [InlineData("//symbol:NamedType[is-from-current-assembly('a')]")]
+    [InlineData("attributes(//symbol:NamedType, //symbol:Method)")]
+    [InlineData("//symbol:Method[overrides()]")]
+    [InlineData("//symbol:Method[implements-member('a', 'b')]")]
+    [InlineData("//symbol:Method[containing-namespace('a', 'b')]")]
+    [InlineData("//symbol:Method[is-externally-visible('a')]")]
+    [InlineData("//symbol:Local[is-captured(.)]")]
+    [InlineData("//GotoStatement[file-path('a')]")]
+    public Task InvalidEntry_SemanticFunctionArgumentCount_Reported(string query)
+    {
+        var test = new AnalyzerTest { MarkupOptions = MarkupOptions.UseFirstDescriptor };
+        test.TestState.AdditionalFiles.Add(("BannedSyntaxes.txt", "{|#0:" + query + "|}"));
+        test.TestCode = """
+            class Sample
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0241", DiagnosticSeverity.Warning).WithLocation(0));
+
+        return test.RunAsync();
+    }
 }
