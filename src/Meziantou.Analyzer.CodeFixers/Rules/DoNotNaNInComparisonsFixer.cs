@@ -51,6 +51,10 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
 
         void RegisterCodeFix(IOperation nanOperand)
         {
+            var generator = SyntaxGenerator.GetGenerator(context.Document);
+            if (!TryGetReplacementExpression(generator, binaryOperation, nanOperand, semanticModel.Compilation, out _))
+                return;
+
             var title = "Use IsNaN";
             context.RegisterCodeFix(
                 CodeAction.Create(
@@ -103,15 +107,65 @@ public sealed class DoNotNaNInComparisonsFixer : CodeFixProvider
             return false;
         }
 
+        // The comparison is done using the type of the operands after their conversions, e.g. "doubleValue == float.NaN" compares doubles,
+        // so IsNaN must be called on this type, not on the type that declares NaN.
+        var comparisonType = GetUnderlyingType(nanOperand.Type);
+        if (comparisonType is null || !IsFloatingPointType(comparisonType, nanType, compilation))
+        {
+            replacement = null!;
+            return false;
+        }
+
+        var otherOperandType = otherOperand.UnwrapImplicitConversions().Type;
+        var otherOperandValueType = GetUnderlyingType(otherOperandType);
+        if (otherOperandValueType is null || !IsImplicitlyConvertible(compilation, otherOperandValueType, comparisonType))
+        {
+            replacement = null!;
+            return false;
+        }
+
+        // A nullable value is never equal to NaN. Using GetValueOrDefault keeps the semantic of IsNaN for null values (0 is not NaN).
+        var argument = otherOperand.Syntax;
+        if (!otherOperandValueType.IsEqualTo(otherOperandType))
+        {
+            argument = generator.InvocationExpression(generator.MemberAccessExpression(argument, "GetValueOrDefault"));
+        }
+
         var isNaNInvocation = (ExpressionSyntax)generator.InvocationExpression(
-            generator.TypeMemberAccessExpression(nanType, "IsNaN", addImport: true),
-            otherOperand.Syntax);
+            generator.TypeMemberAccessExpression(comparisonType, "IsNaN", addImport: true),
+            argument);
 
         replacement = binaryOperation.OperatorKind == BinaryOperatorKind.NotEquals
             ? SyntaxFactory.PrefixUnaryExpression(SyntaxKind.LogicalNotExpression, isNaNInvocation.Parenthesize())
             : isNaNInvocation;
 
         return true;
+    }
+
+    private static ITypeSymbol? GetUnderlyingType(ITypeSymbol? type)
+    {
+        if (type is INamedTypeSymbol { OriginalDefinition.SpecialType: SpecialType.System_Nullable_T, TypeArguments: [var underlyingType] })
+            return underlyingType;
+
+        return type;
+    }
+
+    private static bool IsFloatingPointType(ITypeSymbol type, ITypeSymbol nanType, Compilation compilation)
+    {
+        if (type.SpecialType is SpecialType.System_Double or SpecialType.System_Single)
+            return true;
+
+        if (type.IsEqualTo(compilation.GetTypeByMetadataName("System.Half")))
+            return true;
+
+        // Generic math: T.IsNaN(value)
+        return type.IsEqualTo(nanType);
+    }
+
+    private static bool IsImplicitlyConvertible(Compilation compilation, ITypeSymbol source, ITypeSymbol destination)
+    {
+        var conversion = compilation.ClassifyCommonConversion(source, destination);
+        return conversion.IsIdentity || (conversion.IsImplicit && !conversion.IsUserDefined);
     }
 
     private static bool TryGetNaNType(IOperation operation, Compilation compilation, out ITypeSymbol? typeSymbol, out ExpressionSyntax? expression)
