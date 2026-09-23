@@ -598,7 +598,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     [InlineData("if (value is string local) {}")]
     [InlineData("int local() => throw null;")]
     [InlineData("switch (value) { case string local: break; }")]
-    public Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_NoDiagnosticReported(string localDeclaration)
+    public Task Test_IfThatReturnsButIfAndElseContainConflictingLocalDeclarations_ElseRemovedAndBlockKept(string localDeclaration)
     {
         var originalCode = $$"""
             class TestClass
@@ -611,7 +611,25 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                         {{localDeclaration}}
                         return;
                     }
-                    else
+                    [|else|]
+                    {
+                        int local() => throw null;
+                    }
+                }
+            }
+            """;
+        var modifiedCode = $$"""
+            class TestClass
+            {
+                void Test()
+                {
+                    object value = string.Empty;
+                    if (value != null)
+                    {
+                        {{localDeclaration}}
+                        return;
+                    }
+
                     {
                         int local() => throw null;
                     }
@@ -621,6 +639,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
 
         var test = CreateTest();
         test.TestCode = originalCode;
+        test.FixedCode = modifiedCode;
 
         return test.RunAsync();
     }
@@ -817,7 +836,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     }
 
     [Fact]
-    public Task Test_ElseLocalConflictsWithLocalOfSiblingScope_NoDiagnosticReported()
+    public Task Test_ElseLocalConflictsWithLocalOfSiblingScope_ElseRemovedAndBlockKept()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -828,7 +847,23 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     for (var i = 0; i < 10; i++) { }
                     if (a)
                         return;
-                    else
+                    [|else|]
+                    {
+                        var i = 1;
+                        _ = i;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(bool a)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+
                     {
                         var i = 1;
                         _ = i;
@@ -841,7 +876,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     }
 
     [Fact]
-    public Task Test_ElseLocalConflictsWithFieldUsedInEnclosingScope_NoDiagnosticReported()
+    public Task Test_ElseLocalConflictsWithFieldUsedInEnclosingScope_ElseRemovedAndBlockKept()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -854,7 +889,25 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     _ = i;
                     if (a)
                         return;
-                    else
+                    [|else|]
+                    {
+                        var i = 1;
+                        _ = i;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                int i;
+
+                void Test(bool a)
+                {
+                    _ = i;
+                    if (a)
+                        return;
+
                     {
                         var i = 1;
                         _ = i;
@@ -867,7 +920,44 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
     }
 
     [Fact]
-    public Task Test_ElseLocalOfNestedElseConflictsWithLocalOfSiblingScope_OnlyNestedElseRemoved()
+    public Task Test_ElseIfPatternVariableConflictsWithLocalOfSiblingScope_ElseRemovedAndBlockAdded()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(bool a, object o)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+                    [|else|] if (o is int i)
+                        _ = i;
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                void Test(bool a, object o)
+                {
+                    for (var i = 0; i < 10; i++) { }
+                    if (a)
+                        return;
+
+                    {
+                        if (o is int i)
+                            _ = i;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Test_ElseLocalOfNestedElseConflictsWithLocalOfSiblingScope_OuterBlockKept()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -878,7 +968,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     for (var i = 0; i < 10; i++) { }
                     if (a)
                         return;
-                    else
+                    {|MA0071:else|}
                     {
                         if (b)
                             return;
@@ -899,7 +989,7 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
                     for (var i = 0; i < 10; i++) { }
                     if (a)
                         return;
-                    else
+
                     {
                         if (b)
                             return;
