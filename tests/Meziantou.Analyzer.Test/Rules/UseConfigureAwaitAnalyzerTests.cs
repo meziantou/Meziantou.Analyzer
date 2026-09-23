@@ -1243,7 +1243,7 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
-    public Task AfterConfigureAwaitFalse_InLambda_InWpfWindowClass_ShouldReportError()
+    public Task AfterConfigureAwaitFalse_InLambda_InWpfWindowClass_ShouldNotReportError()
     {
         var test = CreateTest();
         test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
@@ -1255,19 +1255,48 @@ public sealed class UseConfigureAwaitAnalyzerTests
                 async Task Test()
                 {
                     await Task.Delay(1).ConfigureAwait(false);
-                    Func<Task> value = async () => {|MA0004:await Task.Delay(1)|};
+                    Func<Task> value = async () => await Task.Delay(1);
                 }
             }
             """;
-        test.FixedCode = """
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitFalse_InNestedLambda_InWpfWindowClass_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
             using System;
             using System.Threading.Tasks;
             class MyClass : System.Windows.Window
             {
                 async Task Test()
                 {
-                    await Task.Delay(1).ConfigureAwait(false);
-                    Func<Task> value = async () => await Task.Delay(1).ConfigureAwait(false);
+                    Func<Task> f = async () => await Task.Delay(1).ConfigureAwait(false);
+                    await Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitFalse_InNestedLocalFunction_InWpfWindowClass_ShouldNotReportError()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test()
+                {
+                    async Task Local() => await Task.Delay(1).ConfigureAwait(false);
+                    await Task.Delay(1);
                 }
             }
             """;
