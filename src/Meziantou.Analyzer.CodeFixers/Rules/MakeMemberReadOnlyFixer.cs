@@ -71,10 +71,8 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
 
                     if (!addToAccessor)
                     {
-                        foreach (var item in accessorList.Accessors)
-                        {
-                            accessorList = accessorList.ReplaceNode(item, item.WithModifiers(accessor.Modifiers.Remove(SyntaxKind.ReadOnlyKeyword)));
-                        }
+                        // Each accessor keeps its own modifiers (e.g. "private set"), only 'readonly' moves to the property
+                        accessorList = accessorList.ReplaceNodes(accessorList.Accessors, (item, _) => item.WithModifiers(item.Modifiers.Remove(SyntaxKind.ReadOnlyKeyword)));
 
                         var newNode = property
                             .WithAccessorList(accessorList)
