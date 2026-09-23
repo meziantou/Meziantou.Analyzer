@@ -169,6 +169,36 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("public static System.Threading.CancellationToken Shared { get; }")]
+    [InlineData("public static System.Threading.CancellationToken Shared;")]
+    [InlineData("public System.Threading.CancellationToken Token { set { } }")]
+    [InlineData("public System.Threading.CancellationToken Token { private get; set; }")]
+    [InlineData("public System.Threading.CancellationToken this[int index] => default;")]
+    public Task CallingMethodWithClassThatContainsANonUsableMemberOfTypeCancellationToken_ShouldNotSuggestTheMember(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                public static void A(HttpRequest request)
+                {
+                    {|MA0032:MethodWithCancellationToken()|};
+                }
+
+                public static void MethodWithCancellationToken() => throw null;
+                public static void MethodWithCancellationToken(System.Threading.CancellationToken cancellationToken) => throw null;
+            }
+
+            class HttpRequest
+            {
+                {{member}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task CallingMethodWithStructThatContainsAPropertyOfTypeCancellationToken_ShouldReportDiagnosticWithParameterName()
     {
