@@ -524,6 +524,52 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
     }
 
     [Fact]
+    public Task NestedReturnBeforeUsingDeclaration()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class TestClass
+            {
+                Task Test(bool b)
+                {
+                    if (b)
+                        return Task.Delay(1);
+
+                    using var x = (IDisposable)null;
+                    return Task.CompletedTask;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedReturnAfterUsingDeclaration()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class TestClass
+            {
+                Task Test(bool b)
+                {
+                    using var x = (IDisposable)null;
+                    if (b)
+                        {|MA0100:return Task.Delay(1);|}
+
+                    return Task.CompletedTask;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ExecutionContext_SuppressFlow_NoAlert()
     {
         var test = CreateTest();
