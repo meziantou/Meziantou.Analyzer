@@ -390,4 +390,23 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ComparingWithUserDefinedOperator_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class C
+            {
+                public static bool operator ==(C a, bool b) => true;
+                public static bool operator !=(C a, bool b) => false;
+                public override bool Equals(object o) => true;
+                public override int GetHashCode() => 0;
+
+                bool M(C c) => c == true;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
