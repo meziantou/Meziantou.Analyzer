@@ -173,20 +173,22 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                 if ((int)symbol.SpecialType is >= 1 and <= 45)
                     return null;
 
-                if (symbol.IsEqualTo(TimeProviderSymbol))
+                // A type that derives from TimeProvider can be passed as a TimeProvider
+                if (symbol.IsOrInheritsFrom(TimeProviderSymbol))
                     return [[]];
 
                 var result = new List<ISymbol[]>();
                 var members = symbol.GetAllMembers(includeInterfaceMembers: true);
                 foreach (var member in members)
                 {
-                    if (member.IsImplicitlyDeclared)
+                    // The members are accessed through an instance, so static members cannot be used
+                    if (member.IsImplicitlyDeclared || member.IsStatic)
                         continue;
 
                     ITypeSymbol memberTypeSymbol;
                     switch (member)
                     {
-                        case IPropertySymbol propertySymbol:
+                        case IPropertySymbol { IsIndexer: false, GetMethod: not null } propertySymbol:
                             memberTypeSymbol = propertySymbol.Type;
                             break;
 
@@ -198,7 +200,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
                             continue;
                     }
 
-                    if (memberTypeSymbol.IsEqualTo(TimeProviderSymbol))
+                    if (memberTypeSymbol.IsOrInheritsFrom(TimeProviderSymbol))
                     {
                         result.Add([member]);
                     }
@@ -283,6 +285,12 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             static bool IsSymbolAccessibleFromOperation(ISymbol symbol, IOperation operation)
             {
+                // The value of a property is read, so its getter must be accessible
+                if (symbol is IPropertySymbol { GetMethod: { } getMethod })
+                {
+                    symbol = getMethod;
+                }
+
                 return operation.SemanticModel!.IsAccessible(operation.Syntax.Span.Start, symbol);
             }
         }

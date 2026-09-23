@@ -129,6 +129,92 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
     }
 
     [Fact]
+    public Task WhenAvailable_DerivedTimeProviderParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(MyTimeProvider foo)
+                {
+                    {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
+                }
+
+                class MyTimeProvider : System.TimeProvider { }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(MyTimeProvider foo)
+                {
+                    System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo);
+                }
+
+                class MyTimeProvider : System.TimeProvider { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task WhenAvailable_NestedPropOfDerivedType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(Sample foo)
+                {
+                    {|MA0166:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
+                }
+
+                class Sample { public MyTimeProvider A {get;} }
+                class MyTimeProvider : System.TimeProvider { }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                void A(Sample foo)
+                {
+                    System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero, foo.A);
+                }
+
+                class Sample { public MyTimeProvider A {get;} }
+                class MyTimeProvider : System.TimeProvider { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("public static System.TimeProvider Shared { get; }")]
+    [InlineData("public static System.TimeProvider Shared;")]
+    [InlineData("public System.TimeProvider Provider { set { } }")]
+    [InlineData("public System.TimeProvider Provider { private get; set; }")]
+    [InlineData("public System.TimeProvider this[int index] => null;")]
+    public Task NotAvailable_NonUsableMember(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test
+            {
+                void A(Sample foo)
+                {
+                    {|MA0167:System.Threading.Tasks.Task.Delay(System.TimeSpan.Zero)|};
+                }
+
+                class Sample { {{member}} }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task WhenAvailable_NestedPropOfNestedProp()
     {
         var test = CreateTest();
