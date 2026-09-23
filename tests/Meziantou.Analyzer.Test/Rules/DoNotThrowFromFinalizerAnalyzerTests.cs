@@ -131,7 +131,7 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
     }
 
     [Fact]
-    public Task FinalizerThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
+    public Task FinalizerThrowsFromNestedTryCatchBlock_ExceptionIsHandled_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -146,11 +146,103 @@ public sealed class DoNotThrowFromFinalizerAnalyzerTests
                     {
                         try
                         {
-                            {|MA0086:throw new System.Exception();|}
+                            throw new System.Exception();
                         }
                         catch
                         {
                         }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerThrowsFromTryCatchBlock_ExceptionIsHandled_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    try
+                    {
+                        throw new System.InvalidOperationException();
+                    }
+                    catch (System.Exception)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerThrowsFromTryCatchBlock_ExceptionIsUnhandled_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    try
+                    {
+                        {|MA0086:throw new System.Exception();|}
+                    }
+                    catch (System.ArgumentException)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerThrowsFromTryCatchBlock_CatchHasFilter_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    try
+                    {
+                        {|MA0086:throw new System.Exception();|}
+                    }
+                    catch (System.Exception ex) when (ex.Message is null)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinalizerThrowsFromTryFinallyBlock_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                ~TestClass()
+                {
+                    try
+                    {
+                        {|MA0086:throw new System.Exception();|}
+                    }
+                    finally
+                    {
                     }
                 }
             }

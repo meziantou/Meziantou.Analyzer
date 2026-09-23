@@ -86,7 +86,7 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
     }
 
     [Fact]
-    public Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_DiagnosticIsReported()
+    public Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandled_NoDiagnosticReported()
     {
         var test = CreateTest();
         test.TestCode = """
@@ -101,7 +101,167 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzerTests
                     {
                         try
                         {
+                            throw new System.Exception();
+                        }
+                        catch
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyThrowsFromNestedTryCatchBlock_ExceptionIsHandledByBaseType_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            throw new System.InvalidOperationException();
+                        }
+                        catch (System.ArgumentException)
+                        {
+                        }
+                        catch (System.Exception)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyThrowsFromNestedTryCatchBlock_CatchHasFilter_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test(bool condition)
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
                             {|MA0072:throw new System.Exception();|}
+                        }
+                        catch (System.Exception) when (condition)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyThrowsFromCatchBlockOfNestedTryCatchBlock_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                        }
+                        catch (System.Exception)
+                        {
+                            {|MA0072:throw new System.Exception();|}
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyRethrowsFromNestedCatchBlock_ExceptionIsHandledByOuterTryCatchBlock_NoDiagnosticReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            try
+                            {
+                            }
+                            catch (System.InvalidOperationException)
+                            {
+                                throw;
+                            }
+                        }
+                        catch (System.Exception)
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task FinallyThrowsFromNestedFinallyBlock_ExceptionIsHandledByOuterTryCatchBlock_DiagnosticIsReported()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void Test()
+                {
+                    try
+                    {
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            try
+                            {
+                            }
+                            finally
+                            {
+                                {|MA0072:throw new System.Exception();|}
+                            }
                         }
                         catch
                         {

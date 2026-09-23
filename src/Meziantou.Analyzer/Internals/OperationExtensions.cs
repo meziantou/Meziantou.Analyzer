@@ -180,4 +180,46 @@ internal static class OperationExtensions
 
     public static bool IsConstantZero(this IOperation operation) => operation is { ConstantValue: { HasValue: true, Value: 0 or 0L or 0u or 0uL or 0f or 0d or 0m } };
     public static bool IsNull(this IOperation operation) => operation is { ConstantValue: { HasValue: true, Value: null } };
+
+    /// <summary>
+    /// Gets the static type of the exception thrown by the operation. For a rethrow (<c>throw;</c>), this is the type declared by the enclosing catch clause.
+    /// </summary>
+    public static ITypeSymbol? GetThrownExceptionType(this IThrowOperation operation)
+    {
+        if (operation.Exception is not null)
+            return operation.Exception.UnwrapImplicitConversions().Type;
+
+        for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+        {
+            if (parent is ICatchClauseOperation catchClause)
+                return catchClause.ExceptionType;
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Indicates whether an exception of the specified type thrown from the body of the try statement is always caught by one of its catch clauses.
+    /// </summary>
+    public static bool AlwaysCatches(this ITryOperation operation, ITypeSymbol? exceptionType, Compilation compilation)
+    {
+        foreach (var catchClause in operation.Catches)
+        {
+            if (catchClause.Filter is not null)
+                continue;
+
+            // A general catch clause (catch { }) catches all the exceptions
+            if (catchClause.ExceptionType.SpecialType is SpecialType.System_Object)
+                return true;
+
+            if (exceptionType is null)
+                continue;
+
+            var conversion = compilation.ClassifyCommonConversion(exceptionType, catchClause.ExceptionType);
+            if (conversion.IsIdentity || (conversion.IsImplicit && conversion.IsReference))
+                return true;
+        }
+
+        return false;
+    }
 }

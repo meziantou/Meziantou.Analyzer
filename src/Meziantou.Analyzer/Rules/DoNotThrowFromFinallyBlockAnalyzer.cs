@@ -25,18 +25,26 @@ public sealed class DoNotThrowFromFinallyBlockAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeThrow(OperationAnalysisContext context)
     {
-        var operation = context.Operation;
-        var child = operation;
+        var operation = (IThrowOperation)context.Operation;
+        var exceptionType = operation.GetThrownExceptionType();
+        IOperation child = operation;
         for (var parent = operation.Parent; parent is not null; child = parent, parent = parent.Parent)
         {
             // A lambda or a local function declared in a finally block is not executed by the finally block
             if (parent is IAnonymousFunctionOperation or ILocalFunctionOperation)
                 return;
 
-            if (parent is ITryOperation tryOperation && tryOperation.Finally == child)
+            if (parent is ITryOperation tryOperation)
             {
-                context.ReportDiagnostic(Rule, operation);
-                return;
+                // The exception does not escape the finally block when a try statement declared in the finally block catches it
+                if (tryOperation.Body == child && tryOperation.AlwaysCatches(exceptionType, context.Compilation))
+                    return;
+
+                if (tryOperation.Finally == child)
+                {
+                    context.ReportDiagnostic(Rule, operation);
+                    return;
+                }
             }
         }
     }
