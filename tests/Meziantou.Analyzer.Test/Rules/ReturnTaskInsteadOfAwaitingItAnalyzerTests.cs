@@ -1074,4 +1074,88 @@ public sealed class ReturnTaskInsteadOfAwaitingItAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task AwaitForeach_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IAsyncEnumerable<int> E() => throw null;
+                static async Task<int> A()
+                {
+                    await foreach (var x in E())
+                    {
+                    }
+
+                    return await Task.FromResult(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsingStatement_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IAsyncDisposable D() => throw null;
+                static async Task<int> A()
+                {
+                    await using (D())
+                    {
+                    }
+
+                    return await Task.FromResult(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsingDeclaration_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class Test
+            {
+                static IAsyncDisposable D() => throw null;
+                static async Task<int> A()
+                {
+                    {
+                        await using var d = D();
+                    }
+
+                    return await Task.FromResult(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TopLevelStatements_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            await System.Threading.Tasks.Task.Delay(1);
+            """;
+
+        return test.RunAsync();
+    }
 }
