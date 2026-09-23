@@ -61,7 +61,9 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Decimal));
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_String));
             _appendOverloadTypes.AddIfNotNull(compilation.GetSpecialType(SpecialType.System_Char));
-            _appendOverloadTypes.AddIfNotNull(compilation.CreateArrayTypeSymbol(compilation.GetSpecialType(SpecialType.System_Char)));
+
+            // char[] is not included: char[].ToString() returns "System.Char[]", whereas Append(char[]) appends the characters.
+            // ReadOnlySpan<char>.ToString() and ReadOnlyMemory<char>.ToString() return the characters.
             _appendOverloadTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.ReadOnlySpan`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
             _appendOverloadTypes.AddIfNotNull(compilation.GetTypeByMetadataName("System.ReadOnlyMemory`1")?.Construct(compilation.GetSpecialType(SpecialType.System_Char)));
         }
@@ -161,10 +163,14 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                     }
                     else if (constValue.Length == 1)
                     {
-                        var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
-                            .Add(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey, constValue);
-                        context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
-                        return true;
+                        // AppendLine has no overload taking a char
+                        if (string.Equals(methodName, nameof(StringBuilder.Append), System.StringComparison.Ordinal) || string.Equals(methodName, nameof(StringBuilder.Insert), System.StringComparison.Ordinal))
+                        {
+                            var properties = CreateProperties(OptimizeStringBuilderUsageData.ReplaceWithChar)
+                                .Add(OptimizeStringBuilderUsageAnalyzerCommon.ConstantValueKey, constValue);
+                            context.ReportDiagnostic(Rule, properties, argument, $"Replace {methodName}(string) with {methodName}(char)");
+                            return true;
+                        }
                     }
 
                     return false;
@@ -235,7 +241,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
                 {
                     if (targetMethod.Parameters.Length == 0 && targetMethod.ReturnType.IsString())
                     {
-                        if (invocationOperation.Instance?.Type is not null && !_appendOverloadTypes.Contains(invocationOperation.Instance.Type))
+                        // Removing the ToString call is only valid when the Append overload of the type produces the same text
+                        if (invocationOperation.Instance?.Type is not { } instanceType || !_appendOverloadTypes.Contains(instanceType))
                             return false;
 
                         var properties = CreateProperties(OptimizeStringBuilderUsageData.RemoveToString);
