@@ -281,6 +281,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
             var nodeStart = node.SpanStart;
             var nodeStatement = node.FirstAncestorOrSelf<StatementSyntax>();
+            var nodeFunction = GetContainingFunction(node);
             foreach (var otherAwaitExpression in configuredAwaits)
             {
                 // The awaits are ordered by position, so the next ones cannot be before the current node
@@ -290,11 +291,21 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
                 if (otherAwaitExpression == node)
                     continue;
 
+                // A ConfigureAwait(false) only changes the context of the continuations of the function that contains it.
+                // A lambda or a local function runs in the context of its caller, whatever the enclosing method does.
+                if (GetContainingFunction(otherAwaitExpression) != nodeFunction)
+                    continue;
+
                 if (IsReachableFrom(semanticModel, otherAwaitExpression, nodeStatement))
                     return true;
             }
 
             return false;
+        }
+
+        private static SyntaxNode? GetContainingFunction(SyntaxNode node)
+        {
+            return node.FirstAncestorOrSelf<SyntaxNode>(static node => node is AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MethodDeclarationSyntax);
         }
 
         private bool IsReachableFrom(SemanticModel semanticModel, AwaitExpressionSyntax otherAwaitExpression, StatementSyntax? nodeStatement)
