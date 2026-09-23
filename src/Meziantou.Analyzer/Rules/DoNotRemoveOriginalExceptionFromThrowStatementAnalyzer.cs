@@ -32,13 +32,26 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         if (operation.Exception.UnwrapImplicitConversions() is not ILocalReferenceOperation localReferenceOperation)
             return;
 
-        var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
-        if (catchOperation is null)
-            return;
-
-        if (catchOperation.Locals.Contains(localReferenceOperation.Local))
+        IOperation child = operation;
+        foreach (var ancestor in operation.Ancestors())
         {
-            context.ReportDiagnostic(Rule, operation);
+            switch (ancestor)
+            {
+                // 'throw;' is not allowed in a lambda or a local function (CS0156), nor in a finally block (CS0724)
+                case IAnonymousFunctionOperation or ILocalFunctionOperation:
+                case ITryOperation tryOperation when tryOperation.Finally == child:
+                    return;
+
+                case ICatchClauseOperation catchOperation:
+                    if (catchOperation.Locals.Contains(localReferenceOperation.Local))
+                    {
+                        context.ReportDiagnostic(Rule, operation);
+                    }
+
+                    return;
+            }
+
+            child = ancestor;
         }
     }
 }
