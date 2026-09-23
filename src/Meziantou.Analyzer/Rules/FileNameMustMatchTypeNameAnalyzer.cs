@@ -92,10 +92,8 @@ public sealed class FileNameMustMatchTypeNameAnalyzer : DiagnosticAnalyzer
                 var root = location.SourceTree.GetRoot(context.CancellationToken);
                 var symbolNode = root.FindNode(location.SourceSpan);
 
-                static bool IsTypeDeclaration(SyntaxNode syntaxNode) => syntaxNode is BaseTypeDeclarationSyntax;
-
                 var isFirstType = true;
-                foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: node => !IsTypeDeclaration(node)))
+                foreach (var node in root.DescendantNodesAndSelf(descendIntoChildren: static node => !IsTypeDeclaration(node)))
                 {
                     if (!IsTypeDeclaration(node))
                         continue;

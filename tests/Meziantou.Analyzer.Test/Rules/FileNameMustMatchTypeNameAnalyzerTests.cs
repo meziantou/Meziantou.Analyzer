@@ -383,6 +383,32 @@ public sealed class FileNameMustMatchTypeNameAnalyzerTests
     }
 
     [Fact]
+    public Task MatchOnlyFirstType_Delegate()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
+        test.TestState.Sources.Add(("/0/Test0.cs", """
+            delegate void Test0();
+            class Bar {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MatchOnlyFirstType_DelegateNotMatchingFileName()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration("MA0048.only_validate_first_type", "true");
+        test.TestState.Sources.Add(("/0/Test0.cs", """
+            delegate void {|MA0048:Foo|}();
+            class Bar {}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MatchOnlyFirstType_Struct()
     {
         var test = CreateTest();
