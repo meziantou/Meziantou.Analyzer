@@ -229,4 +229,64 @@ public sealed class UseMultiLineXmlCommentSyntaxAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task FieldWithMultipleVariables_ShouldReportDiagnosticOnce()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// {|MA0211:<summary>description</summary>|}
+                public int A, B;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                /// <summary>
+                /// description
+                /// </summary>
+                public int A, B;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordWithPrimaryConstructor_ShouldReportDiagnosticOnce()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>description</summary>|}
+            record Sample(int A);
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            record Sample(int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ClassWithPrimaryConstructor_ShouldReportDiagnosticOnce()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0211:<summary>description</summary>|}
+            class Sample(int a);
+            """;
+        test.FixedCode = """
+            /// <summary>
+            /// description
+            /// </summary>
+            class Sample(int a);
+            """;
+
+        return test.RunAsync();
+    }
 }

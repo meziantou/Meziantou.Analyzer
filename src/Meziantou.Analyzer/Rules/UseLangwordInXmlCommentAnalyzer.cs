@@ -154,10 +154,11 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
         {
             var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-            if (!syntax.HasStructuredTrivia)
+            var syntaxToAnalyze = XmlDocumentationCommentHelper.GetDocumentedNode(symbol, syntax);
+            if (syntaxToAnalyze is null || !syntaxToAnalyze.HasStructuredTrivia)
                 continue;
 
-            foreach (var trivia in syntax.GetLeadingTrivia())
+            foreach (var trivia in syntaxToAnalyze.GetLeadingTrivia())
             {
                 var structure = trivia.GetStructure();
                 if (structure is null)
