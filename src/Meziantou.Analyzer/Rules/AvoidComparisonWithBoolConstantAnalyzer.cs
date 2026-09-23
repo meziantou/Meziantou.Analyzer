@@ -34,6 +34,10 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
             return;
         }
 
+        // Only the built-in bool operators can be replaced by the operand
+        if (binaryOperation.OperatorMethod is not null)
+            return;
+
         // There must be 2 valid operands
         if (binaryOperation.LeftOperand?.Type is null || binaryOperation.RightOperand?.Type is null)
             return;
@@ -62,6 +66,9 @@ public sealed class AvoidComparisonWithBoolConstantAnalyzer : DiagnosticAnalyzer
         {
             return;
         }
+
+        if (!nodeToKeep.Type.IsBoolean())
+            return;
 
         // The fixer will need to prefix the remaining operand with '!' if the original comparison is "!= true" or "== false"
         var logicalNotOperatorNeeded = (bool)nodeToRemove.ConstantValue.Value! ?
