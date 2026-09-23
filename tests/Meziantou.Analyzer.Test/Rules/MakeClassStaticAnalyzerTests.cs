@@ -314,4 +314,103 @@ public sealed class MakeClassStaticAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Theory]
+    [InlineData("public System.Collections.Generic.List<Helper> Field;")]
+    [InlineData("public Helper Field;")]
+    [InlineData("public Helper[] Field;")]
+    [InlineData("public (Helper, int) Field;")]
+    [InlineData("public Helper Property { get; set; }")]
+    [InlineData("public int this[Helper value] => 0;")]
+    [InlineData("public event System.Action<Helper> Event;")]
+    [InlineData("public void Method(Helper value) { }")]
+    [InlineData("public Helper Method() => null;")]
+    [InlineData("public void Method<T>() where T : Helper { }")]
+    [InlineData("public void Method() { Helper value = null; }")]
+    [InlineData("public void Method(object value) { foreach (Helper item in new object[0]) { } }")]
+    [InlineData("public void Method(object value) { _ = value is Helper; }")]
+    [InlineData("public void Method(object value) { _ = value is Helper helper; }")]
+    [InlineData("public void Method(object value) { _ = value is Helper { }; }")]
+    [InlineData("public void Method(object value) { _ = value switch { Helper => 1, _ => 0 }; }")]
+    [InlineData("public void Method(object value) { _ = (Helper)value; }")]
+    [InlineData("public void Method(object value) { _ = value as Helper; }")]
+    [InlineData("public void Method() { _ = default(Helper); }")]
+    [InlineData("public void Method() { _ = typeof(System.Collections.Generic.List<Helper>); }")]
+    [InlineData("public void Method() { _ = typeof(Helper[]); }")]
+    [InlineData("public void Method() { System.Delegate action = (Helper value) => { }; }")]
+    [InlineData("public void Method() { void Local(Helper value) { } }")]
+    [InlineData("public void Method() { _ = TryGet(out Helper value); } public static bool TryGet<T>(out T value) => throw null;")]
+    [InlineData("public void Method() { _ = Generic<Helper>.Value; }")]
+    [InlineData("public void Method() { Generic<Helper>.StaticMethod(); }")]
+    [InlineData("public void Method() { System.Action action = Generic<Helper>.StaticMethod; }")]
+    public Task TypeUsedInMember_NoDiagnostic(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Helper
+            {
+                public static void M() { }
+            }
+
+            class Generic<T>
+            {
+                public static int Value;
+                public int InstanceValue;
+                public static void StaticMethod() { }
+            }
+
+            class Consumer
+            {
+                public int InstanceValue;
+                {{member}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("delegate void Callback(Helper value);")]
+    [InlineData("class Constrained<T> where T : Helper { public int InstanceValue; }")]
+    [InlineData("class Outer<T> { public class Inner { public int InstanceValue; } public int InstanceValue; } class Consumer { public Outer<Helper>.Inner Field; }")]
+    public Task TypeUsedInTypeDeclaration_NoDiagnostic(string declaration)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Helper
+            {
+                public static void M() { }
+            }
+
+            {{declaration}}
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TypeUsedAsTypeOfOperandOrStaticMemberAccess_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class {|MA0036:Helper|}
+            {
+                public static void M() { }
+            }
+
+            class Consumer
+            {
+                public int InstanceValue;
+
+                public void Method()
+                {
+                    _ = typeof(Helper);
+                    _ = nameof(Helper);
+                    Helper.M();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

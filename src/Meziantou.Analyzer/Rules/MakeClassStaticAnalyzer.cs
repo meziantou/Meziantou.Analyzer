@@ -25,9 +25,27 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
+            ctx.RegisterSymbolAction(analyzerContext.AnalyzeMemberSymbol, SymbolKind.Field, SymbolKind.Property, SymbolKind.Event, SymbolKind.Method);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeObjectCreation, OperationKind.ObjectCreation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeArrayCreation, OperationKind.ArrayCreation);
+            ctx.RegisterOperationAction(
+                analyzerContext.AnalyzeTypeUsage,
+                OperationKind.VariableDeclarator,
+                OperationKind.DeclarationExpression,
+                OperationKind.Conversion,
+                OperationKind.DefaultValue,
+                OperationKind.IsType,
+                OperationKind.DeclarationPattern,
+                OperationKind.TypePattern,
+                OperationKind.RecursivePattern,
+                OperationKind.TypeOf,
+                OperationKind.AnonymousFunction,
+                OperationKind.LocalFunction,
+                OperationKind.FieldReference,
+                OperationKind.PropertyReference,
+                OperationKind.EventReference,
+                OperationKind.MethodReference);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -61,6 +79,12 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         public void AnalyzeNamedTypeSymbol(SymbolAnalysisContext context)
         {
             var symbol = (INamedTypeSymbol)context.Symbol;
+            AddTypeParameterConstraintTypes(symbol.TypeParameters);
+            if (symbol.DelegateInvokeMethod is not null)
+            {
+                AddMethodSignatureTypes(symbol.DelegateInvokeMethod);
+            }
+
             switch (symbol.TypeKind)
             {
                 case TypeKind.Class:
@@ -98,6 +122,75 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        // Static types cannot be used as the type of a member, a parameter or a return value, nor as a generic constraint
+        public void AnalyzeMemberSymbol(SymbolAnalysisContext context)
+        {
+            switch (context.Symbol)
+            {
+                case IFieldSymbol field:
+                    AddCannotBeStaticType(field.Type);
+                    break;
+
+                case IPropertySymbol property:
+                    AddCannotBeStaticType(property.Type);
+                    AddParameterTypes(property.Parameters);
+                    break;
+
+                case IEventSymbol @event:
+                    AddCannotBeStaticType(@event.Type);
+                    break;
+
+                case IMethodSymbol method:
+                    AddMethodSignatureTypes(method);
+                    break;
+            }
+        }
+
+        public void AnalyzeTypeUsage(OperationAnalysisContext context)
+        {
+            switch (context.Operation)
+            {
+                case IVariableDeclaratorOperation operation:
+                    AddCannotBeStaticType(operation.Symbol.Type);
+                    break;
+
+                case IIsTypeOperation operation:
+                    AddCannotBeStaticType(operation.TypeOperand);
+                    break;
+
+                case IPatternOperation operation:
+                    AddCannotBeStaticType(operation.NarrowedType);
+                    break;
+
+                // typeof(StaticClass) is valid, but not typeof(List<StaticClass>) or typeof(StaticClass[])
+                case ITypeOfOperation operation:
+                    AddTypeComponents(operation.TypeOperand);
+                    break;
+
+                case IAnonymousFunctionOperation operation:
+                    AddMethodSignatureTypes(operation.Symbol);
+                    break;
+
+                case ILocalFunctionOperation operation:
+                    AddMethodSignatureTypes(operation.Symbol);
+                    break;
+
+                // StaticClass.Member does not create an operation for the type, but Generic<StaticClass>.Member is invalid
+                case IMethodReferenceOperation operation:
+                    AddTypeArguments(operation.Method);
+                    break;
+
+                case IMemberReferenceOperation operation:
+                    AddContainingTypeArguments(operation.Member);
+                    break;
+
+                // Conversions, default values and declaration expressions (out StaticClass value) are typed with the static class
+                case { Type: { } type }:
+                    AddCannotBeStaticType(type);
+                    break;
+            }
+        }
+
         public void AnalyzeObjectCreation(OperationAnalysisContext context)
         {
             var operation = (IObjectCreationOperation)context.Operation;
@@ -123,10 +216,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context)
         {
             var operation = (IInvocationOperation)context.Operation;
-            foreach (var typeArgument in operation.TargetMethod.TypeArguments)
-            {
-                AddCannotBeStaticType(typeArgument);
-            }
+            AddTypeArguments(operation.TargetMethod);
         }
 
         public void AnalyzeCompilationEnd(CompilationAnalysisContext context)
@@ -155,16 +245,82 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                 AddCannotBeStaticType(typeSymbol.OriginalDefinition);
             }
 
-            if (typeSymbol is IArrayTypeSymbol arrayTypeSymbol)
+            AddTypeComponents(typeSymbol);
+        }
+
+        // Adds the types that compose the type (array element type, type arguments, ...), but not the type itself
+        private void AddTypeComponents(ITypeSymbol typeSymbol)
+        {
+            switch (typeSymbol)
             {
-                AddCannotBeStaticType(arrayTypeSymbol.ElementType);
+                case IArrayTypeSymbol arrayTypeSymbol:
+                    AddCannotBeStaticType(arrayTypeSymbol.ElementType);
+                    break;
+
+                case IPointerTypeSymbol pointerTypeSymbol:
+                    AddCannotBeStaticType(pointerTypeSymbol.PointedAtType);
+                    break;
+
+                case IFunctionPointerTypeSymbol functionPointerTypeSymbol:
+                    AddMethodSignatureTypes(functionPointerTypeSymbol.Signature);
+                    break;
+
+                case INamedTypeSymbol namedTypeSymbol:
+                    foreach (var typeArgument in namedTypeSymbol.TypeArguments)
+                    {
+                        AddCannotBeStaticType(typeArgument);
+                    }
+
+                    // Outer<StaticClass>.Inner
+                    if (namedTypeSymbol.ContainingType is not null)
+                    {
+                        AddTypeComponents(namedTypeSymbol.ContainingType);
+                    }
+
+                    break;
+            }
+        }
+
+        private void AddContainingTypeArguments(ISymbol symbol)
+        {
+            if (symbol.ContainingType is not null)
+            {
+                AddTypeComponents(symbol.ContainingType);
+            }
+        }
+
+        private void AddTypeArguments(IMethodSymbol method)
+        {
+            foreach (var typeArgument in method.TypeArguments)
+            {
+                AddCannotBeStaticType(typeArgument);
             }
 
-            if (typeSymbol is INamedTypeSymbol namedTypeSymbol)
+            AddContainingTypeArguments(method);
+        }
+
+        private void AddMethodSignatureTypes(IMethodSymbol method)
+        {
+            AddCannotBeStaticType(method.ReturnType);
+            AddParameterTypes(method.Parameters);
+            AddTypeParameterConstraintTypes(method.TypeParameters);
+        }
+
+        private void AddParameterTypes(ImmutableArray<IParameterSymbol> parameters)
+        {
+            foreach (var parameter in parameters)
             {
-                foreach (var typeArgument in namedTypeSymbol.TypeArguments)
+                AddCannotBeStaticType(parameter.Type);
+            }
+        }
+
+        private void AddTypeParameterConstraintTypes(ImmutableArray<ITypeParameterSymbol> typeParameters)
+        {
+            foreach (var typeParameter in typeParameters)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypes)
                 {
-                    AddCannotBeStaticType(typeArgument);
+                    AddCannotBeStaticType(constraintType);
                 }
             }
         }
