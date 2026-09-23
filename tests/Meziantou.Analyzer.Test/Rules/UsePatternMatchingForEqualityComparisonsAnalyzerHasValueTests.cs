@@ -173,4 +173,111 @@ public sealed class UsePatternMatchingForEqualityComparisonsAnalyzerHasValueTest
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task HasValue_Nameof()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            int? value = null;
+            _ = nameof(value.HasValue);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValue_ConditionalAccess()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A a = null;
+            _ = a?.B.HasValue;
+            _ = a?.B.HasValue.ToString();
+            _ = a?.B.HasValue.GetType();
+
+            class A
+            {
+                public int? B;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValue_ConditionalAccessExtensionMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A a = null;
+            _ = a?.B.HasValue.Negate();
+
+            class A
+            {
+                public int? B;
+            }
+
+            static class Extensions
+            {
+                public static bool Negate(this bool value) => !value;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValue_ParenthesizedConditionalAccess()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A a = null;
+            _ = {|MA0171:(a?.B).HasValue|};
+
+            class A
+            {
+                public int? B;
+            }
+            """;
+        test.FixedCode = """
+            A a = null;
+            _ = (a?.B) is not null;
+
+            class A
+            {
+                public int? B;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task HasValue_ArgumentOfConditionalAccess()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A a = null;
+            int? value = null;
+            _ = a?.M({|MA0171:value.HasValue|});
+
+            class A
+            {
+                public int M(bool value) => 0;
+            }
+            """;
+        test.FixedCode = """
+            A a = null;
+            int? value = null;
+            _ = a?.M(value is not null);
+
+            class A
+            {
+                public int M(bool value) => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
