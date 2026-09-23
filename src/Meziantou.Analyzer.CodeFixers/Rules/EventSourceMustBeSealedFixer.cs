@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.FindSymbols;
 using Microsoft.CodeAnalysis.Formatting;
 
 namespace Meziantou.Analyzer.Rules;
@@ -16,6 +17,16 @@ public sealed class EventSourceMustBeSealedFixer : CodeFixProvider
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
         if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not TypeDeclarationSyntax nodeToFix)
+            return;
+
+        // A class with derived classes cannot be sealed. It should be made abstract instead, which the fixer cannot do
+        // safely as the class may be instantiated.
+        var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+        if (semanticModel?.GetDeclaredSymbol(nodeToFix, context.CancellationToken) is not INamedTypeSymbol symbol)
+            return;
+
+        var derivedClasses = await SymbolFinder.FindDerivedClassesAsync(symbol, context.Document.Project.Solution, transitive: false, cancellationToken: context.CancellationToken).ConfigureAwait(false);
+        if (derivedClasses.Any())
             return;
 
         var title = "Add sealed modifier";

@@ -155,4 +155,26 @@ public sealed class EventSourceMustBeSealedAnalyzerTests
                 """,
         }.RunAsync();
     }
+
+    [Fact]
+    public Task UnsealedEventSource_WithDerivedClass_NoCodeFix()
+    {
+        var code = """
+            using System.Diagnostics.Tracing;
+
+            class [|Base|] : EventSource
+            {
+            }
+
+            sealed class Derived : Base
+            {
+            }
+            """;
+
+        return new CodeFixTest
+        {
+            TestCode = code,
+            FixedCode = code,
+        }.RunAsync();
+    }
 }
