@@ -111,4 +111,47 @@ public sealed class InheritdocShouldNotBeUsedOnTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenRecordHasNoDeclaredInterface()
+    {
+        // The compiler implements IEquatable<Sample> on the record, so it is the only source of the documentation
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0197:<inheritdoc />|}
+            record Sample;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0197_WhenRecordDeclaresEquatableInterface()
+    {
+        // The compiler merges the declared IEquatable<Sample> with the one it implements on the record
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0197:<inheritdoc />|}
+            record Sample : System.IEquatable<Sample>;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoDiagnostic_WhenRecordHasDeclaredInterface()
+    {
+        // The interfaces of the record are ITest and IEquatable<Sample>, which is reported by MA0198
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest
+            {
+            }
+
+            /// <inheritdoc />
+            record Sample : ITest;
+            """;
+
+        return test.RunAsync();
+    }
 }

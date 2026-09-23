@@ -208,4 +208,44 @@ public sealed class InheritdocShouldNotBeAmbiguousOnTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0198_WhenRecordHasDeclaredInterface()
+    {
+        // The interfaces of the record are IInterface1 and the IEquatable<Sample> the compiler implements on the record
+        var test = CreateTest();
+        test.TestCode = """
+            interface IInterface1
+            {
+            }
+
+            /// {|MA0198:<inheritdoc />|}
+            record Sample : IInterface1;
+            """;
+        test.FixedCode = """
+            interface IInterface1
+            {
+            }
+
+            /// <inheritdoc cref="IInterface1" />
+            record Sample : IInterface1;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReportDiagnostic_MA0198_WhenRecordDeclaresEquatableInterfaceOfAnotherType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// {|MA0198:<inheritdoc />|}
+            record Sample : System.IEquatable<int>
+            {
+                public bool Equals(int other) => false;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
