@@ -1,6 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -28,7 +25,7 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
             var compilation = ctx.Compilation;
             var analyzerContext = new AnalyzerContext(compilation);
 
-            ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeMethodDeclaration, SyntaxKind.MethodDeclaration);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeMethodBody, OperationKind.MethodBody);
         });
     }
 
@@ -53,139 +50,104 @@ public sealed class ValidateArgumentsCorrectlyAnalyzer : DiagnosticAnalyzer
 
         public bool CanContainsYield(IMethodSymbol methodSymbol)
         {
+            // The code fixer only supports the methods (not the accessors, operators, ...)
+            if (methodSymbol.MethodKind is not (MethodKind.Ordinary or MethodKind.ExplicitInterfaceImplementation))
+                return false;
+
             if (!_symbols.Contains(methodSymbol.ReturnType.OriginalDefinition))
                 return false;
 
             return methodSymbol.Parameters.All(p => p.RefKind == RefKind.None);
         }
 
-        internal void AnalyzeMethodDeclaration(SyntaxNodeAnalysisContext context)
+        internal void AnalyzeMethodBody(OperationAnalysisContext context)
         {
-            var node = (MethodDeclarationSyntax)context.Node;
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (methodSymbol is null || !CanContainsYield(methodSymbol))
+            var operation = (IMethodBodyOperation)context.Operation;
+            if (operation.BlockBody is null || context.ContainingSymbol is not IMethodSymbol methodSymbol || !CanContainsYield(methodSymbol))
                 return;
 
-            var descendants = node.DescendantNodes(childNode => node == childNode || FilterDescendants(childNode)).ToList();
+            var state = new AnalysisState();
+            foreach (var statement in operation.BlockBody.Operations)
+            {
+                state.CurrentStatementEnd = statement.Syntax.Span.End;
+                Visit(statement, state);
+            }
 
-            var firstYieldIndex = descendants
-                    .Where(node => node.IsKind(SyntaxKind.YieldReturnStatement) || node.IsKind(SyntaxKind.YieldBreakStatement))
-                    .DefaultIfEmpty()
-                    .Min(node => node?.SpanStart);
-
-            if (!firstYieldIndex.HasValue)
+            if (state.FirstYieldStart is null || state.LastValidationEnd is null)
                 return;
 
-            var lastThrowIndex = descendants
-                    .Where(node => IsArgumentValidation(context, node))
-                    .DefaultIfEmpty()
-                    .Max(node => GetEndOfBlockIndex(context, node));
-
-            if (lastThrowIndex is not null && firstYieldIndex is not null && lastThrowIndex < firstYieldIndex)
+            if (state.LastValidationEnd < state.FirstYieldStart)
             {
                 // The validation cannot be done eagerly when it comes after an await, as the method that validates the arguments is not async
-                if (ContainsAwait(node, lastThrowIndex.Value))
+                if (state.FirstAwaitStart < state.LastValidationEnd)
                     return;
 
                 var properties = ImmutableDictionary.Create<string, string?>(StringComparer.Ordinal)
-                    .Add(ValidateArgumentsCorrectlyAnalyzerCommon.IndexKey, lastThrowIndex.Value.ToString(CultureInfo.InvariantCulture));
+                    .Add(ValidateArgumentsCorrectlyAnalyzerCommon.IndexKey, state.LastValidationEnd.Value.ToString(CultureInfo.InvariantCulture));
 
                 context.ReportDiagnostic(Rule, properties, methodSymbol);
             }
         }
 
-        private bool IsArgumentValidation(SyntaxNodeAnalysisContext context, SyntaxNode node)
+        private void Visit(IOperation operation, AnalysisState state)
         {
-            if ((node.IsKind(SyntaxKind.ThrowStatement) || node.IsKind(SyntaxKind.ThrowExpression)) && IsArgumentException(context, node))
-                return true;
+            // The nested functions are not executed by the method
+            if (operation is IAnonymousFunctionOperation or ILocalFunctionOperation)
+                return;
 
-            if (node is InvocationExpressionSyntax invocationExpression)
+            var start = operation.Syntax.SpanStart;
+            if (operation is IReturnOperation { Kind: OperationKind.YieldReturn or OperationKind.YieldBreak })
             {
-                if (context.SemanticModel.GetOperation(invocationExpression, context.CancellationToken) is IInvocationOperation operation)
-                {
-                    var targetMethod = operation.TargetMethod;
-                    return targetMethod.IsStatic &&
-                        targetMethod.ContainingType.IsOrInheritsFrom(_argumentExceptionSymbol) &&
-                        targetMethod.Name.StartsWith("Throw", System.StringComparison.Ordinal);
-                }
+                state.FirstYieldStart = Min(state.FirstYieldStart, start);
+            }
+            else if (IsAwait(operation))
+            {
+                state.FirstAwaitStart = Min(state.FirstAwaitStart, start);
+            }
+            else if (IsArgumentValidation(operation))
+            {
+                // The validation ends at the end of the top-level statement that contains it
+                state.LastValidationEnd = state.CurrentStatementEnd;
             }
 
-            return false;
+            foreach (var child in operation.GetChildOperations())
+            {
+                Visit(child, state);
+            }
+
+            static int Min(int? current, int value) => current is null || value < current ? value : current.Value;
         }
 
-        public bool IsArgumentException(SyntaxNodeAnalysisContext context, SyntaxNode syntaxNode)
+        private static bool IsAwait(IOperation operation)
         {
-            var exceptionExpression = syntaxNode switch
+            return operation switch
             {
-                ThrowStatementSyntax throwStatement => throwStatement.Expression,
-                ThrowExpressionSyntax throwExpression => throwExpression.Expression,
-                _ => null,
+                IAwaitOperation => true,
+                IForEachLoopOperation forEachLoop => forEachLoop.IsAsynchronous,
+                IUsingOperation usingOperation => usingOperation.IsAsynchronous,
+                IUsingDeclarationOperation usingDeclaration => usingDeclaration.IsAsynchronous,
+                _ => false,
             };
-
-            if (exceptionExpression is null)
-                return false;
-
-            var type = context.SemanticModel.GetTypeInfo(exceptionExpression, context.CancellationToken).Type;
-            return type is not null && type.IsOrInheritsFrom(_argumentExceptionSymbol);
         }
 
-        private static bool ContainsAwait(MethodDeclarationSyntax node, int endIndex)
+        private bool IsArgumentValidation(IOperation operation)
         {
-            if (!node.Modifiers.Any(SyntaxKind.AsyncKeyword))
-                return false;
-
-            // The awaits of nested functions are not executed by the method
-            foreach (var descendant in node.DescendantNodes(childNode => childNode.SpanStart < endIndex && childNode is not (AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax)))
+            return operation switch
             {
-                if (descendant.SpanStart >= endIndex)
-                    continue;
-
-                var isAwait = descendant switch
-                {
-                    AwaitExpressionSyntax => true,
-                    CommonForEachStatementSyntax forEachStatement => forEachStatement.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
-                    UsingStatementSyntax usingStatement => usingStatement.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
-                    LocalDeclarationStatementSyntax localDeclaration => localDeclaration.AwaitKeyword.IsKind(SyntaxKind.AwaitKeyword),
-                    _ => false,
-                };
-
-                if (isAwait)
-                    return true;
-            }
-
-            return false;
+                IThrowOperation { Exception: not null } throwOperation => throwOperation.Exception.UnwrapImplicitConversions().Type is { } type && type.IsOrInheritsFrom(_argumentExceptionSymbol),
+                IInvocationOperation { TargetMethod: var targetMethod } => targetMethod.IsStatic &&
+                    targetMethod.ContainingType.IsOrInheritsFrom(_argumentExceptionSymbol) &&
+                    targetMethod.Name.StartsWith("Throw", StringComparison.Ordinal),
+                _ => false,
+            };
         }
 
-        private static bool FilterDescendants(SyntaxNode node)
+        private sealed class AnalysisState
         {
-            return !node.IsKind(SyntaxKind.MethodDeclaration)
-                && !node.IsKind(SyntaxKind.LocalFunctionStatement);
-        }
-
-        private static int? GetEndOfBlockIndex(SyntaxNodeAnalysisContext context, SyntaxNode? syntaxNode)
-        {
-            if (syntaxNode is null)
-                return null;
-
-            var operation = context.SemanticModel.GetOperation(syntaxNode, context.CancellationToken);
-            if (operation is null)
-                return null;
-
-            while (operation is not null)
-            {
-                if (operation is IMethodBodyOperation)
-                    break;
-
-                if (operation.Parent is IBlockOperation)
-                {
-                    if (operation.Parent.Parent is IMethodBodyOperation)
-                        break;
-                }
-
-                operation = operation.Parent;
-            }
-
-            return operation?.Syntax.Span.End;
+            public int CurrentStatementEnd { get; set; }
+            public int? FirstYieldStart { get; set; }
+            public int? FirstAwaitStart { get; set; }
+            public int? LastValidationEnd { get; set; }
         }
     }
 }
