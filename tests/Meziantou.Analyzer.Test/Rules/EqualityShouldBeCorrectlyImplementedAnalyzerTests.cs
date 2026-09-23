@@ -482,6 +482,48 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task MA0096_CodeFix_ExplicitCompareTo()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+
+            class {|MA0096:Test|} : IComparable<Test>
+            {
+                int IComparable<Test>.CompareTo(Test other) => throw null;
+                public override bool Equals(object other) => throw null;
+                public override int GetHashCode() => 0;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+
+            class Test : IComparable<Test>, IEquatable<Test>
+            {
+                int IComparable<Test>.CompareTo(Test other) => throw null;
+                public override bool Equals(object other) => throw null;
+                public override int GetHashCode() => 0;
+                public static bool operator <(Test a, Test b) => throw null;
+                public static bool operator <=(Test a, Test b) => throw null;
+                public static bool operator >(Test a, Test b) => throw null;
+                public static bool operator >=(Test a, Test b) => throw null;
+                public static bool operator ==(Test a, Test b) => throw null;
+                public static bool operator !=(Test a, Test b) => throw null;
+
+                public bool Equals(Test other) => ((IComparable<Test>)this).CompareTo(other) == 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("static public bool CompareTo(Test other)")]
     [InlineData("private bool CompareTo(Test other)")]
