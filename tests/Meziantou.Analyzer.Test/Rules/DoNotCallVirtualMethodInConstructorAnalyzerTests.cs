@@ -170,6 +170,32 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzerTests
     }
 
     [Fact]
+    public Task CtorWithBaseMemberAccess()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Base
+            {
+                public virtual void A() { }
+                public virtual int P => 0;
+                public virtual event System.Action E;
+            }
+
+            class Derived : Base
+            {
+                Derived()
+                {
+                    base.A();
+                    _ = base.P;
+                    base.E += A;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CtorWithVirtualPropertyReferenceInNameOf()
     {
         var test = CreateTest();

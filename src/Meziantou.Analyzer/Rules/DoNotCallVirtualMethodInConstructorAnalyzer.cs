@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.CSharp;
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -89,7 +91,8 @@ public sealed class DoNotCallVirtualMethodInConstructorAnalyzer : DiagnosticAnal
         if (operation is null)
             return false;
 
-        return operation is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance;
+        // The members accessed with 'base' are not called virtually (base.A(), base.P)
+        return operation is IInstanceReferenceOperation i && i.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance && !i.Syntax.IsKind(SyntaxKind.BaseExpression);
     }
 
     private static bool IsInDelegate(IOperation? operation)
