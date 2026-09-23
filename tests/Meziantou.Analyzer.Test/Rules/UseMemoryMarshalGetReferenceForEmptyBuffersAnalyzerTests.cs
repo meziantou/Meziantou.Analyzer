@@ -330,4 +330,55 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ReturnInNonRefNestedFunctionOfRefReturningMethod_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                static byte[] _data = new byte[1];
+
+                ref byte Test()
+                {
+                    Func<byte[], byte> lambda = a => { return a[0]; };
+                    Func<byte[], byte> expressionLambda = a => a[0];
+                    byte Local(Span<byte> span) { return span[0]; }
+                    return ref _data[1];
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RefReturnInLocalFunctionOfNonRefReturningMethod_ReportsDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class C
+            {
+                void Test()
+                {
+                    ref byte Local(Span<byte> span) { return ref {|MA0212:span[0]|}; }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class C
+            {
+                void Test()
+                {
+                    ref byte Local(Span<byte> span) { return ref System.Runtime.InteropServices.MemoryMarshal.GetReference(span); }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

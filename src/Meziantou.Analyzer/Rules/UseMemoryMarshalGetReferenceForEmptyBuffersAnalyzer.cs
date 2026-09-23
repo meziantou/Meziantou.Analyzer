@@ -67,7 +67,8 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
 
         public void AnalyzeReturn(OperationAnalysisContext context)
         {
-            var returnsByRef = context.ContainingSymbol switch
+            var operation = (IReturnOperation)context.Operation;
+            var returnsByRef = GetContainingFunction(operation, context.ContainingSymbol) switch
             {
                 IMethodSymbol method => method.ReturnsByRef || method.ReturnsByRefReadonly,
                 IPropertySymbol property => property.ReturnsByRef || property.ReturnsByRefReadonly,
@@ -76,11 +77,28 @@ public sealed class UseMemoryMarshalGetReferenceForEmptyBuffersAnalyzer : Diagno
             if (!returnsByRef)
                 return;
 
-            var returnedValue = ((IReturnOperation)context.Operation).ReturnedValue?.UnwrapConversions();
+            var returnedValue = operation.ReturnedValue?.UnwrapConversions();
             if (returnedValue is null)
                 return;
 
             ReportIfMatch(context, returnedValue);
+        }
+
+        // The return statement belongs to the nearest lambda or local function, not to the member that contains it
+        private static ISymbol GetContainingFunction(IOperation operation, ISymbol containingSymbol)
+        {
+            for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+            {
+                switch (parent)
+                {
+                    case IAnonymousFunctionOperation anonymousFunction:
+                        return anonymousFunction.Symbol;
+                    case ILocalFunctionOperation localFunction:
+                        return localFunction.Symbol;
+                }
+            }
+
+            return containingSymbol;
         }
 
         public void AnalyzeArgument(OperationAnalysisContext context)
