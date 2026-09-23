@@ -67,12 +67,12 @@ public sealed class RemoveEmptyBlockAnalyzerTests
     }
 
     [Fact]
-    public Task EmptyElseBlock_FollowedByElseOfOuterIf_NoCodeFix()
+    public Task EmptyElseBlock_FollowedByElseOfOuterIf_AddBraces()
     {
         var test = CreateTest();
 
-        // Removing the empty else block would make the else of the outer if statement bind to the inner if statement
-        const string Code = """
+        // Removing the empty else block without braces would make the else of the outer if statement bind to the inner if statement
+        test.TestCode = """
             class Test
             {
                 void A(bool a, bool b)
@@ -88,17 +88,30 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        test.TestCode = Code;
-        test.FixedCode = Code;
+        test.FixedCode = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                    {
+                        if (b)
+                            A(a, b);
+                    }
+                    else
+                        A(a, b);
+                }
+            }
+            """;
 
         return test.RunAsync();
     }
 
     [Fact]
-    public Task EmptyElseBlock_InLoop_FollowedByElseOfOuterIf_NoCodeFix()
+    public Task EmptyElseBlock_InLoop_FollowedByElseOfOuterIf_AddBraces()
     {
         var test = CreateTest();
-        const string Code = """
+        test.TestCode = """
             class Test
             {
                 void A(bool a, bool b)
@@ -115,8 +128,22 @@ public sealed class RemoveEmptyBlockAnalyzerTests
                 }
             }
             """;
-        test.TestCode = Code;
-        test.FixedCode = Code;
+        test.FixedCode = """
+            class Test
+            {
+                void A(bool a, bool b)
+                {
+                    if (a)
+                        while (b)
+                        {
+                            if (b)
+                                A(a, b);
+                        }
+                    else
+                        A(a, b);
+                }
+            }
+            """;
 
         return test.RunAsync();
     }
