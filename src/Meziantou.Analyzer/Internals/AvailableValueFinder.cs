@@ -91,9 +91,8 @@ internal sealed class AvailableValueFinder(Func<ITypeSymbol, bool> isSearchedTyp
                 return null;
 
             // Quickly skips the types that Roslyn marks as special (System.Object, the primitives, System.String, the collection
-            // interfaces, ...) as none of them can contain the searched type. The upper bound is the highest SpecialType value defined by
-            // the oldest supported Roslyn version; special types added by newer versions are simply not skipped.
-            if ((int)symbol.SpecialType is >= 1 and <= 45)
+            // interfaces, System.Threading.Tasks.Task, ...) as none of them can contain the searched type
+            if (symbol.SpecialType is not SpecialType.None)
                 return null;
 
             if (isIgnoredType is not null && isIgnoredType(symbol))
