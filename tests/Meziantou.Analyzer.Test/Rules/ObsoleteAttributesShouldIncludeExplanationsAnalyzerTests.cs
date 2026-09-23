@@ -352,6 +352,39 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
     }
 
     [Fact]
+    public Task RecordPropertyBackingField_HasMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record Test([field: System.Obsolete("message")] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordProperty_HasMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record Test([property: System.Obsolete("message")] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordStructProperty_HasNoMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record struct Test([property: {|MA0070:System.Obsolete|}] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task HasOnlyNamedArgument()
     {
         var test = CreateTest();
