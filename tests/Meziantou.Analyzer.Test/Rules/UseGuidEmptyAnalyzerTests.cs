@@ -92,4 +92,24 @@ public sealed class UseGuidEmptyAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ShouldNotReportError_ParameterDefaultValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TestClass
+            {
+                void A(System.Guid value = new System.Guid()) { }
+
+                void C()
+                {
+                    void Local(System.Guid value = new System.Guid()) { }
+                    var lambda = (System.Guid value = new System.Guid()) => { };
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
