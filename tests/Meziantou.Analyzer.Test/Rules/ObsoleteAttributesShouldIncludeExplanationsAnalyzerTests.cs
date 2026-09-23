@@ -243,6 +243,36 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
     }
 
     [Fact]
+    public Task PropertyBackingField_HasNoMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                [field: {|MA0070:System.Obsolete|}]
+                public int A { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PropertyBackingField_HasMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                [field: System.Obsolete("message")]
+                public int A { get; set; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Field_MultipleDeclarators_HasNoMessage_ReportsOnce()
     {
         var test = CreateTest();
@@ -305,6 +335,50 @@ public sealed class ObsoleteAttributesShouldIncludeExplanationsAnalyzerTests
         var test = CreateTest();
         test.TestCode = """
             record Test([property: {|MA0070:System.Obsolete|}] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordPropertyBackingField_HasNoMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record Test([field: {|MA0070:System.Obsolete|}] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordPropertyBackingField_HasMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record Test([field: System.Obsolete("message")] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordProperty_HasMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record Test([property: System.Obsolete("message")] int A);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordStructProperty_HasNoMessage()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            record struct Test([property: {|MA0070:System.Obsolete|}] int A);
             """;
 
         return test.RunAsync();
