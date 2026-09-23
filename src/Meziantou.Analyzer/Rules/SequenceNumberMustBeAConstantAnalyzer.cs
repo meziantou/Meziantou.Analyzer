@@ -65,20 +65,31 @@ public sealed class SequenceNumberMustBeAConstantAnalyzer : DiagnosticAnalyzer
             {
                 if (RenderTreeMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 1 && targetMethod.Parameters[0].Type.IsInt32() && targetMethod.Parameters[0].Name == "sequence")
                 {
-                    if (IsValidExpression(operation.Arguments[0].Value))
-                        return;
-
-                    context.ReportDiagnostic(Rule, operation.Arguments[0].Value);
+                    AnalyzeSequenceArgument(context, operation, sequenceParameterOrdinal: 0);
                 }
             }
             else if (targetMethod.ContainingType.IsEqualTo(WebRenderTreeBuilderExtensionsSymbol))
             {
                 if (WebRenderTreeBuilderExtensionsSymbolMethodNames.Contains(targetMethod.Name) && targetMethod.Parameters.Length >= 2 && targetMethod.Parameters[1].Type.IsInt32() && targetMethod.Parameters[1].Name == "sequence")
                 {
-                    if (IsValidExpression(operation.Arguments[1].Value))
-                        return;
+                    AnalyzeSequenceArgument(context, operation, sequenceParameterOrdinal: 1);
+                }
+            }
 
-                    context.ReportDiagnostic(Rule, operation.Arguments[1].Value);
+            // The arguments are in the order they are written, which is not the order of the parameters when they are named
+            static void AnalyzeSequenceArgument(OperationAnalysisContext context, IInvocationOperation operation, int sequenceParameterOrdinal)
+            {
+                foreach (var argument in operation.Arguments)
+                {
+                    if (argument.Parameter?.Ordinal != sequenceParameterOrdinal)
+                        continue;
+
+                    if (!IsValidExpression(argument.Value))
+                    {
+                        context.ReportDiagnostic(Rule, argument.Value);
+                    }
+
+                    return;
                 }
             }
 

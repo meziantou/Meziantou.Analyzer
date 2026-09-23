@@ -42,6 +42,8 @@ public sealed class SequenceNumberMustBeAConstantAnalyzerTests
     [InlineData("builder.AddEventPreventDefaultAttribute(param, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventPreventDefaultAttribute((int)(long)param, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventPreventDefaultAttribute((int)longparam, eventName: default(string), value: false)")]
+    [InlineData("builder.AddContent(textContent: \"a\" + param, sequence: 0)")]
+    [InlineData("builder.AddEventPreventDefaultAttribute(eventName: \"a\" + param, sequence: 0, value: false)")]
     public Task Valid(string code)
     {
         var test = CreateTest();
@@ -88,6 +90,8 @@ public sealed class SequenceNumberMustBeAConstantAnalyzerTests
     [InlineData("builder.AddEventStopPropagationAttribute({|MA0123:value++|}, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventStopPropagationAttribute({|MA0123:param++|}, eventName: default(string), value: false)")]
     [InlineData("builder.AddEventStopPropagationAttribute({|MA0123:(int)longparam++|}, eventName: default(string), value: false)")]
+    [InlineData("builder.AddContent(textContent: default(string), sequence: {|MA0123:value++|})")]
+    [InlineData("builder.AddEventStopPropagationAttribute(eventName: default(string), sequence: {|MA0123:value++|}, value: false)")]
     public Task Variable(string code)
     {
         var test = CreateTest();
