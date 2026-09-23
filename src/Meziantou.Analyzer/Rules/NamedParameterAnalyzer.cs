@@ -115,13 +115,14 @@ public sealed partial class NamedParameterAnalyzer : DiagnosticAnalyzer
                 }
 
                 // Exclude in some methods such as ConfigureAwait(false)
-                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
+                // A target-typed new expression (new(...)) is an invocation on its own, so the exclusions of the enclosing invocation don't apply to its arguments
+                var invocationExpression = argument.FirstAncestorOrSelf<ExpressionSyntax>(t => t.IsKind(SyntaxKind.InvocationExpression) || t.IsKind(SyntaxKind.ObjectCreationExpression) || t.IsKind(SyntaxKind.ImplicitObjectCreationExpression) || t.IsKind(SyntaxKind.ElementAccessExpression));
                 if (invocationExpression is not null)
                 {
                     BaseArgumentListSyntax? argumentList = invocationExpression switch
                     {
                         InvocationExpressionSyntax invocationExpressionSyntax => invocationExpressionSyntax.ArgumentList,
-                        ObjectCreationExpressionSyntax objectCreationExpressionSyntax => objectCreationExpressionSyntax.ArgumentList,
+                        BaseObjectCreationExpressionSyntax objectCreationExpressionSyntax => objectCreationExpressionSyntax.ArgumentList,
                         ElementAccessExpressionSyntax elementAccessExpressionSyntax => elementAccessExpressionSyntax.ArgumentList,
                         _ => null,
                     };

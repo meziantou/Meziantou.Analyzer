@@ -668,6 +668,66 @@ public sealed class NamedParameterAnalyzerTests
     }
 
     [Fact]
+    public Task ImplicitCtor_InExcludedMethod_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test(System.Collections.Generic.List<TypeName> list)
+                {
+                    list.Add(new({|MA0003:true|}));
+                }
+
+                TypeName(bool value) { }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test(System.Collections.Generic.List<TypeName> list)
+                {
+                    list.Add(new(value: true));
+                }
+
+                TypeName(bool value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ImplicitCtor_ExcludedCtor_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    M(new("key", null), {|MA0003:true|});
+                }
+
+                void M(System.Collections.Generic.KeyValuePair<string, object> item, bool value) { }
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    M(new("key", null), value: true);
+                }
+
+                void M(System.Collections.Generic.KeyValuePair<string, object> item, bool value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ImplicitCtor_ShouldUseTheRightParameterName()
     {
         var test = CreateTest();
