@@ -171,4 +171,39 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task NotStaticExternMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                [UnsafeAccessor(UnsafeAccessorKind.Field, Name = "a")]
+                extern ref int {|MA0145:A|}(Sample s);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalFunction_Constructor_WithoutNameParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void A()
+                {
+                    [UnsafeAccessor(UnsafeAccessorKind.Constructor)]
+                    static extern Sample Create();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

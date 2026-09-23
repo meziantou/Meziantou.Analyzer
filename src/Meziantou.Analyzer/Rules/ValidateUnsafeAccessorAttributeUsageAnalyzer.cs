@@ -67,20 +67,21 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzer : DiagnosticAna
         if (attribute.ConstructorArguments[0].Value is not int accessorKindInt)
             return;
 
-        if (!methodSymbol.IsExtern)
+        if (!methodSymbol.IsExtern || !methodSymbol.IsStatic)
         {
             diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must be extern static"]);
             return;
         }
 
+        // The name of a constructor accessor is not used, so it does not need to be set on local functions
+        var accessorKind = (UnsafeAccessorKind)accessorKindInt;
         var explicitName = GetName(attribute);
-        if (explicitName is null && methodSymbol.MethodKind is MethodKind.LocalFunction)
+        if (explicitName is null && methodSymbol.MethodKind is MethodKind.LocalFunction && accessorKind is not UnsafeAccessorKind.Constructor)
         {
             diagnosticReporter.ReportDiagnostic(RuleNameMustBeSet, methodSymbol);
             return;
         }
 
-        var accessorKind = (UnsafeAccessorKind)accessorKindInt;
         if (methodSymbol.Parameters.IsEmpty && accessorKind is UnsafeAccessorKind.Field or UnsafeAccessorKind.StaticField or UnsafeAccessorKind.Method or UnsafeAccessorKind.StaticMethod)
         {
             diagnosticReporter.ReportDiagnostic(RuleInvalidSignature, methodSymbol, messageArgs: ["method must have at least one parameter"]);
