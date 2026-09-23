@@ -216,4 +216,90 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task MethodFixer_ConditionalExpression_OnlyReplacesNull()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> A(bool a) { {|MA0022:return a ? null : Task.FromResult(1);|} }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task<int> A(bool a) { return a ? Task.FromResult(0) : Task.FromResult(1); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MethodFixer_SwitchExpression_OnlyReplacesNull()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A(int value) => {|MA0022:value switch { 1 => A(0), 2 => null, _ => default }|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A(int value) => value switch { 1 => A(0), 2 => Task.CompletedTask, _ => Task.CompletedTask };
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MethodFixer_ConditionalAccess_NoFix()
+    {
+        const string Code = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A() { {|MA0022:return ((Test)null)?.A();|} }
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Code;
+        test.FixedCode = Code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AsyncMethodReturningTaskOfTask_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task<Task> A()
+                {
+                    await Task.Yield();
+                    return null;
+                }
+
+                void B()
+                {
+                    System.Func<Task<Task>> lambda = async () => null;
+                    async Task<Task> Local() => null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

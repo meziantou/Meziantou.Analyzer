@@ -46,7 +46,7 @@ public sealed class ReturnTaskFromResultInsteadOfReturningNullAnalyzer : Diagnos
 
             // Find the owning symbol and check if it returns a task and doesn't use the async keyword
             var methodSymbol = ReturnTaskFromResultInsteadOfReturningNullAnalyzerCommon.FindContainingMethod(operation, context.CancellationToken);
-            if (methodSymbol is null || !IsTaskType(methodSymbol.ReturnType))
+            if (methodSymbol is null || methodSymbol.IsAsync || !IsTaskType(methodSymbol.ReturnType))
                 return;
 
             context.ReportDiagnostic(Rule, operation);
