@@ -434,4 +434,40 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task RecordPositionalParameter_ReportsOnce()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record Sample({|MA0016:System.Collections.Generic.List<int>|} Items);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordStructPositionalParameter_ReportsOnce()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record struct Sample({|MA0016:System.Collections.Generic.List<int>|} Items);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RecordPositionalParameter_ExplicitProperty()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public record Sample({|MA0016:System.Collections.Generic.List<int>|} Items)
+            {
+                public {|MA0016:System.Collections.Generic.List<int>|} Items { get; } = Items;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

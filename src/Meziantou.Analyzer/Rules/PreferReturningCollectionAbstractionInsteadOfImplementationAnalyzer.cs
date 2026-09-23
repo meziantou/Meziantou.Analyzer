@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -100,6 +102,17 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
             return false;
         }
 
+        private static bool IsRecordPositionalProperty(IPropertySymbol property, CancellationToken cancellationToken)
+        {
+            foreach (var reference in property.DeclaringSyntaxReferences)
+            {
+                if (reference.GetSyntax(cancellationToken) is ParameterSyntax)
+                    return true;
+            }
+
+            return false;
+        }
+
         public void AnalyzeSymbol(SymbolAnalysisContext context)
         {
             if (!context.Symbol.IsVisibleOutsideOfAssembly())
@@ -131,7 +144,9 @@ public sealed class PreferReturningCollectionAbstractionInsteadOfImplementationA
                     if (IsXmlSerializableProperty(propertySymbol))
                         break;
 
-                    if (!IsValidType(propertySymbol.Type))
+                    // The property of a positional parameter of a record is declared by the parameter of the primary constructor,
+                    // which is already reported on its type
+                    if (!IsValidType(propertySymbol.Type) && !IsRecordPositionalProperty(propertySymbol, context.CancellationToken))
                     {
                         context.ReportDiagnostic(Rule, propertySymbol, DiagnosticPropertyReportOptions.ReportOnReturnType);
                     }
