@@ -138,4 +138,122 @@ public sealed class EmbedCaughtExceptionAsInnerExceptionAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task InCaughtExceptionWithoutInnerException_DerivedException_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw {|MA0054:new System.InvalidOperationException("m")|};
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw new System.InvalidOperationException("m", ex);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InCaughtExceptionWithoutInnerException_ThrowExpression_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public string A(string value)
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        return value ?? throw {|MA0054:new System.InvalidOperationException("m")|};
+                    }
+
+                    return value;
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public string A(string value)
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        return value ?? throw new System.InvalidOperationException("m", ex);
+                    }
+
+                    return value;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InCaughtExceptionWithoutInnerException_NamedArgumentsOutOfOrder_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw {|MA0054:new System.ArgumentException(paramName: "p", message: "m")|};
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        throw new System.ArgumentException(paramName: "p", message: "m", innerException: ex);
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
