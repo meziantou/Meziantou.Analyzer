@@ -1,3 +1,6 @@
+using System.Collections.Concurrent;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace Meziantou.Analyzer.Internals;
 
 internal sealed class OverloadFinder(Compilation compilation)
@@ -13,6 +16,7 @@ internal sealed class OverloadFinder(Compilation compilation)
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
     private readonly INamedTypeSymbol? _halfSymbol = compilation.GetTypeByMetadataName("System.Half");
     private readonly Lazy<Dictionary<string, List<IMethodSymbol>>> _extensionMethodsByName = new(() => CreateExtensionMethodsByName(compilation));
+    private readonly ConcurrentDictionary<(SyntaxTree Tree, int ScopeStart, ITypeSymbol Container, string Name, bool IncludeReducedExtensionMethods), ImmutableArray<ISymbol>> _lookupCache = new();
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
     {
@@ -671,10 +675,10 @@ internal sealed class OverloadFinder(Compilation compilation)
             var semanticModel = compilation.GetSemanticModel(options.SyntaxNode.SyntaxTree);
             var position = options.SyntaxNode.GetLocation().SourceSpan.End;
 
-            AddSymbols(semanticModel.LookupSymbols(position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
+            AddSymbols(LookupSymbols(semanticModel, options.SyntaxNode, position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
             if (reducedReceiverType is not null)
             {
-                AddSymbols(semanticModel.LookupSymbols(position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
+                AddSymbols(LookupSymbols(semanticModel, options.SyntaxNode, position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
                 AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
             }
 
@@ -693,6 +697,20 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
 
         return results;
+    }
+
+    // A member lookup only depends on the enclosing type declaration (accessibility, imported namespaces), the container and the name
+    private ImmutableArray<ISymbol> LookupSymbols(SemanticModel semanticModel, SyntaxNode node, int position, ITypeSymbol container, string name, bool includeReducedExtensionMethods)
+    {
+        var scopeStart = node.FirstAncestorOrSelf<BaseTypeDeclarationSyntax>()?.SpanStart ?? -1;
+        var key = (node.SyntaxTree, scopeStart, container, name, includeReducedExtensionMethods);
+        if (!_lookupCache.TryGetValue(key, out var symbols))
+        {
+            symbols = semanticModel.LookupSymbols(position, container, name, includeReducedExtensionMethods);
+            _lookupCache.TryAdd(key, symbols);
+        }
+
+        return symbols;
     }
 
     /// <summary>

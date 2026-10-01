@@ -1953,4 +1953,188 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionMethod_ImportedInOneNamespaceBlockOfTheFile()
+    {
+        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        var test = CreateTest();
+        test.TestCode = """
+            namespace A
+            {
+                using Ext;
+
+                class TestA
+                {
+                    public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                    {
+                        {|MA0040:sample.Run()|};
+                        {|MA0040:sample.Run()|};
+                    }
+                }
+            }
+
+            namespace B
+            {
+                class TestB
+                {
+                    public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                    {
+                        sample.Run();
+                        sample.Run();
+                    }
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_ImportedInOneFileOfTheCompilation()
+    {
+        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        var test = CreateTest();
+        test.TestState.Sources.Add(("File1.cs", """
+            using Ext;
+
+            class TestA
+            {
+                public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    {|MA0040:sample.Run()|};
+                    {|MA0040:sample.Run()|};
+                }
+            }
+            """));
+        test.TestState.Sources.Add(("File2.cs", """
+            using Bar;
+
+            class TestB
+            {
+                public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample.Run();
+                    sample.Run();
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+
+            namespace Bar
+            {
+                public static class Unrelated
+                {
+                }
+            }
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateOverload_OnlyReportedWhereAccessible()
+    {
+        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        var test = CreateTest();
+        test.TestCode = """
+            public class Sample
+            {
+                public void Run() => throw null;
+                private void Run(System.Threading.CancellationToken cancellationToken) => throw null;
+
+                public void M(Sample other, System.Threading.CancellationToken cancellationToken)
+                {
+                    {|MA0040:other.Run()|};
+                    {|MA0040:other.Run()|};
+                }
+
+                private sealed class Nested
+                {
+                    public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                    {
+                        {|MA0040:sample.Run()|};
+                        {|MA0040:sample.Run()|};
+                    }
+                }
+            }
+
+            class Test
+            {
+                public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                {
+                    sample.Run();
+                    sample.Run();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_ImportedInNamespaceBlockAfterTopLevelStatements()
+    {
+        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            var cancellationToken = System.Threading.CancellationToken.None;
+            new Sample().Run();
+            new Sample().Run();
+
+            namespace A
+            {
+                using Ext;
+
+                class TestA
+                {
+                    public void M(Sample sample, System.Threading.CancellationToken cancellationToken)
+                    {
+                        {|MA0040:sample.Run()|};
+                        {|MA0040:sample.Run()|};
+                    }
+                }
+            }
+
+            public class Sample
+            {
+                public void Run() => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Run(this Sample sample, System.Threading.CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
