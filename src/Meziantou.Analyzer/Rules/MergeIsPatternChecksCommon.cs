@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
@@ -33,6 +34,46 @@ internal static class MergeIsPatternChecksCommon
                 mergeTarget = null!;
                 return false;
         }
+    }
+
+    // A variable cannot be declared under a 'not' pattern or an 'or' pattern (CS8780)
+    public static bool CanMergePattern(SyntaxKind logicalExpressionKind, PatternSyntax pattern)
+    {
+        if (ContainsNotPatternWithVariableDesignation(pattern))
+            return false;
+
+        if (logicalExpressionKind is SyntaxKind.LogicalOrExpression && ContainsVariableDesignation(pattern))
+            return false;
+
+        return true;
+    }
+
+    private static bool ContainsNotPatternWithVariableDesignation(PatternSyntax pattern)
+    {
+        if (pattern is UnaryPatternSyntax unaryPattern && ContainsVariableDesignation(unaryPattern.Pattern))
+            return true;
+
+        foreach (var child in pattern.ChildNodes())
+        {
+            if (child is PatternSyntax childPattern && ContainsNotPatternWithVariableDesignation(childPattern))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool ContainsVariableDesignation(SyntaxNode node)
+    {
+        if (node is SingleVariableDesignationSyntax)
+            return true;
+
+        foreach (var child in node.ChildNodes())
+        {
+            if (ContainsVariableDesignation(child))
+                return true;
+        }
+
+        return false;
     }
 
     public static bool AreSameMergeTarget(MergeTarget left, MergeTarget right)

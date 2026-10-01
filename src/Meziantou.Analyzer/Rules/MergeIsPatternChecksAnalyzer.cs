@@ -138,48 +138,11 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
 
         foreach (var candidate in mergeCandidates)
         {
-            if (candidate.Pattern is not null && ContainsNotPatternWithVariableDesignation(candidate.Pattern))
+            if (candidate.Pattern is not null && !MergeIsPatternChecksCommon.CanMergePattern(logicalExpressionKind, candidate.Pattern))
                 return false;
         }
 
-        if (logicalExpressionKind is SyntaxKind.LogicalOrExpression)
-        {
-            foreach (var candidate in mergeCandidates)
-            {
-                if (candidate.Pattern is not null && ContainsVariableDesignation(candidate.Pattern))
-                    return false;
-            }
-        }
-
         return true;
-    }
-
-    private static bool ContainsNotPatternWithVariableDesignation(PatternSyntax pattern)
-    {
-        if (pattern is UnaryPatternSyntax unaryPattern && ContainsVariableDesignation(unaryPattern.Pattern))
-            return true;
-
-        foreach (var child in pattern.ChildNodes())
-        {
-            if (child is PatternSyntax childPattern && ContainsNotPatternWithVariableDesignation(childPattern))
-                return true;
-        }
-
-        return false;
-    }
-
-    private static bool ContainsVariableDesignation(SyntaxNode node)
-    {
-        if (node is SingleVariableDesignationSyntax)
-            return true;
-
-        foreach (var child in node.ChildNodes())
-        {
-            if (ContainsVariableDesignation(child))
-                return true;
-        }
-
-        return false;
     }
 
     private readonly record struct MergeCandidate(MergeIsPatternChecksCommon.MergeTarget Target, PatternSyntax? Pattern);
