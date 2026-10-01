@@ -146,6 +146,75 @@ public sealed class MergeIsPatternChecksAnalyzerTests
     }
 
     [Fact]
+    public Task LogicalOr_NotPatternWithDeclaration_DoNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var values = new System.Collections.Generic.Dictionary<int, object?>();
+            if (!values.TryGetValue(0, out var value) || value is null || value is not string text)
+                return;
+
+            _ = text;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LogicalOr_DeclarationPatternNotMergedWithOtherCandidates()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            object? obj = null;
+            _ = {|MA0194:value is 1 || value is 2 || obj is null || obj is not string text|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            object? obj = null;
+            _ = value is 1 or 2 || obj is null || obj is not string text;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LogicalAnd_NotPatternWithDeclarationNotMergedWithOtherCandidates()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            object? obj = null;
+            _ = {|MA0194:value is not 1 && value is not 2 && obj is not null && obj is not string text|};
+            """;
+        test.FixedCode = """
+            var value = 0;
+            object? obj = null;
+            _ = value is not 1 and not 2 && obj is not null && obj is not string text;
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task DeclarationPatternInOtherLogicalExpression_NotMerged()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = 0;
+            object? obj = null;
+            _ = ({|MA0194:value is 1 || value is 2|}) && (obj is null || obj is not string text);
+            """;
+        test.FixedCode = """
+            var value = 0;
+            object? obj = null;
+            _ = (value is 1 or 2) && (obj is null || obj is not string text);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task LogicalOr_DeclarationPattern_DoNotReport()
     {
         var test = CreateTest();

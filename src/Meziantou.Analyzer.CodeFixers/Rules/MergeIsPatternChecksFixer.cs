@@ -275,6 +275,12 @@ public sealed class MergeIsPatternChecksFixer : CodeFixProvider
 
     private static bool CanMergeCandidates(SyntaxKind logicalExpressionKind, List<MergeCandidate> mergeCandidates)
     {
+        foreach (var candidate in mergeCandidates)
+        {
+            if (!MergeIsPatternChecksCommon.CanMergePattern(logicalExpressionKind, candidate.Pattern))
+                return false;
+        }
+
         if (logicalExpressionKind is not SyntaxKind.LogicalAndExpression)
             return true;
 
