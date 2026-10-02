@@ -107,7 +107,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeConstructor, OperationKind.ObjectCreation);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            ctx.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(operationContext => analyzerContext.AnalyzeInvocation(operationContext, lookupCache), OperationKind.Invocation);
+            }, SymbolKind.NamedType);
 #if ROSLYN_4_14_OR_GREATER
             ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
 #endif
@@ -163,7 +167,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public void AnalyzeInvocation(OperationAnalysisContext ctx)
+        public void AnalyzeInvocation(OperationAnalysisContext ctx, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)ctx.Operation;
             if (HasEqualityComparerArgument(operation.Arguments))
@@ -197,7 +201,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (QueryableType is not null && method.ContainingType.IsEqualTo(QueryableType))
                 return;
 
-            if (HasOverloadWithComparer(ctx, operation, out var namespaceToImport))
+            if (HasOverloadWithComparer(ctx, operation, lookupCache, out var namespaceToImport))
             {
                 if (IsInvocationReportSuppressedByOrdinalOption(ctx, operation, method))
                     return;
@@ -253,11 +257,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         /// parameter. An overload that does not require a new using directive is preferred. <paramref name="namespaceToImport"/> is set when the
         /// overload is an extension method declared in a namespace that is not imported.
         /// </summary>
-        private bool HasOverloadWithComparer(OperationAnalysisContext context, IInvocationOperation operation, out string? namespaceToImport)
+        private bool HasOverloadWithComparer(OperationAnalysisContext context, IInvocationOperation operation, OverloadLookupCache lookupCache, out string? namespaceToImport)
         {
             namespaceToImport = null;
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
-            var options = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces };
+            var options = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache };
 
             var found = false;
             foreach (var comparerType in (ReadOnlySpan<INamedTypeSymbol?>)[EqualityComparerStringType, ComparerStringType])

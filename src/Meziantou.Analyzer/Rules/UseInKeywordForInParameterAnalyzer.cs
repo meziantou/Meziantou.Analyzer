@@ -39,11 +39,15 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(context =>
         {
             var overloadFinder = new OverloadFinder(context.Compilation);
-            context.RegisterOperationAction(context => AnalyzeArgument(context, overloadFinder), OperationKind.Argument);
+            context.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(operationContext => AnalyzeArgument(operationContext, overloadFinder, lookupCache), OperationKind.Argument);
+            }, SymbolKind.NamedType);
         });
     }
 
-    private static void AnalyzeArgument(OperationAnalysisContext context, OverloadFinder overloadFinder)
+    private static void AnalyzeArgument(OperationAnalysisContext context, OverloadFinder overloadFinder, OverloadLookupCache lookupCache)
     {
         var operation = (IArgumentOperation)context.Operation;
         if (operation.Parameter is null)
@@ -72,7 +76,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
 
         // The arguments are in source order, which differs from the parameter order when named arguments are reordered
         var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
-        if (FindInOverloadWithEquivalentParameters(invocationOperation, operation.Parameter.Ordinal, overloadFinder, includeExtensionMethodsFromNotImportedNamespaces) is { } overload)
+        if (FindInOverloadWithEquivalentParameters(invocationOperation, operation.Parameter.Ordinal, overloadFinder, lookupCache, includeExtensionMethodsFromNotImportedNamespaces) is { } overload)
         {
             var properties = ImmutableDictionary<string, string?>.Empty;
             if (includeExtensionMethodsFromNotImportedNamespaces && overloadFinder.GetNamespaceToImport(overload, invocationOperation.Syntax) is { } namespaceToImport)
@@ -92,7 +96,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
         return UseInKeywordForInParameterCommon.CanBePassedByReference(operation.Value);
     }
 
-    private static IMethodSymbol? FindInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int parameterIndex, OverloadFinder overloadFinder, bool includeExtensionMethodsFromNotImportedNamespaces)
+    private static IMethodSymbol? FindInOverloadWithEquivalentParameters(IInvocationOperation invocationOperation, int parameterIndex, OverloadFinder overloadFinder, OverloadLookupCache lookupCache, bool includeExtensionMethodsFromNotImportedNamespaces)
     {
         var targetMethod = invocationOperation.TargetMethod;
         if (targetMethod.ContainingType is null)
@@ -118,6 +122,7 @@ public sealed class UseInKeywordForInParameterAnalyzer : DiagnosticAnalyzer
             AllowInModifierCompatibility: true,
             AllowInterfaceConversions: false,
             IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces,
+            LookupCache: lookupCache,
             ShouldCheckMethod: method =>
             {
                 if (method.Parameters.Length != targetMethod.Parameters.Length)

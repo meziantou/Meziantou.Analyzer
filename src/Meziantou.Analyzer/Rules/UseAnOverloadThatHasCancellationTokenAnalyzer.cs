@@ -63,8 +63,12 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (analyzerContext.CancellationTokenSymbol is null)
                 return;
 
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeLoop, OperationKind.Loop);
+            ctx.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(context => analyzerContext.AnalyzeInvocation(context, lookupCache), OperationKind.Invocation);
+                symbolContext.RegisterOperationAction(context => analyzerContext.AnalyzeLoop(context, lookupCache), OperationKind.Loop);
+            }, SymbolKind.NamedType);
         });
     }
 
@@ -132,7 +136,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
         /// <param name="NamespaceToImport">The namespace to import to call the overload, when it is an extension method declared in a namespace that is not imported.</param>
         private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, bool HasEnumeratorCancellationAttribute, string? NamespaceToImport = null);
 
-        private bool HasAnOverloadWithCancellationToken(OperationAnalysisContext context, IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
+        private bool HasAnOverloadWithCancellationToken(OperationAnalysisContext context, IInvocationOperation operation, OverloadLookupCache lookupCache, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
             parameterInfo = default;
             var method = operation.TargetMethod;
@@ -145,7 +149,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var allowOptionalParameters = context.Options.GetConfigurationValue(operation, AllowOverloadsWithOptionalParametersConfiguration);
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                 || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [CancellationTokenSymbol]);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [CancellationTokenSymbol]);
             if (overload is not null)
             {
                 var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;
@@ -188,13 +192,13 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return parameterSymbol.HasAttribute(EnumeratorCancellationAttributeSymbol, inherits: false);
         }
 
-        public void AnalyzeInvocation(OperationAnalysisContext context)
+        public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (HasExplicitCancellationTokenArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithCancellationToken(context, operation, out var parameterInfo))
+            if (!HasAnOverloadWithCancellationToken(context, operation, lookupCache, out var parameterInfo))
                 return;
 
             if (IsExcluded(operation.TargetMethod))
@@ -231,7 +235,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             return context.Options.GetConfigurationValue(operation, configuration);
         }
 
-        public void AnalyzeLoop(OperationAnalysisContext context)
+        public void AnalyzeLoop(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             if (context.Operation is not IForEachLoopOperation op)
                 return;
@@ -261,7 +265,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     return;
 
                 // Already handled by AnalyzeInvocation
-                if (HasAnOverloadWithCancellationToken(context, invocation, out var invocationParameterInfo) &&
+                if (HasAnOverloadWithCancellationToken(context, invocation, lookupCache, out var invocationParameterInfo) &&
                     (invocationParameterInfo.NamespaceToImport is null || IsOverloadIncluded(context, invocation, invocationParameterInfo, hasAvailableCancellationTokens: _cancellationTokenFinder.FindPaths(invocation, context.CancellationToken).Length > 0)))
                 {
                     return;

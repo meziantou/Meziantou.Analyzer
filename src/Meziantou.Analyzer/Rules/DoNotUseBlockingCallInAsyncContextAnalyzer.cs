@@ -50,7 +50,11 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var analyzerContext = new Context(ctx.Compilation);
             if (analyzerContext.IsValid)
             {
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+                ctx.RegisterSymbolStartAction(symbolContext =>
+                {
+                    var lookupCache = new OverloadLookupCache();
+                    symbolContext.RegisterOperationAction(operationContext => analyzerContext.AnalyzeInvocation(operationContext, lookupCache), OperationKind.Invocation);
+                }, SymbolKind.NamedType);
                 ctx.RegisterOperationAction(analyzerContext.AnalyzePropertyReference, OperationKind.PropertyReference);
                 ctx.RegisterOperationAction(analyzerContext.AnalyzeUsing, OperationKind.Using);
                 ctx.RegisterOperationAction(analyzerContext.AnalyzeUsingDeclaration, OperationKind.UsingDeclaration);
@@ -205,7 +209,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
         public bool IsValid => TaskSymbol is not null && TaskOfTSymbol is not null && TaskAwaiterSymbol is not null;
 
-        internal void AnalyzeInvocation(OperationAnalysisContext context)
+        internal void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
 
@@ -240,7 +244,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             var sqliteSpecialCasesEnabled = IsSqliteSpecialCasesEnabled(context, operation);
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesInAsyncContextConfiguration)
                 || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
-            var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, includeExtensionMethodsFromNotImportedNamespaces, context.CancellationToken, out var diagnosticMessage);
+            var result = FindAsyncEquivalent(operation, sqliteSpecialCasesEnabled, includeExtensionMethodsFromNotImportedNamespaces, lookupCache, context.CancellationToken, out var diagnosticMessage);
             if (diagnosticMessage is not null)
             {
                 ReportDiagnosticIfNeeded(context, diagnosticMessage.CreateProperties(), operation, diagnosticMessage.DiagnosticMessage, asyncContextKind, requiresNamespaceImport: diagnosticMessage.NamespaceToImport is not null);
@@ -256,7 +260,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         /// Searches for an async equivalent of the called method, visible from the call site. <paramref name="data"/>
         /// is set when the result is <see cref="AsyncEquivalentSearchResult.Found"/>.
         /// </summary>
-        private AsyncEquivalentSearchResult FindAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, bool includeExtensionMethodsFromNotImportedNamespaces, CancellationToken cancellationToken, out DiagnosticData? data)
+        private AsyncEquivalentSearchResult FindAsyncEquivalent(IInvocationOperation operation, bool sqliteSpecialCasesEnabled, bool includeExtensionMethodsFromNotImportedNamespaces, OverloadLookupCache lookupCache, CancellationToken cancellationToken, out DiagnosticData? data)
         {
             data = null;
             var targetMethod = operation.TargetMethod;
@@ -366,10 +370,10 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
                 // as the code fix must add a using directive to call them
                 IMethodSymbol? notImportedAsyncEquivalentMethod = null;
                 string? namespaceToImport = null;
-                var asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name, includeExtensionMethodsFromNotImportedNamespaces, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
+                var asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name, includeExtensionMethodsFromNotImportedNamespaces, lookupCache, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
                 if (asyncEquivalentMethod is null && !targetMethod.Name.EndsWith("Async", StringComparison.Ordinal))
                 {
-                    asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name + "Async", includeExtensionMethodsFromNotImportedNamespaces, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
+                    asyncEquivalentMethod = FindPotentialAsyncEquivalent(operation, targetMethod, targetMethod.Name + "Async", includeExtensionMethodsFromNotImportedNamespaces, lookupCache, ref notImportedAsyncEquivalentMethod, ref namespaceToImport);
                 }
 
                 if (asyncEquivalentMethod is null)
@@ -519,13 +523,14 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         /// is set, the first async equivalent that requires to import its namespace is set to <paramref name="notImportedMethod"/>, and its
         /// namespace to <paramref name="namespaceToImport"/>, if they are not already set.
         /// </summary>
-        private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName, bool includeExtensionMethodsFromNotImportedNamespaces, ref IMethodSymbol? notImportedMethod, ref string? namespaceToImport)
+        private IMethodSymbol? FindPotentialAsyncEquivalent(IInvocationOperation operation, IMethodSymbol targetMethod, string methodName, bool includeExtensionMethodsFromNotImportedNamespaces, OverloadLookupCache lookupCache, ref IMethodSymbol? notImportedMethod, ref string? namespaceToImport)
         {
             var options = new OverloadOptions(
                 AllowOptionalParameters: false,
                 IncludeExtensionsMethods: true,
                 SyntaxNode: operation.Syntax,
-                IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces);
+                IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces,
+                LookupCache: lookupCache);
 
             // When the method name is the same as the original method, and the original is non-generic
             // while a candidate is generic, the compiler will always prefer the non-generic original

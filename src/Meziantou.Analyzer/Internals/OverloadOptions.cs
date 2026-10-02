@@ -12,4 +12,5 @@ internal record struct OverloadOptions(
     bool AllowInterfaceConversions = true,
     bool AllowBaseTypeConversions = true,
     Func<IMethodSymbol, bool>? ShouldCheckMethod = null,
-    bool IncludeExtensionMethodsFromNotImportedNamespaces = false);
+    bool IncludeExtensionMethodsFromNotImportedNamespaces = false,
+    OverloadLookupCache? LookupCache = null);

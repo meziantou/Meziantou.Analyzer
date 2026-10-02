@@ -671,10 +671,10 @@ internal sealed class OverloadFinder(Compilation compilation)
             var semanticModel = compilation.GetSemanticModel(options.SyntaxNode.SyntaxTree);
             var position = options.SyntaxNode.GetLocation().SourceSpan.End;
 
-            AddSymbols(semanticModel.LookupSymbols(position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
+            AddSymbols(LookupSymbols(semanticModel, options, position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
             if (reducedReceiverType is not null)
             {
-                AddSymbols(semanticModel.LookupSymbols(position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
+                AddSymbols(LookupSymbols(semanticModel, options, position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
                 AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
             }
 
@@ -693,6 +693,14 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
 
         return results;
+    }
+
+    private static ImmutableArray<ISymbol> LookupSymbols(SemanticModel semanticModel, OverloadOptions options, int position, ITypeSymbol container, string name, bool includeReducedExtensionMethods)
+    {
+        if (options.LookupCache is null)
+            return semanticModel.LookupSymbols(position, container, name, includeReducedExtensionMethods);
+
+        return options.LookupCache.LookupSymbols(semanticModel, options.SyntaxNode!, position, container, name, includeReducedExtensionMethods);
     }
 
     /// <summary>

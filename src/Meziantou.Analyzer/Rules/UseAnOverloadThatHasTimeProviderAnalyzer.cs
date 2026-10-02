@@ -41,7 +41,11 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             if (analyzerContext.TimeProviderSymbol is null)
                 return;
 
-            ctx.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            ctx.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(context => analyzerContext.AnalyzeInvocation(context, lookupCache), OperationKind.Invocation);
+            }, SymbolKind.NamedType);
         });
     }
 
@@ -74,14 +78,14 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
         /// <param name="NamespaceToImport">The namespace to import to call the overload, when it is an extension method declared in a namespace that is not imported.</param>
         private sealed record AdditionalParameterInfo(int ParameterIndex, string? Name, string? NamespaceToImport = null);
 
-        private bool HasAnOverloadWithTimeProvider(OperationAnalysisContext context, IInvocationOperation operation, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
+        private bool HasAnOverloadWithTimeProvider(OperationAnalysisContext context, IInvocationOperation operation, OverloadLookupCache lookupCache, [NotNullWhen(true)] out AdditionalParameterInfo? parameterInfo)
         {
             if (IsArgumentImplicitlyDeclared(operation, TimeProviderSymbol, out parameterInfo))
                 return true;
 
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                 || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [TimeProviderSymbol]);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [TimeProviderSymbol]);
             if (overload is not null)
             {
                 var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;
@@ -116,13 +120,13 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
             }
         }
 
-        public void AnalyzeInvocation(OperationAnalysisContext context)
+        public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (HasExplicitTimeProviderArgument(operation))
                 return;
 
-            if (!HasAnOverloadWithTimeProvider(context, operation, out var parameterInfo))
+            if (!HasAnOverloadWithTimeProvider(context, operation, lookupCache, out var parameterInfo))
                 return;
 
             var availableTimeProviders = _timeProviderFinder.FindPaths(operation, context.CancellationToken);
