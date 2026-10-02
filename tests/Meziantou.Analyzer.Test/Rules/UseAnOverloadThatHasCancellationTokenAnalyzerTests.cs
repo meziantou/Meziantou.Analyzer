@@ -1477,6 +1477,27 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     }
 
     [Fact]
+    public Task TopLevelStatements_InvocationIsReported()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Threading;
+
+            var cancellationToken = CancellationToken.None;
+            {|MA0032:Sample.Repro()|};
+
+            class Sample
+            {
+                public static void Repro() => throw null;
+                public static void Repro(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ExcludedMethod_Attribute_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
@@ -1957,7 +1978,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     [Fact]
     public Task ExtensionMethod_ImportedInOneNamespaceBlockOfTheFile()
     {
-        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        // Each call is made twice so that the second one is answered from the lookup cache of the analyzed type
         var test = CreateTest();
         test.TestCode = """
             namespace A
@@ -2006,7 +2027,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     [Fact]
     public Task ExtensionMethod_ImportedInOneFileOfTheCompilation()
     {
-        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        // Each call is made twice so that the second one is answered from the lookup cache of the analyzed type
         var test = CreateTest();
         test.TestState.Sources.Add(("File1.cs", """
             using Ext;
@@ -2059,7 +2080,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     [Fact]
     public Task PrivateOverload_OnlyReportedWhereAccessible()
     {
-        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        // Each call is made twice so that the second one is answered from the lookup cache of the analyzed type
         var test = CreateTest();
         test.TestCode = """
             public class Sample
@@ -2099,7 +2120,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     [Fact]
     public Task ExtensionMethod_ImportedInNamespaceBlockAfterTopLevelStatements()
     {
-        // Each call is made twice so that the second one is answered from the lookup cache of OverloadFinder
+        // Each call is made twice so that the second one is answered from the lookup cache of the analyzed type
         var test = CreateTest();
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = """

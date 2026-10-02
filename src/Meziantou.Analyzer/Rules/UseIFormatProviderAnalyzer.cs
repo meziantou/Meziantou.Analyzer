@@ -30,7 +30,11 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         context.RegisterCompilationStartAction(context =>
         {
             var analyzerContext = new AnalyzerContext(context.Compilation);
-            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            context.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(operationContext => analyzerContext.AnalyzeInvocation(operationContext, lookupCache), OperationKind.Invocation);
+            }, SymbolKind.NamedType);
         });
     }
 
@@ -39,7 +43,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         private readonly CultureSensitiveFormattingContext _cultureSensitiveContext = new(compilation);
         private readonly OverloadFinder _overloadFinder = new(compilation);
 
-        public void AnalyzeInvocation(OperationAnalysisContext context)
+        public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (operation is null)
@@ -55,7 +59,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
 
             // The overloads with an additional styles or format parameter are searched with the default options of OverloadFinder
-            var stylesOverloadOptions = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces };
+            var stylesOverloadOptions = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache };
             if (_cultureSensitiveContext.FormatProviderSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
             {
                 if (operation.TargetMethod.Name == "ToString" && operation.Arguments.Length == 0 && operation.TargetMethod.ContainingType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
@@ -64,7 +68,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [_cultureSensitiveContext.FormatProviderSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [_cultureSensitiveContext.FormatProviderSymbol]);
                 if (overload is not null)
                 {
                     if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))
@@ -101,7 +105,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (_cultureSensitiveContext.CultureInfoSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces), [_cultureSensitiveContext.CultureInfoSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [_cultureSensitiveContext.CultureInfoSymbol]);
                 if (overload is not null)
                 {
                     if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))

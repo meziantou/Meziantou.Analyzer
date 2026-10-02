@@ -41,7 +41,11 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             if (!analyzerContext.IsValid)
                 return;
 
-            context.RegisterOperationAction(analyzerContext.AnalyzeInvocation, OperationKind.Invocation);
+            context.RegisterSymbolStartAction(symbolContext =>
+            {
+                var lookupCache = new OverloadLookupCache();
+                symbolContext.RegisterOperationAction(operationContext => analyzerContext.AnalyzeInvocation(operationContext, lookupCache), OperationKind.Invocation);
+            }, SymbolKind.NamedType);
         });
     }
 
@@ -104,7 +108,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public void AnalyzeInvocation(OperationAnalysisContext context)
+        public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
             if (!operation.HasArgumentOfType(_stringComparisonSymbol))
@@ -117,7 +121,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 // Check if there is an overload with a StringComparison
                 var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                     || context.Options.GetConfigurationValue(operation, AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces }, [_stringComparisonSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache }, [_stringComparisonSymbol]);
                 if (overload is not null)
                 {
                     var (rule, configuration) = IsNonCultureSensitiveMethod(operation)
