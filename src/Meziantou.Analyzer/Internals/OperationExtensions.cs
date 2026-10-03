@@ -49,7 +49,7 @@ internal static class OperationExtensions
 
     private static StaticContext GetStaticContext(IOperation operation, CancellationToken cancellationToken)
     {
-        var semanticModel = operation.SemanticModel!;
+        var semanticModel = operation.SemanticModel;
 
         // Local functions can be nested, and an instance local function can be declared
         // in a static local function. So, you need to continue to check ancestors when a
