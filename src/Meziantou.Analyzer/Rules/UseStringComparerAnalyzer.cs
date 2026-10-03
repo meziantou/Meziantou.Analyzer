@@ -181,16 +181,10 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             // Most ISet implementation already configured the IEqualityComparer in this constructor,
             // so it should be ok to skip method calls on those types.
             // A concrete use-case is HashSet<string>.Contains which has an extension method IEnumerable.Contains(value, comparer)
+            // The instance of the call is checked by IsCalledOnSetInstance, only before a report.
             foreach (var type in (ReadOnlySpan<ITypeSymbol?>)[ISetType, IReadOnlySetType, IImmutableSetType])
             {
-
-                if (type is null)
-                    continue;
-
-                if (method.ContainingType.IsOrImplements(type))
-                    return;
-
-                if (operation.Instance is not null && operation.Instance.GetActualType(ctx.CancellationToken)?.IsOrImplements(type) is true)
+                if (type is not null && method.ContainingType.IsOrImplements(type))
                     return;
             }
 
@@ -203,6 +197,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             if (HasOverloadWithComparer(ctx, operation, lookupCache, out var namespaceToImport))
             {
+                if (IsCalledOnSetInstance(operation, ctx.CancellationToken))
+                    return;
+
                 if (IsInvocationReportSuppressedByOrdinalOption(ctx, operation, method))
                     return;
 
@@ -250,6 +247,29 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                     ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 }
             }
+        }
+
+        /// <summary>
+        /// Indicates whether the instance of the call is a set of strings, whatever the declared type of the expression.
+        /// Finding the actual type runs a data flow analysis of the local the instance comes from, so it is done once, and
+        /// only for a call that would be reported.
+        /// </summary>
+        private bool IsCalledOnSetInstance(IInvocationOperation operation, CancellationToken cancellationToken)
+        {
+            if (operation.Instance is null)
+                return false;
+
+            var instanceType = operation.Instance.GetActualType(cancellationToken);
+            if (instanceType is null)
+                return false;
+
+            foreach (var type in (ReadOnlySpan<ITypeSymbol?>)[ISetType, IReadOnlySetType, IImmutableSetType])
+            {
+                if (type is not null && instanceType.IsOrImplements(type))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <summary>

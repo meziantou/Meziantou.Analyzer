@@ -2024,4 +2024,83 @@ public sealed class UseStringComparerAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task MethodOnLocalHoldingSetDeclaredAsInterface_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    IContainer values = new CustomSet();
+                    _ = values.Contains("a");
+                }
+            }
+
+            interface IContainer
+            {
+                bool Contains(string value);
+                bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer);
+            }
+
+            sealed class CustomSet : System.Collections.Generic.HashSet<string>, IContainer
+            {
+                public bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MethodOnLocalHoldingListDeclaredAsInterface_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    IContainer values = new CustomList();
+                    _ = values.{|MA0002:Contains("a")|};
+                }
+            }
+
+            interface IContainer
+            {
+                bool Contains(string value);
+                bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer);
+            }
+
+            sealed class CustomList : System.Collections.Generic.List<string>, IContainer
+            {
+                public bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    IContainer values = new CustomList();
+                    _ = values.Contains("a", System.StringComparer.Ordinal);
+                }
+            }
+
+            interface IContainer
+            {
+                bool Contains(string value);
+                bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer);
+            }
+
+            sealed class CustomList : System.Collections.Generic.List<string>, IContainer
+            {
+                public bool Contains(string value, System.Collections.Generic.IEqualityComparer<string> comparer) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
