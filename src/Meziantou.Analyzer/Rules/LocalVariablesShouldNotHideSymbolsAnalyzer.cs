@@ -73,7 +73,7 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzer : DiagnosticAnaly
                 return;
             }
 
-            if (member is IParameterSymbol && !operation.IsInStaticContext(context.CancellationToken))
+            if (member is IParameterSymbol && operation.CanUsePrimaryConstructorParameters(context.CancellationToken))
             {
                 ReportDiagnostic("parameter");
                 return;

@@ -103,6 +103,37 @@ public sealed class LocalVariablesShouldNotHideSymbolsAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("static int P { get { var a = 10; return a; } }")]
+    [InlineData("static System.Func<int> F = () => { var a = 10; return a; };")]
+    [InlineData("Test(string s) : this(Get(out var a)) { } static int Get(out int value) => value = 0;")]
+    public Task LocalVariableDoesNotHidePrimaryConstructorParameterInStaticContext(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            class Test(int a)
+            {
+                {{member}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalVariableHidePrimaryConstructorParameterInFieldInitializer()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int a)
+            {
+                System.Func<int> F = () => { var {|MA0084:a|} = 10; return a; };
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task LocalVariableDoesNotHidePrimaryConstructorParameter()
     {
