@@ -214,6 +214,111 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("static Task P => {|MA0167:Task.Delay(TimeSpan.Zero)|};")]
+    [InlineData("static Task P { get { return {|MA0167:Task.Delay(TimeSpan.Zero)|}; } }")]
+    [InlineData("static Task F = {|MA0167:Task.Delay(TimeSpan.Zero)|};")]
+    [InlineData("Task F = {|MA0167:Task.Delay(TimeSpan.Zero)|};")]
+    [InlineData("Task P { get; } = {|MA0167:Task.Delay(TimeSpan.Zero)|};")]
+    [InlineData("static Test() { {|MA0167:Task.Delay(TimeSpan.Zero)|}; }")]
+    [InlineData("Test() : this({|MA0167:Task.Delay(TimeSpan.Zero)|}) { } Test(Task task) { }")]
+    [InlineData("static event Action E { add { {|MA0167:Task.Delay(TimeSpan.Zero)|}; } remove { } }")]
+    [InlineData("static int P { get { void Local() => {|MA0167:Task.Delay(TimeSpan.Zero)|}; return 0; } }")]
+    [InlineData("class Nested { void A() { {|MA0167:Task.Delay(TimeSpan.Zero)|}; } }")]
+    public Task NotAvailable_InstanceMemberInStaticContext(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                private readonly TimeProvider _timeProvider = TimeProvider.System;
+
+                {{member}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task WhenAvailable_StaticOperator_DoesNotReportInstanceMembers()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                private readonly TimeProvider _timeProvider = TimeProvider.System;
+
+                public static Test operator +(Test a, Test b)
+                {
+                    {|#0:Task.Delay(TimeSpan.Zero)|};
+                    return a;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0166", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a TimeProvider, available time providers: a._timeProvider, b._timeProvider"));
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Task F = {|MA0166:Task.Delay(TimeSpan.Zero)|};", "Task F = Task.Delay(TimeSpan.Zero, timeProvider);")]
+    [InlineData("Task P { get; } = {|MA0166:Task.Delay(TimeSpan.Zero)|};", "Task P { get; } = Task.Delay(TimeSpan.Zero, timeProvider);")]
+    [InlineData("Task P => {|MA0166:Task.Delay(TimeSpan.Zero)|};", "Task P => Task.Delay(TimeSpan.Zero, timeProvider);")]
+    public Task WhenAvailable_PrimaryConstructorParameter(string member, string fixedMember)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+
+            class Test(TimeProvider timeProvider)
+            {
+                {{member}}
+            }
+            """;
+        test.FixedCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+
+            class Test(TimeProvider timeProvider)
+            {
+                {{fixedMember}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("static Task F = {|MA0167:Task.Delay(TimeSpan.Zero)|};")]
+    [InlineData("static void A() { {|MA0167:Task.Delay(TimeSpan.Zero)|}; }")]
+    [InlineData("Test() : this({|MA0167:Task.Delay(TimeSpan.Zero)|}, null) { }")]
+    public Task NotAvailable_PrimaryConstructorParameter(string member)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Threading.Tasks;
+
+            class Test(Task task, TimeProvider timeProvider)
+            {
+                Task Task => task;
+                TimeProvider TimeProvider => timeProvider;
+
+                {{member}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task WhenAvailable_NestedPropOfNestedProp()
     {

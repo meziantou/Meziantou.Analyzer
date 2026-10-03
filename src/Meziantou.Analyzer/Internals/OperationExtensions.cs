@@ -44,68 +44,99 @@ internal static class OperationExtensions
         return false;
     }
 
-    public static bool IsInStaticContext(this IOperation operation, CancellationToken cancellationToken) => IsInStaticContext(operation, cancellationToken, out _);
-    public static bool IsInStaticContext(this IOperation operation, CancellationToken cancellationToken, out int parentStaticMemberStartPosition)
+    /// <summary>Indicates whether the parameters of the primary constructor of the containing type can be used at the operation.</summary>
+    public static bool CanUsePrimaryConstructorParameters(this IOperation operation, CancellationToken cancellationToken) => GetStaticContext(operation, cancellationToken).CanUsePrimaryConstructorParameters;
+
+    private static StaticContext GetStaticContext(IOperation operation, CancellationToken cancellationToken)
     {
+        var semanticModel = operation.SemanticModel!;
+
         // Local functions can be nested, and an instance local function can be declared
         // in a static local function. So, you need to continue to check ancestors when a
         // local function is not static.
-        foreach (var member in operation.Syntax.Ancestors())
+        foreach (var node in operation.Syntax.Ancestors())
         {
-            if (member is LocalFunctionStatementSyntax localFunction)
+            switch (node)
             {
-                var symbol = operation.SemanticModel.GetDeclaredSymbol(localFunction, cancellationToken);
-                if (symbol is not null && symbol.IsStatic)
-                {
-                    parentStaticMemberStartPosition = localFunction.GetLocation().SourceSpan.Start;
-                    return true;
-                }
-            }
-            else if (member is LambdaExpressionSyntax lambdaExpression)
-            {
-                var symbol = operation.SemanticModel.GetSymbolInfo(lambdaExpression, cancellationToken).Symbol;
-                if (symbol is not null && symbol.IsStatic)
-                {
-                    parentStaticMemberStartPosition = lambdaExpression.GetLocation().SourceSpan.Start;
-                    return true;
-                }
-            }
-            else if (member is AnonymousMethodExpressionSyntax anonymousMethod)
-            {
-                var symbol = operation.SemanticModel.GetSymbolInfo(anonymousMethod, cancellationToken).Symbol;
-                if (symbol is not null && symbol.IsStatic)
-                {
-                    parentStaticMemberStartPosition = anonymousMethod.GetLocation().SourceSpan.Start;
-                    return true;
-                }
-            }
-            else if (member is MethodDeclarationSyntax methodDeclaration)
-            {
-                parentStaticMemberStartPosition = methodDeclaration.GetLocation().SourceSpan.Start;
+                case LocalFunctionStatementSyntax localFunction when semanticModel.GetDeclaredSymbol(localFunction, cancellationToken) is { IsStatic: true }:
+                    return new StaticContext(IsStatic: true, localFunction.SpanStart, CanUsePrimaryConstructorParameters: false);
 
-                var symbol = operation.SemanticModel.GetDeclaredSymbol(methodDeclaration, cancellationToken);
-                return symbol is not null && symbol.IsStatic;
+                case AnonymousFunctionExpressionSyntax anonymousFunction when semanticModel.GetSymbolInfo(anonymousFunction, cancellationToken).Symbol is { IsStatic: true }:
+                    return new StaticContext(IsStatic: true, anonymousFunction.SpanStart, CanUsePrimaryConstructorParameters: false);
+
+                // The instance members and the primary constructor parameters cannot be used in the arguments of ": this(...)" and ": base(...)"
+                case ConstructorInitializerSyntax { Parent: ConstructorDeclarationSyntax constructor }:
+                    return new StaticContext(IsStatic: true, constructor.SpanStart, CanUsePrimaryConstructorParameters: false);
+
+                // The instance members cannot be used in the arguments of the base type of a primary constructor, but its parameters can
+                case PrimaryConstructorBaseTypeSyntax baseType:
+                    return new StaticContext(IsStatic: true, baseType.SpanStart, CanUsePrimaryConstructorParameters: true);
+
+                // The instance members cannot be used in the initializer of a field, but the primary constructor parameters can when the field is not static
+                case BaseFieldDeclarationSyntax field:
+                    return new StaticContext(IsStatic: true, field.SpanStart, CanUsePrimaryConstructorParameters: !IsStaticMember(field));
+
+                case BasePropertyDeclarationSyntax property:
+                    {
+                        var isStatic = IsStaticMember(property);
+
+                        // The instance members cannot be used in the initializer of a property, but the primary constructor parameters can when the property is not static
+                        if (property is PropertyDeclarationSyntax { Initializer: { } initializer } && initializer.Span.Contains(operation.Syntax.Span))
+                            return new StaticContext(IsStatic: true, property.SpanStart, CanUsePrimaryConstructorParameters: !isStatic);
+
+                        return new StaticContext(isStatic, property.SpanStart, CanUsePrimaryConstructorParameters: !isStatic);
+                    }
+
+                // Methods, constructors, operators, conversion operators and finalizers
+                case BaseMethodDeclarationSyntax method:
+                    {
+                        var isStatic = IsStaticMember(method);
+                        return new StaticContext(isStatic, method.SpanStart, CanUsePrimaryConstructorParameters: !isStatic);
+                    }
+
+                // The operation is not in a member, such as in an attribute
+                case BaseTypeDeclarationSyntax:
+                    return StaticContext.Instance;
             }
         }
 
-        parentStaticMemberStartPosition = -1;
-        return false;
+        return StaticContext.Instance;
+
+        static bool IsStaticMember(MemberDeclarationSyntax member) => member.Modifiers.Any(SyntaxKind.StaticKeyword) || member.Modifiers.Any(SyntaxKind.ConstKeyword);
+    }
+
+    /// <param name="IsStatic">Indicates whether the instance members cannot be used.</param>
+    /// <param name="StartPosition">The position of the static context. The locals and the parameters declared before it cannot be used, except the primary constructor parameters.</param>
+    /// <param name="CanUsePrimaryConstructorParameters">Indicates whether the parameters of the primary constructor of the containing type can be used.</param>
+    private readonly record struct StaticContext(bool IsStatic, int StartPosition, bool CanUsePrimaryConstructorParameters)
+    {
+        public static StaticContext Instance { get; } = new(IsStatic: false, StartPosition: -1, CanUsePrimaryConstructorParameters: true);
     }
 
     public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, CancellationToken cancellationToken)
     {
         // Find available symbols
+        var semanticModel = operation.SemanticModel!;
         var operationLocation = operation.Syntax.GetLocation().SourceSpan.Start;
-        var isInStaticContext = operation.IsInStaticContext(cancellationToken, out var parentStaticMemberStartPosition);
-        foreach (var symbol in operation.SemanticModel!.LookupSymbols(operationLocation))
+        var staticContext = GetStaticContext(operation, cancellationToken);
+        var enclosingSymbol = semanticModel.GetEnclosingSymbol(operationLocation, cancellationToken);
+        var enclosingType = enclosingSymbol as INamedTypeSymbol ?? enclosingSymbol?.ContainingType;
+        foreach (var symbol in semanticModel.LookupSymbols(operationLocation))
         {
-            // LookupSymbols check the accessibility of the symbol, but it can
-            // suggest instance members when the current context is static.
-            if (symbol is IFieldSymbol field && isInStaticContext && !field.IsStatic)
+            // LookupSymbols check the accessibility of the symbol, but it can suggest instance members when the current
+            // context is static, or when they are declared by a containing type of the current type.
+            if (symbol is IFieldSymbol or IPropertySymbol && !symbol.IsStatic && (staticContext.IsStatic || !IsMemberOfType(symbol, enclosingType)))
                 continue;
 
-            if (symbol is IPropertySymbol { GetMethod: not null } property && isInStaticContext && !property.IsStatic)
+            if (symbol is IParameterSymbol { ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Constructor } constructor } && constructor.IsPrimaryConstructor(cancellationToken, includeRecordDeclarations: true))
+            {
+                // The primary constructor parameters are declared outside the members, and can be declared in another part of a partial type
+                if (!staticContext.CanUsePrimaryConstructorParameters || !constructor.ContainingType.OriginalDefinition.IsEqualTo(enclosingType?.OriginalDefinition))
+                    continue;
+
+                yield return symbol;
                 continue;
+            }
 
             // Locals can be returned even if there are not valid in the current context. For instance,
             // it can return locals declared after the current location. Or it can return locals that
@@ -123,7 +154,7 @@ internal static class OperationExtensions
                 var isValid = true;
                 foreach (var location in symbol.Locations)
                 {
-                    isValid &= IsValid(location, operationLocation, isInStaticContext ? parentStaticMemberStartPosition : null);
+                    isValid &= IsValid(location, operationLocation, staticContext.IsStatic ? staticContext.StartPosition : null);
                     if (!isValid)
                         break;
                 }
@@ -175,6 +206,31 @@ internal static class OperationExtensions
             }
 
             yield return symbol;
+        }
+
+        static bool IsMemberOfType(ISymbol member, INamedTypeSymbol? type)
+        {
+            if (type is null)
+                return false;
+
+            var memberType = member.ContainingType.OriginalDefinition;
+            for (var current = type; current is not null; current = current.BaseType)
+            {
+                if (current.OriginalDefinition.IsEqualTo(memberType))
+                    return true;
+            }
+
+            // The default implementations of an interface can use the members of the interfaces it inherits from
+            if (memberType.TypeKind is TypeKind.Interface)
+            {
+                foreach (var @interface in type.AllInterfaces)
+                {
+                    if (@interface.OriginalDefinition.IsEqualTo(memberType))
+                        return true;
+                }
+            }
+
+            return false;
         }
     }
 
