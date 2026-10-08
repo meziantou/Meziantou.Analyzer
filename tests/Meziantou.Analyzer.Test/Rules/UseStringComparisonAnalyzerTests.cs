@@ -2,7 +2,6 @@ using System.Security.Claims;
 using System.Security.Principal;
 using System.Text;
 using Microsoft.CodeAnalysis;
-using Microsoft.Extensions.Primitives;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseStringComparisonAnalyzer,
@@ -1086,7 +1085,8 @@ public sealed class UseStringComparisonAnalyzerTests
         return test.RunAsync();
     }
 
-    public static TheoryData<string> NonCultureSensitiveMethodDocumentationIds => new(UseStringComparisonAnalyzer.NonCultureSensitiveMethodDocumentationIds);
+    // The methods of Microsoft.Extensions.Primitives are not checked, as the test project does not reference this package
+    public static TheoryData<string> NonCultureSensitiveMethodDocumentationIds => new(UseStringComparisonAnalyzer.NonCultureSensitiveMethodDocumentationIds.Where(id => !id.StartsWith("M:Microsoft.Extensions.Primitives.", StringComparison.Ordinal)));
 
 #pragma warning disable MA0001, MA0021, MA0074, CA1307, CA1309, CA1310, RS0030 // The methods are called without a StringComparison on purpose, and compared with a culture-sensitive comparison
     [Theory]
@@ -1094,23 +1094,15 @@ public sealed class UseStringComparisonAnalyzerTests
     public void NonCultureSensitiveMethod_DefaultComparisonIsOrdinal(string documentationId)
     {
         // Linguistic comparisons ignore the soft hyphen, so the results of these methods differ between an ordinal and a culture-sensitive comparison
-        const char Ignorable = '­';
-        const string IgnorableString = "­";
+        const char Ignorable = '\u00AD';
+        const string IgnorableString = "\u00AD";
         const StringComparison Culture = StringComparison.InvariantCulture;
         const StringComparison Ordinal = StringComparison.Ordinal;
 
         switch (documentationId)
         {
-            case "M:Microsoft.Extensions.Primitives.StringSegment.Equals(Microsoft.Extensions.Primitives.StringSegment)~System.Boolean":
-                AssertOrdinal(new StringSegment("a" + IgnorableString).Equals(new StringSegment("a")), ordinal: string.Equals("a" + IgnorableString, "a", Ordinal), culture: string.Equals("a" + IgnorableString, "a", Culture));
-                break;
-
-            case "M:Microsoft.Extensions.Primitives.StringSegment.Equals(System.String)~System.Boolean":
-                AssertOrdinal(new StringSegment("a" + IgnorableString).Equals("a"), ordinal: string.Equals("a" + IgnorableString, "a", Ordinal), culture: string.Equals("a" + IgnorableString, "a", Culture));
-                break;
-
             case "M:System.Char.Equals(System.Char)~System.Boolean":
-                AssertOrdinal(Ignorable.Equals('​'), ordinal: string.Equals(IgnorableString, "​", Ordinal), culture: string.Equals(IgnorableString, "​", Culture));
+                AssertOrdinal(Ignorable.Equals('\u200B'), ordinal: string.Equals(IgnorableString, "\u200B", Ordinal), culture: string.Equals(IgnorableString, "\u200B", Culture));
                 break;
 
             case "M:System.IO.Path.GetRelativePath(System.String,System.String)~System.String":
@@ -1215,7 +1207,7 @@ public sealed class UseStringComparisonAnalyzerTests
                 break;
 
             case "M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean":
-                AssertOrdinal(new Rune(Ignorable).Equals(new Rune('​')), ordinal: string.Equals(IgnorableString, "​", Ordinal), culture: string.Equals(IgnorableString, "​", Culture));
+                AssertOrdinal(new Rune(Ignorable).Equals(new Rune('\u200B')), ordinal: string.Equals(IgnorableString, "\u200B", Ordinal), culture: string.Equals(IgnorableString, "\u200B", Culture));
                 break;
 
 #if NET11_0_OR_GREATER
@@ -1284,7 +1276,7 @@ public sealed class UseStringComparisonAnalyzerTests
 
         static void AssertOrdinalIgnoreCase(ClaimsIdentity identity)
         {
-            // OrdinalIgnoreCase: "A" matches "a", but "b" does not match "b­" as it would with a culture-sensitive comparison
+            // OrdinalIgnoreCase: "A" matches "a", but "b" does not match "b\u00AD" as it would with a culture-sensitive comparison
             Assert.Equal("1", identity.FindFirst("A")?.Value);
             Assert.Null(identity.FindFirst("b"));
         }
