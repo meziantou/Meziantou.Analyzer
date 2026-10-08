@@ -140,6 +140,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         public INamedTypeSymbol? IReadOnlySetType { get; } = compilation.GetTypeByMetadataName("System.Collections.Generic.IReadOnlySet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? IImmutableSetType { get; } = compilation.GetTypeByMetadataName("System.Collections.Immutable.IImmutableSet`1")?.Construct(compilation.GetSpecialType(SpecialType.System_String));
         public INamedTypeSymbol? MeziantouFrameworkAssertType { get; } = compilation.GetTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
+        public INamedTypeSymbol? XunitAssertType { get; } = compilation.GetTypeByMetadataName("Xunit.Assert");
 
         public void AnalyzeConstructor(OperationAnalysisContext ctx)
         {
@@ -403,6 +404,14 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
             if (method.ContainingType.IsEqualTo(MeziantouFrameworkAssertType))
                 return true;
+
+            // xunit compares strings ordinally: Assert.Equal(string, string) by itself, and the item and
+            // collection assertions (Equal, NotEqual, Contains, DoesNotContain, Distinct) through
+            // IEquatable<string>. Only InRange and NotInRange take an IComparer<T>, and their default,
+            // Comparer<string>.Default, is culture-sensitive. So a method of Xunit.Assert is known to be
+            // ordinal when the overload it lacks takes an IEqualityComparer<string>, not an IComparer<string>.
+            if (method.ContainingType.IsEqualTo(XunitAssertType))
+                return EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType]);
 
             return KnownOrdinalMethodNames.Contains(method.Name)
                 && _knownOrdinalContainerTypes.Contains(method.ContainingType.OriginalDefinition);

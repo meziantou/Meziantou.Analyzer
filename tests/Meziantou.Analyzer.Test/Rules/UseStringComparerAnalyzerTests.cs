@@ -905,6 +905,98 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public Task Xunit_Assert_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> values = new[] { "a" };
+                    Xunit.Assert.{|MA0002:Equal(values, values)|};
+                    Xunit.Assert.{|MA0002:Contains("a", values)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Xunit_Assert_ReportOnlyNonOrdinal_ShouldNotReportEqualityAssertions()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV3();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> values = new[] { "a" };
+                    Xunit.Assert.Equal(values, values);
+                    Xunit.Assert.NotEqual("a", "b");
+                    Xunit.Assert.Contains("a", values);
+                    Xunit.Assert.DoesNotContain("b", values);
+                    Xunit.Assert.Distinct(values);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Xunit_Assert_ReportOnlyNonOrdinal_ShouldReportOrderingAssertions()
+    {
+        var test = CreateTest();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            namespace Xunit
+            {
+                static class Assert
+                {
+                    public static void InRange(string actual, string low, string high) { }
+                    public static void InRange(string actual, string low, string high, System.Collections.Generic.IComparer<string> comparer) { }
+                }
+            }
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    Xunit.Assert.{|MA0002:InRange("b", "a", "c")|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task XunitV2_Assert_ReportOnlyNonOrdinal_ShouldNotReportEqualityAssertions()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = test.ReferenceAssemblies.AddXunitV2();
+        test.TestState.SetConfiguration(ReportOnlyNonOrdinalConfigurationName, "true");
+        test.TestCode = """
+            class TypeName
+            {
+                public void Test()
+                {
+                    System.Collections.Generic.IEnumerable<string> values = new[] { "a" };
+                    Xunit.Assert.Equal(values, values);
+                    Xunit.Assert.Contains("a", values);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task ReportOnlyNonOrdinal_HashSet_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
