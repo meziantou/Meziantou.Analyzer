@@ -203,7 +203,7 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task IndexOf_Char_ShouldNotReportCultureSensitiveDiagnostic()
+    public Task IndexOf_Char_ReportCharOverloads_ShouldNotReportCultureSensitiveDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -225,11 +225,12 @@ public sealed class UseStringComparisonAnalyzerTests
             }
             """;
 
+        test.TestState.SetConfiguration("MA0001.report_char_overloads", "true");
         return test.RunAsync();
     }
 
     [Fact]
-    public Task IndexOf_Char_Int_ShouldNotReportCultureSensitiveDiagnostic()
+    public Task IndexOf_Char_Int_ReportCharOverloads_ShouldNotReportCultureSensitiveDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -251,11 +252,12 @@ public sealed class UseStringComparisonAnalyzerTests
             }
             """;
 
+        test.TestState.SetConfiguration("MA0001.report_char_overloads", "true");
         return test.RunAsync();
     }
 
     [Fact]
-    public Task LastIndexOf_Char_ShouldNotReportCultureSensitiveDiagnostic()
+    public Task LastIndexOf_Char_ReportCharOverloads_ShouldNotReportCultureSensitiveDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -277,11 +279,12 @@ public sealed class UseStringComparisonAnalyzerTests
             }
             """;
 
+        test.TestState.SetConfiguration("MA0001.report_char_overloads", "true");
         return test.RunAsync();
     }
 
     [Fact]
-    public Task Contains_Char_ShouldNotReportCultureSensitiveDiagnostic()
+    public Task Contains_Char_ReportCharOverloads_ShouldNotReportCultureSensitiveDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -303,6 +306,7 @@ public sealed class UseStringComparisonAnalyzerTests
             }
             """;
 
+        test.TestState.SetConfiguration("MA0001.report_char_overloads", "true");
         return test.RunAsync();
     }
 
@@ -502,7 +506,7 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task IndexOf_Char_ShouldReportDiagnostic()
+    public Task IndexOf_Char_ShouldNotReportDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -510,17 +514,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    {|#0:"a".IndexOf('v')|};
-                }
-            }
-            """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter"));
-        test.FixedCode = """
-            class TypeName
-            {
-                public void Test()
-                {
-                    "a".IndexOf('v', System.StringComparison.Ordinal);
+                    "a".IndexOf('v');
                 }
             }
             """;
@@ -529,7 +523,7 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task IndexOf_Char_Int_ShouldReportDiagnostic()
+    public Task IndexOf_Char_Int_ShouldNotReportDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -537,17 +531,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    {|#0:"abc".IndexOf('v', 0)|};
-                }
-            }
-            """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'IndexOf' that has a StringComparison parameter"));
-        test.FixedCode = """
-            class TypeName
-            {
-                public void Test()
-                {
-                    "abc".IndexOf('v', 0, System.StringComparison.Ordinal);
+                    "abc".IndexOf('v', 0);
                 }
             }
             """;
@@ -556,7 +540,7 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task Contains_Char_ShouldReportDiagnostic()
+    public Task Contains_Char_ShouldNotReportDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -564,17 +548,7 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    {|#0:"abc".Contains('a')|};
-                }
-            }
-            """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'Contains' that has a StringComparison parameter"));
-        test.FixedCode = """
-            class TypeName
-            {
-                public void Test()
-                {
-                    "abc".Contains('a', System.StringComparison.Ordinal);
+                    "abc".Contains('a');
                 }
             }
             """;
@@ -600,7 +574,7 @@ public sealed class UseStringComparisonAnalyzerTests
     }
 
     [Fact]
-    public Task LastIndexOf_Char_ShouldReportDiagnostic()
+    public Task LastIndexOf_Char_ShouldNotReportDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -608,11 +582,10 @@ public sealed class UseStringComparisonAnalyzerTests
             {
                 public void Test()
                 {
-                    {|#0:"abc".LastIndexOf('a')|};
+                    "abc".LastIndexOf('a');
                 }
             }
             """;
-        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0001", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload of 'LastIndexOf' that has a StringComparison parameter"));
 
         return test.RunAsync();
     }

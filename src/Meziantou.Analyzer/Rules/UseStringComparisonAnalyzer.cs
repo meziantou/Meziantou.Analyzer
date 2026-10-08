@@ -27,6 +27,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
 
     private static readonly ConfigurationDefinition<bool> AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.AvoidCultureSensitiveMethod + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseStringComparison + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
+    private static readonly ConfigurationDefinition<bool> UseStringComparisonReportCharOverloadsConfiguration = new(RuleIdentifiers.UseStringComparison + ".report_char_overloads", defaultValue: false);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
 
@@ -58,6 +59,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private readonly INamedTypeSymbol? _xunitAssertSymbol = compilation.GetTypeByMetadataName("Xunit.Assert");
         private readonly INamedTypeSymbol? _meziantouFrameworkAssertSymbol = compilation.GetTypeByMetadataName("Meziantou.Framework.Assertions.Assert");
         private readonly HashSet<ISymbol> _nonCultureSensitiveSymbols = CreateNonCultureSensitiveSymbols(compilation);
+        private readonly HashSet<ISymbol> _charOverloadSymbols = CreateCharOverloadSymbols(compilation);
 
         public bool IsValid => _stringComparisonSymbol is not null;
 
@@ -73,14 +75,25 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.IO.BinaryReader)");
             Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Claims.ClaimsIdentity)");
             Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Principal.IIdentity,System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.String,System.String,System.String)");
-            Add("M:System.String.Contains(System.Char)~System.Boolean");
-            Add("M:System.String.Contains(System.Text.Rune)~System.Boolean");
-            Add("M:System.String.EndsWith(System.Char)~System.Boolean");
-            Add("M:System.String.EndsWith(System.Text.Rune)~System.Boolean");
             Add("M:System.String.Equals(System.String)~System.Boolean");
             Add("M:System.String.Equals(System.String,System.String)~System.Boolean");
             Add("M:System.String.GetHashCode(System.ReadOnlySpan{System.Char})~System.Int32");
             Add("M:System.String.GetHashCode~System.Int32");
+            Add("M:System.String.Replace(System.String,System.String)~System.String");
+            Add("M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean");
+            return symbols;
+
+            void Add(string documentationId) => AddSymbols(symbols, compilation, documentationId);
+        }
+
+        // The char and Rune overloads are ordinal, and the comparison is not ambiguous for most characters (CA1307 and CA1310 do not report them)
+        private static HashSet<ISymbol> CreateCharOverloadSymbols(Compilation compilation)
+        {
+            var symbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
+            Add("M:System.String.Contains(System.Char)~System.Boolean");
+            Add("M:System.String.Contains(System.Text.Rune)~System.Boolean");
+            Add("M:System.String.EndsWith(System.Char)~System.Boolean");
+            Add("M:System.String.EndsWith(System.Text.Rune)~System.Boolean");
             Add("M:System.String.IndexOf(System.Char)~System.Int32");
             Add("M:System.String.IndexOf(System.Char,System.Int32)~System.Int32");
             Add("M:System.String.IndexOf(System.Char,System.Int32,System.Int32)~System.Int32");
@@ -93,18 +106,18 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             Add("M:System.String.LastIndexOf(System.Text.Rune)~System.Int32");
             Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32)~System.Int32");
             Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32");
-            Add("M:System.String.Replace(System.String,System.String)~System.String");
             Add("M:System.String.StartsWith(System.Char)~System.Boolean");
             Add("M:System.String.StartsWith(System.Text.Rune)~System.Boolean");
-            Add("M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean");
             return symbols;
 
-            void Add(string documentationId)
+            void Add(string documentationId) => AddSymbols(symbols, compilation, documentationId);
+        }
+
+        private static void AddSymbols(HashSet<ISymbol> symbols, Compilation compilation, string documentationId)
+        {
+            foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
             {
-                foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
-                {
-                    symbols.Add(symbol);
-                }
+                symbols.Add(symbol);
             }
         }
 
@@ -116,6 +129,9 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 // EntityFramework Core doesn't support StringComparison and evaluates everything client side...
                 // https://github.com/aspnet/EntityFrameworkCore/issues/1222
                 if (_operationUtilities.IsInExpressionContext(operation))
+                    return;
+
+                if (_charOverloadSymbols.Contains(operation.TargetMethod) && !context.Options.GetConfigurationValue(operation, UseStringComparisonReportCharOverloadsConfiguration))
                     return;
 
                 // Check if there is an overload with a StringComparison
@@ -149,7 +165,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
             if (method is null)
                 return false;
 
-            if (_nonCultureSensitiveSymbols.Contains(method))
+            if (_nonCultureSensitiveSymbols.Contains(method) || _charOverloadSymbols.Contains(method))
                 return true;
 
             // JObject.Property / TryGetValue / GetValue
