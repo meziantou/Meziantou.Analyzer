@@ -28,6 +28,43 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.AvoidCultureSensitiveMethod + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(RuleIdentifiers.UseStringComparison + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
 
+    // The methods whose default comparison is Ordinal or OrdinalIgnoreCase
+    internal static ImmutableArray<string> NonCultureSensitiveMethodDocumentationIds { get; } = ImmutableArray.Create(
+        "M:Microsoft.Extensions.Primitives.StringSegment.Equals(Microsoft.Extensions.Primitives.StringSegment)~System.Boolean",
+        "M:Microsoft.Extensions.Primitives.StringSegment.Equals(System.String)~System.Boolean",
+        "M:System.Char.Equals(System.Char)~System.Boolean",
+        "M:System.IO.Path.GetRelativePath(System.String,System.String)~System.String",
+        "M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},System.ReadOnlySpan{``0})~System.Boolean",
+        "M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},``0)~System.Boolean",
+        "M:System.Security.Claims.ClaimsIdentity.#ctor(System.IO.BinaryReader)",
+        "M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Claims.ClaimsIdentity)",
+        "M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Principal.IIdentity,System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.String,System.String,System.String)",
+        "M:System.String.Contains(System.Char)~System.Boolean",
+        "M:System.String.Contains(System.String)~System.Boolean",
+        "M:System.String.Contains(System.Text.Rune)~System.Boolean",
+        "M:System.String.EndsWith(System.Char)~System.Boolean",
+        "M:System.String.EndsWith(System.Text.Rune)~System.Boolean",
+        "M:System.String.Equals(System.String)~System.Boolean",
+        "M:System.String.Equals(System.String,System.String)~System.Boolean",
+        "M:System.String.GetHashCode(System.ReadOnlySpan{System.Char})~System.Int32",
+        "M:System.String.GetHashCode~System.Int32",
+        "M:System.String.IndexOf(System.Char)~System.Int32",
+        "M:System.String.IndexOf(System.Char,System.Int32)~System.Int32",
+        "M:System.String.IndexOf(System.Char,System.Int32,System.Int32)~System.Int32",
+        "M:System.String.IndexOf(System.Text.Rune)~System.Int32",
+        "M:System.String.IndexOf(System.Text.Rune,System.Int32)~System.Int32",
+        "M:System.String.IndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32",
+        "M:System.String.LastIndexOf(System.Char)~System.Int32",
+        "M:System.String.LastIndexOf(System.Char,System.Int32)~System.Int32",
+        "M:System.String.LastIndexOf(System.Char,System.Int32,System.Int32)~System.Int32",
+        "M:System.String.LastIndexOf(System.Text.Rune)~System.Int32",
+        "M:System.String.LastIndexOf(System.Text.Rune,System.Int32)~System.Int32",
+        "M:System.String.LastIndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32",
+        "M:System.String.Replace(System.String,System.String)~System.String",
+        "M:System.String.StartsWith(System.Char)~System.Boolean",
+        "M:System.String.StartsWith(System.Text.Rune)~System.Boolean",
+        "M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean");
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(AvoidCultureSensitiveMethodRule, UseStringComparisonRule);
 
     public override void Initialize(AnalysisContext context)
@@ -64,49 +101,15 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
         private static HashSet<ISymbol> CreateNonCultureSensitiveSymbols(Compilation compilation)
         {
             var symbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-            Add("M:Microsoft.Extensions.Primitives.StringSegment.Equals(Microsoft.Extensions.Primitives.StringSegment)~System.Boolean");
-            Add("M:Microsoft.Extensions.Primitives.StringSegment.Equals(System.String)~System.Boolean");
-            Add("M:System.Char.Equals(System.Char)~System.Boolean");
-            Add("M:System.IO.Path.GetRelativePath(System.String,System.String)~System.String");
-            Add("M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},System.ReadOnlySpan{``0})~System.Boolean");
-            Add("M:System.MemoryExtensions.EndsWith``1(System.ReadOnlySpan{``0},``0)~System.Boolean");
-            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.IO.BinaryReader)");
-            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Claims.ClaimsIdentity)");
-            Add("M:System.Security.Claims.ClaimsIdentity.#ctor(System.Security.Principal.IIdentity,System.Collections.Generic.IEnumerable{System.Security.Claims.Claim},System.String,System.String,System.String)");
-            Add("M:System.String.Contains(System.Char)~System.Boolean");
-            Add("M:System.String.Contains(System.String)~System.Boolean");
-            Add("M:System.String.Contains(System.Text.Rune)~System.Boolean");
-            Add("M:System.String.EndsWith(System.Char)~System.Boolean");
-            Add("M:System.String.EndsWith(System.Text.Rune)~System.Boolean");
-            Add("M:System.String.Equals(System.String)~System.Boolean");
-            Add("M:System.String.Equals(System.String,System.String)~System.Boolean");
-            Add("M:System.String.GetHashCode(System.ReadOnlySpan{System.Char})~System.Int32");
-            Add("M:System.String.GetHashCode~System.Int32");
-            Add("M:System.String.IndexOf(System.Char)~System.Int32");
-            Add("M:System.String.IndexOf(System.Char,System.Int32)~System.Int32");
-            Add("M:System.String.IndexOf(System.Char,System.Int32,System.Int32)~System.Int32");
-            Add("M:System.String.IndexOf(System.Text.Rune)~System.Int32");
-            Add("M:System.String.IndexOf(System.Text.Rune,System.Int32)~System.Int32");
-            Add("M:System.String.IndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Char)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Char,System.Int32)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Char,System.Int32,System.Int32)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Text.Rune)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32)~System.Int32");
-            Add("M:System.String.LastIndexOf(System.Text.Rune,System.Int32,System.Int32)~System.Int32");
-            Add("M:System.String.Replace(System.String,System.String)~System.String");
-            Add("M:System.String.StartsWith(System.Char)~System.Boolean");
-            Add("M:System.String.StartsWith(System.Text.Rune)~System.Boolean");
-            Add("M:System.Text.Rune.Equals(System.Text.Rune)~System.Boolean");
-            return symbols;
-
-            void Add(string documentationId)
+            foreach (var documentationId in NonCultureSensitiveMethodDocumentationIds)
             {
                 foreach (var symbol in DocumentationCommentId.GetSymbolsForDeclarationId(documentationId, compilation))
                 {
                     symbols.Add(symbol);
                 }
             }
+
+            return symbols;
         }
 
         public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)

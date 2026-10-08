@@ -25,6 +25,8 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeFix.Testing" Version="1.1.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.CodeRefactoring.Testing" Version="1.1.4" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <!-- Used to check the default comparison of StringSegment in UseStringComparisonAnalyzerTests -->
+    <PackageReference Include="Microsoft.Extensions.Primitives" Version="10.0.12" />
   </ItemGroup>
 
   <!-- Each test project tests the projects of its own Roslyn version -->
