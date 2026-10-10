@@ -8,6 +8,9 @@
 
     <!-- The report is named after the assembly, so the projects would all write the same file when they run together -->
     <TestingPlatformCommandLineArguments>--report-trx-filename $(MSBuildProjectName).trx</TestingPlatformCommandLineArguments>
+
+    <!-- Add the SharedHttpClient class of Meziantou.NET.Sdk, which the tests use to download the NuGet packages -->
+    <IncludeSharedHttpClient>true</IncludeSharedHttpClient>
   </PropertyGroup>
 
   <!-- Global using directives shared by all the files of this project -->

@@ -3,7 +3,6 @@ using System.IO.Compression;
 using System.Reflection.Metadata;
 using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
-using Meziantou.Analyzer.Test.Helpers;
 
 namespace Meziantou.Analyzer.Test.Harness;
 
@@ -96,7 +95,7 @@ internal static class NuGetPackages
                     {
                         try
                         {
-                            await using var stream = await SharedHttpClient.Instance.GetStreamAsync(url, cts.Token).ConfigureAwait(false);
+                            await using var stream = await SharedHttpClient.InstanceWithAutoRedirect.GetStreamAsync(url, cts.Token).ConfigureAwait(false);
                             await stream.CopyToAsync(content, cts.Token).ConfigureAwait(false);
                         }
                         catch (OperationCanceledException ex) when (cts.IsCancellationRequested)
@@ -134,7 +133,7 @@ internal static class NuGetPackages
                         // Another test run may have downloaded the package at the same time
                         if (!IsCacheValid())
                         {
-                            throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version + "\n" + ex);
+                            throw new InvalidOperationException("Cannot download NuGet package " + packageName + "@" + version, ex);
                         }
                     }
                 }
