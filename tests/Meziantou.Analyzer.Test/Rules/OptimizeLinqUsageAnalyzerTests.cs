@@ -724,6 +724,14 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [InlineData("Count() != 10", "Take(11).Count() != 10", "Replace 'Count() != 10' with 'Take(11).Count() != 10'")]
     [InlineData("Count() != n", "Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
     [InlineData("Count(x => x > 1) != n", "Where(x => x > 1).Take(n + 1).Count() != n", "Replace 'Count() != n' with 'Take(n + 1).Count() != n'")]
+    [InlineData("Count() == n", "Take(n + 1).Count() == n", "Replace 'Count() == n' with 'Take(n + 1).Count() == n'")]
+    [InlineData("Count() < n", "Take(n).Count() < n", "Replace 'Count() < n' with 'Take(n).Count() < n'")]
+    [InlineData("Count() <= n", "Take(n + 1).Count() <= n", "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'")]
+    [InlineData("Count(x => true) <= n", "Where(x => true).Take(n + 1).Count() <= n", "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'")]
+    [InlineData("Count() > n", "Take(n + 1).Count() > n", "Replace 'Count() > n' with 'Take(n + 1).Count() > n'")]
+    [InlineData("Count() >= n", "Take(n).Count() >= n", "Replace 'Count() >= n' with 'Take(n).Count() >= n'")]
+    [InlineData("Count(x => x > 1) >= n", "Where(x => x > 1).Take(n).Count() >= n", "Replace 'Count() >= n' with 'Take(n).Count() >= n'")]
+    [InlineData("Count() >= n - 1", "Take(n - 1).Count() >= n - 1", "Replace 'Count() >= n' with 'Take(n).Count() >= n'")]
     public Task Count_TakeAndCount(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -761,9 +769,7 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     [Theory]
     [InlineData("Count() > 1", "Skip(1).Any()", "Replace 'Count() > 1' with 'Skip(1).Any()'")]
     [InlineData("Count() > 2", "Skip(2).Any()", "Replace 'Count() > 2' with 'Skip(2).Any()'")]
-    [InlineData("Count() > n", "Skip(n).Any()", "Replace 'Count() > n' with 'Skip(n).Any()'")]
     [InlineData("Count() >= 2", "Skip(1).Any()", "Replace 'Count() >= 2' with 'Skip(1).Any()'")]
-    [InlineData("Count() >= n", "Skip(n - 1).Any()", "Replace 'Count() >= n' with 'Skip(n - 1).Any()'")]
     public Task Count_SkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -800,11 +806,9 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
     [Theory]
     [InlineData("Count() < 2", "Skip(1).Any()", "Replace 'Count() < 2' with 'Skip(1).Any() == false'")]
-    [InlineData("Count() < n", "Skip(n - 1).Any()", "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'")]
     [InlineData("Count() <= 1", "Skip(1).Any()", "Replace 'Count() <= 1' with 'Skip(1).Any() == false'")]
     [InlineData("Count() <= 2", "Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
-    [InlineData("Count() <= n", "Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
-    [InlineData("Count(x => true) <= n", "Where(x => true).Skip(n).Any()", "Replace 'Count() <= n' with 'Skip(n).Any() == false'")]
+    [InlineData("Count(x => true) <= 2", "Where(x => true).Skip(2).Any()", "Replace 'Count() <= 2' with 'Skip(2).Any() == false'")]
     public Task Count_NotSkipAndAny(string text, string fix, string expectedMessage)
     {
         var test = new CodeFixTest();
@@ -840,6 +844,41 @@ public sealed class OptimizeLinqUsageAnalyzerTests
     }
 
     [Theory]
+    [InlineData("n <= enumerable.Count()", "n <= enumerable.Take(n).Count()", "Replace 'Count() >= n' with 'Take(n).Count() >= n'")]
+    [InlineData("n < enumerable.Count()", "n < enumerable.Take(n + 1).Count()", "Replace 'Count() > n' with 'Take(n + 1).Count() > n'")]
+    public Task Count_TakeAndCount_OperandOnTheLeft(string text, string fix, string expectedMessage)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test(int n)
+                {
+                    var enumerable = Enumerable.Empty<int>();
+                    _ = {|#0:{{text}}|};
+                }
+            }
+
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0031", DiagnosticSeverity.Info).WithLocation(0).WithMessage(expectedMessage));
+        test.FixedCode = $$"""
+            using System.Linq;
+            class Test
+            {
+                public Test(int n)
+                {
+                    var enumerable = Enumerable.Empty<int>();
+                    _ = {{fix}};
+                }
+            }
+
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
     [InlineData("Take(10).Count() == 1")]
     public Task Count_Equals(string text)
     {
@@ -862,7 +901,12 @@ public sealed class OptimizeLinqUsageAnalyzerTests
 
     [Theory]
     [InlineData("Take(1).Count() != n")]
-    public Task Count_NotEquals(string text)
+    [InlineData("Take(n + 1).Count() == n")]
+    [InlineData("Take(n).Count() < n")]
+    [InlineData("Take(n + 1).Count() <= n")]
+    [InlineData("Take(n + 1).Count() > n")]
+    [InlineData("Take(n).Count() >= n")]
+    public Task Count_Take_NonConstantOperand(string text)
     {
         var test = new CodeFixTest();
         test.TestCode = $$"""
