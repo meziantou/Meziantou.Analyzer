@@ -14,4 +14,5 @@ internal static class OptimizeLinqUsageAnalyzerCommon
     internal const string OperandOperationStartKey = "OperandOperationStart";
     internal const string OperandOperationLengthKey = "OperandOperationLength";
     internal const string SkipMinusOneKey = "SkipMinusOne";
+    internal const string TakePlusOneKey = "TakePlusOne";
 }

@@ -199,7 +199,8 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
                 if (!TryGetCountOperationSpan(diagnostic, out var takeCountSpan) || !TryGetOperandOperationSpan(diagnostic, out var takeOperandSpan))
                     return;
 
-                context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, takeCountSpan, takeOperandSpan, ct), equivalenceKey: title), context.Diagnostics);
+                var takePlusOne = diagnostic.Properties.ContainsKey(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey);
+                context.RegisterCodeFix(CodeAction.Create(title, ct => UseTakeAndCount(context.Document, takeCountSpan, takeOperandSpan, takePlusOne, ct), equivalenceKey: title), context.Diagnostics);
                 break;
 
             case OptimizeLinqUsageData.UseSkipAndAny:
@@ -315,7 +316,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> UseTakeAndCount(Document document, TextSpan countOperationSpan, TextSpan operandOperationSpan, CancellationToken cancellationToken)
+    private static async Task<Document> UseTakeAndCount(Document document, TextSpan countOperationSpan, TextSpan operandOperationSpan, bool takePlusOne, CancellationToken cancellationToken)
     {
         var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
         var countNode = root?.FindNode(countOperationSpan, getInnermostNodeForTie: true);
@@ -340,7 +341,11 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         }
 
         SyntaxNode takeArgument;
-        if (operandOperation.ConstantValue.Value is int value)
+        if (!takePlusOne)
+        {
+            takeArgument = operandOperation.Syntax.WithoutTrivia();
+        }
+        else if (operandOperation.ConstantValue.Value is int value)
         {
             takeArgument = generator.LiteralExpression(value + 1);
         }

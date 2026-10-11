@@ -657,7 +657,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             if (!HasTake(operation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() == {value}' with 'Take({value + 1}).Count() == {value}'");
-                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                                    .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                             }
                         }
 
@@ -682,7 +683,8 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                             if (!HasTake(operation))
                             {
                                 message = string.Create(CultureInfo.InvariantCulture, $"Replace 'Count() != {value}' with 'Take({value + 1}).Count() != {value}'");
-                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
+                                properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                                    .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                             }
                         }
 
@@ -779,54 +781,51 @@ public sealed class OptimizeLinqUsageAnalyzer : DiagnosticAnalyzer
                         break;
                 }
             }
-            else
+            else if (!HasTake(operation))
             {
+                // The value of the operand is not known, so it may be negative or 0. 'Skip(n).Any()' cannot be used as 'Skip' considers
+                // a negative value as 0: 'Count() >= n' is true when 'n' is 0, whereas 'Skip(n - 1).Any()' is false for an empty sequence.
+                // 'Take' also considers a negative value as 0, but the result is still compared to the operand.
                 switch (opKind)
                 {
                     case BinaryOperatorKind.Equals:
-                        // expr.Count() == 1
-                        if (!HasTake(operation))
-                        {
-                            message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
-                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
-                        }
-
+                        // expr.Count() == n
+                        message = "Replace 'Count() == n' with 'Take(n + 1).Count() == n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                            .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.NotEquals:
-                        // expr.Count() != 1
-                        if (!HasTake(operation))
-                        {
-                            message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
-                            properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
-                        }
-
+                        // expr.Count() != n
+                        message = "Replace 'Count() != n' with 'Take(n + 1).Count() != n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                            .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.LessThan:
-                        // expr.Count() < 10
-                        message = "Replace 'Count() < n' with 'Skip(n - 1).Any() == false'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny)
-                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
+                        // expr.Count() < n
+                        message = "Replace 'Count() < n' with 'Take(n).Count() < n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         break;
 
                     case BinaryOperatorKind.LessThanOrEqual:
-                        // expr.Count() <= 10
-                        message = "Replace 'Count() <= n' with 'Skip(n).Any() == false'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndNotAny);
+                        // expr.Count() <= n
+                        message = "Replace 'Count() <= n' with 'Take(n + 1).Count() <= n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                            .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.GreaterThan:
-                        // expr.Count() > 1
-                        message = "Replace 'Count() > n' with 'Skip(n).Any()'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny);
+                        // expr.Count() > n
+                        message = "Replace 'Count() > n' with 'Take(n + 1).Count() > n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount)
+                            .Add(OptimizeLinqUsageAnalyzerCommon.TakePlusOneKey, value: "");
                         break;
 
                     case BinaryOperatorKind.GreaterThanOrEqual:
-                        // expr.Count() >= 2
-                        message = "Replace 'Count() >= n' with 'Skip(n - 1).Any()'";
-                        properties = CreateProperties(OptimizeLinqUsageData.UseSkipAndAny)
-                            .Add(OptimizeLinqUsageAnalyzerCommon.SkipMinusOneKey, value: "");
+                        // expr.Count() >= n
+                        message = "Replace 'Count() >= n' with 'Take(n).Count() >= n'";
+                        properties = CreateProperties(OptimizeLinqUsageData.UseTakeAndCount);
                         break;
                 }
             }
