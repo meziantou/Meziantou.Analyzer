@@ -47,7 +47,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.2.0" PrivateAssets="all" />
+    <PackageReference Include="Meziantou.Framework.Roslyn" Version="1.2.1" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" PrivateAssets="all" />
     <PackageReference Include="Microsoft.CodeAnalysis.Workspaces.Common" PrivateAssets="all" />
   </ItemGroup>
