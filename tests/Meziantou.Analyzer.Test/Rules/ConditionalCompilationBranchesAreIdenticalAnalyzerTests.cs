@@ -143,6 +143,107 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
     }
 
     [Fact]
+    public Task AllBranches_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            _ = 0;
+            {|MA0202:#elif B|}
+            _ = 0;
+            {|MA0202:#else|}
+            _ = 0;
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SameFirstStatements()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            _ = 0;
+            _ = 1;
+            #elif B
+            _ = 0;
+            #elif C
+            _ = 0;
+            _ = 2;
+            {|MA0202:#else|}
+            _ = 0;
+            _ = 1;
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedBlock_SameCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            #if B
+            _ = 0;
+            {|MA0202:#else|}
+            _ = 0;
+            #endif
+            #else
+            #if B
+            _ = 1;
+            {|MA0202:#else|}
+            _ = 1;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedBlock_DifferentCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            #if B
+            _ = 0;
+            #else
+            _ = 1;
+            #endif
+            #else
+            #if B
+            _ = 2;
+            #else
+            _ = 3;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SingleBranchBlocks()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if !A
+            _ = 0;
+            #endif
+            #if B
+            _ = 0;
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task NestedDirectives_DifferentConditions()
     {
         var test = CreateTest();
@@ -194,6 +295,27 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzerTests
             _ = 2;
             #if B
             _ = 1;
+            #endif
+            #endif
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NestedDirectives_SameInactiveCode()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            #if A
+            _ = 2;
+            #if B
+            _ = 0;
+            #endif
+            {|MA0202:#else|}
+            _ = 2;
+            #if B
+            _ = 0; // comment
             #endif
             #endif
             """;
