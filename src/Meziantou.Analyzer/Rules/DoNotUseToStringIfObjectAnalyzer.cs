@@ -47,7 +47,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             {
                 if (part is IInterpolationOperation content)
                 {
-                    AnalyzeExpression(context, content.Expression, context.CancellationToken);
+                    AnalyzeExpression(context, content.Expression);
                 }
                 else if (part is IInterpolatedStringAppendOperation { AppendCall: IInvocationOperation appendCall })
                 {
@@ -57,7 +57,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
                     if (appendCall.Arguments is not [{ Value: var content2 }])
                         continue;
 
-                    AnalyzeExpression(context, content2, context.CancellationToken);
+                    AnalyzeExpression(context, content2);
                 }
             }
         }
@@ -74,7 +74,7 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (operation.Instance is null)
                 return;
 
-            var actualType = operation.Instance.GetActualType(context.CancellationToken);
+            var actualType = GetActualType(operation.Instance, context.CancellationToken);
             if (actualType is null)
                 return;
 
@@ -95,23 +95,35 @@ public sealed class DoNotUseToStringIfObjectAnalyzer : DiagnosticAnalyzer
             if (!operation.Type.IsString())
                 return;
 
-            AnalyzeExpression(context, operation.LeftOperand, context.CancellationToken);
-            AnalyzeExpression(context, operation.RightOperand, context.CancellationToken);
+            AnalyzeExpression(context, operation.LeftOperand);
+            AnalyzeExpression(context, operation.RightOperand);
         }
 
-        private static void AnalyzeExpression(DiagnosticReporter reporter, IOperation operation, CancellationToken cancellationToken)
+        private static void AnalyzeExpression(OperationAnalysisContext context, IOperation operation)
         {
-            var actualType = operation.GetActualType(cancellationToken);
+            var actualType = GetActualType(operation, context.CancellationToken);
             if (actualType is null)
                 return;
 
             if (actualType.IsAnonymousType)
                 return;
 
-            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType, cancellationToken))
+            if (CultureSensitiveFormattingContext.UsesObjectToString(actualType, context.CancellationToken))
             {
-                reporter.ReportDiagnostic(Rule, operation, [actualType.ToDisplayString()]);
+                context.ReportDiagnostic(Rule, operation, actualType.ToDisplayString());
             }
+        }
+
+        private static ITypeSymbol? GetActualType(IOperation operation, CancellationToken cancellationToken)
+        {
+            // A value whose type is sealed cannot be an instance of another type, so there is no need to search the value
+            // assigned to the local, the field or the property, which is expensive. A Nullable<T> formats its value, so the
+            // type of the value is still searched.
+            var type = operation.UnwrapImplicitConversions().Type;
+            if (type is INamedTypeSymbol { IsSealed: true, OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T })
+                return type;
+
+            return operation.GetActualType(cancellationToken);
         }
 
         private bool IsDefaultToString(IMethodSymbol method)

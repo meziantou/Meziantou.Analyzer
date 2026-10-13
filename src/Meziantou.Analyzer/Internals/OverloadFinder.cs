@@ -12,6 +12,10 @@ internal sealed class OverloadFinder(Compilation compilation)
     private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
     private readonly INamedTypeSymbol? _halfSymbol = compilation.GetTypeByMetadataName("System.Half");
+    private readonly ExtensionMethodIndex _extensionMethodIndex = ExtensionMethodIndex.Get(compilation);
+
+    private readonly BoundedCache<SimilarMethodKey, bool> _mightHaveSimilarMethodCache = new(capacity: 4096);
+    private Func<SimilarMethodKey, bool>? _mightHaveSimilarMethod;
     private readonly Lazy<Dictionary<string, List<IMethodSymbol>>> _extensionMethodsByName = new(() => CreateExtensionMethodsByName(compilation));
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
@@ -128,11 +132,14 @@ internal sealed class OverloadFinder(Compilation compilation)
     public IMethodSymbol? FindFirstSimilarMethod(IMethodSymbol methodSymbol, OverloadOptions options, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
         additionalParameterTypes = RemoveNulls(additionalParameterTypes);
+        var key = CreateSimilarMethodKey(methodSymbol, methodName, additionalParameterTypes);
+        if (!MightHaveSimilarMethod(key, options))
+            return null;
 
         var members = GetCandidateMethods(methodSymbol, methodName, options);
         foreach (var member in members)
         {
-            if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, out var method))
+            if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, key, out var method))
                 return method;
         }
 
@@ -142,12 +149,15 @@ internal sealed class OverloadFinder(Compilation compilation)
     public ImmutableArray<IMethodSymbol> FindSimilarMethods(IMethodSymbol methodSymbol, OverloadOptions options, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
         additionalParameterTypes = RemoveNulls(additionalParameterTypes);
+        var key = CreateSimilarMethodKey(methodSymbol, methodName, additionalParameterTypes);
+        if (!MightHaveSimilarMethod(key, options))
+            return ImmutableArray<IMethodSymbol>.Empty;
 
         List<IMethodSymbol>? result = null;
         var members = GetCandidateMethods(methodSymbol, methodName, options);
         foreach (var member in members)
         {
-            if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, out var method))
+            if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, key, out var method))
             {
                 result ??= [];
                 result.Add(method);
@@ -157,10 +167,116 @@ internal sealed class OverloadFinder(Compilation compilation)
         return result is null ? ImmutableArray<IMethodSymbol>.Empty : ImmutableArray.CreateRange(result);
     }
 
-    private bool IsSimilarMethod(IMethodSymbol methodSymbol, ISymbol member, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes, [NotNullWhen(true)] out IMethodSymbol? similarMethod)
+    private static SimilarMethodKey CreateSimilarMethodKey(IMethodSymbol methodSymbol, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+    {
+        var key = new SimilarMethodKey(methodSymbol.ContainingType, GetReducedReceiverType(methodSymbol), methodName, additionalParameterTypes);
+        if (key.IsValid && key.AdditionalType0 is not null)
+        {
+            foreach (var typeArgument in methodSymbol.TypeArguments)
+            {
+                if (typeArgument.IsEqualTo(key.AdditionalType0) || typeArgument.IsEqualTo(key.AdditionalType1))
+                    return key with { IsTypeArgument = true };
+            }
+        }
+
+        return key;
+    }
+
+    /// <summary>
+    /// Indicates whether a method can be similar to the method of the key, wherever the method is searched from. Looking up the
+    /// symbols in scope is expensive, and most methods have no similar method, so this check avoids it. It considers a superset
+    /// of the methods a lookup can find, whatever their accessibility and the imported namespaces: the members of the type
+    /// hierarchies, and the extension methods of the compilation and its references.
+    /// </summary>
+    private bool MightHaveSimilarMethod(SimilarMethodKey key, OverloadOptions options)
+    {
+        // Without a syntax node, only the members declared by the types are searched, which is cheap
+        if (options.SyntaxNode is null || !key.IsValid)
+            return true;
+
+        // The same methods are invoked many times in a compilation, and the result is the same for all the overloads of a method
+        return _mightHaveSimilarMethodCache.GetOrAdd(key, _mightHaveSimilarMethod ??= MightHaveSimilarMethod);
+    }
+
+    private bool MightHaveSimilarMethod(SimilarMethodKey key)
+    {
+        if (MightDeclareSimilarMethod(key, key.ContainingType, depth: 0))
+            return true;
+
+        if (key.ReducedReceiverType is not null && MightDeclareSimilarMethod(key, key.ReducedReceiverType, depth: 0))
+            return true;
+
+        if (!_extensionMethodIndex.TryGetMethods(key.MethodName, out var extensionMethods))
+            return true;
+
+        foreach (var extensionMethod in extensionMethods)
+        {
+            if (key.HasParametersForAdditionalTypes(extensionMethod))
+                return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>
+    /// Indicates whether a method that a member lookup in <paramref name="type"/> can find, which are the methods of the type,
+    /// of its base types and of its interfaces, can be similar to the method.
+    /// </summary>
+    private bool MightDeclareSimilarMethod(SimilarMethodKey key, ITypeSymbol type, int depth)
+    {
+        const int MaxConstraintDepth = 8;
+
+        switch (type)
+        {
+            case INamedTypeSymbol or IArrayTypeSymbol when type.TypeKind is not TypeKind.Error:
+                for (var current = type; current is not null; current = current.BaseType)
+                {
+                    if (HasPotentiallySimilarMethod(key, current))
+                        return true;
+                }
+
+                foreach (var interfaceType in type.AllInterfaces)
+                {
+                    if (HasPotentiallySimilarMethod(key, interfaceType))
+                        return true;
+                }
+
+                // The members of System.Object are available on the interfaces
+                return type.TypeKind is TypeKind.Interface && HasPotentiallySimilarMethod(key, compilation.ObjectType);
+
+            // The members of a type parameter are the ones of its constraints
+            case ITypeParameterSymbol typeParameter when depth < MaxConstraintDepth:
+                foreach (var constraintType in typeParameter.ConstraintTypes)
+                {
+                    if (MightDeclareSimilarMethod(key, constraintType, depth + 1))
+                        return true;
+                }
+
+                return HasPotentiallySimilarMethod(key, compilation.ObjectType) || HasPotentiallySimilarMethod(key, compilation.GetSpecialType(SpecialType.System_ValueType));
+
+            default:
+                return true;
+        }
+
+        static bool HasPotentiallySimilarMethod(SimilarMethodKey key, ITypeSymbol type)
+        {
+            foreach (var member in type.GetMembers(key.MethodName))
+            {
+                if (member is IMethodSymbol method && key.HasParametersForAdditionalTypes(method))
+                    return true;
+            }
+
+            return false;
+        }
+    }
+
+    private bool IsSimilarMethod(IMethodSymbol methodSymbol, ISymbol member, OverloadOptions options, ReadOnlySpan<OverloadParameterType> additionalParameterTypes, SimilarMethodKey key, [NotNullWhen(true)] out IMethodSymbol? similarMethod)
     {
         similarMethod = null;
         if (member is not IMethodSymbol method)
+            return false;
+
+        if (key.IsValid && !key.HasParametersForAdditionalTypes(method))
             return false;
 
         if (!options.IncludeObsoleteMembers && IsObsolete(method))
@@ -829,6 +945,127 @@ internal sealed class OverloadFinder(Compilation compilation)
             return false;
 
         return methodSymbol.HasAttribute(_experimentalSymbol);
+    }
+
+    /// <summary>
+    /// The data used to know whether a method can have a similar method, whatever its parameters are: the types whose methods
+    /// are searched, the name of the methods, the types of the additional parameters, and whether one of them is a type argument
+    /// of the method. The key is not valid when the search cannot be summarized this way.
+    /// </summary>
+    private readonly record struct SimilarMethodKey(INamedTypeSymbol ContainingType, ITypeSymbol? ReducedReceiverType, string MethodName, ITypeSymbol? AdditionalType0, ITypeSymbol? AdditionalType1, bool IsTypeArgument, bool IsValid)
+    {
+        public SimilarMethodKey(INamedTypeSymbol? containingType, ITypeSymbol? reducedReceiverType, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
+            : this(containingType!, reducedReceiverType, methodName, AdditionalType0: null, AdditionalType1: null, IsTypeArgument: false, IsValid: false)
+        {
+            if (containingType is null)
+                return;
+
+            // The methods cannot be filtered using the types of their parameters when the type of a parameter can inherit from
+            // the additional type, or when the additional type is a type parameter
+            foreach (var additionalParameterType in additionalParameterTypes)
+            {
+                if (additionalParameterType.AllowInherits || additionalParameterType.Symbol is null or ITypeParameterSymbol)
+                    return;
+            }
+
+            switch (additionalParameterTypes.Length)
+            {
+                case 0:
+                    break;
+
+                case 1:
+                    AdditionalType0 = additionalParameterTypes[0].Symbol;
+                    break;
+
+                case 2:
+                    AdditionalType0 = additionalParameterTypes[0].Symbol;
+                    AdditionalType1 = additionalParameterTypes[1].Symbol;
+                    break;
+
+                default:
+                    return;
+            }
+
+            IsValid = true;
+        }
+
+        /// <summary>
+        /// Indicates whether the method has a parameter that can match each additional type. This is cheap to compute, and it is
+        /// a requirement for the method to be similar to another method, whatever the type arguments inferred for the method are.
+        /// </summary>
+        public bool HasParametersForAdditionalTypes(IMethodSymbol method)
+        {
+            if (AdditionalType0 is null)
+                return true;
+
+            // The parameters of a reduced extension method are compared using the ones of the method it is reduced from
+            var parameters = (method.ReducedFrom ?? method).Parameters;
+            return HasParameterForAdditionalType(parameters, AdditionalType0) && (AdditionalType1 is null || HasParameterForAdditionalType(parameters, AdditionalType1));
+        }
+
+        private bool HasParameterForAdditionalType(ImmutableArray<IParameterSymbol> parameters, ITypeSymbol additionalType)
+        {
+            foreach (var parameter in parameters)
+            {
+                if (MightBeCompatibleWithAdditionalType(parameter.Type, additionalType))
+                    return true;
+            }
+
+            return false;
+        }
+
+        private bool MightBeCompatibleWithAdditionalType(ITypeSymbol parameterType, ITypeSymbol additionalType)
+        {
+            switch (parameterType)
+            {
+                // The type arguments can differ, as they can be the type parameters of the method
+                case INamedTypeSymbol:
+                    return string.Equals(parameterType.Name, additionalType.Name, StringComparison.Ordinal) && parameterType.OriginalDefinition.IsEqualTo(additionalType.OriginalDefinition);
+
+                // A type parameter of a method is only compared to the type arguments of the method the overload is searched for
+                case ITypeParameterSymbol { TypeParameterKind: TypeParameterKind.Method }:
+                    return IsTypeArgument;
+
+                // A type parameter of an extension block is inferred from the receiver, so it can be any type
+                case ITypeParameterSymbol typeParameter:
+                    return ExtensionMethodIndex.IsExtensionBlock(typeParameter.ContainingType);
+
+                case IArrayTypeSymbol:
+                    return additionalType is IArrayTypeSymbol;
+
+                case IPointerTypeSymbol:
+                    return additionalType is IPointerTypeSymbol;
+
+                case IFunctionPointerTypeSymbol:
+                    return additionalType is IFunctionPointerTypeSymbol;
+
+                default:
+                    return true;
+            }
+        }
+
+        public bool Equals(SimilarMethodKey other)
+        {
+            return IsTypeArgument == other.IsTypeArgument
+                && string.Equals(MethodName, other.MethodName, StringComparison.Ordinal)
+                && SymbolEqualityComparer.Default.Equals(ContainingType, other.ContainingType)
+                && SymbolEqualityComparer.Default.Equals(ReducedReceiverType, other.ReducedReceiverType)
+                && SymbolEqualityComparer.Default.Equals(AdditionalType0, other.AdditionalType0)
+                && SymbolEqualityComparer.Default.Equals(AdditionalType1, other.AdditionalType1);
+        }
+
+        public override int GetHashCode()
+        {
+            unchecked
+            {
+                var hashCode = StringComparer.Ordinal.GetHashCode(MethodName);
+                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(ContainingType);
+                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(ReducedReceiverType);
+                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(AdditionalType0);
+                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(AdditionalType1);
+                return (hashCode * 397) ^ (IsTypeArgument ? 1 : 0);
+            }
+        }
     }
 
     /// <summary>

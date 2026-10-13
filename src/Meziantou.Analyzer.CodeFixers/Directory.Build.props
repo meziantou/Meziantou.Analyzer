@@ -31,7 +31,9 @@
     <AdditionalFiles Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\BannedSymbols.txt" />
 
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\RuleIdentifiers.cs" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\BoundedCache.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\EnumerableExtensions.cs" LinkBase="Internals" />
+    <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ExtensionMethodIndex.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\ObjectPool.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\OperationExtensions.cs" LinkBase="Internals" />
     <Compile Include="$(MSBuildThisFileDirectory)\..\Meziantou.Analyzer\Internals\StringExtensions.cs" LinkBase="Internals" />

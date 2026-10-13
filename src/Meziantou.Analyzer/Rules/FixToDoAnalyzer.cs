@@ -1,3 +1,4 @@
+using System.Buffers;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
@@ -30,6 +31,10 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
+        // Most files do not contain "TODO" at all, and reading the text is much faster than enumerating the trivia
+        if (!ContainsToDo(context.Tree.GetText(context.CancellationToken)))
+            return;
+
         var root = context.Tree.GetCompilationUnitRoot(context.CancellationToken);
         foreach (var node in root.DescendantTrivia())
         {
@@ -84,5 +89,38 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
             }
         }
     }
-}
 
+    private static bool ContainsToDo(SourceText text)
+    {
+        const int BufferSize = 4096;
+        const int ToDoLength = 4;
+
+        var buffer = ArrayPool<char>.Shared.Rent(BufferSize);
+        try
+        {
+            var position = 0;
+            while (text.Length - position >= ToDoLength)
+            {
+                var count = Math.Min(BufferSize, text.Length - position);
+                text.CopyTo(position, buffer, 0, count);
+
+                // The letters of "TODO" have no other character with the same uppercase, so this is equivalent to StringComparison.OrdinalIgnoreCase
+                var lastIndex = count - ToDoLength;
+                for (var i = 0; i <= lastIndex; i++)
+                {
+                    if ((buffer[i] | 0x20) == 't' && (buffer[i + 1] | 0x20) == 'o' && (buffer[i + 2] | 0x20) == 'd' && (buffer[i + 3] | 0x20) == 'o')
+                        return true;
+                }
+
+                // Read the last characters again, as "TODO" can span two buffers
+                position += count - (ToDoLength - 1);
+            }
+
+            return false;
+        }
+        finally
+        {
+            ArrayPool<char>.Shared.Return(buffer);
+        }
+    }
+}

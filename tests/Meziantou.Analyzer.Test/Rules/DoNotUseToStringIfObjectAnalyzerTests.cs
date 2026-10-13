@@ -811,4 +811,56 @@ public sealed class DoNotUseToStringIfObjectAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task SealedType_FlowedFromUserDefinedImplicitConversion()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            var value = new A();
+            string text = value;
+            _ = "a" + text;
+            _ = $"{text}";
+            text.ToString();
+
+            struct A
+            {
+                public static implicit operator string(A value) => "";
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SealedType_FlowedFromDynamic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            dynamic value = new A();
+            A a = value;
+            _ = "a" + {|MA0150:a|};
+            _ = $"{{|MA0150:a|}}";
+            {|MA0150:a.ToString()|};
+
+            struct A { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Nullable_FlowedFromValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            A? a = new A();
+            _ = "a" + {|MA0150:a|};
+            _ = $"{{|MA0150:a|}}";
+
+            struct A { }
+            """;
+
+        return test.RunAsync();
+    }
 }
