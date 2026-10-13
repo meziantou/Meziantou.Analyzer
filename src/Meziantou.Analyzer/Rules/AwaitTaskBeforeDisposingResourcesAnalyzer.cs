@@ -40,8 +40,9 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
             if (returnedValue is null)
                 return;
 
+            // Most of the returned values cannot be awaited, which is cheap to check
             var returnType = returnedValue.UnwrapImplicitConversions().Type;
-            if (!_awaitableTypes.IsAwaitable(returnType, returnedValue.SemanticModel!, returnedValue.Syntax.GetLocation().SourceSpan.End))
+            if (!_awaitableTypes.MightBeAwaitable(returnType))
                 return;
 
             // Must be in a using block
@@ -49,6 +50,10 @@ public class AwaitTaskBeforeDisposingResourcesAnalyzer : DiagnosticAnalyzer
                 return;
 
             if (!NeedAwait(returnedValue))
+                return;
+
+            // Looking up the GetAwaiter method is the most expensive check, so it is done last
+            if (!_awaitableTypes.IsAwaitable(returnType, returnedValue.SemanticModel!, returnedValue.Syntax.Span.End))
                 return;
 
             context.ReportDiagnostic(Rule, op);

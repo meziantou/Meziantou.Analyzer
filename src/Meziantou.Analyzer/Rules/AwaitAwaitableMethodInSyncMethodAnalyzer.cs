@@ -36,7 +36,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         var operation = (IInvocationOperation)context.Operation;
 
         // This method is called for every invocation, so the checks are ordered from the cheapest to the most expensive.
-        // Most invocations are not statements, and most of the others return void
+        // Most invocations are not statements, and most of the others return a value that cannot be awaited
         var parent = operation.Parent;
 
         // unwrap all IConditionalAccessOperation
@@ -54,7 +54,7 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             isDiscarded = true;
         }
 
-        if (operation.Type is null or { SpecialType: SpecialType.System_Void })
+        if (!awaitableTypes.MightBeAwaitable(operation.Type))
             return;
 
         if (isDiscarded && !context.Options.GetConfigurationValue(operation, ReportDiscardedConfiguration))
