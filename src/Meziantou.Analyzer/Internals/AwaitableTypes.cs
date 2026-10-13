@@ -8,6 +8,11 @@ internal sealed class AwaitableTypes
     private readonly Compilation _compilation;
     private readonly ConcurrentDictionary<ITypeSymbol, bool> _isAwaitableCache = new(SymbolEqualityComparer.Default);
 
+    // Most types have no GetAwaiter method, and the same types are checked many times in a compilation
+    private readonly OverloadCandidateIndex _candidateIndex;
+    private readonly ConcurrentDictionary<ITypeSymbol, bool> _mightHaveGetAwaiterMethodCache = new(SymbolEqualityComparer.Default);
+    private readonly Func<ITypeSymbol, bool> _mightHaveGetAwaiterMethod;
+
     public AwaitableTypes(Compilation compilation)
     {
         INotifyCompletionSymbol = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.INotifyCompletion");
@@ -35,6 +40,8 @@ internal sealed class AwaitableTypes
 
         _nonAwaitableTypes = CreateNonAwaitableTypes(compilation);
         _compilation = compilation;
+        _candidateIndex = OverloadCandidateIndex.Get(compilation);
+        _mightHaveGetAwaiterMethod = type => _candidateIndex.MightHaveMethod(type, "GetAwaiter");
     }
 
     public INamedTypeSymbol? TaskSymbol { get; }
@@ -104,6 +111,11 @@ internal sealed class AwaitableTypes
 
         if (IsTaskOrValueTask(symbol))
             return true;
+
+        // Looking up the symbols is expensive, as it searches the extension methods in scope at the position, so it is only
+        // done when a lookup can find a GetAwaiter method for the type, which does not depend on the position
+        if (!_mightHaveGetAwaiterMethodCache.GetOrAdd(symbol, _mightHaveGetAwaiterMethod))
+            return false;
 
         foreach (var potentialSymbol in semanticModel.LookupSymbols(position, container: symbol, name: "GetAwaiter", includeReducedExtensionMethods: true))
         {

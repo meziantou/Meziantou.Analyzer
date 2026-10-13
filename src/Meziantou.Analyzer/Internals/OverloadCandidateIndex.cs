@@ -8,7 +8,8 @@ namespace Meziantou.Analyzer.Internals;
 /// <summary>
 /// Gives the types of the parameters of the methods that can be found when looking up a method by name, wherever the lookup
 /// is done. Looking up the symbols in scope with the semantic model is expensive, and most methods have no overload with the
-/// parameter an analyzer looks for, so <see cref="OverloadFinder"/> uses this index to skip the lookup.
+/// parameter an analyzer looks for, so <see cref="OverloadFinder"/> uses this index to skip the lookup. In the same way,
+/// most types have no <c>GetAwaiter</c> method, so <c>AwaitableTypes</c> uses it to skip the lookup of that method.
 /// <para>
 /// The index does not replace the lookup, as it ignores the imported namespaces and the accessibility of the methods. It only
 /// guarantees that a method that can be found by a lookup, wherever the lookup is done, is taken into account.
@@ -49,6 +50,31 @@ internal sealed class OverloadCandidateIndex
     public ParameterTypes GetParameterTypes(INamedTypeSymbol containingType, ITypeSymbol? reducedReceiverType, string methodName)
     {
         return _parameterTypes.GetOrAdd(new ParameterTypesKey(containingType, reducedReceiverType, methodName), _createParameterTypes);
+    }
+
+    /// <summary>
+    /// Indicates whether a lookup of the methods named <paramref name="methodName"/> in <paramref name="type"/> can find a
+    /// method, wherever the lookup is done: a method of the type, of its base types or of its interfaces, or an extension
+    /// method of the compilation or of its references that can be invoked on the type.
+    /// </summary>
+    public bool MightHaveMethod(ITypeSymbol type, string methodName)
+    {
+        var builder = new ParameterTypes.Builder();
+        if (!AddTypeMethods(builder, type, methodName, depth: 0) || builder.HasMethod)
+            return true;
+
+        if (!TryGetExtensionMethods(methodName, out var extensionMethods))
+            return true;
+
+        foreach (var extensionMethod in extensionMethods)
+        {
+            // A lookup reduces the extension methods the same way, so it cannot find the ones that cannot be reduced.
+            // The members of an extension block are not reduced, so they are all considered
+            if (IsExtensionBlock(extensionMethod.ContainingType) || extensionMethod.ReduceExtensionMethod(type) is not null)
+                return true;
+        }
+
+        return false;
     }
 
     /// <summary>Indicates whether the type is an <c>extension</c> block, whose members are all extension members.</summary>
@@ -433,6 +459,8 @@ internal sealed class OverloadCandidateIndex
         {
             private List<ITypeSymbol>? _namedTypes;
             private Kinds _kinds;
+
+            public bool HasMethod => (_kinds & Kinds.Method) != Kinds.None;
 
             public void AddRange(ImmutableArray<ISymbol> members)
             {
