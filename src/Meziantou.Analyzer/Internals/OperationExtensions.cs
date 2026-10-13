@@ -114,6 +114,10 @@ internal static class OperationExtensions
     }
 
     public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, CancellationToken cancellationToken)
+        => LookupAvailableSymbols(operation, name: null, cancellationToken);
+
+    /// <param name="name">The name of the symbols to find, or <see langword="null"/> to find all the symbols. Looking up all the symbols is expensive, as it binds every name in scope, so provide the name when it is known.</param>
+    public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, string? name, CancellationToken cancellationToken)
     {
         // Find available symbols
         var semanticModel = operation.SemanticModel!;
@@ -121,7 +125,7 @@ internal static class OperationExtensions
         var staticContext = GetStaticContext(operation, cancellationToken);
         var enclosingSymbol = semanticModel.GetEnclosingSymbol(operationLocation, cancellationToken);
         var enclosingType = enclosingSymbol as INamedTypeSymbol ?? enclosingSymbol?.ContainingType;
-        foreach (var symbol in semanticModel.LookupSymbols(operationLocation))
+        foreach (var symbol in semanticModel.LookupSymbols(operationLocation, name: name))
         {
             // LookupSymbols check the accessibility of the symbol, but it can suggest instance members when the current
             // context is static, or when they are declared by a containing type of the current type.

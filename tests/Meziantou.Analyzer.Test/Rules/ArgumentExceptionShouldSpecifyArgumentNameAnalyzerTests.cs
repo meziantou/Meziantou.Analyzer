@@ -396,6 +396,108 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
     }
 
     [Fact]
+    public Task InvalidParameterName_StaticLocalFunction_NameofParameterOfParentMethod()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void Test(string test)
+                {
+                    static void LocalFunction(string a)
+                    {
+                        throw new System.ArgumentNullException({|MA0015:nameof(test)|});
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InvalidParameterName_StaticLambda_NameofParameterOfParentMethod()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void Test(string test)
+                {
+                    _ = new System.Action<int>(static a =>
+                    {
+                        throw new System.ArgumentOutOfRangeException(paramName: {|MA0015:nameof(test)|}, a, message: "address out of range");
+                    });
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ValidParameterName_NestedLambda_NameofParameterOfParentLambda()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void Test()
+                {
+                    _ = new System.Action<int>(static a =>
+                    {
+                        _ = new System.Action<int>(b =>
+                        {
+                            throw new System.ArgumentOutOfRangeException(paramName: nameof(a), b, message: "address out of range");
+                        });
+                    });
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    [InlineData("te st")]
+    [InlineData("test ")]
+    [InlineData("1test")]
+    public Task InvalidParameterName_NotAnIdentifier(string value)
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = $$"""
+            class Sample
+            {
+                void Test(string test)
+                {
+                    throw new System.ArgumentNullException({|MA0015:"{{value}}"|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseNameof_ParameterNamedAfterKeyword()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            class Sample
+            {
+                void Test(string @class)
+                {
+                    throw new System.ArgumentNullException({|MA0043:"class"|});
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task NoCtorWithParameterName()
     {
         var test = new AnalyzerTest();
@@ -674,6 +776,27 @@ public sealed class ArgumentExceptionShouldSpecifyArgumentNameAnalyzerTests
             }
             """;
         test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0015", DiagnosticSeverity.Warning).WithLocation(0).WithMessage("'invalid' is not a valid parameter name"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ThrowIfNull_StaticLocalFunction_NameofParameterOfParentMethod_ShouldReportError()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System;
+            class Sample
+            {
+                void Test(string test)
+                {
+                    static void LocalFunction(string a)
+                    {
+                        ArgumentNullException.ThrowIfNull(a, {|MA0015:nameof(test)|});
+                    }
+                }
+            }
+            """;
 
         return test.RunAsync();
     }
