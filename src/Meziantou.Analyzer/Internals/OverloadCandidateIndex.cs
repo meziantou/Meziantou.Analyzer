@@ -125,10 +125,10 @@ internal sealed class OverloadCandidateIndex
     }
 
     /// <summary>
-    /// Gets the extension methods named <paramref name="name"/>, as they are declared. Returns <see langword="false"/> when
-    /// they are not known.
+    /// Gets the extension methods named <paramref name="name"/>, as they are declared, wherever they are declared in the
+    /// compilation and its references. Returns <see langword="false"/> when they are not known.
     /// </summary>
-    private bool TryGetExtensionMethods(string name, out ImmutableArray<IMethodSymbol> methods)
+    public bool TryGetExtensionMethods(string name, out ImmutableArray<IMethodSymbol> methods)
     {
         var typesByMemberName = _extensionTypesByMemberName.Value;
         if (typesByMemberName is null)

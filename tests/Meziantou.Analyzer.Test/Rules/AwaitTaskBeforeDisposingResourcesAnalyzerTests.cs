@@ -128,6 +128,192 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter(this Base value) => throw null;")]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter(this IAwaitable value) => throw null;")]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter(this object value) => throw null;")]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter<TValue>(this TValue value) where TValue : IAwaitable => throw null;")]
+    [InlineData("new Generic<int>()", "static TaskAwaiter GetAwaiter<TValue>(this Generic<TValue> value) => throw null;")]
+    [InlineData("new Struct()", "static TaskAwaiter GetAwaiter(this IAwaitable value) => throw null;")]
+    [InlineData("new Struct()", "static TaskAwaiter GetAwaiter(this ValueType value) => throw null;")]
+    [InlineData("(Struct?)new Struct()", "static TaskAwaiter GetAwaiter(this Struct? value) => throw null;")]
+    [InlineData("(Struct?)new Struct()", "static TaskAwaiter GetAwaiter(this IAwaitable value) => throw null;")]
+    [InlineData("(Struct?)new Struct()", "static TaskAwaiter GetAwaiter(this ValueType value) => throw null;")]
+    [InlineData("DayOfWeek.Monday", "static TaskAwaiter GetAwaiter(this Enum value) => throw null;")]
+    [InlineData("new[] { Task.CompletedTask }", "static TaskAwaiter GetAwaiter(this Task[] value) => throw null;")]
+    [InlineData("new[] { Task.CompletedTask }", "static TaskAwaiter GetAwaiter(this System.Collections.Generic.IEnumerable<Task> value) => throw null;")]
+    [InlineData("new[] { new Derived() }", "static TaskAwaiter GetAwaiter(this Base[] value) => throw null;")]
+    [InlineData("constrained", "static TaskAwaiter GetAwaiter(this IAwaitable value) => throw null;")]
+    [InlineData("constrained", "static TaskAwaiter GetAwaiter(this Base value) => throw null;")]
+    [InlineData("unconstrained", "static TaskAwaiter GetAwaiter(this object value) => throw null;")]
+    [InlineData("new DerivedAwaitable()", "")]
+    [InlineData("instanceAwaitable", "")]
+#if CSHARP14_OR_GREATER
+    // The receiver of an extension method can be converted to a span
+    [InlineData("\"\"", "static TaskAwaiter GetAwaiter(this ReadOnlySpan<char> value) => throw null;")]
+    [InlineData("new[] { 'a' }", "static TaskAwaiter GetAwaiter(this ReadOnlySpan<char> value) => throw null;")]
+    [InlineData("new[] { 'a' }", "static TaskAwaiter GetAwaiter(this Span<char> value) => throw null;")]
+#endif
+    public Task NotAwaitedCustomAwaitable_InUsing(string returnedValue, string extensionMethod)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+
+            interface IAwaitable { }
+            class Base : IAwaitable { }
+            class Derived : Base { }
+            class Generic<T> { }
+            struct Struct : IAwaitable { }
+            class BaseAwaitable { public TaskAwaiter GetAwaiter() => throw null; }
+            class DerivedAwaitable : BaseAwaitable { }
+            interface IInstanceAwaitable { TaskAwaiter GetAwaiter(); }
+
+            static class TestClass
+            {
+                static object Test<T, TConstrained, TInstanceAwaitable>(T unconstrained, TConstrained constrained, TInstanceAwaitable instanceAwaitable)
+                    where TConstrained : Derived
+                    where TInstanceAwaitable : IInstanceAwaitable
+                {
+                    using ((IDisposable)null)
+                    {
+                        {|MA0100:return {{returnedValue}};|}
+                    }
+                }
+
+                {{extensionMethod}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("new Base()", "static TaskAwaiter GetAwaiter(this Derived value) => throw null;")]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter(this Struct value) => throw null;")]
+    [InlineData("new Derived()", "static TaskAwaiter GetAwaiter(this Base value, int other) => throw null;")]
+    [InlineData("new Derived()", "static int GetAwaiter(this Base value) => throw null;")]
+    [InlineData("new Generic<int>()", "static TaskAwaiter GetAwaiter(this Generic<string> value) => throw null;")]
+    [InlineData("new Struct()", "static TaskAwaiter GetAwaiter(this Base value) => throw null;")]
+    [InlineData("constrained", "static TaskAwaiter GetAwaiter(this Struct value) => throw null;")]
+    [InlineData("unconstrained", "static TaskAwaiter GetAwaiter(this Base value) => throw null;")]
+    [InlineData("\"\"", "static TaskAwaiter GetAwaiter(this int value) => throw null;")]
+    [InlineData("new Derived()", "")]
+    public Task NotAwaitable_InUsing(string returnedValue, string extensionMethod)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System;
+            using System.Runtime.CompilerServices;
+            using System.Threading.Tasks;
+
+            class Base { }
+            class Derived : Base { }
+            class Generic<T> { }
+            struct Struct { }
+
+            static class TestClass
+            {
+                static object Test<T, TConstrained>(T unconstrained, TConstrained constrained)
+                    where TConstrained : Derived
+                {
+                    using ((IDisposable)null)
+                    {
+                        return {{returnedValue}};
+                    }
+                }
+
+                {{extensionMethod}}
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NotAwaitedExtensionMethodFromAnotherNamespace_InUsing()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            namespace Extensions
+            {
+                static class AwaitableExtensions
+                {
+                    public static TaskAwaiter GetAwaiter(this string value) => throw null;
+                }
+            }
+
+            namespace Imported
+            {
+                using Extensions;
+
+                class TestClass
+                {
+                    object Test()
+                    {
+                        using ((IDisposable)null)
+                        {
+                            {|MA0100:return "";|}
+                        }
+                    }
+                }
+            }
+
+            namespace NotImported
+            {
+                class TestClass
+                {
+                    object Test()
+                    {
+                        using ((IDisposable)null)
+                        {
+                            return "";
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public Task NotAwaitedExtensionBlockMember_InUsing()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Runtime.CompilerServices;
+
+            class Sample { }
+
+            static class TestClass
+            {
+                static object Test()
+                {
+                    using ((IDisposable)null)
+                    {
+                        {|MA0100:return new Sample();|}
+                    }
+                }
+
+                extension(Sample value)
+                {
+                    public TaskAwaiter GetAwaiter() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
+
     [Fact]
     public Task NotAwaitedValueTask_InUsing()
     {
