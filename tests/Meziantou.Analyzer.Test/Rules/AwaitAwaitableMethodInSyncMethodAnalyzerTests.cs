@@ -516,4 +516,264 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Report_TaskInLambda_Arrow_InAsyncMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A()
+                {
+                    _ = new System.Action(() => {|MA0134:Task.Delay(0)|});
+                    await Task.Yield();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoReport_TaskInAsyncLambda_Arrow()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                void A()
+                {
+                    _ = new System.Func<Task>(async () => Task.Delay(0));
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_TaskInLambdaInFieldInitializer()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                System.Action _a = () => {|MA0134:Task.Delay(0)|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_ExpressionBodiedMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                void A() => {|MA0134:Task.Delay(0)|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoReport_AsyncExpressionBodiedMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A() => Task.Delay(0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoReport_NonAwaitableType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A(System.Text.StringBuilder sb)
+                {
+                    sb.Append('a');
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_InheritedGetAwaiterMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0134:B()|};
+                }
+
+                Derived B() => throw null;
+            }
+
+            class Base
+            {
+                public TaskAwaiter GetAwaiter() => throw null;
+            }
+
+            class Derived : Base { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_GetAwaiterExtensionMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0134:B()|};
+                }
+
+                Sample B() => throw null;
+            }
+
+            interface ISample { }
+            class Sample : ISample { }
+
+            static class Extensions
+            {
+                public static TaskAwaiter GetAwaiter(this ISample value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public Task Report_GetAwaiterExtensionBlock()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Test
+            {
+                void A()
+                {
+                    {|MA0134:B()|};
+                }
+
+                Sample B() => throw null;
+            }
+
+            class Sample { }
+
+            static class Extensions
+            {
+                extension(Sample value)
+                {
+                    public TaskAwaiter GetAwaiter() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
+
+    [Fact]
+    public Task NoReport_GetAwaiterExtensionMethod_OtherType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Runtime.CompilerServices;
+            class Test
+            {
+                void A()
+                {
+                    B();
+                }
+
+                Sample B() => throw null;
+            }
+
+            class Sample { }
+
+            static class Extensions
+            {
+                public static TaskAwaiter GetAwaiter(this string value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoReport_GetAwaiterExtensionMethod_NotInScope()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A()
+                {
+                    B();
+                }
+
+                Sample B() => throw null;
+            }
+
+            class Sample { }
+
+            namespace Other
+            {
+                static class Extensions
+                {
+                    public static System.Runtime.CompilerServices.TaskAwaiter GetAwaiter(this Sample value) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_TypeParameterConstrainedToTask()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                void A<T>(System.Func<T> func) where T : Task
+                {
+                    {|MA0134:func()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

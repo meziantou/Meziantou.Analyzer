@@ -27,18 +27,16 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
         {
             var awaitableTypes = new AwaitableTypes(context.Compilation);
             var operationUtilities = new OperationUtilities(context.Compilation);
-            context.RegisterSymbolStartAction(context =>
-            {
-                context.RegisterOperationAction(context => AnalyzeOperation(context, operationUtilities, awaitableTypes), OperationKind.Invocation);
-            }, SymbolKind.Method);
+            context.RegisterOperationAction(context => AnalyzeOperation(context, operationUtilities, awaitableTypes), OperationKind.Invocation);
         });
     }
 
     private static void AnalyzeOperation(OperationAnalysisContext context, OperationUtilities operationUtilities, AwaitableTypes awaitableTypes)
     {
         var operation = (IInvocationOperation)context.Operation;
-        var reportDiscarded = context.Options.GetConfigurationValue(operation, ReportDiscardedConfiguration);
 
+        // This method is called for every invocation, so the checks are ordered from the cheapest to the most expensive.
+        // Most invocations are not statements, and most of the others return a value that cannot be awaited
         var parent = operation.Parent;
 
         // unwrap all IConditionalAccessOperation
@@ -47,23 +45,48 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzer : DiagnosticAnalyze
             parent = conditionalAccess.Parent;
         }
 
-        if (parent is not (null or IBlockOperation or IExpressionStatementOperation) &&
-            (!reportDiscarded || parent is not ISimpleAssignmentOperation { Target: IDiscardOperation }))
+        var isDiscarded = false;
+        if (parent is not (null or IBlockOperation or IExpressionStatementOperation))
+        {
+            if (parent is not ISimpleAssignmentOperation { Target: IDiscardOperation })
+                return;
+
+            isDiscarded = true;
+        }
+
+        if (!awaitableTypes.MightBeAwaitable(operation.Type))
             return;
+
+        if (isDiscarded && !context.Options.GetConfigurationValue(operation, ReportDiscardedConfiguration))
+            return;
+
+        if (IsInAsyncMethodOrTopLevelStatements(operation, context.ContainingSymbol))
+            return; // Already handled by CS4014
 
         if (operationUtilities.IsInExpressionContext(operation))
             return;
 
-        var semanticModel = operation.SemanticModel!;
-        var position = operation.Syntax.GetLocation().SourceSpan.End;
-
-        var enclosingSymbol = semanticModel.GetEnclosingSymbol(position, context.CancellationToken);
-        if (enclosingSymbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod()))
-            return; // Already handled by CS4014
-
-        if (!awaitableTypes.IsAwaitable(operation.Type, semanticModel, position))
+        if (!awaitableTypes.IsAwaitable(operation.Type, operation.SemanticModel!, operation.Syntax.Span.End))
             return;
 
         context.ReportDiagnostic(Rule, operation);
+    }
+
+    private static bool IsInAsyncMethodOrTopLevelStatements(IOperation operation, ISymbol containingSymbol)
+    {
+        // The containing symbol is the member, so the operations are used to find the enclosing lambda or local function
+        for (var parent = operation.Parent; parent is not null; parent = parent.Parent)
+        {
+            switch (parent)
+            {
+                case IAnonymousFunctionOperation anonymousFunction:
+                    return anonymousFunction.Symbol.IsAsync;
+
+                case ILocalFunctionOperation localFunction:
+                    return localFunction.Symbol.IsAsync;
+            }
+        }
+
+        return containingSymbol is IMethodSymbol method && (method.IsAsync || method.IsTopLevelStatementsEntryPointMethod());
     }
 }
