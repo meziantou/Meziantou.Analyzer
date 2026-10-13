@@ -5,103 +5,6 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
 {
-    private static readonly ObjectPool<PooledQueue<SyntaxNode>> NodeQueuePool = ObjectPool.CreateQueuePool<SyntaxNode>();
-
-    // Reserved keywords, plus the contextual keywords and the type keywords that are unlikely to be used as an identifier.
-    // Contextual keywords such as "value", "from", "select", "add", "remove", "get" or "set" are excluded as they are commonly used as plain words or identifiers.
-    private static readonly HashSet<string> CSharpKeywords = new(StringComparer.Ordinal)
-    {
-        "abstract",
-        "as",
-        "async",
-        "await",
-        "base",
-        "bool",
-        "break",
-        "byte",
-        "case",
-        "catch",
-        "char",
-        "checked",
-        "class",
-        "const",
-        "continue",
-        "decimal",
-        "default",
-        "delegate",
-        "do",
-        "double",
-        "dynamic",
-        "else",
-        "enum",
-        "event",
-        "explicit",
-        "extern",
-        "false",
-        "finally",
-        "fixed",
-        "float",
-        "for",
-        "foreach",
-        "goto",
-        "if",
-        "implicit",
-        "in",
-        "init",
-        "int",
-        "interface",
-        "internal",
-        "is",
-        "lock",
-        "long",
-        "nameof",
-        "namespace",
-        "new",
-        "nint",
-        "nuint",
-        "null",
-        "object",
-        "operator",
-        "out",
-        "override",
-        "params",
-        "partial",
-        "private",
-        "protected",
-        "public",
-        "readonly",
-        "record",
-        "ref",
-        "required",
-        "return",
-        "sbyte",
-        "scoped",
-        "sealed",
-        "short",
-        "sizeof",
-        "stackalloc",
-        "static",
-        "string",
-        "struct",
-        "switch",
-        "this",
-        "throw",
-        "true",
-        "try",
-        "typeof",
-        "uint",
-        "ulong",
-        "unchecked",
-        "unsafe",
-        "ushort",
-        "using",
-        "var",
-        "virtual",
-        "void",
-        "volatile",
-        "while",
-    };
-
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.UseLangwordInXmlComment,
         title: "Use langword in XML comment",
@@ -122,127 +25,40 @@ public sealed class UseLangwordInXmlCommentAnalyzer : DiagnosticAnalyzer
         description: "",
         helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.EmptyLanguageAttributeInXmlComment));
 
-    private static readonly DiagnosticDescriptor MissingLanguageAttributeRule = new(
-        RuleIdentifiers.MissingLanguageAttributeInXmlComment,
-        title: "Set the language attribute in XML comment",
-        messageFormat: "Set the language attribute in XML comment",
-        RuleCategories.Design,
-        DiagnosticSeverity.Hidden,
-        isEnabledByDefault: true,
-        description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MissingLanguageAttributeInXmlComment));
-
-    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, EmptyLanguageAttributeRule, MissingLanguageAttributeRule);
+    public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule, EmptyLanguageAttributeRule);
 
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
         context.ConfigureAnalysisOfGeneratedCode(GeneratedCodeAnalysisFlags.None);
 
-        context.RegisterSymbolAction(AnalyzeSymbol, SymbolKind.NamedType, SymbolKind.Method, SymbolKind.Field, SymbolKind.Event, SymbolKind.Property);
+        context.RegisterSyntaxTreeAction(AnalyzeTree);
     }
 
-    private static void AnalyzeSymbol(SymbolAnalysisContext context)
+    private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
-        var symbol = context.Symbol;
-        if (symbol.IsImplicitlyDeclared)
-            return;
+        XmlCommentCodeElementHelper.AnalyzeCodeElements(context, AnalyzeCodeElement);
+    }
 
-        if (symbol is INamedTypeSymbol namedTypeSymbol && (namedTypeSymbol.IsImplicitClass || symbol.Name.Contains('$', StringComparison.Ordinal)))
-            return;
-
-        foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
+    private static void AnalyzeCodeElement(SyntaxTreeAnalysisContext context, XmlElementSyntax codeElement)
+    {
+        if (XmlCommentCodeElementHelper.TryGetKeyword(codeElement, out var keyword))
         {
-            var syntax = syntaxReference.GetSyntax(context.CancellationToken);
-            var syntaxToAnalyze = XmlDocumentationCommentHelper.GetDocumentedNode(symbol, syntax);
-            if (syntaxToAnalyze is null || !syntaxToAnalyze.HasStructuredTrivia)
-                continue;
-
-            foreach (var trivia in syntaxToAnalyze.GetLeadingTrivia())
-            {
-                var structure = trivia.GetStructure();
-                if (structure is null)
-                    continue;
-
-                if (structure is not DocumentationCommentTriviaSyntax documentation)
-                    continue;
-
-                // Detect the following patterns
-                // <c>{keyword}</c>
-                // <code>{keyword}</code>
-
-                var queue = NodeQueuePool.Get();
-                try
-                {
-                    foreach (var item in documentation.ChildNodes())
-                    {
-                        queue.Enqueue(item);
-                    }
-
-                    while (queue.TryDequeue(out var childNode))
-                    {
-                        if (childNode is XmlElementSyntax elementSyntax)
-                        {
-                            var elementName = elementSyntax.StartTag.Name.LocalName.Text;
-                            if (string.Equals(elementName, "c", StringComparison.OrdinalIgnoreCase) || string.Equals(elementName, "code", StringComparison.OrdinalIgnoreCase))
-                            {
-                                if (elementSyntax.StartTag.Attributes.Count == 0)
-                                {
-                                    var item = elementSyntax.Content.SingleOrDefaultIfMultiple();
-                                    if (item is XmlTextSyntax { TextTokens: [var codeText] } && CSharpKeywords.Contains(codeText.Text))
-                                    {
-                                        // The langword attribute is the way to document a keyword, so the language is not needed
-                                        var properties = ImmutableDictionary<string, string?>.Empty.Add(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, codeText.Text);
-                                        context.ReportDiagnostic(Rule, properties, elementSyntax);
-                                        continue;
-                                    }
-                                }
-
-                                AnalyzeLanguageAttributes(context, elementSyntax);
-                            }
-                            else
-                            {
-                                foreach (var child in elementSyntax.Content)
-                                {
-                                    queue.Enqueue(child);
-                                }
-                            }
-                        }
-                    }
-                }
-                finally
-                {
-                    NodeQueuePool.Return(queue);
-                }
-            }
+            // The langword attribute is the way to document a keyword, so the language is not needed
+            var properties = ImmutableDictionary<string, string?>.Empty.Add(UseLangwordInXmlCommentAnalyzerCommon.KeywordKey, keyword);
+            context.ReportDiagnostic(Rule, properties, codeElement);
+            return;
         }
-    }
 
-    private static void AnalyzeLanguageAttributes(SymbolAnalysisContext context, XmlElementSyntax elementSyntax)
-    {
-        var hasLanguageAttribute = false;
-        foreach (var attribute in elementSyntax.StartTag.Attributes)
+        foreach (var attribute in codeElement.StartTag.Attributes)
         {
-            var attributeName = attribute.Name.LocalName.Text;
-            if (string.Equals(attributeName, "langword", StringComparison.OrdinalIgnoreCase))
-            {
-                hasLanguageAttribute = true;
-                continue;
-            }
-
-            if (!string.Equals(attributeName, "lang", StringComparison.OrdinalIgnoreCase) && !string.Equals(attributeName, "language", StringComparison.OrdinalIgnoreCase))
+            if (!XmlCommentCodeElementHelper.IsLanguageAttribute(attribute))
                 continue;
 
-            hasLanguageAttribute = true;
             if (attribute is XmlTextAttributeSyntax textAttribute && textAttribute.TextTokens.All(token => string.IsNullOrWhiteSpace(token.ValueText)))
             {
-                context.ReportDiagnostic(EmptyLanguageAttributeRule, attribute, attributeName);
+                context.ReportDiagnostic(EmptyLanguageAttributeRule, attribute, attribute.Name.LocalName.Text);
             }
-        }
-
-        if (!hasLanguageAttribute)
-        {
-            context.ReportDiagnostic(MissingLanguageAttributeRule, elementSyntax);
         }
     }
 }

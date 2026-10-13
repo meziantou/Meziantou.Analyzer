@@ -1,3 +1,4 @@
+using Meziantou.Analyzer.Internals;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
@@ -116,7 +117,7 @@ public sealed class FixToDoAnalyzerTests
     public Task TodoAtTheEndOfAReadBuffer(int bufferCount, int offset)
     {
         const string CommentStart = "//";
-        var endOfBuffer = (bufferCount * FixToDoAnalyzer.ReadBufferSize) - ((bufferCount - 1) * 3);
+        var endOfBuffer = (bufferCount * SourceTextSearcher.ReadBufferSize) - ((bufferCount - 1) * 3);
         var todoPosition = endOfBuffer + offset;
 
         var test = CreateTest();

@@ -1,4 +1,3 @@
-using System.Buffers;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Text;
 
@@ -21,9 +20,6 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     private static readonly char[] TrimStartChars = [' ', '\t', '*', '-', '/'];
 
-    /// <summary>The number of characters read at once when searching "TODO" in the text of a file.</summary>
-    internal const int ReadBufferSize = 4096;
-
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
@@ -35,8 +31,11 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
     private static void AnalyzeTree(SyntaxTreeAnalysisContext context)
     {
         // Most files do not contain "TODO" at all, and reading the text is much faster than enumerating the trivia
-        if (!ContainsToDo(context.Tree.GetText(context.CancellationToken)))
-            return;
+        using (var searcher = new SourceTextSearcher(context.Tree.GetText(context.CancellationToken), "TODO", StringComparison.OrdinalIgnoreCase))
+        {
+            if (searcher.IndexOf(0) < 0)
+                return;
+        }
 
         var root = context.Tree.GetCompilationUnitRoot(context.CancellationToken);
         foreach (var node in root.DescendantTrivia())
@@ -90,33 +89,6 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
                     }
                 }
             }
-        }
-    }
-
-    private static bool ContainsToDo(SourceText text)
-    {
-        const int ToDoLength = 4;
-
-        var buffer = ArrayPool<char>.Shared.Rent(ReadBufferSize);
-        try
-        {
-            var position = 0;
-            while (text.Length - position >= ToDoLength)
-            {
-                var count = Math.Min(ReadBufferSize, text.Length - position);
-                text.CopyTo(position, buffer, 0, count);
-                if (new ReadOnlySpan<char>(buffer, 0, count).Contains("TODO".AsSpan(), StringComparison.OrdinalIgnoreCase))
-                    return true;
-
-                // Read the last characters again, as "TODO" can span two buffers
-                position += count - (ToDoLength - 1);
-            }
-
-            return false;
-        }
-        finally
-        {
-            ArrayPool<char>.Shared.Return(buffer);
         }
     }
 }
