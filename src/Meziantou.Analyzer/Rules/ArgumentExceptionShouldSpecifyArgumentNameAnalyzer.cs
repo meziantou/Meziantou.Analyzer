@@ -1,4 +1,5 @@
 using Meziantou.Analyzer.Configurations;
+using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
@@ -56,7 +57,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
         public INamedTypeSymbol ArgumentNullExceptionType { get; } = compilation.GetTypeByMetadataName("System.ArgumentNullException")!;
         public INamedTypeSymbol? ArgumentOutOfRangeExceptionType { get; } = compilation.GetTypeByMetadataName("System.ArgumentOutOfRangeException");
         public INamedTypeSymbol? InvalidEnumArgumentExceptionType { get; } = compilation.GetTypeByMetadataName("System.ComponentModel.InvalidEnumArgumentException");
-                public INamedTypeSymbol? CallerArgumentExpressionAttribute { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
+        public INamedTypeSymbol? CallerArgumentExpressionAttribute { get; } = compilation.GetBestTypeByMetadataName("System.Runtime.CompilerServices.CallerArgumentExpressionAttribute");
 
         public bool IsValid => ArgumentExceptionType is not null && ArgumentNullExceptionType is not null;
 
@@ -89,8 +90,10 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 {
                     if (argument.Value.ConstantValue.Value is string value)
                     {
-                        var parameterNames = GetParameterNames(op, context.CancellationToken);
-                        if (parameterNames.Contains(value, StringComparer.Ordinal))
+                        if (IsNameOfParameterOfContainingFunction(argument.Value, context.ContainingSymbol))
+                            return;
+
+                        if (IsParameterName(op, value, context.CancellationToken))
                         {
                             if (argument.Value is not INameOfOperation)
                             {
@@ -105,7 +108,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                         if (considerMemberAccessAsParameter)
                         {
                             var dotIndex = value.IndexOf('.', StringComparison.Ordinal);
-                            if (dotIndex > 0 && parameterNames.Contains(value[..dotIndex], StringComparer.Ordinal))
+                            if (dotIndex > 0 && IsParameterName(op, value[..dotIndex], context.CancellationToken))
                                 return;
                         }
 
@@ -126,13 +129,18 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
                 return;
             }
 
-            var ctors = type.GetMembers(".ctor").OfType<IMethodSymbol>().Where(m => m.MethodKind is MethodKind.Constructor);
-            foreach (var ctor in ctors)
+            if (type is not INamedTypeSymbol namedType)
+                return;
+
+            foreach (var ctor in namedType.InstanceConstructors)
             {
-                if (ctor.Parameters.Any(p => p.Name is "paramName" or "argumentName" && p.Type.IsString()))
+                foreach (var parameter in ctor.Parameters)
                 {
-                    context.ReportDiagnostic(Rule, op, $"Use an overload of '{type.ToDisplayString()}' with the parameter name");
-                    return;
+                    if (parameter.Name is "paramName" or "argumentName" && parameter.Type.IsString())
+                    {
+                        context.ReportDiagnostic(Rule, op, $"Use an overload of '{type.ToDisplayString()}' with the parameter name");
+                        return;
+                    }
                 }
             }
         }
@@ -213,8 +221,10 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (!paramNameArgument.Value.ConstantValue.HasValue || paramNameArgument.Value.ConstantValue.Value is not string paramNameValue)
                 return;
 
-            var availableParameterNames = GetParameterNames(paramNameArgument, context.CancellationToken);
-            if (availableParameterNames.Contains(paramNameValue, StringComparer.Ordinal))
+            if (IsNameOfParameterOfContainingFunction(paramNameArgument.Value, context.ContainingSymbol))
+                return;
+
+            if (IsParameterName(paramNameArgument, paramNameValue, context.CancellationToken))
             {
                 if (paramNameArgument.Value is not INameOfOperation)
                 {
@@ -229,7 +239,7 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             if (considerMemberAccessAsParameter)
             {
                 var dotIndex = paramNameValue.IndexOf('.', StringComparison.Ordinal);
-                if (dotIndex > 0 && availableParameterNames.Contains(paramNameValue[..dotIndex], StringComparer.Ordinal))
+                if (dotIndex > 0 && IsParameterName(paramNameArgument, paramNameValue[..dotIndex], context.CancellationToken))
                     return;
             }
 
@@ -271,18 +281,43 @@ public sealed partial class ArgumentExceptionShouldSpecifyArgumentNameAnalyzer :
             return current is IParameterReferenceOperation;
         }
 
-        private static IEnumerable<string> GetParameterNames(IOperation operation, CancellationToken cancellationToken)
+        // nameof(parameter) is the most common value, and it is valid without looking up any symbol when the parameter
+        // is declared by the function that contains the operation. The parameters of the other functions need the lookup,
+        // as they are not valid when the operation is in a static local function or in a static lambda.
+        private static bool IsNameOfParameterOfContainingFunction(IOperation operation, ISymbol containingSymbol)
         {
-            var symbols = operation.LookupAvailableSymbols(cancellationToken);
-            foreach (var symbol in symbols)
+            if (operation is not INameOfOperation { Argument: IParameterReferenceOperation { Parameter.ContainingSymbol: var parameterOwner } })
+                return false;
+
+            for (var current = operation.Parent; current is not null; current = current.Parent)
             {
-                switch (symbol)
+                switch (current)
                 {
-                    case IParameterSymbol parameterSymbol:
-                        yield return parameterSymbol.Name;
-                        break;
+                    case IAnonymousFunctionOperation anonymousFunction:
+                        return anonymousFunction.Symbol.IsEqualTo(parameterOwner);
+
+                    case ILocalFunctionOperation localFunction:
+                        return localFunction.Symbol.IsEqualTo(parameterOwner);
                 }
             }
+
+            return containingSymbol.IsEqualTo(parameterOwner);
+        }
+
+        // Only look up the symbols named after the value: enumerating all the symbols in scope binds every name
+        // of the usings and of the containing namespaces, which is far more expensive.
+        private static bool IsParameterName(IOperation operation, string name, CancellationToken cancellationToken)
+        {
+            if (!SyntaxFacts.IsValidIdentifier(name))
+                return false;
+
+            foreach (var symbol in operation.LookupAvailableSymbols(name, cancellationToken))
+            {
+                if (symbol is IParameterSymbol)
+                    return true;
+            }
+
+            return false;
         }
     }
 }
