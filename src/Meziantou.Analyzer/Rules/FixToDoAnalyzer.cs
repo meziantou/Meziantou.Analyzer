@@ -21,6 +21,9 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     private static readonly char[] TrimStartChars = [' ', '\t', '*', '-', '/'];
 
+    /// <summary>The number of characters read at once when searching "TODO" in the text of a file.</summary>
+    internal const int ReadBufferSize = 4096;
+
     public override void Initialize(AnalysisContext context)
     {
         context.EnableConcurrentExecution();
@@ -92,25 +95,18 @@ public sealed class FixToDoAnalyzer : DiagnosticAnalyzer
 
     private static bool ContainsToDo(SourceText text)
     {
-        const int BufferSize = 4096;
         const int ToDoLength = 4;
 
-        var buffer = ArrayPool<char>.Shared.Rent(BufferSize);
+        var buffer = ArrayPool<char>.Shared.Rent(ReadBufferSize);
         try
         {
             var position = 0;
             while (text.Length - position >= ToDoLength)
             {
-                var count = Math.Min(BufferSize, text.Length - position);
+                var count = Math.Min(ReadBufferSize, text.Length - position);
                 text.CopyTo(position, buffer, 0, count);
-
-                // The letters of "TODO" have no other character with the same uppercase, so this is equivalent to StringComparison.OrdinalIgnoreCase
-                var lastIndex = count - ToDoLength;
-                for (var i = 0; i <= lastIndex; i++)
-                {
-                    if ((buffer[i] | 0x20) == 't' && (buffer[i + 1] | 0x20) == 'o' && (buffer[i + 2] | 0x20) == 'd' && (buffer[i + 3] | 0x20) == 'o')
-                        return true;
-                }
+                if (new ReadOnlySpan<char>(buffer, 0, count).Contains("TODO".AsSpan(), StringComparison.OrdinalIgnoreCase))
+                    return true;
 
                 // Read the last characters again, as "TODO" can span two buffers
                 position += count - (ToDoLength - 1);
