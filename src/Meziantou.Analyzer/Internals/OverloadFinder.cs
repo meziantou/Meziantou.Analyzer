@@ -12,10 +12,7 @@ internal sealed class OverloadFinder(Compilation compilation)
     private readonly ITypeSymbol? _experimentalSymbol = compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.ExperimentalAttribute");
     private readonly INamedTypeSymbol? _ienumerableOfTSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.IEnumerable`1");
     private readonly INamedTypeSymbol? _halfSymbol = compilation.GetTypeByMetadataName("System.Half");
-    private readonly ExtensionMethodIndex _extensionMethodIndex = ExtensionMethodIndex.Get(compilation);
-
-    private readonly BoundedCache<SimilarMethodKey, bool> _mightHaveSimilarMethodCache = new(capacity: 4096);
-    private Func<SimilarMethodKey, bool>? _mightHaveSimilarMethod;
+    private readonly OverloadCandidateIndex _candidateIndex = OverloadCandidateIndex.Get(compilation);
     private readonly Lazy<Dictionary<string, List<IMethodSymbol>>> _extensionMethodsByName = new(() => CreateExtensionMethodsByName(compilation));
 
     private static ReadOnlySpan<OverloadParameterType> Wrap(ReadOnlySpan<ITypeSymbol?> types)
@@ -84,6 +81,42 @@ internal sealed class OverloadFinder(Compilation compilation)
         return FindOverloadWithAdditionalParameterOfType(methodSymbol, options, additionalParameterTypes) is not null;
     }
 
+    public bool HasOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ITypeSymbol? additionalParameterType)
+    {
+        return FindOverloadWithAdditionalParameterOfType(operation, options, additionalParameterType) is not null;
+    }
+
+    public bool HasOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ITypeSymbol? additionalParameterType)
+    {
+        return FindOverloadWithAdditionalParameterOfType(methodSymbol, options, additionalParameterType) is not null;
+    }
+
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ITypeSymbol? additionalParameterType)
+    {
+        if (options.SyntaxNode is null)
+        {
+            options = options with { SyntaxNode = operation.Syntax };
+        }
+
+        return FindOverloadWithAdditionalParameterOfType(operation.TargetMethod, options, additionalParameterType);
+    }
+
+    /// <summary>
+    /// Same as the overloads with several additional parameter types, but does not allocate when the method has no overload,
+    /// which is the case of most methods.
+    /// </summary>
+    public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IMethodSymbol methodSymbol, OverloadOptions options, ITypeSymbol? additionalParameterType)
+    {
+        if (additionalParameterType is null)
+            return null;
+
+        var key = CreateSimilarMethodKey(methodSymbol, methodSymbol.Name, additionalParameterType);
+        if (!MightHaveSimilarMethod(key, options))
+            return null;
+
+        return FindFirstSimilarMethod(methodSymbol, options, methodSymbol.Name, [new OverloadParameterType(additionalParameterType)], key);
+    }
+
     public IMethodSymbol? FindOverloadWithAdditionalParameterOfType(IInvocationOperation operation, OverloadOptions options, ReadOnlySpan<ITypeSymbol?> additionalParameterTypes)
     {
         if (options.SyntaxNode is null)
@@ -136,8 +169,12 @@ internal sealed class OverloadFinder(Compilation compilation)
         if (!MightHaveSimilarMethod(key, options))
             return null;
 
-        var members = GetCandidateMethods(methodSymbol, methodName, options);
-        foreach (var member in members)
+        return FindFirstSimilarMethod(methodSymbol, options, methodName, additionalParameterTypes, key);
+    }
+
+    private IMethodSymbol? FindFirstSimilarMethod(IMethodSymbol methodSymbol, OverloadOptions options, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes, SimilarMethodKey key)
+    {
+        foreach (var member in GetCandidateMethods(methodSymbol, methodName, options))
         {
             if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, key, out var method))
                 return method;
@@ -154,8 +191,7 @@ internal sealed class OverloadFinder(Compilation compilation)
             return ImmutableArray<IMethodSymbol>.Empty;
 
         List<IMethodSymbol>? result = null;
-        var members = GetCandidateMethods(methodSymbol, methodName, options);
-        foreach (var member in members)
+        foreach (var member in GetCandidateMethods(methodSymbol, methodName, options))
         {
             if (IsSimilarMethod(methodSymbol, member, options, additionalParameterTypes, key, out var method))
             {
@@ -169,17 +205,12 @@ internal sealed class OverloadFinder(Compilation compilation)
 
     private static SimilarMethodKey CreateSimilarMethodKey(IMethodSymbol methodSymbol, string methodName, ReadOnlySpan<OverloadParameterType> additionalParameterTypes)
     {
-        var key = new SimilarMethodKey(methodSymbol.ContainingType, GetReducedReceiverType(methodSymbol), methodName, additionalParameterTypes);
-        if (key.IsValid && key.AdditionalType0 is not null)
-        {
-            foreach (var typeArgument in methodSymbol.TypeArguments)
-            {
-                if (typeArgument.IsEqualTo(key.AdditionalType0) || typeArgument.IsEqualTo(key.AdditionalType1))
-                    return key with { IsTypeArgument = true };
-            }
-        }
+        return new SimilarMethodKey(methodSymbol.ContainingType, GetReducedReceiverType(methodSymbol), methodName, additionalParameterTypes).WithTypeArguments(methodSymbol);
+    }
 
-        return key;
+    private static SimilarMethodKey CreateSimilarMethodKey(IMethodSymbol methodSymbol, string methodName, ITypeSymbol additionalParameterType)
+    {
+        return new SimilarMethodKey(methodSymbol.ContainingType, GetReducedReceiverType(methodSymbol), methodName, additionalParameterType).WithTypeArguments(methodSymbol);
     }
 
     /// <summary>
@@ -190,73 +221,19 @@ internal sealed class OverloadFinder(Compilation compilation)
     /// </summary>
     private bool MightHaveSimilarMethod(SimilarMethodKey key, OverloadOptions options)
     {
+        if (!key.IsValid)
+            return true;
+
         // Without a syntax node, only the members declared by the types are searched, which is cheap
-        if (options.SyntaxNode is null || !key.IsValid)
-            return true;
+        if (options.SyntaxNode is null)
+            return HasPotentiallySimilarMethod(key, key.ContainingType) || (key.ReducedReceiverType is not null && HasPotentiallySimilarMethod(key, key.ReducedReceiverType));
 
-        // The same methods are invoked many times in a compilation, and the result is the same for all the overloads of a method
-        return _mightHaveSimilarMethodCache.GetOrAdd(key, _mightHaveSimilarMethod ??= MightHaveSimilarMethod);
-    }
+        var parameterTypes = _candidateIndex.GetParameterTypes(key.ContainingType, key.ReducedReceiverType, key.MethodName);
+        if (key.AdditionalType0 is null)
+            return parameterTypes.HasMethod;
 
-    private bool MightHaveSimilarMethod(SimilarMethodKey key)
-    {
-        if (MightDeclareSimilarMethod(key, key.ContainingType, depth: 0))
-            return true;
-
-        if (key.ReducedReceiverType is not null && MightDeclareSimilarMethod(key, key.ReducedReceiverType, depth: 0))
-            return true;
-
-        if (!_extensionMethodIndex.TryGetMethods(key.MethodName, out var extensionMethods))
-            return true;
-
-        foreach (var extensionMethod in extensionMethods)
-        {
-            if (key.HasParametersForAdditionalTypes(extensionMethod))
-                return true;
-        }
-
-        return false;
-    }
-
-    /// <summary>
-    /// Indicates whether a method that a member lookup in <paramref name="type"/> can find, which are the methods of the type,
-    /// of its base types and of its interfaces, can be similar to the method.
-    /// </summary>
-    private bool MightDeclareSimilarMethod(SimilarMethodKey key, ITypeSymbol type, int depth)
-    {
-        const int MaxConstraintDepth = 8;
-
-        switch (type)
-        {
-            case INamedTypeSymbol or IArrayTypeSymbol when type.TypeKind is not TypeKind.Error:
-                for (var current = type; current is not null; current = current.BaseType)
-                {
-                    if (HasPotentiallySimilarMethod(key, current))
-                        return true;
-                }
-
-                foreach (var interfaceType in type.AllInterfaces)
-                {
-                    if (HasPotentiallySimilarMethod(key, interfaceType))
-                        return true;
-                }
-
-                // The members of System.Object are available on the interfaces
-                return type.TypeKind is TypeKind.Interface && HasPotentiallySimilarMethod(key, compilation.ObjectType);
-
-            // The members of a type parameter are the ones of its constraints
-            case ITypeParameterSymbol typeParameter when depth < MaxConstraintDepth:
-                foreach (var constraintType in typeParameter.ConstraintTypes)
-                {
-                    if (MightDeclareSimilarMethod(key, constraintType, depth + 1))
-                        return true;
-                }
-
-                return HasPotentiallySimilarMethod(key, compilation.ObjectType) || HasPotentiallySimilarMethod(key, compilation.GetSpecialType(SpecialType.System_ValueType));
-
-            default:
-                return true;
-        }
+        return parameterTypes.MightHaveParameterOfType(key.AdditionalType0, key.IsTypeArgument)
+            && (key.AdditionalType1 is null || parameterTypes.MightHaveParameterOfType(key.AdditionalType1, key.IsTypeArgument));
 
         static bool HasPotentiallySimilarMethod(SimilarMethodKey key, ITypeSymbol type)
         {
@@ -762,53 +739,65 @@ internal sealed class OverloadFinder(Compilation compilation)
         }
     }
 
-    private List<ISymbol> GetCandidateMethods(IMethodSymbol methodSymbol, string methodName, OverloadOptions options)
+    private ImmutableArray<ISymbol> GetCandidateMethods(IMethodSymbol methodSymbol, string methodName, OverloadOptions options)
     {
         if (methodSymbol.ContainingType is null)
-            return [];
-
-        var results = new List<ISymbol>();
-        var knownSymbols = new HashSet<ISymbol>(SymbolEqualityComparer.Default);
-
-        static void AddSymbols(IEnumerable<ISymbol> symbols, List<ISymbol> results, HashSet<ISymbol> knownSymbols)
-        {
-            foreach (var symbol in symbols)
-            {
-                if (knownSymbols.Add(symbol))
-                {
-                    results.Add(symbol);
-                }
-            }
-        }
+            return ImmutableArray<ISymbol>.Empty;
 
         var reducedReceiverType = GetReducedReceiverType(methodSymbol);
-        if (options.SyntaxNode is not null)
+        if (options.SyntaxNode is null)
+        {
+            // The members of a type are distinct, so there is nothing to merge
+            var members = methodSymbol.ContainingType.GetMembers(methodName);
+            if (reducedReceiverType is null)
+                return members;
+
+            var builder = new CandidateBuilder();
+            builder.AddRange(members);
+            builder.AddRange(reducedReceiverType.GetMembers(methodName));
+            return builder.ToImmutable();
+        }
+        else
         {
             var semanticModel = compilation.GetSemanticModel(options.SyntaxNode.SyntaxTree);
             var position = options.SyntaxNode.GetLocation().SourceSpan.End;
 
-            AddSymbols(LookupSymbols(semanticModel, options, position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true), results, knownSymbols);
+            var builder = new CandidateBuilder();
+            builder.AddRange(LookupSymbols(semanticModel, options, position, methodSymbol.ContainingType, methodName, includeReducedExtensionMethods: true));
             if (reducedReceiverType is not null)
             {
-                AddSymbols(LookupSymbols(semanticModel, options, position, reducedReceiverType, methodName, includeReducedExtensionMethods: false), results, knownSymbols);
-                AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
+                builder.AddRange(LookupSymbols(semanticModel, options, position, reducedReceiverType, methodName, includeReducedExtensionMethods: false));
+                builder.AddRange(reducedReceiverType.GetMembers(methodName));
             }
 
             if (options.IncludeExtensionMethodsFromNotImportedNamespaces)
             {
-                AddExtensionMethodsFromNotImportedNamespaces(methodSymbol, methodName, semanticModel, position, results);
+                AddExtensionMethodsFromNotImportedNamespaces(methodSymbol, methodName, semanticModel, position, builder.Symbols);
             }
+
+            return builder.ToImmutable();
         }
-        else
+    }
+
+    /// <summary>Merges the symbols coming from several lookups, which can find the same symbol.</summary>
+    private readonly struct CandidateBuilder()
+    {
+        private readonly HashSet<ISymbol> _knownSymbols = new(SymbolEqualityComparer.Default);
+
+        public List<ISymbol> Symbols { get; } = [];
+
+        public void AddRange(ImmutableArray<ISymbol> symbols)
         {
-            AddSymbols(methodSymbol.ContainingType.GetMembers(methodName), results, knownSymbols);
-            if (reducedReceiverType is not null)
+            foreach (var symbol in symbols)
             {
-                AddSymbols(reducedReceiverType.GetMembers(methodName), results, knownSymbols);
+                if (_knownSymbols.Add(symbol))
+                {
+                    Symbols.Add(symbol);
+                }
             }
         }
 
-        return results;
+        public ImmutableArray<ISymbol> ToImmutable() => ImmutableArray.CreateRange(Symbols);
     }
 
     private static ImmutableArray<ISymbol> LookupSymbols(SemanticModel semanticModel, OverloadOptions options, int position, ITypeSymbol container, string name, bool includeReducedExtensionMethods)
@@ -989,82 +978,34 @@ internal sealed class OverloadFinder(Compilation compilation)
             IsValid = true;
         }
 
-        /// <summary>
-        /// Indicates whether the method has a parameter that can match each additional type. This is cheap to compute, and it is
-        /// a requirement for the method to be similar to another method, whatever the type arguments inferred for the method are.
-        /// </summary>
+        public SimilarMethodKey(INamedTypeSymbol? containingType, ITypeSymbol? reducedReceiverType, string methodName, ITypeSymbol additionalParameterType)
+            : this(containingType!, reducedReceiverType, methodName, additionalParameterType, AdditionalType1: null, IsTypeArgument: false, IsValid: containingType is not null && additionalParameterType is not ITypeParameterSymbol)
+        {
+        }
+
+        /// <summary>Sets <see cref="IsTypeArgument"/> from the type arguments of the method the overload is searched for.</summary>
+        public SimilarMethodKey WithTypeArguments(IMethodSymbol methodSymbol)
+        {
+            if (IsValid && AdditionalType0 is not null && methodSymbol.IsGenericMethod)
+            {
+                foreach (var typeArgument in methodSymbol.TypeArguments)
+                {
+                    if (typeArgument.IsEqualTo(AdditionalType0) || typeArgument.IsEqualTo(AdditionalType1))
+                        return this with { IsTypeArgument = true };
+                }
+            }
+
+            return this;
+        }
+
+        /// <summary>Indicates whether the method has a parameter that can match each additional type.</summary>
         public bool HasParametersForAdditionalTypes(IMethodSymbol method)
         {
             if (AdditionalType0 is null)
                 return true;
 
-            // The parameters of a reduced extension method are compared using the ones of the method it is reduced from
-            var parameters = (method.ReducedFrom ?? method).Parameters;
-            return HasParameterForAdditionalType(parameters, AdditionalType0) && (AdditionalType1 is null || HasParameterForAdditionalType(parameters, AdditionalType1));
-        }
-
-        private bool HasParameterForAdditionalType(ImmutableArray<IParameterSymbol> parameters, ITypeSymbol additionalType)
-        {
-            foreach (var parameter in parameters)
-            {
-                if (MightBeCompatibleWithAdditionalType(parameter.Type, additionalType))
-                    return true;
-            }
-
-            return false;
-        }
-
-        private bool MightBeCompatibleWithAdditionalType(ITypeSymbol parameterType, ITypeSymbol additionalType)
-        {
-            switch (parameterType)
-            {
-                // The type arguments can differ, as they can be the type parameters of the method
-                case INamedTypeSymbol:
-                    return string.Equals(parameterType.Name, additionalType.Name, StringComparison.Ordinal) && parameterType.OriginalDefinition.IsEqualTo(additionalType.OriginalDefinition);
-
-                // A type parameter of a method is only compared to the type arguments of the method the overload is searched for
-                case ITypeParameterSymbol { TypeParameterKind: TypeParameterKind.Method }:
-                    return IsTypeArgument;
-
-                // A type parameter of an extension block is inferred from the receiver, so it can be any type
-                case ITypeParameterSymbol typeParameter:
-                    return ExtensionMethodIndex.IsExtensionBlock(typeParameter.ContainingType);
-
-                case IArrayTypeSymbol:
-                    return additionalType is IArrayTypeSymbol;
-
-                case IPointerTypeSymbol:
-                    return additionalType is IPointerTypeSymbol;
-
-                case IFunctionPointerTypeSymbol:
-                    return additionalType is IFunctionPointerTypeSymbol;
-
-                default:
-                    return true;
-            }
-        }
-
-        public bool Equals(SimilarMethodKey other)
-        {
-            return IsTypeArgument == other.IsTypeArgument
-                && string.Equals(MethodName, other.MethodName, StringComparison.Ordinal)
-                && SymbolEqualityComparer.Default.Equals(ContainingType, other.ContainingType)
-                && SymbolEqualityComparer.Default.Equals(ReducedReceiverType, other.ReducedReceiverType)
-                && SymbolEqualityComparer.Default.Equals(AdditionalType0, other.AdditionalType0)
-                && SymbolEqualityComparer.Default.Equals(AdditionalType1, other.AdditionalType1);
-        }
-
-        public override int GetHashCode()
-        {
-            unchecked
-            {
-                var hashCode = StringComparer.Ordinal.GetHashCode(MethodName);
-                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(ContainingType);
-                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(ReducedReceiverType);
-                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(AdditionalType0);
-                hashCode = (hashCode * 397) ^ SymbolEqualityComparer.Default.GetHashCode(AdditionalType1);
-                return (hashCode * 397) ^ (IsTypeArgument ? 1 : 0);
-            }
+            return OverloadCandidateIndex.ParameterTypes.MightHaveParameterOfType(method, AdditionalType0, IsTypeArgument)
+                && (AdditionalType1 is null || OverloadCandidateIndex.ParameterTypes.MightHaveParameterOfType(method, AdditionalType1, IsTypeArgument));
         }
     }
 

@@ -158,8 +158,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (method is null)
                 return;
 
-            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [EqualityComparerStringType])) ||
-                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, [ComparerStringType])))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, EqualityComparerStringType)) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(method, options: default, ComparerStringType)))
             {
                 if (ctx.Options.GetConfigurationValue(operation, ReportOnlyNonOrdinalConfiguration) && IsKnownOrdinalType(operation.Type))
                     return;
@@ -290,7 +290,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 if (comparerType is null)
                     continue;
 
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, options, [comparerType]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, options, comparerType);
                 if (overload is null)
                     continue;
 
@@ -334,8 +334,8 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (constructMethod is null)
                 return;
 
-            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, [EqualityComparerStringType])) ||
-                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, [ComparerStringType])))
+            if ((EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, EqualityComparerStringType)) ||
+                (ComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(constructMethod, options: default, ComparerStringType)))
             {
                 if (ctx.Options.GetConfigurationValue(operation, ReportOnlyNonOrdinalConfiguration) && IsKnownOrdinalType(operation.Type))
                     return;
@@ -411,7 +411,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             // Comparer<string>.Default, is culture-sensitive. So a method of Xunit.Assert is known to be
             // ordinal when the overload it lacks takes an IEqualityComparer<string>, not an IComparer<string>.
             if (method.ContainingType.IsEqualTo(XunitAssertType))
-                return EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, [EqualityComparerStringType]);
+                return EqualityComparerStringType is not null && _overloadFinder.HasOverloadWithAdditionalParameterOfType(operation, options: default, EqualityComparerStringType);
 
             return KnownOrdinalMethodNames.Contains(method.Name)
                 && _knownOrdinalContainerTypes.Contains(method.ContainingType.OriginalDefinition);

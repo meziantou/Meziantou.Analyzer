@@ -125,7 +125,7 @@ public sealed class UseStringComparisonAnalyzer : DiagnosticAnalyzer
                 // Check if there is an overload with a StringComparison
                 var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, UseStringComparisonIncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                     || context.Options.GetConfigurationValue(operation, AvoidCultureSensitiveMethodIncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache }, [_stringComparisonSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache }, _stringComparisonSymbol);
                 if (overload is not null)
                 {
                     var (rule, configuration) = IsNonCultureSensitiveMethod(operation)
