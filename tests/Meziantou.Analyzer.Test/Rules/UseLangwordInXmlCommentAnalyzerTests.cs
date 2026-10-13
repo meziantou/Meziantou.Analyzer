@@ -1,3 +1,6 @@
+using Meziantou.Analyzer.Internals;
+using Meziantou.Analyzer.Rules;
+using Microsoft.CodeAnalysis;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseLangwordInXmlCommentAnalyzer,
     Meziantou.Analyzer.Rules.UseLangwordInXmlCommentFixer>;
@@ -9,9 +12,10 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class UseLangwordInXmlCommentAnalyzerTests
 {
-    private static CodeFixTest CreateTest() => new();
+    // MA0219 is reported by its own analyzer, so the tests run both analyzers
+    private static CodeFixTest CreateTest() => new() { AdditionalAnalyzers = { new MissingLanguageAttributeInXmlCommentAnalyzer() } };
 
-    private static AddLanguageAttributeFixTest CreateAddLanguageAttributeFixTest() => new();
+    private static AddLanguageAttributeFixTest CreateAddLanguageAttributeFixTest() => new() { AdditionalAnalyzers = { new MissingLanguageAttributeInXmlCommentAnalyzer() } };
 
     [Theory]
     [InlineData("{|MA0154:<c>void</c>|}", "<see langword=\"void\"/>")]
@@ -231,6 +235,231 @@ public sealed class UseLangwordInXmlCommentAnalyzerTests
         test.TestCode = """
             /// <summary>{|MA0219:<c>test</c>|}</summary>
             class Sample(int a);
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingLanguageAttributeAnalyzer_DoesNotReportKeywords()
+    {
+        var test = new Harness.CSharpAnalyzerTest<MissingLanguageAttributeInXmlCommentAnalyzer>();
+        test.TestCode = """
+            /// <summary><c>void</c> [|<c>test</c>|] <c language="">test</c></summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task UseLangwordAnalyzer_DoesNotReportMissingLanguageAttribute()
+    {
+        var test = new Harness.CSharpAnalyzerTest<UseLangwordInXmlCommentAnalyzer>();
+        test.TestCode = """
+            /// <summary>{|MA0154:<c>void</c>|} <c>test</c> <c {|MA0218:language=""|}>test</c></summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("{|MA0154:<C>null</C>|}")]
+    [InlineData("{|MA0154:<CODE>null</CODE>|}")]
+    [InlineData("{|MA0154:<c >null</c>|}")]
+    [InlineData("{|MA0219:<Code>test</Code>|}")]
+    [InlineData("<para><b>{|MA0154:<c>null</c>|}</b></para>")]
+    // The content of a code element is not analyzed
+    [InlineData("{|MA0219:<code><c>null</c> test</code>|}")]
+    [InlineData("<c/>")]
+    [InlineData("<code />")]
+    [InlineData("<![CDATA[<c>null</c>]]>")]
+    [InlineData("<!-- <c>null</c> -->")]
+    // An element of another XML namespace is not a code element
+    [InlineData("""<x:c xmlns:x="urn:x">null</x:c>""")]
+    public Task CodeElementSyntax(string comment)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            /// <summary>{{comment}}</summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task StartTagOnMultipleLines()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>
+            /// {|MA0154:<c
+            /// >null</c>|}
+            /// <code
+            /// {|MA0218:language=""|}>
+            /// test
+            /// </code>
+            /// </summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MultiLineDocumentationComment()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /**
+             * <summary>{|MA0154:<c>null</c>|}</summary>
+             * <remarks>
+             * {|MA0219:<code>
+             * test
+             * </code>|}
+             * </remarks>
+             */
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Members()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary>{|MA0154:<c>null</c>|}</summary>
+            enum SampleEnum
+            {
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                A,
+            }
+
+            /// <summary>{|MA0154:<c>null</c>|}</summary>
+            delegate void SampleDelegate();
+
+            partial class Sample
+            {
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                Sample() { }
+
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                event System.EventHandler A, B;
+
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                int this[int index] => 0;
+
+                int C
+                {
+                    /// <summary>{|MA0154:<c>null</c>|}</summary>
+                    get => 0;
+                }
+
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                partial void D();
+
+                /// <summary>{|MA0154:<c>null</c>|}</summary>
+                partial void D() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task SeveralCommentsOnTheSameMember()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Sample
+            {
+                /// <summary>{|MA0154:<c>null</c>|} {|MA0219:<c>test</c>|}</summary>
+
+                /// <remarks>{|MA0154:<c>true</c>|}</remarks>
+                int a;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CommentNotPlacedOnTypeOrMember()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary><c>null</c></summary>
+            namespace Test
+            {
+                [System.Obsolete]
+                /// <summary><c>null</c></summary>
+                class Sample
+                {
+                    void A()
+                    {
+                        /// <summary><c>null</c></summary>
+                        void B() { }
+                    }
+
+                    // <c>null</c>
+                    /* <c>null</c> */
+                    string C = "<c>null</c>";
+                    System.Collections.Generic.List<C> D;
+
+            #if DISABLED
+                    /// <summary><c>null</c></summary>
+                    int E;
+            #endif
+
+                    /// <summary><c>null</c></summary>
+                }
+
+                class C { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CommentBeforeTopLevelStatement()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            /// <summary><c>null</c></summary>
+            System.Console.WriteLine();
+
+            /// <summary>{|MA0154:<c>null</c>|}</summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
+
+    // The text is read by chunks, and the last character of a chunk is read again by the next one.
+    // The offset is relative to the end of the chunk, so the start of the element spans two chunks when the offset is -1.
+    [Theory]
+    [InlineData(1, -2)]
+    [InlineData(1, -1)]
+    [InlineData(1, 0)]
+    [InlineData(2, -2)]
+    [InlineData(2, -1)]
+    [InlineData(2, 0)]
+    public Task CodeElementAtTheEndOfAReadBuffer(int bufferCount, int offset)
+    {
+        const string CommentStart = "/// <summary>";
+        var endOfBuffer = (bufferCount * SourceTextSearcher.ReadBufferSize) - (bufferCount - 1);
+        var elementPosition = endOfBuffer + offset;
+
+        var test = CreateTest();
+        test.TestCode = new string(' ', elementPosition - CommentStart.Length) + CommentStart + """
+            {|MA0154:<c>null</c>|} {|MA0219:<code>test</code>|}</summary>
+            class Sample { }
             """;
 
         return test.RunAsync();
