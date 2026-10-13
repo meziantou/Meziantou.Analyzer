@@ -1,5 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp.Syntax;
-
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -28,32 +26,19 @@ public sealed class ConditionalCompilationBranchesAreIdenticalAnalyzer : Diagnos
     private static void AnalyzeSyntaxTree(SyntaxTreeAnalysisContext context)
     {
         var root = context.Tree.GetRoot(context.CancellationToken);
+        if (!root.ContainsDirectives)
+            return;
+
         var sourceText = context.Tree.GetText(context.CancellationToken);
-        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true))
+        foreach (var group in ConditionalCompilationBranchesAreIdenticalCommon.GetBranchGroups(root, sourceText))
         {
-            if (!trivia.HasStructure)
-                continue;
-
-            if (trivia.GetStructure() is IfDirectiveTriviaSyntax ifDirective &&
-                ConditionalCompilationBranchesAreIdenticalCommon.TryCreateBranchGroup(ifDirective, sourceText, out var group))
+            var firstBranchesWithSameContent = group.GetFirstBranchesWithSameContent();
+            for (var i = 1; i < firstBranchesWithSameContent.Length; i++)
             {
-                AnalyzeDirectiveGroup(context, group);
-            }
-        }
-    }
-
-    private static void AnalyzeDirectiveGroup(SyntaxTreeAnalysisContext context, ConditionalCompilationBranchesAreIdenticalCommon.BranchGroup group)
-    {
-        Dictionary<string, DirectiveTriviaSyntax> previousBranchBySignature = new(StringComparer.Ordinal);
-        foreach (var branch in group.Branches)
-        {
-            if (previousBranchBySignature.ContainsKey(branch.Signature))
-            {
-                context.ReportDiagnostic(Rule, branch.StartDirective.GetLocation());
-            }
-            else
-            {
-                previousBranchBySignature.Add(branch.Signature, branch.StartDirective);
+                if (firstBranchesWithSameContent[i] != i)
+                {
+                    context.ReportDiagnostic(Rule, group.Branches[i].StartDirective.GetLocation());
+                }
             }
         }
     }

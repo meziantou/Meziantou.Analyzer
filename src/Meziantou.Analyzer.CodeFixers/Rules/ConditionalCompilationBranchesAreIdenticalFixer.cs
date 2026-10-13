@@ -107,51 +107,36 @@ public sealed class ConditionalCompilationBranchesAreIdenticalFixer : CodeFixPro
 
     private static bool TryGetFixContext(SyntaxNode root, SourceText sourceText, TextSpan span, out FixContext fixContext)
     {
-        var directive = FindDirective(root, span);
-        if (directive is null)
+        foreach (var group in ConditionalCompilationBranchesAreIdenticalCommon.GetBranchGroups(root, sourceText))
         {
-            fixContext = default;
-            return false;
+            for (var currentBranchIndex = 0; currentBranchIndex < group.Branches.Count; currentBranchIndex++)
+            {
+                if (!group.Branches[currentBranchIndex].StartDirective.FullSpan.Contains(span.Start))
+                    continue;
+
+                if (currentBranchIndex == 0)
+                {
+                    fixContext = default;
+                    return false;
+                }
+
+                // Only the branch right before the current branch can be merged with it. Merging it with an earlier branch
+                // would change the behavior when the condition of a branch in between is also true.
+                var duplicateBranchIndex = currentBranchIndex - 1;
+                var firstBranchesWithSameContent = group.GetFirstBranchesWithSameContent();
+                if (firstBranchesWithSameContent[duplicateBranchIndex] != firstBranchesWithSameContent[currentBranchIndex])
+                {
+                    fixContext = default;
+                    return false;
+                }
+
+                fixContext = new FixContext(group, currentBranchIndex, duplicateBranchIndex);
+                return true;
+            }
         }
 
-        if (!ConditionalCompilationBranchesAreIdenticalCommon.TryCreateBranchGroup(directive, sourceText, out var branchGroup))
-        {
-            fixContext = default;
-            return false;
-        }
-
-        var currentBranchIndex = branchGroup.GetBranchIndex(directive);
-        if (currentBranchIndex <= 0)
-        {
-            fixContext = default;
-            return false;
-        }
-
-        // Only the branch right before the current branch can be merged with it. Merging it with an earlier branch
-        // would change the behavior when the condition of a branch in between is also true.
-        var duplicateBranchIndex = currentBranchIndex - 1;
-        if (!string.Equals(branchGroup.Branches[duplicateBranchIndex].Signature, branchGroup.Branches[currentBranchIndex].Signature, StringComparison.Ordinal))
-        {
-            fixContext = default;
-            return false;
-        }
-
-        fixContext = new FixContext(branchGroup, currentBranchIndex, duplicateBranchIndex);
-        return true;
-    }
-
-    private static DirectiveTriviaSyntax? FindDirective(SyntaxNode root, TextSpan span)
-    {
-        foreach (var trivia in root.DescendantTrivia(descendIntoTrivia: true))
-        {
-            if (!trivia.HasStructure || !trivia.FullSpan.Contains(span.Start))
-                continue;
-
-            if (trivia.GetStructure() is DirectiveTriviaSyntax directive)
-                return directive;
-        }
-
-        return null;
+        fixContext = default;
+        return false;
     }
 
     private readonly record struct FixContext(ConditionalCompilationBranchesAreIdenticalCommon.BranchGroup Group, int CurrentBranchIndex, int DuplicateBranchIndex);
