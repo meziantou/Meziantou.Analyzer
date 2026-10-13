@@ -1902,6 +1902,121 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public Task InternalClassReferencingItselfInLambdaAndLocalFunction_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class {|MA0182:NotUsed|}
+            {
+                private static readonly System.Func<object> Factory = () => new NotUsed();
+
+                public static object Create()
+                {
+                    System.Func<object> factory = static () => Local();
+                    return factory();
+
+                    static object Local() => Factory() ?? new NotUsed();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassUsedInLambdaAndLocalFunctionOfAnotherType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal sealed class UsedInLambda
+            {
+            }
+
+            internal sealed class UsedInLocalFunction
+            {
+            }
+
+            public sealed class Sample
+            {
+                private static readonly System.Func<object> Factory = () => new UsedInLambda();
+
+                public static object Create()
+                {
+                    return Factory() ?? Local();
+
+                    static object Local() => new UsedInLocalFunction();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassReferencingItselfInPrimaryConstructor_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:NotUsed|}([Sample(typeof(NotUsed))] int value = NotUsed.DefaultValue) : Base(NotUsed.DefaultValue)
+            {
+                public const int DefaultValue = 1;
+
+                public int Value { get; } = value;
+            }
+
+            public class Base(int baseValue)
+            {
+                public int BaseValue { get; } = baseValue;
+            }
+
+            public sealed class SampleAttribute : System.Attribute
+            {
+                public SampleAttribute(System.Type type) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassUsedInPrimaryConstructorOfAnotherType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal static class ParameterDefaults
+            {
+                public const int Value = 1;
+            }
+
+            internal static class BaseArguments
+            {
+                public const int Value = 1;
+            }
+
+            internal sealed class AttributeArgument
+            {
+            }
+
+            public class Sample([Sample(typeof(AttributeArgument))] int value = ParameterDefaults.Value) : Base(BaseArguments.Value)
+            {
+                public int Value { get; } = value;
+            }
+
+            public class Base(int baseValue)
+            {
+                public int BaseValue { get; } = baseValue;
+            }
+
+            public sealed class SampleAttribute : System.Attribute
+            {
+                public SampleAttribute(System.Type type) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InternalClassAttributeTypeOfOwnClass_Diagnostic()
     {
         var test = CreateTest();
