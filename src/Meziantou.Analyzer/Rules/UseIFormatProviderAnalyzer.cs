@@ -68,7 +68,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
                     return;
                 }
 
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [_cultureSensitiveContext.FormatProviderSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), _cultureSensitiveContext.FormatProviderSymbol);
                 if (overload is not null)
                 {
                     if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))
@@ -105,7 +105,7 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             if (_cultureSensitiveContext.CultureInfoSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
-                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [_cultureSensitiveContext.CultureInfoSymbol]);
+                var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), _cultureSensitiveContext.CultureInfoSymbol);
                 if (overload is not null)
                 {
                     if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))

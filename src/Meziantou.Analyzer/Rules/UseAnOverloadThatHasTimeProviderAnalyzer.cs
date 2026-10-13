@@ -85,7 +85,7 @@ public sealed class UseAnOverloadThatHasTimeProviderAnalyzer : DiagnosticAnalyze
 
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                 || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenAvailableConfiguration);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [TimeProviderSymbol]);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), TimeProviderSymbol);
             if (overload is not null)
             {
                 var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;

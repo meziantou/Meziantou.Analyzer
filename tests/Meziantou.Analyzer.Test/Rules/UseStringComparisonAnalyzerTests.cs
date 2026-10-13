@@ -1085,6 +1085,310 @@ public sealed class UseStringComparisonAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task ExtensionMethod_NamespaceImported()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using Ext;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using Ext;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_UsingStatic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using static Ext.SampleExtensions;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using static Ext.SampleExtensions;
+
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            namespace Ext
+            {
+                public static class SampleExtensions
+                {
+                    public static void Find(this Sample sample, string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionMethod_GenericReceiver()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+            }
+
+            public static class SampleExtensions
+            {
+                public static void Find<T>(this T sample, string value) where T : Sample => throw null;
+                public static void Find<T>(this T sample, string value, System.StringComparison comparison) where T : Sample => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", comparison: System.StringComparison.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+            }
+
+            public static class SampleExtensions
+            {
+                public static void Find<T>(this T sample, string value) where T : Sample => throw null;
+                public static void Find<T>(this T sample, string value, System.StringComparison comparison) where T : Sample => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Overload_DeclaredInBaseClass()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public class SampleBase
+            {
+                public void Find(string value, System.StringComparison comparison) => throw null;
+            }
+
+            public class Sample : SampleBase
+            {
+                public void Find(string value) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public class SampleBase
+            {
+                public void Find(string value, System.StringComparison comparison) => throw null;
+            }
+
+            public class Sample : SampleBase
+            {
+                public void Find(string value) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Overload_DeclaredInBaseInterface()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(ISample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public interface ISampleBase
+            {
+                void Find(string value, System.StringComparison comparison);
+            }
+
+            public interface ISample : ISampleBase
+            {
+                void Find(string value);
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(ISample sample)
+                {
+                    sample.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public interface ISampleBase
+            {
+                void Find(string value, System.StringComparison comparison);
+            }
+
+            public interface ISample : ISampleBase
+            {
+                void Find(string value);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    public Task ExtensionBlock()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    {|MA0074:sample.Find("a")|};
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            public static class SampleExtensions
+            {
+                extension(Sample sample)
+                {
+                    public void Find(string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void A(Sample sample)
+                {
+                    sample.Find("a", System.StringComparison.Ordinal);
+                }
+            }
+
+            public class Sample
+            {
+                public void Find(string value) => throw null;
+            }
+
+            public static class SampleExtensions
+            {
+                extension(Sample sample)
+                {
+                    public void Find(string value, System.StringComparison comparison) => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
+
     // The methods of Microsoft.Extensions.Primitives are not checked, as the test project does not reference this package
     public static TheoryData<string> NonCultureSensitiveMethodDocumentationIds => new(UseStringComparisonAnalyzer.NonCultureSensitiveMethodDocumentationIds.Where(id => !id.StartsWith("M:Microsoft.Extensions.Primitives.", StringComparison.Ordinal)));
 

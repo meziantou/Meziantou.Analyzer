@@ -99,6 +99,33 @@ public sealed class FixToDoAnalyzerTests
         return test.RunAsync();
     }
 
+    // The text is read by chunks, and the last 3 characters of a chunk are read again by the next one.
+    // The offset is relative to the end of the chunk, so "TODO" spans two chunks when the offset is -3, -2 or -1.
+    [Theory]
+    [InlineData(1, -5)]
+    [InlineData(1, -4)]
+    [InlineData(1, -3)]
+    [InlineData(1, -2)]
+    [InlineData(1, -1)]
+    [InlineData(1, 0)]
+    [InlineData(2, -4)]
+    [InlineData(2, -3)]
+    [InlineData(2, -2)]
+    [InlineData(2, -1)]
+    [InlineData(2, 0)]
+    public Task TodoAtTheEndOfAReadBuffer(int bufferCount, int offset)
+    {
+        const string CommentStart = "//";
+        var endOfBuffer = (bufferCount * FixToDoAnalyzer.ReadBufferSize) - ((bufferCount - 1) * 3);
+        var todoPosition = endOfBuffer + offset;
+
+        var test = CreateTest();
+        test.TestCode = new string(' ', todoPosition - CommentStart.Length) + CommentStart + "{|#0:todo test|}";
+        test.ExpectedDiagnostics.Add(ExpectedToDo(markupKey: 0, "test"));
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task MultiTodoComment()
     {

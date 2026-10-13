@@ -11,17 +11,19 @@ namespace Meziantou.Analyzer.Internals;
 /// </summary>
 internal sealed class OverloadLookupCache
 {
-    private readonly ConcurrentDictionary<LookupKey, ImmutableArray<ISymbol>> _cache = new(LookupKeyComparer.Instance);
+    // Most types need no lookup, so the dictionary, which is expensive to create, is only created by the first lookup
+    private ConcurrentDictionary<LookupKey, ImmutableArray<ISymbol>>? _cache;
 
     // A member lookup only depends on the file and enclosing type declaration (accessibility, imported namespaces), the container and the name
     public ImmutableArray<ISymbol> LookupSymbols(SemanticModel semanticModel, SyntaxNode node, int position, ITypeSymbol container, string name, bool includeReducedExtensionMethods)
     {
         var scopeStart = node.FirstAncestorOrSelf<BaseTypeDeclarationSyntax>()?.SpanStart ?? -1;
         var key = new LookupKey(node.SyntaxTree, scopeStart, container, name, includeReducedExtensionMethods);
-        if (!_cache.TryGetValue(key, out var symbols))
+        var cache = _cache ?? Interlocked.CompareExchange(ref _cache, new(LookupKeyComparer.Instance), comparand: null) ?? _cache;
+        if (!cache.TryGetValue(key, out var symbols))
         {
             symbols = semanticModel.LookupSymbols(position, container, name, includeReducedExtensionMethods);
-            _ = _cache.TryAdd(key, symbols);
+            _ = cache.TryAdd(key, symbols);
         }
 
         return symbols;

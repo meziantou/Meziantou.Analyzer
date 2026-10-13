@@ -149,7 +149,7 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             var allowOptionalParameters = context.Options.GetConfigurationValue(operation, AllowOverloadsWithOptionalParametersConfiguration);
             var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration)
                 || context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesWhenACancellationTokenIsAvailableConfiguration);
-            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), [CancellationTokenSymbol]);
+            var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(AllowOptionalParameters: allowOptionalParameters, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), CancellationTokenSymbol);
             if (overload is not null)
             {
                 var namespaceToImport = includeExtensionMethodsFromNotImportedNamespaces ? _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) : null;

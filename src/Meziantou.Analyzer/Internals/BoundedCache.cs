@@ -13,6 +13,9 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
     private readonly Lock _evictionLock = new();
     private long _lastUsage;
 
+    // ConcurrentDictionary.Count takes all the locks of the dictionary, so the additions are counted to only read it when the cache can be full
+    private int _count;
+
     public BoundedCache(int capacity)
     {
         if (capacity < 1)
@@ -37,9 +40,14 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
     {
         if (!_entries.TryGetValue(key, out var entry))
         {
-            entry = _entries.GetOrAdd(key, key => new Entry(valueFactory(key)));
+            var newEntry = new Entry(valueFactory(key));
+            entry = _entries.GetOrAdd(key, newEntry);
             Touch(entry);
-            Evict();
+            if (ReferenceEquals(entry, newEntry) && Interlocked.Increment(ref _count) > Capacity)
+            {
+                Evict();
+            }
+
             return entry.Value;
         }
 
@@ -51,24 +59,24 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
 
     private void Evict()
     {
-        if (_entries.Count <= Capacity)
-            return;
-
         lock (_evictionLock)
         {
-            if (_entries.Count <= Capacity)
-                return;
-
-            // Remove a quarter of the entries, so the eviction does not run at every addition once the cache is full.
-            // The entries added while the snapshot is taken can be removed, which is fine as their value is recreated on demand.
-            var entries = _entries.ToArray();
-            Array.Sort(entries, static (a, b) => b.Value.LastUsage.CompareTo(a.Value.LastUsage));
-
-            var retainedCount = Math.Max(1, Capacity - (Capacity / 4));
-            for (var i = retainedCount; i < entries.Length; i++)
+            if (_entries.Count > Capacity)
             {
-                _entries.TryRemove(entries[i].Key, out _);
+                // Remove a quarter of the entries, so the eviction does not run at every addition once the cache is full.
+                // The entries added while the snapshot is taken can be removed, which is fine as their value is recreated on demand.
+                var entries = _entries.ToArray();
+                Array.Sort(entries, static (a, b) => b.Value.LastUsage.CompareTo(a.Value.LastUsage));
+
+                var retainedCount = Math.Max(1, Capacity - (Capacity / 4));
+                for (var i = retainedCount; i < entries.Length; i++)
+                {
+                    _entries.TryRemove(entries[i].Key, out _);
+                }
             }
+
+            // The entries added in the meantime may not be counted, so the cache can exceed its capacity by a few entries until the next eviction
+            Volatile.Write(ref _count, _entries.Count);
         }
     }
 
