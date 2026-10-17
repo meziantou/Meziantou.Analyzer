@@ -322,6 +322,36 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
     }
 
     [Fact]
+    public Task WithCyclicStruct_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct A
+            {
+                B {|CS0523:b|};
+                int c;
+            }
+            struct B
+            {
+                A {|CS0523:a|};
+                int c;
+            }
+            struct C
+            {
+                C {|CS0523:c|};
+                int d;
+            }
+            struct D<T>
+            {
+                D<D<T>> {|CS0523:d|};
+                int e;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task RecordStruct()
     {
         var test = CreateTest();
