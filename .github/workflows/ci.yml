@@ -90,11 +90,15 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    # The first dotnet command of a runner runs the NuGet migrations, which can fail when several dotnet commands start them at the same time
+    - run: dotnet nuget locals global-packages --list
     # create_nuget skips the analyzers and dotnet test does not run them, so this job reports their diagnostics
     - parallel:
       # Meziantou.Analyzer.Pack references one project per Roslyn version, so this builds all of them
       - run: dotnet build src/Meziantou.Analyzer.Pack/Meziantou.Analyzer.Pack.csproj --configuration Release /p:RunAnalyzers=true
       - run: dotnet build src/Meziantou.Analyzer.Annotations/Meziantou.Analyzer.Annotations.csproj --configuration Release /p:RunAnalyzers=true
+      # The fuzz tests only run in the fuzz workflow, so this keeps them compiling
+      - run: dotnet build tests/Meziantou.Analyzer.Fuzz/Meziantou.Analyzer.Fuzz.csproj --configuration Release /p:RunAnalyzers=true
 
   create_nuget:
     runs-on: ubuntu-latest
@@ -105,6 +109,8 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    # The first dotnet command of a runner runs the NuGet migrations, which can fail when several dotnet commands start them at the same time
+    - run: dotnet nuget locals global-packages --list
 
     # The analyzers are skipped as the build_with_analyzers job runs them on the same projects
     # Meziantou.Analyzer.Annotations does not depend on the analyzer, so it is packed while the analyzer is built and packed
