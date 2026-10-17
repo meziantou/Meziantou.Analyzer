@@ -1,0 +1,38 @@
+<Project Sdk="Meziantou.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <!-- This project runs the analyzers, it is not an analyzer -->
+    <EnforceExtendedAnalyzerRules>false</EnforceExtendedAnalyzerRules>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Meziantou.Framework.FullPath" Version="3.0.11" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
+    <PackageReference Include="SharpFuzz" Version="2.3.0" />
+  </ItemGroup>
+
+  <!-- The fuzzed code is compiled against the assemblies of the application, so the libraries the rules know about must be in the output folder.
+       The versions are the ones of tests/Meziantou.Analyzer.Test/Harness/ReferenceAssembliesExtensions.cs -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="Moq" Version="4.20.72" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="MSTest.TestFramework" Version="4.3.3" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="NUnit" Version="4.6.1" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="Serilog" Version="4.4.0" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="xunit.v3.assert" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- This project is not specific to a Roslyn version, so RoslynVersion is the default version -->
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.Annotations\Meziantou.Analyzer.Annotations.csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer.CodeFixers\Meziantou.Analyzer.CodeFixers.$(RoslynVersion).csproj" />
+    <ProjectReference Include="..\..\src\Meziantou.Analyzer\Meziantou.Analyzer.$(RoslynVersion).csproj" />
+  </ItemGroup>
+
+</Project>
