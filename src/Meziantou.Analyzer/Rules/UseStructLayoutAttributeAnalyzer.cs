@@ -3,6 +3,11 @@ namespace Meziantou.Analyzer.Rules;
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
 public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
 {
+    // The fields of an invalid struct can cycle back to the struct (CS0523), directly or through other types,
+    // and the generic structs can create an infinite number of types (struct S<T> { S<S<T>> field; }).
+    // The depth is limited, so these types are not blittable instead of overflowing the stack.
+    private const int MaxBlittableTypeDepth = 32;
+
     private static readonly DiagnosticDescriptor Rule = new(
         RuleIdentifiers.MissingStructLayoutAttribute,
         title: "Add StructLayoutAttribute",
@@ -45,7 +50,7 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
             if (member.IsConst || member.IsStatic)
                 continue;
 
-            if (!member.Type.IsBlittableType())
+            if (!IsBlittableType(member.Type, depth: 0))
                 return;
 
             memberCount++;
@@ -55,5 +60,44 @@ public sealed class UseStructLayoutAttributeAnalyzer : DiagnosticAnalyzer
         {
             context.ReportDiagnostic(Rule, symbol);
         }
+    }
+
+    private static bool IsBlittableType(ITypeSymbol symbol, int depth)
+    {
+        if (symbol.SpecialType is SpecialType.System_Byte or SpecialType.System_SByte
+            or SpecialType.System_Int16 or SpecialType.System_UInt16
+            or SpecialType.System_Int32 or SpecialType.System_UInt32
+            or SpecialType.System_Int64 or SpecialType.System_UInt64
+            or SpecialType.System_Single or SpecialType.System_Double
+            or SpecialType.System_IntPtr or SpecialType.System_UIntPtr)
+        {
+            return true;
+        }
+
+        if (symbol.SpecialType is not SpecialType.None)
+            return false;
+
+        if (symbol.TypeKind is TypeKind.Pointer)
+            return true;
+
+        if (symbol is not INamedTypeSymbol namedType)
+            return false;
+
+        if (namedType.EnumUnderlyingType is not null)
+            return true;
+
+        if (!namedType.IsValueType || depth >= MaxBlittableTypeDepth)
+            return false;
+
+        foreach (var member in namedType.GetMembers())
+        {
+            if (member is not IFieldSymbol field || field.IsConst || field.IsStatic)
+                continue;
+
+            if (!IsBlittableType(field.Type, depth + 1))
+                return false;
+        }
+
+        return true;
     }
 }
