@@ -1,0 +1,130 @@
+# Fuzz the analyzers and the code fixers, and open an issue for each new finding
+# See tests/Meziantou.Analyzer.Fuzz/README.md
+name: fuzz
+on:
+  workflow_dispatch:
+    inputs:
+      duration-minutes:
+        description: "Duration of the fuzzing, in minutes"
+        type: number
+        default: 240
+      report:
+        description: "Open an issue for each new finding"
+        type: boolean
+        default: true
+  schedule:
+    - cron: "0 3 * * 0"
+
+concurrency:
+  group: fuzz
+  cancel-in-progress: false
+
+env:
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
+  DOTNET_NOLOGO: true
+  SHARPFUZZ_VERSION: 2.3.0
+  # https://github.com/Metalnem/libfuzzer-dotnet/releases
+  LIBFUZZER_DOTNET_URL: https://github.com/Metalnem/libfuzzer-dotnet/releases/download/v2025.05.02.0904/libfuzzer-dotnet-ubuntu
+  LIBFUZZER_DOTNET_SHA256: c2c2a90d94c409a4af339a0d4f244e0442c5a5d249be0f1252ba07871f285958
+
+defaults:
+  run:
+    shell: pwsh
+
+jobs:
+  fuzz:
+    # The scheduled runs would open issues in the forks
+    if: github.event_name == 'workflow_dispatch' || github.repository == 'meziantou/Meziantou.Analyzer'
+    runs-on: ubuntu-latest
+    timeout-minutes: 350
+    permissions:
+      contents: read
+      actions: read # Download the corpus of the previous run
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+
+    - name: Install SharpFuzz and libfuzzer-dotnet
+      run: |
+        dotnet tool install --global SharpFuzz.CommandLine --version $env:SHARPFUZZ_VERSION
+
+        $libFuzzer = Join-Path $env:RUNNER_TEMP "libfuzzer-dotnet"
+        Invoke-WebRequest $env:LIBFUZZER_DOTNET_URL -OutFile $libFuzzer
+        $hash = (Get-FileHash $libFuzzer -Algorithm SHA256).Hash
+        if ($hash -ne $env:LIBFUZZER_DOTNET_SHA256) {
+          Write-Error "Unexpected SHA-256 of libfuzzer-dotnet: $hash"
+          exit 1
+        }
+
+        chmod +x $libFuzzer
+        "LIBFUZZER=$libFuzzer" >> $env:GITHUB_ENV
+
+    - name: Download the corpus of the previous run
+      env:
+        GH_TOKEN: ${{ github.token }}
+      run: |
+        $directory = Join-Path $env:RUNNER_TEMP "previous-corpus"
+        $runs = gh run list --repo $env:GITHUB_REPOSITORY --workflow fuzz.yml --status completed --limit 10 --json databaseId | ConvertFrom-Json
+        foreach ($run in $runs) {
+          gh run download $run.databaseId --repo $env:GITHUB_REPOSITORY --name fuzz-corpus --dir $directory
+          if ($LASTEXITCODE -eq 0) {
+            Write-Host "Using the corpus of the run $($run.databaseId)"
+            "PREVIOUS_CORPUS=$directory" >> $env:GITHUB_ENV
+            break
+          }
+        }
+
+        exit 0
+
+    - name: Fuzz
+      env:
+        DURATION_MINUTES: ${{ inputs.duration-minutes || 240 }}
+      run: ./tests/Meziantou.Analyzer.Fuzz/eng/run.ps1 -LibFuzzer $env:LIBFUZZER -DurationMinutes $env:DURATION_MINUTES -OutputDirectory artifacts/fuzz -PreviousCorpus $env:PREVIOUS_CORPUS
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      if: always()
+      with:
+        name: fuzz-corpus
+        path: artifacts/fuzz/corpus-merged
+        if-no-files-found: ignore
+        retention-days: 30
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      if: always()
+      with:
+        name: fuzz-findings
+        path: artifacts/fuzz/findings
+        if-no-files-found: ignore
+        retention-days: 90
+
+    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+      if: always()
+      with:
+        name: fuzz-logs
+        path: |
+          artifacts/fuzz/logs
+          artifacts/fuzz/artifacts
+          artifacts/fuzz/state/suppressed.txt
+        if-no-files-found: ignore
+        retention-days: 14
+
+  # A separate job, so the token that can write the issues is not available to the fuzzed code
+  report:
+    needs: fuzz
+    if: github.event_name == 'schedule' || inputs.report
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      issues: write
+    steps:
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+      continue-on-error: true # There is no artifact when there is no finding
+      with:
+        name: fuzz-findings
+        path: artifacts/fuzz/findings
+    - name: Open the issues
+      env:
+        GH_TOKEN: ${{ github.token }}
+        RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      run: ./tests/Meziantou.Analyzer.Fuzz/eng/report.ps1 -FindingsDirectory artifacts/fuzz/findings -RunUrl $env:RUN_URL

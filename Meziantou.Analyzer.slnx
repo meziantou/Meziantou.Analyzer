@@ -2,6 +2,7 @@
   <Folder Name="/Solution Items/">
     <File Path=".editorconfig" />
     <File Path=".github/workflows/ci.yml" />
+    <File Path=".github/workflows/fuzz.yml" />
     <File Path="CHANGELOG.md" />
     <File Path="Directory.Build.props" />
     <File Path="Directory.Build.targets" />
@@ -23,6 +24,7 @@
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.0.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.6.csproj" />
   <Project Path="src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.9.csproj" />
+  <Project Path="tests/Meziantou.Analyzer.Fuzz/Meziantou.Analyzer.Fuzz.csproj" />
   <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj" />
   <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.14.csproj" />
   <Project Path="tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj" />
