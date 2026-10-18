@@ -405,4 +405,26 @@ public sealed class EventsShouldHaveProperArgumentsAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task InvalidEventArgs_GenericEventArgs_NoCodeFix()
+    {
+        const string Source = """
+            using System;
+            delegate void CustomEventHandler<TEventArgs>(object sender, TEventArgs e) where TEventArgs : EventArgs;
+            class Test<TEventArgs> where TEventArgs : EventArgs
+            {
+                public event CustomEventHandler<TEventArgs> MyEvent;
+                void OnEvent()
+                {
+                    MyEvent?.Invoke(this, {|MA0093:null|});
+                }
+            }
+            """;
+        var test = CreateEventArgsFixTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
