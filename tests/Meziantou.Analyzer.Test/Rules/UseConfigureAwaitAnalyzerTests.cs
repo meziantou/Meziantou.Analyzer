@@ -1404,4 +1404,35 @@ public sealed class UseConfigureAwaitAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1676")]
+    public Task InvalidCode_MissingSemicolon()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    {|MA0004:await Task.Delay(1)|}
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false)
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

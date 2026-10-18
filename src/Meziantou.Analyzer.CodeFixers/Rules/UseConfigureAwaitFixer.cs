@@ -15,15 +15,10 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: false);
+        // The statement has the same span as the await expression when the semicolon is missing, and the argument when it is an argument: F(await task)
+        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
         if (nodeToFix is null)
             return;
-
-        // The argument has the same span as the awaited expression: F(await task)
-        if (nodeToFix is ArgumentSyntax argument)
-        {
-            nodeToFix = argument.Expression;
-        }
 
         context.RegisterCodeFix(
             CodeAction.Create(
@@ -90,10 +85,12 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             if (awaitSyntax.Expression is not null)
             {
-                var newExpression = (ExpressionSyntax)generator.InvocationExpression(
-                    generator.MemberAccessExpression(awaitSyntax.Expression.Parenthesize(), nameof(Task.ConfigureAwait)),
+                // The trailing trivia of the expression is the end of the line when the semicolon is missing
+                var newExpression = ((ExpressionSyntax)generator.InvocationExpression(
+                    generator.MemberAccessExpression(awaitSyntax.Expression.WithoutTrailingTrivia().Parenthesize(), nameof(Task.ConfigureAwait)),
                     generator.LiteralExpression(value))
-                    .Parenthesize();
+                    .Parenthesize())
+                    .WithTrailingTrivia(awaitSyntax.Expression.GetTrailingTrivia());
 
                 var newInvokeExpression = awaitSyntax.WithExpression(newExpression);
 
