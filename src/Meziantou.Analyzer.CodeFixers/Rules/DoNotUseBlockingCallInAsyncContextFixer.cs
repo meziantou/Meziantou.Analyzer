@@ -1,3 +1,5 @@
+using Microsoft.CodeAnalysis.Simplification;
+
 namespace Meziantou.Analyzer.Rules;
 
 [ExportCodeFixProvider(LanguageNames.CSharp), Shared]
@@ -27,27 +29,19 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     if (taskSymbol is null)
                         break;
 
-                    var codeAction = CodeAction.Create(
-                        "Use Task.Delay",
-                        ct => UseTaskDelay(context.Document, nodeToFix, taskSymbol, ct),
-                        equivalenceKey: "Thread_Sleep");
+                    if (nodeToFix is not InvocationExpressionSyntax { ArgumentList.Arguments.Count: > 0 } threadSleepInvocation)
+                        break;
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    await RegisterCodeFixAsync(context, threadSleepInvocation, "Use Task.Delay", "Thread_Sleep", editor => UseTaskDelay(editor, threadSleepInvocation, taskSymbol)).ConfigureAwait(false);
                     break;
                 }
 
             case DoNotUseBlockingCallInAsyncContextData.Task_Wait:
                 {
-                    if (nodeToFix is not InvocationExpressionSyntax taskWaitInvocation ||
-                        (taskWaitInvocation.Expression as MemberAccessExpressionSyntax)?.Expression is null)
+                    if (nodeToFix is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax } taskWaitInvocation)
                         break;
 
-                    var codeAction = CodeAction.Create(
-                        "Use await",
-                        ct => ReplaceTaskWaitWithAwait(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Task_Wait");
-
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    await RegisterCodeFixAsync(context, taskWaitInvocation, "Use await", "Task_Wait", editor => ReplaceTaskWaitWithAwait(editor, taskWaitInvocation)).ConfigureAwait(false);
                     break;
                 }
 
@@ -57,12 +51,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     if (nodeToFix is not MemberAccessExpressionSyntax taskResultMemberAccess || nodeToFix.FirstAncestorOrSelf<SubpatternSyntax>() is not null)
                         break;
 
-                    var codeAction = CodeAction.Create(
-                        "Use await",
-                        ct => ReplaceTaskResultWithAwait(context.Document, taskResultMemberAccess, ct),
-                        equivalenceKey: "Task_Result");
-
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    await RegisterCodeFixAsync(context, taskResultMemberAccess, "Use await", "Task_Result", editor => ReplaceTaskResultWithAwait(editor, taskResultMemberAccess)).ConfigureAwait(false);
                     break;
                 }
 
@@ -75,33 +64,74 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                     if (nodeToFix is not InvocationExpressionSyntax { Expression: MemberAccessExpressionSyntax or SimpleNameSyntax } overloadInvocation)
                         return;
 
-                    properties.TryGetValue(OverloadFinder.NamespaceToImportPropertyName, out var namespaceToImport);
-                    var codeAction = CodeAction.Create(
-                        $"Use '{methodName}'",
-                        ct => ReplaceWithMethodName(context.Document, overloadInvocation, methodName, namespaceToImport, ct),
-                        equivalenceKey: "Overload");
+                    var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
+                    if (semanticModel is null)
+                        return;
 
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    properties.TryGetValue(OverloadFinder.NamespaceToImportPropertyName, out var namespaceToImport);
+
+                    // The overload may not be callable with the same arguments: Write() => Write(CancellationToken), or A(in value) => AAsync(int value).
+                    // The extension method of a namespace that is not imported yet cannot be bound before the using directive is added.
+                    if (namespaceToImport is null)
+                    {
+                        var renamedInvocation = CreateRenamedInvocation(SyntaxGenerator.GetGenerator(context.Document), semanticModel, overloadInvocation, methodName);
+                        var renamedMethod = semanticModel.GetSpeculativeSymbolInfo(overloadInvocation.SpanStart, renamedInvocation, SpeculativeBindingOption.BindAsExpression).Symbol;
+                        if (renamedMethod is not IMethodSymbol { ReturnsVoid: false } || renamedMethod.IsEqualTo(semanticModel.GetSymbolInfo(overloadInvocation, context.CancellationToken).Symbol))
+                            return;
+                    }
+
+                    await RegisterCodeFixAsync(context, overloadInvocation, $"Use '{methodName}'", "Overload", editor => ReplaceWithMethodName(editor, overloadInvocation, methodName, namespaceToImport)).ConfigureAwait(false);
                     break;
                 }
 
             case DoNotUseBlockingCallInAsyncContextData.Using:
             case DoNotUseBlockingCallInAsyncContextData.UsingDeclarator:
                 {
-                    var codeAction = CodeAction.Create(
-                        $"Use 'await using'",
-                        ct => ReplaceWithAwaitUsing(context.Document, nodeToFix, ct),
-                        equivalenceKey: "Overload");
-
-                    context.RegisterCodeFix(codeAction, context.Diagnostics);
+                    await RegisterCodeFixAsync(context, nodeToFix, "Use 'await using'", "Overload", editor => ReplaceWithAwaitUsing(editor, nodeToFix)).ConfigureAwait(false);
                     break;
                 }
         }
     }
 
-    private static async Task<Document> ReplaceWithAwaitUsing(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    /// <summary>
+    /// Registers a code fix that replaces the blocking call by an await expression. The enclosing function must be async,
+    /// and making it async can break the code, so the fix is computed upfront and only registered when the code still compiles.
+    /// </summary>
+    private static async Task RegisterCodeFixAsync(CodeFixContext context, SyntaxNode nodeToFix, string title, string equivalenceKey, Action<DocumentEditor> fix)
+    {
+        var document = context.Document;
+        if (!AsyncFunctionConverter.TryGetEnclosingFunction(nodeToFix, out var function))
+            return;
+
+        if (function is null || AsyncFunctionConverter.IsAsync(function))
+        {
+            context.RegisterCodeFix(CodeAction.Create(title, ct => FixAsync(document, nodeToFix, function: null, fix, ct), equivalenceKey), context.Diagnostics);
+            return;
+        }
+
+        // The await expressions are parenthesized, and the parentheses are only removed by the simplifier: (await task);
+        var fixedDocument = await FixAsync(document, nodeToFix, function, fix, context.CancellationToken).ConfigureAwait(false);
+        fixedDocument = await Simplifier.ReduceAsync(fixedDocument, Simplifier.Annotation, cancellationToken: context.CancellationToken).ConfigureAwait(false);
+        if (!await AsyncFunctionConverter.IsValidAsync(document, fixedDocument, function, context.CancellationToken).ConfigureAwait(false))
+            return;
+
+        context.RegisterCodeFix(CodeAction.Create(title, _ => Task.FromResult(fixedDocument), equivalenceKey), context.Diagnostics);
+    }
+
+    private static async Task<Document> FixAsync(Document document, SyntaxNode nodeToFix, SyntaxNode? function, Action<DocumentEditor> fix, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        fix(editor);
+        if (function is not null)
+        {
+            AsyncFunctionConverter.MakeAsync(editor, function, nodeToFix, cancellationToken);
+        }
+
+        return editor.GetChangedDocument();
+    }
+
+    private static void ReplaceWithAwaitUsing(DocumentEditor editor, SyntaxNode nodeToFix)
+    {
         if (nodeToFix is UsingStatementSyntax usingStatement)
         {
             var awaitKeyword = GetAwaitKeyword(usingStatement.UsingKeyword);
@@ -116,8 +146,6 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
                 localDeclarationStatement,
                 localDeclarationStatement.WithUsingKeyword(localDeclarationStatement.UsingKeyword.WithLeadingTrivia(SyntaxFactory.TriviaList())).WithAwaitKeyword(awaitKeyword));
         }
-
-        return editor.GetChangedDocument();
     }
 
     private static SyntaxToken GetAwaitKeyword(SyntaxToken usingKeyword)
@@ -125,11 +153,20 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
         return SyntaxFactory.Token(usingKeyword.LeadingTrivia, SyntaxKind.AwaitKeyword, SyntaxFactory.TriviaList(SyntaxFactory.Space));
     }
 
-    private static async Task<Document> ReplaceWithMethodName(Document document, InvocationExpressionSyntax invocation, string methodName, string? namespaceToImport, CancellationToken cancellationToken)
+    private static void ReplaceWithMethodName(DocumentEditor editor, InvocationExpressionSyntax invocation, string methodName, string? namespaceToImport)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
+        var newNode = CreateRenamedInvocation(editor.Generator, editor.SemanticModel, invocation, methodName);
+        var newExpression = editor.Generator.AwaitExpression(newNode).Parenthesize();
+        editor.ReplaceNode(invocation, newExpression);
 
+        if (namespaceToImport is not null)
+        {
+            UsingDirectiveHelper.AddUsingDirective(editor, invocation, namespaceToImport);
+        }
+    }
+
+    private static InvocationExpressionSyntax CreateRenamedInvocation(SyntaxGenerator generator, SemanticModel semanticModel, InvocationExpressionSyntax invocation, string methodName)
+    {
         var nodeToReplace = invocation.Expression switch
         {
             MemberAccessExpressionSyntax memberAccess => memberAccess.Name,
@@ -141,59 +178,33 @@ public sealed class DoNotUseBlockingCallInAsyncContextFixer : CodeFixProvider
             GenericNameSyntax genericName => generator.GenericName(methodName, genericName.TypeArgumentList.Arguments),
             _ => generator.IdentifierName(methodName),
         };
-        var newNode = invocation.ReplaceNode(nodeToReplace, newMethodName);
 
         // An extension method cannot be called with a simple name, so the implicit receiver must be explicit: Do() => this.DoAsync()
-        if (nodeToReplace == invocation.Expression && !editor.SemanticModel.LookupSymbols(invocation.SpanStart, name: methodName).OfType<IMethodSymbol>().Any())
-        {
-            newNode = invocation.WithExpression((ExpressionSyntax)generator.MemberAccessExpression(generator.ThisExpression(), newMethodName));
-        }
+        if (nodeToReplace == invocation.Expression && !semanticModel.LookupSymbols(invocation.SpanStart, name: methodName).OfType<IMethodSymbol>().Any())
+            return invocation.WithExpression((ExpressionSyntax)generator.MemberAccessExpression(generator.ThisExpression(), newMethodName));
 
-        var newExpression = generator.AwaitExpression(newNode).Parenthesize();
-        editor.ReplaceNode(invocation, newExpression);
-
-        if (namespaceToImport is not null)
-        {
-            UsingDirectiveHelper.AddUsingDirective(editor, invocation, namespaceToImport);
-        }
-
-        return editor.GetChangedDocument();
+        return invocation.ReplaceNode(nodeToReplace, newMethodName);
     }
 
-    private static async Task<Document> ReplaceTaskResultWithAwait(Document document, MemberAccessExpressionSyntax memberAccess, CancellationToken cancellationToken)
+    private static void ReplaceTaskResultWithAwait(DocumentEditor editor, MemberAccessExpressionSyntax memberAccess)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-
-        var newExpression = generator.AwaitExpression(memberAccess.Expression).Parenthesize();
+        var newExpression = editor.Generator.AwaitExpression(memberAccess.Expression).Parenthesize();
         editor.ReplaceNode(memberAccess, newExpression);
-
-        return editor.GetChangedDocument();
     }
 
-    private static async Task<Document> ReplaceTaskWaitWithAwait(Document document, SyntaxNode nodeToFix, CancellationToken cancellationToken)
+    private static void ReplaceTaskWaitWithAwait(DocumentEditor editor, InvocationExpressionSyntax invocation)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        var generator = editor.Generator;
-
-        var invocation = (InvocationExpressionSyntax)nodeToFix;
-        var expr = (invocation.Expression as MemberAccessExpressionSyntax)!.Expression;
-        var newExpression = generator.AwaitExpression(expr).Parenthesize();
-        editor.ReplaceNode(nodeToFix, newExpression);
-
-        return editor.GetChangedDocument();
+        var expr = ((MemberAccessExpressionSyntax)invocation.Expression).Expression;
+        var newExpression = editor.Generator.AwaitExpression(expr).Parenthesize();
+        editor.ReplaceNode(invocation, newExpression);
     }
 
-    private static async Task<Document> UseTaskDelay(Document document, SyntaxNode nodeToFix, INamedTypeSymbol taskSymbol, CancellationToken cancellationToken)
+    private static void UseTaskDelay(DocumentEditor editor, InvocationExpressionSyntax invocation, INamedTypeSymbol taskSymbol)
     {
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-
-        var invocation = (InvocationExpressionSyntax)nodeToFix;
         var delay = invocation.ArgumentList.Arguments[0].Expression;
 
-        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.MemberAccessExpression(generator.TypeExpression(taskSymbol), "Delay"), delay)).Parenthesize();
-        editor.ReplaceNode(nodeToFix, newExpression);
-        return editor.GetChangedDocument();
+        var newExpression = generator.AwaitExpression(generator.InvocationExpression(generator.TypeMemberAccessExpression(taskSymbol, "Delay"), delay)).Parenthesize();
+        editor.ReplaceNode(invocation, newExpression);
     }
 }
