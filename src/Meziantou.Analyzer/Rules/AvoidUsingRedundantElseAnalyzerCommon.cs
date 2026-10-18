@@ -8,9 +8,11 @@ internal static class AvoidUsingRedundantElseAnalyzerCommon
 {
     internal static IEnumerable<SyntaxNode> GetElseClauseChildren(ElseClauseSyntax elseClauseSyntax)
     {
-        return elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax ?
-            elseBlockSyntax.ChildNodes() :
-            [elseClauseSyntax.Statement];
+        // The attributes of the block are not statements: else [A] { }
+        if (elseClauseSyntax.Statement is BlockSyntax elseBlockSyntax)
+            return elseBlockSyntax.Statements;
+
+        return [elseClauseSyntax.Statement];
     }
 
     /// <summary>

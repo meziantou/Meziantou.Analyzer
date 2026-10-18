@@ -1039,4 +1039,42 @@ public sealed class AvoidUsingRedundantElseAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1685")]
+    public Task InvalidCode_ElseBlockWithAttribute_ElseRemoved()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            class TestClass
+            {
+                int Test(bool a)
+                {
+                    if (a)
+                        return 0;
+                    {|MA0071:else|}
+                    [A]
+                    {
+                        return 1;
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class TestClass
+            {
+                int Test(bool a)
+                {
+                    if (a)
+                        return 0;
+
+                    return 1;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
