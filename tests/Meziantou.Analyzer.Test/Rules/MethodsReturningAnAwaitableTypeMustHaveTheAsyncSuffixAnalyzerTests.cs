@@ -542,4 +542,99 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1648")]
+    public Task NotAwaitable_RenameConflictsWithExistingMethod_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                public void Write() => throw null;
+                void {|MA0138:WriteAsync|}() => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NotAwaitable_RenameToOverloadWithDifferentParameters()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                public void Write(int value) => throw null;
+                void {|MA0138:WriteAsync|}() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                public void Write(int value) => throw null;
+                void Write() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NotAwaitable_RenameConflictsWithGenericMethod_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                public void Write<T>(T value) => throw null;
+                void {|MA0138:WriteAsync|}<U>(U value) => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NotAwaitable_RenameConflictsWithProperty_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                public int Write => 0;
+                void {|MA0138:WriteAsync|}() => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NotAwaitable_LocalFunction_RenameConflictsWithLocal_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                void A()
+                {
+                    var Foo = 0;
+                    _ = Foo;
+                    void {|MA0138:FooAsync|}() => throw null;
+                }
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }

@@ -62,6 +62,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
                 title = $"Rename to '{newName}'";
             }
 
+            if (IsNameAlreadyUsed(semanticModel, nodeToFix, methodSymbol, newName))
+                continue;
+
             context.RegisterCodeFix(
                 CodeAction.Create(
                     title,
@@ -69,6 +72,59 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
                     equivalenceKey: title),
                 diagnostic);
         }
+    }
+
+    /// <summary>
+    /// Indicates whether renaming the method would conflict with a member of the type that has the same signature, or
+    /// with a local or a local function in scope, as the code would not compile anymore.
+    /// </summary>
+    private static bool IsNameAlreadyUsed(SemanticModel semanticModel, SyntaxNode node, IMethodSymbol methodSymbol, string newName)
+    {
+        if (methodSymbol.MethodKind is MethodKind.LocalFunction)
+        {
+            foreach (var symbol in semanticModel.LookupSymbols(node.SpanStart, name: newName))
+            {
+                if (symbol is ILocalSymbol or IParameterSymbol or IRangeVariableSymbol or IMethodSymbol { MethodKind: MethodKind.LocalFunction })
+                    return true;
+            }
+
+            return false;
+        }
+
+        foreach (var member in methodSymbol.ContainingType.GetMembers(newName))
+        {
+            if (member is not IMethodSymbol otherMethod || HasSameSignature(methodSymbol, otherMethod))
+                return true;
+        }
+
+        return false;
+    }
+
+    private static bool HasSameSignature(IMethodSymbol method, IMethodSymbol otherMethod)
+    {
+        if (method.Arity != otherMethod.Arity || method.Parameters.Length != otherMethod.Parameters.Length)
+            return false;
+
+        for (var i = 0; i < method.Parameters.Length; i++)
+        {
+            var parameter = method.Parameters[i];
+            var otherParameter = otherMethod.Parameters[i];
+            if (parameter.RefKind is RefKind.None != otherParameter.RefKind is RefKind.None)
+                return false;
+
+            // The type parameters of the methods are compared by position: Write<T>(T value) and Write<U>(U value) have the same signature
+            if (parameter.Type is ITypeParameterSymbol { TypeParameterKind: TypeParameterKind.Method } typeParameter && otherParameter.Type is ITypeParameterSymbol { TypeParameterKind: TypeParameterKind.Method } otherTypeParameter)
+            {
+                if (typeParameter.Ordinal != otherTypeParameter.Ordinal)
+                    return false;
+            }
+            else if (!parameter.Type.IsEqualTo(otherParameter.Type))
+            {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private static async Task<Solution> RenameMethodAsync(Document document, IMethodSymbol methodSymbol, string newName, CancellationToken cancellationToken)
