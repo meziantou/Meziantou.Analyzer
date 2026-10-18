@@ -715,4 +715,26 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
 
         return test.RunAsync();
     }
+
+#if ROSLYN_5_6_OR_GREATER
+    // The older versions of the parser do not produce the same syntax tree for this invalid code
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1673")]
+    public Task InvalidCode_PropertyWithoutName_NoCodeFix()
+    {
+        const string Source = """
+            struct Test
+            {
+                int {|MA0102:|}=> 0;
+            }
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+#endif
 }
