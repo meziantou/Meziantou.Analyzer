@@ -69,4 +69,22 @@ public sealed class BoundedCacheTests
         cache.GetOrAdd(0, key => { created = true; return key; });
         Assert.True(created);
     }
+
+    [Fact]
+    public void TheEntriesCanBeUsedConcurrentlyWithTheEviction()
+    {
+        var cache = new BoundedCache<int, int>(capacity: 256);
+        Parallel.For(0, Environment.ProcessorCount * 2, new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount }, worker =>
+        {
+            var random = new Random(worker);
+            for (var i = 0; i < 200_000; i++)
+            {
+                // Most of the lookups use the same entries, so their usage changes while the eviction sorts them
+                var key = random.Next(10) is 0 ? random.Next(100_000) : random.Next(256);
+                Assert.Equal(key, cache.GetOrAdd(key, static key => key));
+            }
+        });
+
+        Assert.True(cache.Count <= cache.Capacity * 2, $"The cache contains {cache.Count} entries");
+    }
 }

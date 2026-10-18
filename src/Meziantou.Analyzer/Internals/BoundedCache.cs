@@ -66,10 +66,18 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
                 // Remove a quarter of the entries, so the eviction does not run at every addition once the cache is full.
                 // The entries added while the snapshot is taken can be removed, which is fine as their value is recreated on demand.
                 var entries = _entries.ToArray();
-                Array.Sort(entries, static (a, b) => b.Value.LastUsage.CompareTo(a.Value.LastUsage));
+
+                // The entries are used concurrently, so their usage is read once before sorting them. Otherwise, the comparisons are inconsistent and Array.Sort throws.
+                var lastUsages = new long[entries.Length];
+                for (var i = 0; i < entries.Length; i++)
+                {
+                    lastUsages[i] = entries[i].Value.LastUsage;
+                }
+
+                Array.Sort(lastUsages, entries);
 
                 var retainedCount = Math.Max(1, Capacity - (Capacity / 4));
-                for (var i = retainedCount; i < entries.Length; i++)
+                for (var i = 0; i < entries.Length - retainedCount; i++)
                 {
                     _entries.TryRemove(entries[i].Key, out _);
                 }
