@@ -2726,4 +2726,89 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1646")]
+    public Task CodeFix_RemoveType_PartialType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class {|#0:Test|}
+            { partial void A();}partial class {|#1:Test|}{
+                partial void A() { }
+            }
+
+            public class UsedClass
+            {
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0182", DiagnosticSeverity.Info).WithLocation(0).WithLocation(1));
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+
+            public class UsedClass
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_PartialTypeInSeveralFiles()
+    {
+        var test = CreateTest();
+        test.TestState.Sources.Add("""
+            partial class {|#0:Test|}
+            {
+                partial void A();
+            }
+
+            public class UsedClass
+            {
+            }
+            """);
+        test.TestState.Sources.Add("""
+            partial class {|#1:Test|}
+            {
+                partial void A() { }
+            }
+            """);
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0182", DiagnosticSeverity.Info).WithLocation(0).WithLocation(1));
+        test.CodeActionIndex = 1;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.FixedState.Sources.Add("""
+
+            public class UsedClass
+            {
+            }
+            """);
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TypeUsedInDelegateSignature_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class SampleEventArgs : System.EventArgs
+            {
+            }
+
+            class SampleResult
+            {
+            }
+
+            delegate SampleResult CustomEventHandler(object sender, SampleEventArgs e);
+
+            public class Test
+            {
+                event CustomEventHandler myevent;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
