@@ -162,6 +162,28 @@ public sealed class UseRegexOptionsAnalyzerTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1642")]
+    public Task GeneratedRegex_NonConstantArgument_NoException()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net70;
+        // The argument of the attribute is not a constant, so the code does not compile
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+            partial class TestClass
+            {
+                [GeneratedRegex(options: RegexOptions.CultureInvariant, pattern: "([a-z]+)", matchTimeoutMilliseconds: M())]
+                private static partial Regex Test();
+
+                static int M() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task GeneratedRegex_RegexOptions_Invalid_CodeFix()
     {
         var test = new GeneratedRegexCodeFixTest();

@@ -59,11 +59,13 @@ public abstract class RegexUsageAnalyzerBase : DiagnosticAnalyzer
                 var regexOptions = RegexOptions.None;
 
                 // RegexOptions.ExplicitCapture
-                if (attribute.ConstructorArguments.Length >= 2)
+                // The constructor arguments are in the order of the parameters, except when the constructor cannot be resolved
+                if (attribute.AttributeConstructor is { Parameters: [{ Type.SpecialType: SpecialType.System_String }, { } optionsParameter, ..] } &&
+                    optionsParameter.Type.IsEqualTo(_regexOptionsSymbol) &&
+                    attribute.ConstructorArguments is [{ Value: var patternValue }, { Value: int optionsValue }, ..])
                 {
-                    var pattern = attribute.ConstructorArguments[0].Value as string;
-                    regexOptions = (RegexOptions)(int)attribute.ConstructorArguments[1].Value!;
-                    if (pattern is not null && ShouldAddExplicitCapture(pattern, regexOptions))
+                    regexOptions = (RegexOptions)optionsValue;
+                    if (patternValue is string pattern && ShouldAddExplicitCapture(pattern, regexOptions))
                     {
                         context.ReportDiagnostic(ExplicitCaptureRule, attribute);
                     }
