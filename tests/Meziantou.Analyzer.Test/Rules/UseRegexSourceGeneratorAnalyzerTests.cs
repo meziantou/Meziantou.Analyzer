@@ -639,6 +639,39 @@ public class UseRegexSourceGeneratorAnalyzerTests
     }
 
     [Fact]
+    public Task NewRegex_ExpressionStatement_PartialMethod()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                void A()
+                {
+                    {|MA0110:new Regex("[a-z]+")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                void A()
+                {
+                    MyRegex();
+                }
+
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task NewRegex_Options_PartialProperty()
     {
         var test = CreateTest();
@@ -1798,6 +1831,55 @@ public class UseRegexSourceGeneratorAnalyzerTests
             {
                 [GeneratedRegex("a")]
                 private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1645")]
+    public Task NewRegex_InvalidPattern_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                private static Regex Value = new Regex("+=tr");
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NewRegex_InvalidOptions_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                private static Regex Value = new Regex("a", RegexOptions.ECMAScript | RegexOptions.Singleline);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task RegexIsMatch_InvalidPattern_NoDiagnostic()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                bool A(string value) => Regex.IsMatch(value, "(");
             }
             """;
 

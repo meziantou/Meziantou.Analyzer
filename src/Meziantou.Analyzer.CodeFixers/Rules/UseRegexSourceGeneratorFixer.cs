@@ -35,7 +35,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions") is null)
             return;
 
-        var arguments = semanticModel.GetOperation(nodeToFix, context.CancellationToken) switch
+        var operation = semanticModel.GetOperation(nodeToFix, context.CancellationToken);
+        var arguments = operation switch
         {
             IObjectCreationOperation objectCreationOperation => objectCreationOperation.Arguments,
             IInvocationOperation invocationOperation => invocationOperation.Arguments,
@@ -52,8 +53,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
             isCSharp14OrAbove = parseOptions.LanguageVersion.IsCSharp14OrGreater();
         }
 
-        // Offer partial property first if C# 14 or later
-        if (isCSharp14OrAbove)
+        // Offer partial property first if C# 14 or later. A property access cannot be used as a statement: new Regex("pattern"); => MyRegex;
+        if (isCSharp14OrAbove && operation is not IObjectCreationOperation { Parent: IExpressionStatementOperation })
         {
             context.RegisterCodeFix(
                 CodeAction.Create(
