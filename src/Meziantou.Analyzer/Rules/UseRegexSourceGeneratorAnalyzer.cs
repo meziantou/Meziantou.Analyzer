@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -133,6 +135,11 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
             if (timeoutIndex is not null && !IsConstant(arguments[timeoutIndex.Value]))
                 return null;
 
+            // The source generator does not implement the partial member when the pattern or the options are invalid,
+            // so the code would not compile anymore. The Regex constructor would throw at runtime anyway.
+            if (!IsValidPattern(arguments[patternIndex.Value], optionsIndex is null ? null : arguments[optionsIndex.Value]))
+                return null;
+
             return ImmutableDictionary.CreateRange(
             [
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.PatternIndexName, patternIndex.Value.ToString(CultureInfo.InvariantCulture)),
@@ -140,6 +147,28 @@ public sealed partial class UseRegexSourceGeneratorAnalyzer : DiagnosticAnalyzer
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutIndexName, timeoutIndex?.ToString(CultureInfo.InvariantCulture)),
                 new KeyValuePair<string, string?>(UseRegexSourceGeneratorAnalyzerCommon.RegexTimeoutName, timeoutIndex is null ? null : _timeSpanOperation.GetMilliseconds(arguments[timeoutIndex.Value].Value)?.ToString(CultureInfo.InvariantCulture)),
             ]);
+        }
+
+        private static bool IsValidPattern(IArgumentOperation patternArgument, IArgumentOperation? optionsArgument)
+        {
+            if (patternArgument.Value.ConstantValue.Value is not string pattern)
+                return false;
+
+            var options = RegexOptions.None;
+            if (optionsArgument is not null)
+            {
+                if (optionsArgument.Value.ConstantValue.Value is not int optionsValue)
+                    return false;
+
+                options = (RegexOptions)optionsValue;
+            }
+
+            // RegexOptions.NonBacktracking is not supported by all the runtimes the analyzer runs on, and the source generator
+            // falls back to the Regex constructor for it. RegexOptions.Compiled does not change the validity of the pattern.
+            const RegexOptions NonBacktracking = (RegexOptions)1024;
+            options &= ~(NonBacktracking | RegexOptions.Compiled);
+
+            return RegexCache.IsValidPattern(pattern, options, out _);
         }
 
         private static int? GetArgumentIndex(ImmutableArray<IArgumentOperation> arguments, string parameterName)
