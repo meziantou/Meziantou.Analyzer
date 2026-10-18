@@ -154,4 +154,25 @@ public sealed class RemoveUselessToStringAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExpressionStatement_NoCodeFix()
+    {
+        const string Source = """
+            class Sample
+            {
+                void A(string value) => {|MA0044:value.ToString()|};
+
+                void B(string value)
+                {
+                    {|MA0044:value.ToString()|};
+                }
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }

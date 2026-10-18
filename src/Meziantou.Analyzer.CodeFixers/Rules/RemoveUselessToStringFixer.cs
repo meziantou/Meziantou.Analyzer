@@ -21,6 +21,10 @@ public sealed class RemoveUselessToStringFixer : CodeFixProvider
         if (semanticModel?.GetOperation(syntax, context.CancellationToken) is not IInvocationOperation operation)
             return;
 
+        // The string cannot be used as a statement: value.ToString(); or void M() => value.ToString();
+        if (operation.Parent is IExpressionStatementOperation)
+            return;
+
         // The arguments are evaluated even though string.ToString ignores them, so they can only be removed
         // along with the call when evaluating them has no observable effect
         var cultureInfoType = semanticModel.Compilation.GetTypeByMetadataName("System.Globalization.CultureInfo");
