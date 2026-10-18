@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseGuidEmptyAnalyzer,
     Meziantou.Analyzer.Rules.UseGuidEmptyFixer>;
@@ -108,6 +109,20 @@ public sealed class UseGuidEmptyAnalyzerTests
                     var lambda = (System.Guid value = new System.Guid()) => { };
                 }
             }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1689")]
+    public Task InvalidCode_GuidUsedAsAttribute_NoDiagnostic()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            [assembly: System.Guid]
             """;
 
         return test.RunAsync();
