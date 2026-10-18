@@ -1,4 +1,3 @@
-using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 
 namespace Meziantou.Analyzer.Rules;
@@ -37,9 +36,9 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         {
             var analyzerContext = new AnalyzerContext(ctx.Compilation);
 
-            ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeMethod, SyntaxKind.MethodDeclaration);
-            ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeProperty, SyntaxKind.PropertyDeclaration);
+            ctx.RegisterOperationBlockAction(analyzerContext.AnalyzeOperationBlock);
             ctx.RegisterOperationAction(analyzerContext.AnalyzeDelegateCreation, OperationKind.DelegateCreation);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeMemberReference, OperationKind.Invocation, OperationKind.MethodReference, OperationKind.PropertyReference);
             ctx.RegisterCompilationEndAction(analyzerContext.CompilationEnd);
         });
     }
@@ -76,64 +75,71 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             }
         }
 
-        public void AnalyzeMethod(SyntaxNodeAnalysisContext context)
+        public void AnalyzeOperationBlock(OperationBlockAnalysisContext context)
         {
-            var node = (MethodDeclarationSyntax)context.Node;
-            var methodSymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (methodSymbol is null)
+            if (context.OwningSymbol is not IMethodSymbol methodSymbol)
                 return;
 
-            if (context.Compilation is null)
+            switch (methodSymbol)
+            {
+                case { MethodKind: MethodKind.Ordinary }:
+                    AnalyzeMethod(context, methodSymbol);
+                    break;
+
+                case { MethodKind: MethodKind.PropertyGet or MethodKind.PropertySet, AssociatedSymbol: IPropertySymbol propertySymbol }:
+                    AnalyzeProperty(context, propertySymbol);
+                    break;
+            }
+        }
+
+        private void AnalyzeMethod(OperationBlockAnalysisContext context, IMethodSymbol methodSymbol)
+        {
+            if (!IsDeclaredBy<MethodDeclarationSyntax>(methodSymbol, context.CancellationToken))
                 return;
 
             if (!IsPotentialStatic(methodSymbol) || methodSymbol.IsUnitTestMethod() || IsAspNetCoreMiddleware(methodSymbol) || IsAspNetCoreStartup(methodSymbol))
-            {
-                return;
-            }
-
-            var body = (SyntaxNode?)node.Body ?? node.ExpressionBody;
-            if (body is null)
                 return;
 
-            var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
-            if (operation is null || HasInstanceUsages(operation))
+            if (HasInstanceUsages(context.OperationBlocks))
                 return;
 
             _potentialSymbols.Add(methodSymbol);
         }
 
-        public void AnalyzeProperty(SyntaxNodeAnalysisContext context)
+        /// <summary>
+        /// The accessors of a property are analyzed separately, so the property can be made static when none of
+        /// its accessors uses the instance. The auto-implemented accessors have no operation block, and use the instance.
+        /// </summary>
+        private void AnalyzeProperty(OperationBlockAnalysisContext context, IPropertySymbol propertySymbol)
         {
-            var node = (PropertyDeclarationSyntax)context.Node;
-            var propertySymbol = context.SemanticModel.GetDeclaredSymbol(node, context.CancellationToken);
-            if (propertySymbol is null)
-                return;
-
             if (!IsPotentialStatic(propertySymbol))
                 return;
 
-            if (node.ExpressionBody is not null)
+            if (propertySymbol.DeclaringSyntaxReferences is not [var syntaxReference] || syntaxReference.GetSyntax(context.CancellationToken) is not PropertyDeclarationSyntax node)
+                return;
+
+            if (HasInstanceUsages(context.OperationBlocks))
             {
-                var operation = context.SemanticModel.GetOperation(node.ExpressionBody, context.CancellationToken);
-                if (operation is null || HasInstanceUsages(operation))
-                    return;
+                _cannotBeStaticSymbols.Add(propertySymbol);
+                return;
             }
 
-            if (node.AccessorList is not null)
-            {
-                foreach (var accessor in node.AccessorList.Accessors)
-                {
-                    var body = (SyntaxNode?)accessor.Body ?? accessor.ExpressionBody;
-                    if (body is null)
-                        return;
-
-                    var operation = context.SemanticModel.GetOperation(body, context.CancellationToken);
-                    if (operation is null || HasInstanceUsages(operation))
-                        return;
-                }
-            }
+            if (node.AccessorList is not null && node.AccessorList.Accessors.Any(accessor => accessor.Body is null && accessor.ExpressionBody is null))
+                return;
 
             _potentialSymbols.Add(propertySymbol);
+        }
+
+        private static bool IsDeclaredBy<TSyntax>(ISymbol symbol, CancellationToken cancellationToken)
+            where TSyntax : SyntaxNode
+        {
+            foreach (var syntaxReference in symbol.DeclaringSyntaxReferences)
+            {
+                if (syntaxReference.GetSyntax(cancellationToken) is TSyntax)
+                    return true;
+            }
+
+            return false;
         }
 
         public void AnalyzeDelegateCreation(OperationAnalysisContext context)
@@ -149,6 +155,29 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             }
         }
 
+        /// <summary>
+        /// A static member cannot be accessed through an instance (CS0176), nor in an object initializer or a property pattern.
+        /// The code fixer replaces <c>this.Member</c> with <c>Type.Member</c>, but the other instances cannot be removed, as
+        /// they can have side effects.
+        /// </summary>
+        public void AnalyzeMemberReference(OperationAnalysisContext context)
+        {
+            var (member, instance) = context.Operation switch
+            {
+                IInvocationOperation operation => ((ISymbol)operation.TargetMethod, operation.Instance),
+                IMemberReferenceOperation operation => (operation.Member, operation.Instance),
+                _ => default,
+            };
+
+            if (member is null || instance is null or IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance })
+                return;
+
+            if (member.IsStatic || !member.ContainingAssembly.IsEqualTo(compilation.Assembly))
+                return;
+
+            _cannotBeStaticSymbols.Add(member.OriginalDefinition);
+        }
+
         private static bool IsPotentialStatic(IMethodSymbol symbol)
         {
             return
@@ -157,6 +186,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
+                !IsPatternBasedMember(symbol) &&
                 symbol.PartialDefinitionPart is null;
         }
 
@@ -167,16 +197,28 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsVirtual &&
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
-                !symbol.IsInterfaceImplementation();
+                !symbol.IsInterfaceImplementation() &&
+                !IsPatternBasedMember(symbol);
         }
 
-        private static bool HasInstanceUsages(IOperation operation)
+        /// <summary>
+        /// The compiler binds some members by name on an instance, without operations referencing them: foreach, await,
+        /// using, deconstruction, collection initializers and collection expressions, fixed statements, indexes and ranges.
+        /// They cannot be static.
+        /// </summary>
+        private static bool IsPatternBasedMember(ISymbol symbol)
         {
-            if (operation is null)
-                return false;
+            return symbol switch
+            {
+                IMethodSymbol => symbol.Name is "GetEnumerator" or "GetAsyncEnumerator" or "MoveNext" or "MoveNextAsync" or "Dispose" or "DisposeAsync" or "GetAwaiter" or "GetResult" or "OnCompleted" or "UnsafeOnCompleted" or "Deconstruct" or "Add" or "GetPinnableReference" or "Slice",
+                IPropertySymbol => symbol.Name is "Current" or "IsCompleted" or "Length" or "Count",
+                _ => false,
+            };
+        }
 
-            var operations = new Queue<IOperation>();
-            operations.Enqueue(operation);
+        private static bool HasInstanceUsages(ImmutableArray<IOperation> operationBlocks)
+        {
+            var operations = new Queue<IOperation>(operationBlocks);
 
             while (operations.Count > 0)
             {
@@ -189,6 +231,10 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 switch (op)
                 {
                     case IInstanceReferenceOperation instanceReferenceOperation when instanceReferenceOperation.ReferenceKind == InstanceReferenceKind.ContainingTypeInstance:
+                        return true;
+
+                    // The parameters of a constructor can only be referenced from a method or an accessor when they are the parameters of the primary constructor, which are captured by the instance
+                    case IParameterReferenceOperation { Parameter.ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Constructor } }:
                         return true;
                 }
             }
