@@ -32,6 +32,11 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
 
         // Try to get the method symbol: either from a method declaration or a local function
         var declarationNode = nodeToFix.AncestorsAndSelf().FirstOrDefault(n => n is MethodDeclarationSyntax or LocalFunctionStatementSyntax);
+
+        // The renamer can throw when the declaration of the renamed method does not compile
+        if (declarationNode is null || declarationNode.ContainsDiagnostics)
+            return;
+
         if (declarationNode is MethodDeclarationSyntax methodDeclaration)
         {
             methodSymbol = semanticModel.GetDeclaredSymbol(methodDeclaration, context.CancellationToken) as IMethodSymbol;
@@ -55,7 +60,8 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixFixer :
             }
             else
             {
-                if (!methodSymbol.Name.EndsWith("Async", StringComparison.Ordinal))
+                // A method named Async cannot be renamed to an empty name
+                if (!methodSymbol.Name.EndsWith("Async", StringComparison.Ordinal) || methodSymbol.Name.Length == "Async".Length)
                     continue;
 
                 newName = methodSymbol.Name[..^"Async".Length];

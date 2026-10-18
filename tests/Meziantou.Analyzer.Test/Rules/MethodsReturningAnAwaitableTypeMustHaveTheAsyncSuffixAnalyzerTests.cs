@@ -637,4 +637,63 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1678")]
+    public Task NotAwaitable_MethodNamedAsync_NoCodeFix()
+    {
+        const string Source = """
+            class Test
+            {
+                void {|MA0138:Async|}() => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1684")]
+    public Task InvalidCode_LocalFunctionDeclarationDoesNotCompile_NoCodeFix()
+    {
+        const string Source = """
+            using System.Threading.Tasks static Task {|MA0137:Main|}(){Task<>{|MA0137:Inner|}(null Inner
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1690")]
+    public Task InvalidCode_MethodDeclarationDoesNotCompile_NoCodeFix()
+    {
+        const string Source = """
+            t A{{
+            #if A
+            #else
+            T public k {|#0:AAsync|}<
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+#if ROSLYN_4_14_OR_GREATER
+        // The older versions of the parser do not declare a method for this invalid code
+        test.TestState.ExpectedDiagnostics.Add(new DiagnosticResult("MA0138", DiagnosticSeverity.Warning).WithLocation(0));
+        test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult("MA0138", DiagnosticSeverity.Warning).WithLocation(0));
+#endif
+
+        return test.RunAsync();
+    }
 }
