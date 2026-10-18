@@ -17,6 +17,10 @@ The harness reports these defects:
 
 The exceptions thrown by Roslyn without a frame of the analyzers in their stack trace (`RoslynException`), such as the formatter failing on the invalid code
 of an input, and the exceptions of the harness itself (`HarnessException`) are saved, but no issue is opened for them.
+The analyzers do not run when the compiler throws on the input (`[assembly:(async()=>`), as the compilation then hangs when it is used again.
+This is saved as a `RoslynException`, instead of a `Timeout` of the analyzer that happens to run.
+The code fixers do not run when the syntax tree of the input does not contain the whole text, which the parser can produce for some invalid code
+(`r e implicit operator`), as the workspace services they use, such as `SymbolFinder` and `Renamer`, throw on such a document.
 
 All the rules are enabled, including the ones disabled by default, and the code is compiled with the .NET and ASP.NET Core
 assemblies of the harness, the libraries referenced by the project file, and the source generators of the .NET SDK.
