@@ -1372,4 +1372,36 @@ public sealed class UseConfigureAwaitAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task AwaitInArgument_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A()
+                {
+                    B({|MA0004:await Task.FromResult(1)|});
+                }
+
+                void B(int value) { }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A()
+                {
+                    B(await Task.FromResult(1).ConfigureAwait(false));
+                }
+
+                void B(int value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

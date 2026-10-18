@@ -19,6 +19,12 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        // The argument has the same span as the awaited expression: F(await task)
+        if (nodeToFix is ArgumentSyntax argument)
+        {
+            nodeToFix = argument.Expression;
+        }
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use ConfigureAwait(false)",
