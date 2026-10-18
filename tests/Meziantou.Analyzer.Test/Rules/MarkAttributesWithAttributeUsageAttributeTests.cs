@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.MarkAttributesWithAttributeUsageAttributeAnalyzer,
     Meziantou.Analyzer.Rules.MarkAttributesWithAttributeUsageAttributeFixer>;
@@ -63,6 +64,22 @@ public sealed class MarkAttributesWithAttributeUsageAttributeTests
             class ChildTestAttribute : TestAttribute { }
             class GrandChildTestAttribute : ChildTestAttribute { }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1682")]
+    public Task InvalidCode_ClassWithoutName_NoCodeFix()
+    {
+        const string Source = """
+            class {|MA0010:|}: System.Attribute { }
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = Source;
+        test.FixedCode = Source;
 
         return test.RunAsync();
     }

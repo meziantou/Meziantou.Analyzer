@@ -13,8 +13,9 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        // The class has no name when its identifier is missing, and the diagnostic is then reported on another node: class : Attribute
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix is not ClassDeclarationSyntax classNode)
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
@@ -32,18 +33,16 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         var title = "Add AttributeUsage attribute";
         var codeAction = CodeAction.Create(
             title,
-            ct => Refactor(context.Document, nodeToFix, attributeUsageAttribute, attributeTargets, ct),
+            ct => Refactor(context.Document, classNode, attributeUsageAttribute, attributeTargets, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, SyntaxNode nodeToFix, INamedTypeSymbol attributeUsageAttribute, INamedTypeSymbol attributeTargets, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, ClassDeclarationSyntax classNode, INamedTypeSymbol attributeUsageAttribute, INamedTypeSymbol attributeTargets, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
-
-        var classNode = (ClassDeclarationSyntax)nodeToFix;
 
         var attribute = editor.Generator.Attribute(
             generator.TypeExpression(attributeUsageAttribute, addImport: true),
