@@ -259,4 +259,25 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExplicitConstructor_NoCodeFix()
+    {
+        const string Source = """
+            using Microsoft.AspNetCore.Components;
+
+            class MyComponent : ComponentBase
+            {
+                public MyComponent() { }
+
+                [Inject]
+                protected NavigationManager {|MA0187:Navigation|} { get; set; } = default!;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
