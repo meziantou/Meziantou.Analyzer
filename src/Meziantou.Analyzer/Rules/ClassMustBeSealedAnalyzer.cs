@@ -32,6 +32,7 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeNamedTypeSymbol, SymbolKind.NamedType);
             ctx.RegisterSymbolAction(analyzerContext.AnalyzeMethodSymbol, SymbolKind.Method);
+            ctx.RegisterOperationAction(analyzerContext.AnalyzeLocalFunction, OperationKind.LocalFunction);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -70,6 +71,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
 
                     break;
             }
+
+            AddConstraintTypes(symbol.TypeParameters);
         }
 
         public void AnalyzeMethodSymbol(SymbolAnalysisContext context)
@@ -79,6 +82,29 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
             {
                 _cannotBeSealedClasses.Add(symbol.ContainingType);
                 _cannotBeSealedClasses.Add(symbol.ContainingType.OriginalDefinition);
+            }
+
+            AddConstraintTypes(symbol.TypeParameters);
+        }
+
+        public void AnalyzeLocalFunction(OperationAnalysisContext context)
+        {
+            AddConstraintTypes(((ILocalFunctionOperation)context.Operation).Symbol.TypeParameters);
+        }
+
+        // A sealed class cannot be used as a generic constraint (CS0701)
+        private void AddConstraintTypes(ImmutableArray<ITypeParameterSymbol> typeParameters)
+        {
+            foreach (var typeParameter in typeParameters)
+            {
+                foreach (var constraintType in typeParameter.ConstraintTypes)
+                {
+                    if (constraintType.TypeKind is TypeKind.Class)
+                    {
+                        _cannotBeSealedClasses.Add(constraintType);
+                        _cannotBeSealedClasses.Add(constraintType.OriginalDefinition);
+                    }
+                }
             }
         }
 
