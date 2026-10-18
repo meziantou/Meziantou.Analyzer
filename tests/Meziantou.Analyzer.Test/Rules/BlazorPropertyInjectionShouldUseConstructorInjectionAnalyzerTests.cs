@@ -280,4 +280,29 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionAnalyzer
 
         return test.RunAsync();
     }
+
+#if ROSLYN_5_6_OR_GREATER
+    // The older versions of the parser do not produce the same syntax tree for this invalid code
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1680")]
+    public Task InvalidCode_PropertyWithoutName_NoCodeFix()
+    {
+        const string Source = """
+            using Microsoft.AspNetCore.Components;
+
+            class MyComponent : ComponentBase
+            {
+                [Inject]
+                protected NavigationManager {|MA0187:|}{ get; set; } = default!;
+            }
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+#endif
 }
