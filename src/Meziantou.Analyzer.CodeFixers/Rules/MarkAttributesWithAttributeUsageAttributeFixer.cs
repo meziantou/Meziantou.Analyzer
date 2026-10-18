@@ -13,9 +13,10 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        // The class has no name when its identifier is missing, and the diagnostic is then reported on another node: class : Attribute
+        // The type is a class, or a record that does not compile as it derives from Attribute (CS8864).
+        // The type has no name when its identifier is missing, and the diagnostic is then reported on another node: class : Attribute
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is not ClassDeclarationSyntax classNode)
+        if (nodeToFix is not TypeDeclarationSyntax typeDeclaration)
             return;
 
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
@@ -33,13 +34,13 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
         var title = "Add AttributeUsage attribute";
         var codeAction = CodeAction.Create(
             title,
-            ct => Refactor(context.Document, classNode, attributeUsageAttribute, attributeTargets, ct),
+            ct => Refactor(context.Document, typeDeclaration, attributeUsageAttribute, attributeTargets, ct),
             equivalenceKey: title);
 
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static async Task<Document> Refactor(Document document, ClassDeclarationSyntax classNode, INamedTypeSymbol attributeUsageAttribute, INamedTypeSymbol attributeTargets, CancellationToken cancellationToken)
+    private static async Task<Document> Refactor(Document document, TypeDeclarationSyntax typeDeclaration, INamedTypeSymbol attributeUsageAttribute, INamedTypeSymbol attributeTargets, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -51,7 +52,7 @@ public sealed class MarkAttributesWithAttributeUsageAttributeFixer : CodeFixProv
                         generator.TypeMemberAccessExpression(attributeTargets, nameof(AttributeTargets.All), addImport: true)),
             ]);
 
-        editor.AddAttribute(classNode, attribute);
+        editor.AddAttribute(typeDeclaration, attribute);
         return editor.GetChangedDocument();
     }
 }

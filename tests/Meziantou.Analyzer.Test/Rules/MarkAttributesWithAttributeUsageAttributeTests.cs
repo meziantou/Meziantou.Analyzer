@@ -83,4 +83,19 @@ public sealed class MarkAttributesWithAttributeUsageAttributeTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task InvalidCode_RecordInheritsFromAttribute_MissingAttribute_ShouldReportError()
+    {
+        var test = CreateTest();
+        // A record cannot derive from Attribute (CS8864), so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = "record {|MA0010:TestAttribute|} : System.Attribute { }";
+        test.FixedCode = """
+            [System.AttributeUsage(System.AttributeTargets.All)]
+            record TestAttribute : System.Attribute { }
+            """;
+
+        return test.RunAsync();
+    }
 }
