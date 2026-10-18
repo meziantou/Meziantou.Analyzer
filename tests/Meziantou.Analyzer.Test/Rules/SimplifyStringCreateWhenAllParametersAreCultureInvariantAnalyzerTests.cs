@@ -727,4 +727,26 @@ public sealed class SimplifyStringCreateWhenAllParametersAreCultureInvariantAnal
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExpressionStatement_NoCodeFix()
+    {
+        const string Source = """
+            using System;
+            using System.Globalization;
+
+            class TypeName
+            {
+                public void Test()
+                {
+                    {|MA0185:string.Create(CultureInfo.InvariantCulture, $"")|};
+                }
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
