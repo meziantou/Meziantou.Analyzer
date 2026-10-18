@@ -38,6 +38,10 @@ public sealed class UseGuidEmptyAnalyzer : DiagnosticAnalyzer
         if (operation.Constructor is null || !operation.Constructor.ContainingType.IsEqualTo(guidType))
             return;
 
+        // [System.Guid] does not compile, and the attribute cannot be replaced with Guid.Empty
+        if (operation.Parent is IAttributeOperation)
+            return;
+
         if (operation.Arguments.Length == 0)
         {
             // Guid.Empty is not a compile-time constant, so it cannot replace the default value of a parameter
