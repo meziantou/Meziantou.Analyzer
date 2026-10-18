@@ -36,7 +36,9 @@ The [fuzz workflow](../../.github/workflows/fuzz.yml) fuzzes for 4 hours every S
 previous run. It then opens an issue labeled `fuzzing` for each new finding, at most 50 per run. The signature is in the body of the issue, so:
 
 - a finding with an open issue, or with an issue closed as not planned, is not reported again
-- a finding with an issue closed as completed is reported in a new issue, as a regression
+- a finding with an issue closed as completed is reported in a new issue, as a regression, when the fuzzed commit contains the commit that
+  closed the issue (the merge commit of its pull request). A run of an older commit, such as a branch that does not have the fix yet, still finds
+  the defect, so the finding is not reported. When the closing commit is unknown, for instance for an issue closed manually, the finding is reported.
 
 The workflow can be started manually with a shorter duration, and without opening issues. The findings, the corpus, and the logs are attached to the run.
 
@@ -75,6 +77,7 @@ The script publishes the harness to `artifacts/fuzz/bin`, instruments the analyz
    the findings with `__builtin_trap()`, which raises `SIGTRAP` on Arm64, and libFuzzer does not handle this signal.
 
 `pwsh tests/Meziantou.Analyzer.Fuzz/eng/report.ps1 -FindingsDirectory artifacts/fuzz/findings -DryRun` prints the issues without creating them.
+With `-Repository meziantou/Meziantou.Analyzer -CommitSha <commit>`, it also skips the findings that are already known, as the weekly run does.
 
 ## Not covered yet
 
