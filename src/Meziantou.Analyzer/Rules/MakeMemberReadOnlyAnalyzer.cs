@@ -125,6 +125,10 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
                         var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
                         if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
                         {
+                            // Both parts of a partial property must be readonly, and the code fix only updates the implementation part
+                            if (((PropertyDeclarationSyntax)parent).Modifiers.Any(SyntaxKind.PartialKeyword))
+                                return;
+
                             context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
                             return;
                         }
@@ -170,6 +174,10 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
         if (symbol is IMethodSymbol method)
         {
             if (method.IsReadOnly || method.IsStatic)
+                return false;
+
+            // Both parts of a partial method must be readonly (CS8663), and the code fix only updates the implementation part
+            if (method.PartialDefinitionPart is not null)
                 return false;
 
             if (method.MethodKind is MethodKind.Ordinary or MethodKind.PropertyGet or MethodKind.PropertySet or MethodKind.EventAdd or MethodKind.EventRemove or MethodKind.ExplicitInterfaceImplementation)
