@@ -13,8 +13,8 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
-        var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        // Only the string literals are fixed, not the interpolated strings
+        if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not LiteralExpressionSyntax nodeToFix)
             return;
 
         foreach (var newLine in new[] { null, "\n", "\r\n" })
@@ -33,7 +33,7 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         }
     }
 
-    private static async Task<Document> FixString(Document document, SyntaxNode nodeToFix, string? newLine, CancellationToken cancellationToken)
+    private static async Task<Document> FixString(Document document, LiteralExpressionSyntax nodeToFix, string? newLine, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -44,15 +44,12 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         var firstCharPosition = nodeToFix.GetLineSpan(cancellationToken)?.StartLinePosition.Character ?? 0;
         var newLineTrivia = TriviaList(lineEnding == "\n" ? LineFeed : CarriageReturnLineFeed, Whitespace(new string(' ', firstCharPosition)));
 
-        if (nodeToFix is LiteralExpressionSyntax literal)
-        {
-            var text = literal.GetText().ToString();
-            var isVerbatim = text.StartsWith('@', StringComparison.Ordinal);
-            text = isVerbatim ? text[2..^1] : text[1..^1];
+        var text = nodeToFix.GetText().ToString();
+        var isVerbatim = text.StartsWith('@', StringComparison.Ordinal);
+        text = isVerbatim ? text[2..^1] : text[1..^1];
 
-            var newNode = ReplaceString(generator, text, newLine, newLineTrivia);
-            editor.ReplaceNode(nodeToFix, newNode);
-        }
+        var newNode = ReplaceString(generator, text, newLine, newLineTrivia);
+        editor.ReplaceNode(nodeToFix, newNode);
 
         return editor.GetChangedDocument();
     }

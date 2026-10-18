@@ -246,4 +246,24 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task InterpolatedString_NoCodeFix()
+    {
+        const string Source = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = {|MA0101:$@"line1{0}
+            line2"|};
+                }
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
