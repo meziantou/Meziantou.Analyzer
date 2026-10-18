@@ -800,4 +800,271 @@ public sealed class MakeMethodStaticAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1644")]
+    public Task InvalidCode_UnconvertedInterpolatedString_NoException()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            class Test
+            {
+                void Sample()
+                {
+                    A(B$@ = 0);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1650")]
+    public Task CalledThroughConditionalAccess_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class Test
+            {
+                Task A() { return ((Test)null)?.A(); }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CalledThroughInstance_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() => throw null;
+                static void B(Test instance) => instance.A();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PropertyInObjectInitializer_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                int A { get => 0; set { } }
+                static Test B() => new Test { A = 1 };
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PropertyInPropertyPattern_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                int A => 0;
+                static bool B(object value) => value is Test { A: 1 };
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CalledThroughThis_Simplified()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                private int _value;
+
+                void {|MA0038:A|}() => throw null;
+                int {|MA0041:P|} => 0;
+
+                void B()
+                {
+                    this.A();
+                    _ = this.P + _value;
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                private int _value;
+
+                static void A() => throw null;
+                static int P => 0;
+
+                void B()
+                {
+                    A();
+                    _ = P + _value;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CalledThroughBase_Simplified()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Base<T>
+            {
+                internal void {|MA0038:A|}() => throw null;
+            }
+
+            class Derived : Base<int>
+            {
+                private int _value;
+
+                int B()
+                {
+                    base.A();
+                    return _value;
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Base<T>
+            {
+                internal static void A() => throw null;
+            }
+
+            class Derived : Base<int>
+            {
+                private int _value;
+
+                int B()
+                {
+                    A();
+                    return _value;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrimaryConstructorParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(int p)
+            {
+                int A() => p++;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrimaryConstructorParameter_RefLocal_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test(string p)
+            {
+                void A()
+                {
+                    ref var a = ref p;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ReadOnlyStructMembers_CodeFix_RemovesReadOnly()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct Test
+            {
+                readonly void {|MA0038:A|}() { }
+                public readonly int {|MA0041:B|} => 0;
+                int {|MA0041:C|} { readonly get => 0; set { } }
+            }
+            """;
+        test.FixedCode = """
+            struct Test
+            {
+                static void A() { }
+                public static int B => 0;
+                static int C { get => 0; set { } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsingDisposeAsync_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+
+            class Test
+            {
+                public async Task {|MA0038:A|}()
+                {
+                    await using var a = new Sample();
+                }
+
+                private class Sample : IDisposable
+                {
+                    public void Dispose() => throw null;
+                    public ValueTask DisposeAsync() => throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CollectionExpressionAdd_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Collections;
+            using System.Collections.Generic;
+
+            public class Data<T> : IEnumerable<T>
+            {
+                public void Add(T value) { }
+                public IEnumerator<T> GetEnumerator() => throw null;
+                IEnumerator IEnumerable.GetEnumerator() => throw null;
+            }
+
+            public class TestClass
+            {
+                public static Data<string> Value => ["foo", "bar"];
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
