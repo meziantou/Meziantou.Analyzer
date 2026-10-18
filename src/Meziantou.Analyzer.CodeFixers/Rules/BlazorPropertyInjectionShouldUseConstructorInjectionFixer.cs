@@ -19,6 +19,11 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionFixer : 
         if (nodeToFix is null)
             return;
 
+        // The parameter cannot be added to the explicit constructors, as they could not initialize the property
+        var classDecl = nodeToFix.AncestorsAndSelf().OfType<PropertyDeclarationSyntax>().FirstOrDefault()?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        if (classDecl is null || HasExplicitNonPrimaryConstructors(classDecl))
+            return;
+
         var title = "Use constructor injection";
         context.RegisterCodeFix(
             CodeAction.Create(
