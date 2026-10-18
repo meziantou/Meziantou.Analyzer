@@ -64,7 +64,9 @@ public sealed class UseStringComparerFixer : CodeFixProvider
 
             if (targetOverload is not null)
             {
-                TryGetComparerParameterInfo(currentMethod, targetOverload, equalityComparerOpenType, comparerOpenType, out insertionIndex, out parameterName);
+                // The operations use the method that is not reduced, so the form of the call is only known from the symbol of the syntax
+                var isReducedCall = semanticModel.GetSymbolInfo(nodeToFix, context.CancellationToken).Symbol is IMethodSymbol { MethodKind: MethodKind.ReducedExtension };
+                TryGetComparerParameterInfo(currentMethod, targetOverload, isReducedCall, equalityComparerOpenType, comparerOpenType, out insertionIndex, out parameterName);
             }
         }
 
@@ -88,12 +90,13 @@ public sealed class UseStringComparerFixer : CodeFixProvider
         }
     }
 
-    private static bool TryGetComparerParameterInfo(IMethodSymbol method, IMethodSymbol overload, INamedTypeSymbol? equalityComparerOpenType, INamedTypeSymbol? comparerOpenType, out int insertionIndex, out string parameterName)
+    /// <param name="isReducedCall">Indicates whether the extension method is called as an extension method (<c>source.Contains(value)</c>). When it is called as a static method (<c>Enumerable.Contains(source, value)</c>), the instance is its first argument.</param>
+    private static bool TryGetComparerParameterInfo(IMethodSymbol method, IMethodSymbol overload, bool isReducedCall, INamedTypeSymbol? equalityComparerOpenType, INamedTypeSymbol? comparerOpenType, out int insertionIndex, out string parameterName)
     {
         // Use comparable parameters to correctly handle extension methods:
         // strip the implicit 'this' parameter so indices align with the argument list.
-        var methodParams = GetComparableParameters(method);
-        var overloadParams = GetComparableParameters(overload);
+        var methodParams = GetComparableParameters(method, isReducedCall);
+        var overloadParams = GetComparableParameters(overload, isReducedCall);
 
         for (var i = 0; i < overloadParams.Length; i++)
         {
@@ -122,14 +125,14 @@ public sealed class UseStringComparerFixer : CodeFixProvider
     /// Returns the parameters that correspond to actual arguments in the invocation/creation argument list,
     /// i.e. excluding the implicit 'this' receiver for extension methods.
     /// </summary>
-    private static ImmutableArray<IParameterSymbol> GetComparableParameters(IMethodSymbol method)
+    private static ImmutableArray<IParameterSymbol> GetComparableParameters(IMethodSymbol method, bool isReducedCall)
     {
         // Reduced extension method: Parameters already exclude 'this'.
         if (method.MethodKind is MethodKind.ReducedExtension)
             return method.Parameters;
 
-        // Non-reduced extension method: the first parameter is 'this' and is not an argument.
-        if (method.IsExtensionMethod && method.Parameters.Length > 0)
+        // Non-reduced extension method called as an extension method: the first parameter is 'this' and is not an argument.
+        if (isReducedCall && method.IsExtensionMethod && method.Parameters.Length > 0)
             return method.Parameters.RemoveAt(0);
 
         return method.Parameters;
