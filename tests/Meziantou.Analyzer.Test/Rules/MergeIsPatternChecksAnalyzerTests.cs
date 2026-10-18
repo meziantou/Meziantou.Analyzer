@@ -582,4 +582,24 @@ public sealed class MergeIsPatternChecksAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1643")]
+    public Task InvalidCode_UnconvertedInterpolatedString_NoException()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            class Test
+            {
+                void Sample(int value)
+                {
+                    _ = A(B$@ = 0) || value is 1 || value is 2;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

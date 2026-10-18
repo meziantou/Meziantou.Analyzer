@@ -28,26 +28,23 @@ public sealed class MergeIsPatternChecksAnalyzer : DiagnosticAnalyzer
             if (context.Compilation.GetCSharpLanguageVersion() < LanguageVersion.CSharp9)
                 return;
 
-            context.RegisterSyntaxNodeAction(AnalyzeBinary, SyntaxKind.LogicalAndExpression, SyntaxKind.LogicalOrExpression);
+            context.RegisterOperationAction(AnalyzeBinary, OperationKind.Binary);
         });
     }
 
-    private static void AnalyzeBinary(SyntaxNodeAnalysisContext context)
+    private static void AnalyzeBinary(OperationAnalysisContext context)
     {
-        var operation = context.SemanticModel.GetOperation(context.Node, context.CancellationToken) as IBinaryOperation;
-        if (operation is null)
-            return;
-
+        var operation = (IBinaryOperation)context.Operation;
         if (operation.OperatorKind is not (BinaryOperatorKind.ConditionalAnd or BinaryOperatorKind.ConditionalOr))
             return;
 
-        if (context.Node is not BinaryExpressionSyntax rootExpression)
+        if (operation.Syntax is not BinaryExpressionSyntax rootExpression)
             return;
 
         if (rootExpression.Parent is BinaryExpressionSyntax parentExpression && parentExpression.IsKind(rootExpression.Kind()))
             return;
 
-        if (!HasMergeableContiguousCandidates(rootExpression, context.SemanticModel, context.CancellationToken))
+        if (!HasMergeableContiguousCandidates(rootExpression, operation.SemanticModel!, context.CancellationToken))
             return;
 
         context.ReportDiagnostic(Rule, rootExpression);
