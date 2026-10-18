@@ -114,10 +114,17 @@ internal static class ArgumentListHelper
     private sealed class BindingContext(SemanticModel semanticModel, InvocationExpressionSyntax invocationExpression, string? namespaceToImport, CancellationToken cancellationToken)
     {
         private readonly bool _isInConditionalAccess = IsInConditionalAccess(invocationExpression.Expression);
+
+        // An attribute argument must be a constant (CS0182), so an invocation cannot be one, and the speculative binding can throw there
+        private readonly bool _isInAttributeArgument = invocationExpression.FirstAncestorOrSelf<AttributeArgumentSyntax>() is not null;
+
         private (SemanticModel SemanticModel, int Position)? _bindingLocation;
 
         public IMethodSymbol? GetTargetMethod(InvocationExpressionSyntax newInvocation)
         {
+            if (_isInAttributeArgument)
+                return null;
+
             if (_isInConditionalAccess)
             {
                 var (newSemanticModel, newNode) = ReplaceInvocation(newInvocation);

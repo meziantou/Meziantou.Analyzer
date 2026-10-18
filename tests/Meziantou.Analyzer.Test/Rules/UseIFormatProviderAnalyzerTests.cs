@@ -1283,4 +1283,21 @@ public sealed class UseIFormatProviderAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1686")]
+    public Task InvalidCode_InvocationInAttributeArgument_NoCodeFix()
+    {
+        const string Source = """
+            [assembly:({|MA0011:string.Format(""new object[]{-1a is g System
+            |}using>
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
