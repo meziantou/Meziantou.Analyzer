@@ -142,4 +142,23 @@ public sealed class UseInlineArrayInsteadOfFixedBufferAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1674")]
+    public Task InvalidCode_FixedBufferWithoutNameAndType_NoCodeFix()
+    {
+        const string Source = """
+            unsafe struct Buffer
+            {
+                fixed {|MA0189:|}2
+            }
+            """;
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
 }
