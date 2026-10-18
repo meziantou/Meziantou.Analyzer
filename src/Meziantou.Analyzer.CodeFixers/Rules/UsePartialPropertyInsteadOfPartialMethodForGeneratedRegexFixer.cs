@@ -52,6 +52,10 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFix
 
         // Find all references to the method (call sites) across the solution
         var references = await SymbolFinder.FindReferencesAsync(methodSymbol, solution, cancellationToken).ConfigureAwait(false);
+
+        // Replacing the call sites located before the declaration moves it, so its span cannot be used to find it afterward
+        var methodAnnotation = new SyntaxAnnotation();
+        solution = solution.WithDocumentSyntaxRoot(document.Id, root.ReplaceNode(methodDeclaration, methodDeclaration.WithAdditionalAnnotations(methodAnnotation)));
         var referencesByDocument = references
             .SelectMany(r => r.Locations)
             .Where(loc => loc.Location.IsInSource)
@@ -98,9 +102,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFix
         if (updatedRoot is null)
             return solution;
 
-        var currentMethodDecl = updatedRoot
-            .FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true)
-            ?.FirstAncestorOrSelf<MethodDeclarationSyntax>();
+        var currentMethodDecl = updatedRoot.GetAnnotatedNodes(methodAnnotation).OfType<MethodDeclarationSyntax>().FirstOrDefault();
         if (currentMethodDecl is null)
             return solution;
 

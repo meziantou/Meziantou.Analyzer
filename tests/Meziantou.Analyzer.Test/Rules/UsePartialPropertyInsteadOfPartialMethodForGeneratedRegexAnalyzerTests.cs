@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
@@ -203,6 +204,37 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
                     _ = SampleRegex.Match("value");
                 }
             }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1679")]
+    public Task InvalidCode_ReferenceBeforeDeclaration()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            _ = EmailRegex(
+
+            partial class Program
+            {
+                [GeneratedRegex("a")]
+                private static partial Regex {|MA0190:EmailRegex|}(
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            _ = EmailRegex
+            partial class Program
+            {
+                [GeneratedRegex("a")]
+                private static partial Regex EmailRegex { get; }
             """;
 
         return test.RunAsync();
