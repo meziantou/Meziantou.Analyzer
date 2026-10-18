@@ -1886,6 +1886,41 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1692")]
+    public Task NewRegex_InAttributeOfType()
+    {
+        var test = CreatePartialMethodTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class A : Attribute { public Regex Value { get; set; } }
+
+            [A(Value = {|MA0110:new Regex("a")|})]
+            class Test
+            {
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            class A : Attribute { public Regex Value { get; set; } }
+
+            [A(Value = MyRegex())]
+            partial class Test
+            {
+                [GeneratedRegex("a")]
+                private static partial Regex MyRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
 #if CSHARP14_OR_GREATER
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1681")]

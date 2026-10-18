@@ -225,23 +225,22 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         // Regular class handling
+        // Track the node to fix, as the partial modifiers are not always inserted before it (e.g. the attributes of the type)
+        var nodeToFixAnnotation = new SyntaxAnnotation();
+        root = root.ReplaceNode(nodeToFix, nodeToFix.WithAdditionalAnnotations(nodeToFixAnnotation));
+        nodeToFix = root.GetAnnotatedNodes(nodeToFixAnnotation).First();
+
         // Add partial to the type hierarchy
-        var count = 0;
         root = root.ReplaceNodes(nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>(), (_, r) =>
         {
             if (!r.Modifiers.Any(m => m.IsKind(SyntaxKind.PartialKeyword)))
-            {
-                count++;
                 return r.AddModifiers(Token(SyntaxKind.PartialKeyword));
-            }
 
             return r;
         });
 
         // Get the new node to fix in the new syntax tree
-        nodeToFix = root.FindNode(new Microsoft.CodeAnalysis.Text.TextSpan(nodeToFix.Span.Start + (count * "partial".Length), nodeToFix.Span.Length));
-        if (nodeToFix is null)
-            return document;
+        nodeToFix = root.GetAnnotatedNodes(nodeToFixAnnotation).First();
 
         typeDeclaration = nodeToFix.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
         if (typeDeclaration is null)
