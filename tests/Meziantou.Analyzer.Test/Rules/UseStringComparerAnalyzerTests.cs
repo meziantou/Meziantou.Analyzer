@@ -2195,4 +2195,28 @@ public sealed class UseStringComparerAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task EnumerableContains_StaticCall_CodeFix()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Sample
+            {
+                bool Test(HashSet<string> set, string value) => Enumerable.[|Contains(set, value)|];
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Sample
+            {
+                bool Test(HashSet<string> set, string value) => Enumerable.Contains(set, value, System.StringComparer.Ordinal);
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
