@@ -163,7 +163,8 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         if (genericInterfaceSymbol is null)
             return document;
 
-        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().SingleOrDefault(EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod);
+        // The type can declare the method several times when the code does not compile (CS0111)
+        var equalsMethod = declaredTypeSymbol.GetMembers().OfType<IMethodSymbol>().FirstOrDefault(EqualityShouldBeCorrectlyImplementedAnalyzerCommon.IsEqualsOfTMethod);
         if (equalsMethod is null)
             return document;
 
