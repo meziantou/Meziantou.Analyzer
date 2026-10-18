@@ -2221,7 +2221,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
-    public Task Argument_ImplicitNumericHalfToSingle_ShouldReport()
+    public Task Argument_ExplicitNumericHalfToSingle_NoDiagnostic()
     {
         var test = new CodeFixTest();
         test.TestCode = """
@@ -2239,7 +2239,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             {
                 public async Task M()
                 {
-                    {|MA0042:new Test().A((Half)1)|};
+                    new Test().A((Half)1);
                 }
             }
             """;
@@ -2248,7 +2248,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
-    public Task Argument_ImplicitNumericHalfToDouble_ShouldReport()
+    public Task Argument_ExplicitNumericHalfToDouble_NoDiagnostic()
     {
         var test = new CodeFixTest();
         test.ReferenceAssemblies = ReferenceAssemblies.Net.Net60;
@@ -2267,7 +2267,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
             {
                 public async Task M()
                 {
-                    {|MA0042:new Test().A((Half)1)|};
+                    new Test().A((Half)1);
                 }
             }
             """;
