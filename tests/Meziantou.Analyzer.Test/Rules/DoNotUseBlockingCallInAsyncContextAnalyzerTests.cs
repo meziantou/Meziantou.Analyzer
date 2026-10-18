@@ -3048,6 +3048,47 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1695")]
+    public Task TopLevelStatement_LocalFunctionNamedMain_NoCodeFix()
+    {
+        const string Source = """
+            using System.Threading;
+
+            static void Main()
+            {
+                {|MA0045:Thread.Sleep(1)|};
+            }
+            """;
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1695")]
+    public Task TopLevelStatement_AsyncLocalFunctionNamedMain_NoCodeFix()
+    {
+        const string Source = """
+            using System.Threading;
+            using System.Threading.Tasks;
+
+            static async Task Main()
+            {
+                {|MA0042:Thread.Sleep(1)|};
+            }
+            """;
+        var test = new CodeFixTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = Source;
+        test.FixedCode = Source;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task TaskRunDelegate()
     {
         var test = new CodeFixTest();

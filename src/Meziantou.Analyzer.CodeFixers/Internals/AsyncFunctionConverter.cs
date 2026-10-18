@@ -17,7 +17,8 @@ internal static class AsyncFunctionConverter
     /// <summary>
     /// Gets the function that contains <paramref name="node"/>. <paramref name="function"/> is <see langword="null"/> when the
     /// node is in a top-level statement, which can already await. Returns <see langword="false"/> when the node is in a
-    /// member that cannot be async, such as a constructor, an accessor, an operator, or an initializer.
+    /// member that cannot be async, such as a constructor, an accessor, an operator, or an initializer, or when the node is in
+    /// a local function that the code fixes cannot change, see <see cref="IsEntryPointCandidate"/>.
     /// </summary>
     public static bool TryGetEnclosingFunction(SyntaxNode node, out SyntaxNode? function)
     {
@@ -25,6 +26,10 @@ internal static class AsyncFunctionConverter
         {
             switch (ancestor)
             {
+                case LocalFunctionStatementSyntax localFunction when IsEntryPointCandidate(localFunction):
+                    function = null;
+                    return false;
+
                 case AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MethodDeclarationSyntax:
                     function = ancestor;
                     return true;
@@ -40,6 +45,30 @@ internal static class AsyncFunctionConverter
         }
 
         function = null;
+        return false;
+    }
+
+    /// <summary>
+    /// A local function named <c>Main</c> declared in the top-level statements is an entry point candidate. When it returns a task,
+    /// Roslyn throws when it binds its code speculatively (<c>Syntax tree not found</c>), so the simplifier cannot run on it.
+    /// </summary>
+    private static bool IsEntryPointCandidate(LocalFunctionStatementSyntax localFunction)
+    {
+        if (localFunction.Identifier.ValueText is not WellKnownMemberNames.EntryPointMethodName)
+            return false;
+
+        foreach (var ancestor in localFunction.Ancestors())
+        {
+            switch (ancestor)
+            {
+                case GlobalStatementSyntax:
+                    return true;
+
+                case AnonymousFunctionExpressionSyntax or LocalFunctionStatementSyntax or MemberDeclarationSyntax:
+                    return false;
+            }
+        }
+
         return false;
     }
 
