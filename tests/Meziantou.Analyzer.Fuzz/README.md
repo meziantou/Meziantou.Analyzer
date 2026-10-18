@@ -23,7 +23,8 @@ The code fixers do not run when the syntax tree of the input does not contain th
 (`r e implicit operator`), as the workspace services they use, such as `SymbolFinder` and `Renamer`, throw on such a document.
 
 All the rules are enabled, including the ones disabled by default, and the code is compiled with the .NET and ASP.NET Core
-assemblies of the harness, the libraries referenced by the project file, and the source generators of the .NET SDK.
+assemblies of the harness, the libraries referenced by the project file (Entity Framework Core and xUnit), and the source
+generators of the .NET SDK.
 
 Each defect has a signature, computed from its kind, the analyzer or the code fixer, the exception, and the frames of the analyzer.
 The findings are saved in `findings/<signature>/`: the smallest inputs that reproduce them (`input-*.cs`), the input minimized by libFuzzer
@@ -81,3 +82,4 @@ The script publishes the harness to `artifacts/fuzz/bin`, instruments the analyz
 - The Fix All providers and the refactorings
 - The Roslyn versions other than the default one
 - The analysis of generated code (`MEZIANTOU_ANALYZER_GENERATED_CODE`)
+- The rules specific to the libraries that the project file does not reference (Moq, MSTest, Newtonsoft.Json, NUnit, Serilog, ...)

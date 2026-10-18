@@ -19,11 +19,6 @@
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="Moq" Version="4.20.72" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="MSTest.TestFramework" Version="4.3.3" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="NUnit" Version="4.6.1" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="Serilog" Version="4.4.0" ExcludeAssets="analyzers;build;buildTransitive" />
     <PackageReference Include="xunit.v3.assert" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
     <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
   </ItemGroup>
