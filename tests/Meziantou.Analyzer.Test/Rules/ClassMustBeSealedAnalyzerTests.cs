@@ -436,4 +436,32 @@ public sealed class ClassMustBeSealedAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task GenericConstraint_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal class BaseEntity
+            {
+            }
+
+            internal abstract class Repository<T> where T : BaseEntity
+            {
+                public T Get() => null;
+            }
+
+            public class Service
+            {
+                internal T Create<T>() where T : BaseEntity, new() => new T();
+
+                internal void A()
+                {
+                    void Local<T>() where T : BaseEntity { }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
