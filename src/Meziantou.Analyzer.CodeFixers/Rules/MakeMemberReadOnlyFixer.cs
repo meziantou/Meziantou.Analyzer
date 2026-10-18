@@ -12,8 +12,9 @@ public sealed class MakeMemberReadOnlyFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        // The diagnostic is not reported on the member when its identifier is missing: int => 0;
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix?.Kind() is not (SyntaxKind.PropertyDeclaration or SyntaxKind.MethodDeclaration or SyntaxKind.EventDeclaration or SyntaxKind.GetAccessorDeclaration or SyntaxKind.SetAccessorDeclaration))
             return;
 
         var title = "Add readonly";
