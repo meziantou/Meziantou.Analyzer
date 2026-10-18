@@ -760,4 +760,31 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1683")]
+    public Task InvalidCode_EqualsMethodDeclaredTwice_ImplementIEquatable()
+    {
+        var test = new CodeFixTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.FixedState.MarkupHandling = MarkupMode.Allow;
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
+        test.TestCode = """
+            class {|MA0077:Test|}
+            {
+                public bool Equals(Test other) => throw null;
+                public bool Equals(Test other) => throw null;
+            }
+            """;
+        test.FixedCode = """
+            class {|MA0095:Test|} : System.IEquatable<Test>
+            {
+                public bool Equals(Test other) => throw null;
+                public bool Equals(Test other) => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
