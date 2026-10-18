@@ -699,4 +699,20 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task PartialMethod_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial struct Sample
+            {
+                partial void M();
+                partial void M()
+                { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
