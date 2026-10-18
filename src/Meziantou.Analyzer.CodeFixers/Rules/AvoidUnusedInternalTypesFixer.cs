@@ -72,26 +72,66 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
 
     private static async Task<Solution> RemoveTypeDeclaration(Document document, TypeDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
     {
-        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
-        if (root is null)
-            return document.Project.Solution;
+        var solution = document.Project.Solution;
 
-        // Check if the type is the only type in the file
-        var compilationUnit = root as CompilationUnitSyntax;
-        if (compilationUnit is not null)
+        // All the declarations of a partial type must be removed, as the remaining ones would still declare the type
+        var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+        var typeSymbol = semanticModel?.GetDeclaredSymbol(typeDeclarationSyntax, cancellationToken);
+        var declarationsByDocument = new Dictionary<DocumentId, HashSet<TypeDeclarationSyntax>>();
+        if (typeSymbol is not null)
         {
-            var allTypes = GetAllTypeDeclarations(compilationUnit);
-            
-            // If this is the only type in the file and there are no assembly attributes, remove the document from the solution
-            if (allTypes.Count == 1 && allTypes.Contains(typeDeclarationSyntax) && compilationUnit.AttributeLists.Count == 0)
+            foreach (var syntaxReference in typeSymbol.DeclaringSyntaxReferences)
             {
-                return document.Project.Solution.RemoveDocument(document.Id);
+                if (solution.GetDocumentId(syntaxReference.SyntaxTree) is not { } documentId)
+                    continue;
+
+                if (await syntaxReference.GetSyntaxAsync(cancellationToken).ConfigureAwait(false) is not TypeDeclarationSyntax declaration)
+                    continue;
+
+                if (!declarationsByDocument.TryGetValue(documentId, out var declarations))
+                {
+                    declarations = [];
+                    declarationsByDocument.Add(documentId, declarations);
+                }
+
+                declarations.Add(declaration);
             }
         }
 
-        // Otherwise, just remove the type declaration
+        if (declarationsByDocument.Count == 0)
+        {
+            declarationsByDocument.Add(document.Id, [typeDeclarationSyntax]);
+        }
+
+        foreach (var (documentId, declarations) in declarationsByDocument)
+        {
+            solution = await RemoveTypeDeclarations(solution, documentId, declarations, cancellationToken).ConfigureAwait(false);
+        }
+
+        return solution;
+    }
+
+    private static async Task<Solution> RemoveTypeDeclarations(Solution solution, DocumentId documentId, HashSet<TypeDeclarationSyntax> declarations, CancellationToken cancellationToken)
+    {
+        var document = solution.GetDocument(documentId);
+        if (document is null)
+            return solution;
+
+        var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+        if (root is null)
+            return solution;
+
+        // If the file only contains the removed declarations and there are no assembly attributes, remove the document from the solution
+        if (root is CompilationUnitSyntax compilationUnit && compilationUnit.AttributeLists.Count == 0 && GetAllTypeDeclarations(compilationUnit).All(declarations.Contains))
+            return solution.RemoveDocument(documentId);
+
+        // Otherwise, just remove the type declarations
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
-        editor.RemoveNode(typeDeclarationSyntax);
+        foreach (var declaration in declarations)
+        {
+            editor.RemoveNode(declaration);
+        }
+
         return editor.GetChangedDocument().Project.Solution;
     }
 

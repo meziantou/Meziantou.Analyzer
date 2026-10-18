@@ -119,6 +119,16 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
+            // The Invoke method of a delegate is implicitly declared, so its signature is not analyzed with the other methods
+            if (symbol.DelegateInvokeMethod is { } invokeMethod)
+            {
+                AddUsedType(symbol, invokeMethod.ReturnType);
+                foreach (var parameter in invokeMethod.Parameters)
+                {
+                    AddUsedType(symbol, parameter.Type);
+                }
+            }
+
 #if CSHARP14_OR_GREATER
             if (symbol.ExtensionParameter is not null)
             {
