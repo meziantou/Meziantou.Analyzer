@@ -59,11 +59,17 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
             !HasBaseClass() &&
             !symbol.IsUnitTestClass() &&
             !symbol.IsTopLevelStatement(cancellationToken) &&
-            symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !member.IsOperator());
+            symbol.GetMembers().All(member => (member.IsStatic || member.IsImplicitlyDeclared) && !member.IsOperator() && !IsProtected(member));
 
         bool HasBaseClass()
         {
             return symbol.BaseType is not null && symbol.BaseType.SpecialType != SpecialType.System_Object;
+        }
+
+        // A static class cannot contain protected members (CS1057)
+        static bool IsProtected(ISymbol member)
+        {
+            return member.DeclaredAccessibility is Accessibility.Protected or Accessibility.ProtectedOrInternal or Accessibility.ProtectedAndInternal;
         }
     }
 

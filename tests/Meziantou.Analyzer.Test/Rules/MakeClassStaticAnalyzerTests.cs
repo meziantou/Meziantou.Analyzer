@@ -413,4 +413,33 @@ public sealed class MakeClassStaticAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1647")]
+    public Task PrivateProtectedMember_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                private protected static void A() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ProtectedMember_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                protected static int A;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
