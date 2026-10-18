@@ -13,7 +13,7 @@ param(
     [string]$Repository = $env:GITHUB_REPOSITORY,
     [string]$CommitSha = $env:GITHUB_SHA,
     [string]$RunUrl,
-    [int]$MaxIssues = 10,
+    [int]$MaxIssues = 50,
     [switch]$DryRun
 )
 

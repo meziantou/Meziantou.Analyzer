@@ -28,7 +28,7 @@ The findings are saved in `findings/<signature>/`: the smallest inputs that repr
 ## Weekly run
 
 The [fuzz workflow](../../.github/workflows/fuzz.yml) fuzzes for 4 hours every Sunday, starting from the snippets of the tests and the corpus of the
-previous run. It then opens an issue labeled `fuzzing` for each new finding, at most 10 per run. The signature is in the body of the issue, so:
+previous run. It then opens an issue labeled `fuzzing` for each new finding, at most 50 per run. The signature is in the body of the issue, so:
 
 - a finding with an open issue, or with an issue closed as not planned, is not reported again
 - a finding with an issue closed as completed is reported in a new issue, as a regression
