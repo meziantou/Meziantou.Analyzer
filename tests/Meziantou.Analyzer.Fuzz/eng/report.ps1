@@ -5,7 +5,8 @@ Open a GitHub issue for each new finding of a fuzzing session.
 .DESCRIPTION
 The issues are labeled "fuzzing" and contain the signature of their finding, so a finding is reported once:
 - an open issue, or an issue closed as not planned or duplicate, means the finding is known, and nothing is done
-- an issue closed as completed means the finding is a regression, and a new issue references it
+- an issue closed as completed means the finding is a regression, and a new issue references it, unless the fuzzed commit
+  does not contain the commit that closed the issue, as the finding is then known
 #>
 param(
     [Parameter(Mandatory = $true)]
@@ -51,6 +52,25 @@ function Format-CodeBlock([string]$text, [string]$language, [int]$maxLength) {
 function Get-ExistingIssues([string]$signature) {
     $json = gh issue list --repo $Repository --label $label --state all --search "$signature in:body" --json "number,state,stateReason" --limit 20
     return @($json | ConvertFrom-Json)
+}
+
+function Get-ClosingCommit([int]$number) {
+    # The merge commit of the pull request, or the commit, that closed the issue the last time
+    $owner, $name = $Repository -split '/', 2
+    $query = 'query($owner: String!, $name: String!, $number: Int!) { repository(owner: $owner, name: $name) { issue(number: $number) { timelineItems(itemTypes: [CLOSED_EVENT], last: 1) { nodes { ... on ClosedEvent { closer { ... on PullRequest { mergeCommit { oid } } ... on Commit { oid } } } } } } } }'
+    $commit = gh api graphql -f query=$query -F owner=$owner -F name=$name -F number=$number --jq '.data.repository.issue.timelineItems.nodes[-1].closer | .mergeCommit.oid // .oid // empty'
+    return [string]$commit
+}
+
+function Test-IsAncestor([string]$commit, [string]$descendant) {
+    # git returns 1 when the commit is not an ancestor, and another code when a commit is unknown, for instance in a shallow clone
+    $PSNativeCommandUseErrorActionPreference = $false
+    git -C $PSScriptRoot merge-base --is-ancestor $commit $descendant 2>$null
+    switch ($LASTEXITCODE) {
+        0 { return $true }
+        1 { return $false }
+        default { return $null }
+    }
 }
 
 function Get-IssueBody($finding, [string]$inputText, [string]$inputName, $regressionOf) {
@@ -157,7 +177,7 @@ foreach ($item in $findings) {
     }
 
     $regressionOf = $null
-    if (-not $DryRun) {
+    if ($Repository) {
         $existingIssues = Get-ExistingIssues $finding.signature
         $knownIssue = $existingIssues | Where-Object { $_.state -eq "OPEN" -or $_.stateReason -ne "COMPLETED" } | Select-Object -First 1
         if ($knownIssue) {
@@ -167,6 +187,13 @@ foreach ($item in $findings) {
 
         $fixedIssue = $existingIssues | Sort-Object number -Descending | Select-Object -First 1
         if ($fixedIssue) {
+            # A commit older than the fix, such as a branch that is not up to date, still has the defect
+            $closingCommit = Get-ClosingCommit $fixedIssue.number
+            if ($closingCommit -and $CommitSha -and (Test-IsAncestor $closingCommit $CommitSha) -eq $false) {
+                Write-Host "Fixed in #$($fixedIssue.number) by $closingCommit, which $CommitSha does not contain: $($finding.title)"
+                continue
+            }
+
             $regressionOf = $fixedIssue.number
         }
     }
