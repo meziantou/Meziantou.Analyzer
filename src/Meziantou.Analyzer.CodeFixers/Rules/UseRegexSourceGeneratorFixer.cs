@@ -102,7 +102,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
 
         // Check if we're in a field or variable initializer context that should be removed
         var (fieldOrVariableToRemove, fieldOrVariableSymbol) = GetFieldOrVariableToRemove(operation, cancellationToken);
-        var shouldRemoveFieldOrVariable = usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null;
+        // The field or variable may be renamed before being removed, and the renamer can throw when the code has syntax errors
+        var shouldRemoveFieldOrVariable = usePartialProperty && fieldOrVariableToRemove is not null && fieldOrVariableSymbol is not null && !root.ContainsDiagnostics;
 
         // Compute suggested name from context
         var methodName = GetSuggestedNameFromContext(operation) ?? "MyRegex";
@@ -686,6 +687,10 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
                 var variableSyntax = variable.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax(cancellationToken);
                 if (variableSyntax is VariableDeclaratorSyntax varDeclarator)
                 {
+                    // A declaration used as an embedded statement does not compile, and cannot be removed: lock (obj) var regex = new Regex("");
+                    if (varDeclarator.Parent?.Parent is LocalDeclarationStatementSyntax { Parent: not (BlockSyntax or SwitchSectionSyntax or GlobalStatementSyntax) })
+                        return (null, null);
+
                     return (varDeclarator, variable);
                 }
             }

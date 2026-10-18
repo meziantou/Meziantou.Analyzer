@@ -1885,4 +1885,94 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
         return test.RunAsync();
     }
+
+#if CSHARP14_OR_GREATER
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1681")]
+    public Task NewRegex_VariableDeclaredAsEmbeddedStatement_KeepVariable()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Test
+            {
+                void A(object obj)
+                {
+                    lock (obj) Regex value = {|MA0110:new Regex("a")|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Test
+            {
+                void A(object obj)
+                {
+                    lock (obj) Regex value = Value;
+                }
+
+                [GeneratedRegex("a")]
+                private static partial Regex Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1677")]
+    public Task NewRegex_TopLevelVariableDeclaredAsEmbeddedStatement_KeepVariable()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            lock (new object()) Regex value = {|MA0110:new Regex("a")|};
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            lock (new object()) Regex value = Value;
+
+            partial class Program
+            {
+                [GeneratedRegex("a")]
+                private static partial Regex Value { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1687")]
+    public Task NewRegex_SyntaxErrors_KeepVariable()
+    {
+        var test = CreateTest();
+        // The code does not compile, so the compiler diagnostics cannot be verified
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        // The syntax tree of the invalid code is not the same once the fixed code is parsed again
+        test.CodeActionValidationMode = CodeActionValidationMode.None;
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System.Text.RegularExpressions;T x={|MA0110:new Regex(""|};T m{{x
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;T x= MyRegex; T m{{xpartial class Program
+            {
+                [GeneratedRegex("")]
+                private static partial Regex MyRegex { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
 }
