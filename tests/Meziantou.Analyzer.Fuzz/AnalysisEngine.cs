@@ -36,10 +36,28 @@ internal sealed class AnalysisEngine(ComponentFilter filter, int maxFixedDiagnos
 
             var document = solution.GetDocument(documentId)!;
             var compilation = (await document.Project.GetCompilationAsync(cancellationToken).ConfigureAwait(false))!;
-            var diagnostics = await RunAnalyzersAsync(compilation, findings, cancellationToken).ConfigureAwait(false);
-            if (!filter.CodeFixProviders.IsEmpty)
+
+            // The compiler can throw on invalid code, such as "[assembly:(async()=>", and then hangs when the compilation is used again,
+            // as the symbols it was completing are never completed. The analyzers cannot be blamed for it, so the input is not analyzed.
+            ImmutableArray<Diagnostic> compilerDiagnostics;
+            try
             {
-                var hasErrors = compilation.GetDiagnostics(cancellationToken).Any(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error);
+                compilerDiagnostics = compilation.GetDiagnostics(cancellationToken);
+            }
+            catch (Exception ex) when (ex is not OperationCanceledException)
+            {
+                findings.Add(Finding.FromException(FindingKind.RoslynException, "Microsoft.CodeAnalysis.CSharp", [], ex));
+                return findings;
+            }
+
+            var diagnostics = await RunAnalyzersAsync(compilation, findings, cancellationToken).ConfigureAwait(false);
+
+            // The parser can produce a syntax tree that does not contain the whole text, such as "r e implicit operator" whose tree does not contain "e ".
+            // The workspace services used by the code fixers, such as SymbolFinder and Renamer, throw on such a document.
+            var root = await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false);
+            if (!filter.CodeFixProviders.IsEmpty && root?.FullSpan.Length == source.Length)
+            {
+                var hasErrors = compilerDiagnostics.Any(diagnostic => diagnostic.Severity is DiagnosticSeverity.Error);
                 await RunCodeFixesAsync(document, diagnostics, hasErrors, findings, cancellationToken).ConfigureAwait(false);
             }
         }
