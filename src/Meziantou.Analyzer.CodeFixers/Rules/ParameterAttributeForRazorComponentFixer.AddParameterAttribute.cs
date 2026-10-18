@@ -15,8 +15,9 @@ public sealed class ParameterAttributeForRazorComponentFixer : CodeFixProvider
     public override async Task RegisterCodeFixesAsync(CodeFixContext context)
     {
         var root = await context.Document.GetSyntaxRootAsync(context.CancellationToken).ConfigureAwait(false);
+        // The diagnostic is not reported on the property when its identifier is missing: [EditorRequired] string { get; set; }
         var nodeToFix = root?.FindNode(context.Span, getInnermostNodeForTie: true);
-        if (nodeToFix is null)
+        if (nodeToFix is not PropertyDeclarationSyntax)
             return;
 
         context.RegisterCodeFix(CodeAction.Create("Add [Parameter]", ct => AddAttribute(context.Document, nodeToFix, ct), equivalenceKey: "Add [Parameter]"), context.Diagnostics);
