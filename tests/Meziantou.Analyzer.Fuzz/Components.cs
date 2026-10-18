@@ -34,7 +34,7 @@ internal static class Components
     public static ImmutableArray<CodeFixProvider> CodeFixProviders { get; } = CreateInstances<CodeFixProvider>();
 
     /// <summary>
-    /// The assemblies of the application: the .NET and ASP.NET Core frameworks.
+    /// The assemblies of the application: the .NET and ASP.NET Core frameworks, and the libraries referenced by the project file.
     /// </summary>
     public static ImmutableArray<MetadataReference> MetadataReferences { get; } = CreateMetadataReferences();
 
