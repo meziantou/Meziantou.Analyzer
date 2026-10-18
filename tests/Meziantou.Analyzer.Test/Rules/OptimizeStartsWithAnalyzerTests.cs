@@ -479,4 +479,39 @@ public sealed class OptimizeStartsWithAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1675")]
+    public Task NonLiteralConstant_Report()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            class Test
+            {
+                const string Value = "a";
+
+                void A(string str)
+                {
+                    _ = str.IndexOf(startIndex: 0, value: {|MA0089:$"a"|}, comparisonType: StringComparison.Ordinal);
+                    _ = str.StartsWith({|MA0089:Value|}, StringComparison.Ordinal);
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            class Test
+            {
+                const string Value = "a";
+
+                void A(string str)
+                {
+                    _ = str.IndexOf(startIndex: 0, value: 'a');
+                    _ = str.StartsWith('a');
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

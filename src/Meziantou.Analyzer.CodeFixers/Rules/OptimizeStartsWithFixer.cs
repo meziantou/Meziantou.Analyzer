@@ -50,9 +50,10 @@ public class OptimizeStartsWithFixer : CodeFixProvider
             return operation?.Ancestors().OfType<IInvocationOperation>().FirstOrDefault();
         }
 
-        if (operation is ILiteralOperation literalOperation && literalOperation.ConstantValue.Value is string { Length: 1 } literalValue)
+        // The value is not always a literal: $"a", or a constant
+        if (operation is not IArgumentOperation && operation?.ConstantValue is { HasValue: true, Value: string { Length: 1 } literalValue })
         {
-            editor.ReplaceNode(literalOperation.Syntax, editor.Generator.LiteralExpression(literalValue[0]));
+            editor.ReplaceNode(operation.Syntax, editor.Generator.LiteralExpression(literalValue[0]));
 
             if (invocation?.TargetMethod.Name is "StartsWith" or "EndsWith")
             {
