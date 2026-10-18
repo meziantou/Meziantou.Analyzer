@@ -16,11 +16,21 @@ public sealed class UseInlineArrayInsteadOfFixedBufferFixer : CodeFixProvider
         if (nodeToFix?.FirstAncestorOrSelf<VariableDeclaratorSyntax>() is not { } variableDeclarator)
             return;
 
+        if (variableDeclarator.Parent is not VariableDeclarationSyntax { Parent: FieldDeclarationSyntax, Variables.Count: 1 } variableDeclaration)
+            return;
+
+        // The name and the type of the buffer are missing when the code does not compile: fixed 2
+        if (variableDeclarator.Identifier.IsMissing)
+            return;
+
         var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
         if (semanticModel is null)
             return;
 
         if (semanticModel.GetDeclaredSymbol(variableDeclarator, context.CancellationToken) is not IFieldSymbol { IsFixedSizeBuffer: true } field)
+            return;
+
+        if (semanticModel.GetTypeInfo(variableDeclaration.Type, context.CancellationToken).Type is null or { TypeKind: TypeKind.Error })
             return;
 
         if (field.FixedSize is < 2 or > 16)
