@@ -19,8 +19,12 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionFixer : 
         if (nodeToFix is null)
             return;
 
+        var propertyDecl = nodeToFix.AncestorsAndSelf().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
+        if (propertyDecl is null || !CanBeConvertedToParameter(propertyDecl))
+            return;
+
         // The parameter cannot be added to the explicit constructors, as they could not initialize the property
-        var classDecl = nodeToFix.AncestorsAndSelf().OfType<PropertyDeclarationSyntax>().FirstOrDefault()?.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
+        var classDecl = propertyDecl.Ancestors().OfType<TypeDeclarationSyntax>().FirstOrDefault();
         if (classDecl is null || HasExplicitNonPrimaryConstructors(classDecl))
             return;
 
@@ -47,7 +51,7 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionFixer : 
         {
             var node = root.FindNode(diagnostic.Location.SourceSpan, getInnermostNodeForTie: true);
             var propertyDecl = node?.AncestorsAndSelf().OfType<PropertyDeclarationSyntax>().FirstOrDefault();
-            if (propertyDecl is null)
+            if (propertyDecl is null || !CanBeConvertedToParameter(propertyDecl))
                 continue;
 
             var propertySymbol = semanticModel.GetDeclaredSymbol(propertyDecl, cancellationToken) as IPropertySymbol;
@@ -213,6 +217,9 @@ public sealed class BlazorPropertyInjectionShouldUseConstructorInjectionFixer : 
                 return SymbolEqualityComparer.Default.Equals(symbol, propertySymbol.ContainingType);
             });
     }
+
+    // The property has no name when its identifier is missing, so there is no name for the parameter: [Inject] NavigationManager { get; set; }
+    private static bool CanBeConvertedToParameter(PropertyDeclarationSyntax propertyDeclaration) => !propertyDeclaration.Identifier.IsMissing;
 
     private static bool HasExplicitNonPrimaryConstructors(TypeDeclarationSyntax typeDeclaration)
     {
