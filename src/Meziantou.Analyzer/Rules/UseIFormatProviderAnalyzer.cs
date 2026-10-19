@@ -46,81 +46,76 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
         public void AnalyzeInvocation(OperationAnalysisContext context, OverloadLookupCache lookupCache)
         {
             var operation = (IInvocationOperation)context.Operation;
-            if (operation is null)
+            if (operation.TargetMethod.Name.EndsWith("OrDefault", StringComparison.Ordinal))
+                return;
+
+            // Most methods have no overload to report, and finding it is cheaper than computing the culture sensitivity of the invocation
+            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+            if (FindOverloadToReport(operation, lookupCache, includeExtensionMethodsFromNotImportedNamespaces) is not { } overloadToReport)
                 return;
 
             if (IsExcludedMethod(context, operation))
                 return;
 
-            var options = GetOptions(context, operation);
+            var options = GetOptions(context);
             if (!CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, options), options))
                 return;
 
-            var includeExtensionMethodsFromNotImportedNamespaces = context.Options.GetConfigurationValue(operation, IncludeExtensionMethodsFromNotImportedNamespacesConfiguration);
+            // The culture sensitivity without unwrapping the nullable types is the same when they are not unwrapped
+            if (overloadToReport.MustBeCultureSensitiveWithoutUnwrappingNullableTypes && (options & CultureSensitiveOptions.UnwrapNullableOfT) == CultureSensitiveOptions.UnwrapNullableOfT)
+            {
+                if (!CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, options & ~CultureSensitiveOptions.UnwrapNullableOfT), options))
+                    return;
+            }
 
+            context.ReportDiagnostic(Rule, CreateProperties(operation, overloadToReport.Overload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, overloadToReport.ParameterType.ToDisplayString());
+        }
+
+        /// <summary>
+        /// Finds the overload to suggest when the invocation is culture sensitive. It does not depend on the culture sensitivity of the
+        /// invocation, so it is done first to skip computing the culture sensitivity of most invocations.
+        /// </summary>
+        private OverloadToReport? FindOverloadToReport(IInvocationOperation operation, OverloadLookupCache lookupCache, bool includeExtensionMethodsFromNotImportedNamespaces)
+        {
             // The overloads with an additional styles or format parameter are searched with the default options of OverloadFinder
             var stylesOverloadOptions = new OverloadOptions { IncludeExtensionMethodsFromNotImportedNamespaces = includeExtensionMethodsFromNotImportedNamespaces, LookupCache = lookupCache };
             if (_cultureSensitiveContext.FormatProviderSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.FormatProviderSymbol))
             {
                 if (operation.TargetMethod.Name == "ToString" && operation.Arguments.Length == 0 && operation.TargetMethod.ContainingType.ConstructedFrom.SpecialType == SpecialType.System_Nullable_T)
-                {
-                    context.ReportDiagnostic(Rule, operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                    return;
-                }
+                    return new OverloadToReport(Overload: null, _cultureSensitiveContext.FormatProviderSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: false);
 
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: true, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), _cultureSensitiveContext.FormatProviderSymbol);
                 if (overload is not null)
-                {
-                    if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))
-                    {
-                        context.ReportDiagnostic(Rule, CreateProperties(operation, overload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                    }
-
-                    return;
-                }
+                    return new OverloadToReport(overload, _cultureSensitiveContext.FormatProviderSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: true);
 
                 var targetMethodType = operation.TargetMethod.ContainingType;
                 if (targetMethodType.IsNumberType() && _cultureSensitiveContext.NumberStyleSymbol is not null && _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, stylesOverloadOptions, [_cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.NumberStyleSymbol]) is { } numberStyleOverload)
-                {
-                    context.ReportDiagnostic(Rule, CreateProperties(operation, numberStyleOverload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                    return;
-                }
+                    return new OverloadToReport(numberStyleOverload, _cultureSensitiveContext.FormatProviderSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: false);
 
                 var isDateTime = targetMethodType.IsDateTime() || targetMethodType.IsEqualToAny(_cultureSensitiveContext.DateTimeOffsetSymbol, _cultureSensitiveContext.DateOnlySymbol, _cultureSensitiveContext.TimeOnlySymbol);
                 if (isDateTime)
                 {
                     if (_cultureSensitiveContext.DateTimeStyleSymbol is not null && _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, stylesOverloadOptions, [_cultureSensitiveContext.FormatProviderSymbol, _cultureSensitiveContext.DateTimeStyleSymbol]) is { } dateTimeStyleOverload)
-                    {
-                        context.ReportDiagnostic(Rule, CreateProperties(operation, dateTimeStyleOverload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                        return;
-                    }
+                        return new OverloadToReport(dateTimeStyleOverload, _cultureSensitiveContext.FormatProviderSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: false);
                 }
 
                 if (operation.Arguments.IsEmpty && targetMethodType.Implements(_cultureSensitiveContext.SystemIFormattableSymbol) && _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, stylesOverloadOptions, [_cultureSensitiveContext.FormatProviderSymbol, compilation.GetSpecialType(SpecialType.System_String)]) is { } formatOverload)
-                {
-                    context.ReportDiagnostic(Rule, CreateProperties(operation, formatOverload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, _cultureSensitiveContext.FormatProviderSymbol.ToDisplayString());
-                    return;
-                }
+                    return new OverloadToReport(formatOverload, _cultureSensitiveContext.FormatProviderSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: false);
             }
 
             if (_cultureSensitiveContext.CultureInfoSymbol is not null && !operation.HasArgumentOfType(_cultureSensitiveContext.CultureInfoSymbol))
             {
                 var overload = _overloadFinder.FindOverloadWithAdditionalParameterOfType(operation, new OverloadOptions(IncludeObsoleteMembers: false, AllowOptionalParameters: false, IncludeExtensionMethodsFromNotImportedNamespaces: includeExtensionMethodsFromNotImportedNamespaces, LookupCache: lookupCache), _cultureSensitiveContext.CultureInfoSymbol);
                 if (overload is not null)
-                {
-                    if (CultureSensitiveFormattingContext.IsCultureSensitive(_cultureSensitiveContext.GetCultureSensitivity(operation, GetOptions(context, operation, unwrapNullableTypes: false)), options))
-                    {
-                        context.ReportDiagnostic(Rule, CreateProperties(operation, overload, includeExtensionMethodsFromNotImportedNamespaces), operation, operation.TargetMethod.Name, _cultureSensitiveContext.CultureInfoSymbol.ToDisplayString());
-                    }
-
-                    return;
-                }
+                    return new OverloadToReport(overload, _cultureSensitiveContext.CultureInfoSymbol, MustBeCultureSensitiveWithoutUnwrappingNullableTypes: true);
             }
+
+            return null;
         }
 
-        private ImmutableDictionary<string, string?> CreateProperties(IInvocationOperation operation, IMethodSymbol overload, bool includeExtensionMethodsFromNotImportedNamespaces)
+        private ImmutableDictionary<string, string?> CreateProperties(IInvocationOperation operation, IMethodSymbol? overload, bool includeExtensionMethodsFromNotImportedNamespaces)
         {
-            if (includeExtensionMethodsFromNotImportedNamespaces && _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) is { } namespaceToImport)
+            if (overload is not null && includeExtensionMethodsFromNotImportedNamespaces && _overloadFinder.GetNamespaceToImport(overload, operation.Syntax) is { } namespaceToImport)
                 return ImmutableDictionary<string, string?>.Empty.Add(OverloadFinder.NamespaceToImportPropertyName, namespaceToImport);
 
             return ImmutableDictionary<string, string?>.Empty;
@@ -128,9 +123,6 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
         private static bool IsExcludedMethod(OperationAnalysisContext context, IInvocationOperation operation)
         {
-            if (operation.TargetMethod.Name.EndsWith("OrDefault", StringComparison.Ordinal))
-                return true;
-
             // ToString show culture-sensitive data by default
             if (operation.GetContainingMethod(context.CancellationToken)?.Name == "ToString")
             {
@@ -140,12 +132,12 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
             return false;
         }
 
-        private static CultureSensitiveOptions GetOptions(OperationAnalysisContext context, IOperation operation, bool? unwrapNullableTypes = null)
+        private static CultureSensitiveOptions GetOptions(OperationAnalysisContext context)
         {
             var options = CultureSensitiveOptions.None;
-            var syntaxTree = operation.Syntax.SyntaxTree;
+            var syntaxTree = context.Operation.Syntax.SyntaxTree;
 
-            if (unwrapNullableTypes ?? context.Options.GetConfigurationValue(syntaxTree, ConsiderNullableTypesConfiguration))
+            if (context.Options.GetConfigurationValue(syntaxTree, ConsiderNullableTypesConfiguration))
                 options |= CultureSensitiveOptions.UnwrapNullableOfT;
 
             if (context.Options.GetConfigurationValue(syntaxTree, TreatOpaqueRuntimeTypesAsCultureSensitiveConfiguration))
@@ -156,5 +148,8 @@ public sealed class UseIFormatProviderAnalyzer : DiagnosticAnalyzer
 
             return options;
         }
+
+        /// <summary>The overload to suggest, and the type of its additional parameter.</summary>
+        private readonly record struct OverloadToReport(IMethodSymbol? Overload, INamedTypeSymbol ParameterType, bool MustBeCultureSensitiveWithoutUnwrappingNullableTypes);
     }
 }
