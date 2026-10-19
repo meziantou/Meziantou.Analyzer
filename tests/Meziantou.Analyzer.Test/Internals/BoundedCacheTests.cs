@@ -80,7 +80,9 @@ public sealed class BoundedCacheTests
             for (var i = 0; i < 200_000; i++)
             {
                 // Most of the lookups use the same entries, so their usage changes while the eviction sorts them
+#pragma warning disable CA5394 // Do not use insecure randomness: the random numbers only simulate the lookups
                 var key = random.Next(10) is 0 ? random.Next(100_000) : random.Next(256);
+#pragma warning restore CA5394
                 Assert.Equal(key, cache.GetOrAdd(key, static key => key));
             }
         });
