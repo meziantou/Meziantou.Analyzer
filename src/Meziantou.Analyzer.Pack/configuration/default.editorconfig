@@ -718,3 +718,6 @@ dotnet_diagnostic.MA0241.severity = warning
 
 # MA0242: Use a value factory to compute the value only when the key is not in the ConcurrentDictionary
 dotnet_diagnostic.MA0242.severity = suggestion
+
+# MA0243: Use an escape sequence for invisible characters
+dotnet_diagnostic.MA0243.severity = none
