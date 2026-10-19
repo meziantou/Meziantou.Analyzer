@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.CSharp;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseEscapeSequenceForInvisibleCharacterAnalyzer,
     Meziantou.Analyzer.Rules.UseEscapeSequenceForInvisibleCharacterFixer>;
@@ -8,6 +9,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterAnalyzerTests
 {
     private const string Tab = "\t";
     private const string Bell = "\a";
+    private const string Escape = "\u001B";
     private const string Nbsp = "\u00A0";
     private const string ZeroWidthSpace = "\u200B";
     private const string ZeroWidthJoiner = "\u200D";
@@ -120,6 +122,64 @@ public sealed class UseEscapeSequenceForInvisibleCharacterAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task StringLiteral_EscapeCharacter_CSharp12()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp12;
+        test.TestCode = $$"""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = "a[|{{Escape}}|]b";
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = "a\u001Bb";
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+#if CSHARP13_OR_GREATER
+    [Fact]
+    public Task StringLiteral_EscapeCharacter_CSharp13()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp13;
+        test.TestCode = $$"""
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = "a[|{{Escape}}|]b";
+                    _ = '[|{{Escape}}|]';
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Dummy
+            {
+                void Test()
+                {
+                    _ = "a\eb";
+                    _ = '\e';
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+#endif
 
     [Fact]
     public Task StringLiteral_SupplementaryCharacter()

@@ -17,10 +17,11 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
 
         // The whole literal is rewritten, so the fixes of all the characters of a literal are identical and can be merged by the FixAll
         var token = root.FindToken(context.Span.Start);
+        var supportsEscapeCharacterEscapeSequence = root.GetCSharpLanguageVersion().IsCSharp13OrGreater();
         var (nodeToFix, newNode) = token.Parent switch
         {
-            LiteralExpressionSyntax literal => ((ExpressionSyntax)literal, (ExpressionSyntax?)EscapeLiteral(literal)),
-            InterpolatedStringTextSyntax { Parent: InterpolatedStringExpressionSyntax interpolatedString } => (interpolatedString, EscapeInterpolatedString(interpolatedString)),
+            LiteralExpressionSyntax literal => ((ExpressionSyntax)literal, (ExpressionSyntax?)EscapeLiteral(literal, supportsEscapeCharacterEscapeSequence)),
+            InterpolatedStringTextSyntax { Parent: InterpolatedStringExpressionSyntax interpolatedString } => (interpolatedString, EscapeInterpolatedString(interpolatedString, supportsEscapeCharacterEscapeSequence)),
             _ => default,
         };
 
@@ -36,7 +37,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
         context.RegisterCodeFix(codeAction, context.Diagnostics);
     }
 
-    private static LiteralExpressionSyntax? EscapeLiteral(LiteralExpressionSyntax literal)
+    private static LiteralExpressionSyntax? EscapeLiteral(LiteralExpressionSyntax literal, bool supportsEscapeCharacterEscapeSequence)
     {
         // Raw strings cannot contain escape sequences
         var token = literal.Token;
@@ -50,7 +51,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
             var suffix = token.IsKind(SyntaxKind.Utf8StringLiteralToken) ? text[^2..] : "";
             var sb = new StringBuilder(text.Length);
             sb.Append('"');
-            AppendVerbatimText(sb, text[2..(text.Length - suffix.Length - 1)]);
+            AppendVerbatimText(sb, text[2..(text.Length - suffix.Length - 1)], supportsEscapeCharacterEscapeSequence);
             sb.Append('"');
             sb.Append(suffix);
             newText = sb.ToString();
@@ -58,7 +59,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
         else
         {
             var sb = new StringBuilder(text.Length);
-            AppendRegularText(sb, text);
+            AppendRegularText(sb, text, supportsEscapeCharacterEscapeSequence);
             newText = sb.ToString();
         }
 
@@ -69,7 +70,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
         return literal.WithToken(newToken.WithTriviaFrom(token));
     }
 
-    private static InterpolatedStringExpressionSyntax? EscapeInterpolatedString(InterpolatedStringExpressionSyntax interpolatedString)
+    private static InterpolatedStringExpressionSyntax? EscapeInterpolatedString(InterpolatedStringExpressionSyntax interpolatedString, bool supportsEscapeCharacterEscapeSequence)
     {
         var isVerbatim = interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedVerbatimStringStartToken);
         if (!isVerbatim && !interpolatedString.StringStartToken.IsKind(SyntaxKind.InterpolatedStringStartToken))
@@ -82,11 +83,11 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
             switch (content)
             {
                 case InterpolatedStringTextSyntax text when isVerbatim:
-                    AppendVerbatimText(sb, text.TextToken.Text);
+                    AppendVerbatimText(sb, text.TextToken.Text, supportsEscapeCharacterEscapeSequence);
                     break;
 
                 case InterpolatedStringTextSyntax text:
-                    AppendRegularText(sb, text.TextToken.Text);
+                    AppendRegularText(sb, text.TextToken.Text, supportsEscapeCharacterEscapeSequence);
                     break;
 
                 case InterpolationSyntax interpolation:
@@ -109,14 +110,14 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
         return newInterpolatedString.WithTriviaFrom(interpolatedString);
     }
 
-    private static void AppendRegularText(StringBuilder sb, string text)
+    private static void AppendRegularText(StringBuilder sb, string text, bool supportsEscapeCharacterEscapeSequence)
     {
         for (var i = 0; i < text.Length; i++)
         {
             var codePoint = UseEscapeSequenceForInvisibleCharacterCommon.GetCodePoint(text, i, out var length);
             if (UseEscapeSequenceForInvisibleCharacterCommon.IsInvisibleCharacter(codePoint))
             {
-                sb.Append(UseEscapeSequenceForInvisibleCharacterCommon.GetEscapeSequence(codePoint));
+                sb.Append(UseEscapeSequenceForInvisibleCharacterCommon.GetEscapeSequence(codePoint, supportsEscapeCharacterEscapeSequence));
             }
             else
             {
@@ -127,7 +128,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
         }
     }
 
-    private static void AppendVerbatimText(StringBuilder sb, string text)
+    private static void AppendVerbatimText(StringBuilder sb, string text, bool supportsEscapeCharacterEscapeSequence)
     {
         for (var i = 0; i < text.Length; i++)
         {
@@ -153,7 +154,7 @@ public sealed class UseEscapeSequenceForInvisibleCharacterFixer : CodeFixProvide
                     break;
 
                 case var _ when UseEscapeSequenceForInvisibleCharacterCommon.IsInvisibleCharacter(codePoint):
-                    sb.Append(UseEscapeSequenceForInvisibleCharacterCommon.GetEscapeSequence(codePoint));
+                    sb.Append(UseEscapeSequenceForInvisibleCharacterCommon.GetEscapeSequence(codePoint, supportsEscapeCharacterEscapeSequence));
                     break;
 
                 default:

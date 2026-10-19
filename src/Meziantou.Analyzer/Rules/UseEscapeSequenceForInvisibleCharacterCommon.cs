@@ -40,7 +40,8 @@ internal static class UseEscapeSequenceForInvisibleCharacterCommon
 
     public static string GetCodePointName(int codePoint) => "U+" + codePoint.ToString(codePoint <= 0xFFFF ? "X4" : "X5", CultureInfo.InvariantCulture);
 
-    public static string GetEscapeSequence(int codePoint) => codePoint switch
+    // The \e escape sequence is supported since C# 13
+    public static string GetEscapeSequence(int codePoint, bool supportsEscapeCharacterEscapeSequence) => codePoint switch
     {
         '\0' => "\\0",
         '\a' => "\\a",
@@ -48,6 +49,7 @@ internal static class UseEscapeSequenceForInvisibleCharacterCommon
         '\f' => "\\f",
         '\t' => "\\t",
         '\v' => "\\v",
+        0x1B when supportsEscapeCharacterEscapeSequence => "\\e",
         <= 0xFFFF => "\\u" + codePoint.ToString("X4", CultureInfo.InvariantCulture),
         _ => "\\U" + codePoint.ToString("X8", CultureInfo.InvariantCulture),
     };
