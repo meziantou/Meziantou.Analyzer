@@ -240,6 +240,7 @@
 |[MA0240](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0240.md)|Design|Do not use banned syntax|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0241](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0241.md)|Design|The banned syntax entry is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0242](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0242.md)|Performance|Use a value factory to compute the value only when the key is not in the ConcurrentDictionary|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
+|[MA0243](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0243.md)|Style|Do not use non-ASCII characters|<span title='Info'>ℹ️</span>|❌|✔️|<span title='MA0243.additional_allowed_ranges&#xA;MA0243.allow_emoji&#xA;MA0243.allow_visible_characters&#xA;MA0243.always_report_invisible_characters&#xA;MA0243.skip_chars&#xA;MA0243.skip_comments&#xA;MA0243.skip_documentation_comments&#xA;MA0243.skip_identifiers&#xA;MA0243.skip_indentation&#xA;MA0243.skip_raw_strings&#xA;MA0243.skip_strings&#xA;MA0243.skip_verbatim_strings'>✔️</span>|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
