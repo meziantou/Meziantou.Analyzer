@@ -3,18 +3,25 @@ using System.Collections.Concurrent;
 namespace Meziantou.Analyzer.Internals;
 
 /// <summary>
-/// A thread-safe cache that keeps at most <see cref="Capacity"/> entries. When the capacity is exceeded, the least
-/// recently used entries are removed, so the values that are no longer used do not stay alive for the lifetime of
-/// the process. An entry can be removed at any time, so the values must be reproducible from their key.
+/// A thread-safe cache that keeps at most <see cref="Capacity"/> entries, so the values that are no longer used do not stay
+/// alive for the lifetime of the process. An entry can be removed at any time, so the values must be reproducible from their key.
+/// <para>
+/// The entries are split in two generations of half the capacity. The entries are added to the current generation and, when it
+/// is full, it becomes the previous generation and the entries of the former previous generation are removed. An entry of the
+/// previous generation that is used is added back to the current generation, so the entries that are used often are kept.
+/// Unlike a least recently used cache, getting an entry of the current generation writes nothing, so the lookups that run
+/// concurrently do not contend, and removing the entries does not require sorting them.
+/// </para>
 /// </summary>
 internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
 {
-    private readonly ConcurrentDictionary<TKey, Entry> _entries = new();
-    private readonly Lock _evictionLock = new();
-    private long _lastUsage;
+    private readonly Lock _rotationLock = new();
+    private readonly int _generationCapacity;
+    private ConcurrentDictionary<TKey, TValue> _currentGeneration = new();
+    private ConcurrentDictionary<TKey, TValue> _previousGeneration = new();
 
-    // ConcurrentDictionary.Count takes all the locks of the dictionary, so the additions are counted to only read it when the cache can be full
-    private int _count;
+    // ConcurrentDictionary.Count takes all the locks of the dictionary, so the additions are counted instead
+    private int _currentGenerationCount;
 
     public BoundedCache(int capacity)
     {
@@ -22,15 +29,19 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
             throw new ArgumentOutOfRangeException(nameof(capacity), capacity, message: "The capacity must be greater than 0");
 
         Capacity = capacity;
+
+        // The generations are rotated once the current one is full, so the previous generation is full and the current one is not
+        _generationCapacity = (capacity + 1) / 2;
     }
 
     /// <summary>
     /// Gets the maximum number of entries kept by the cache. The cache can hold a few more entries for a short time,
-    /// as the eviction happens once an entry is added.
+    /// when entries are added while the generations are rotated.
     /// </summary>
     public int Capacity { get; }
 
-    public int Count => _entries.Count;
+    /// <summary>Gets the number of entries of the generations. An entry used in both generations is counted twice.</summary>
+    public int Count => Volatile.Read(ref _currentGeneration).Count + Volatile.Read(ref _previousGeneration).Count;
 
     /// <summary>
     /// Gets the value associated with the key, or adds the value created by <paramref name="valueFactory"/>.
@@ -38,70 +49,39 @@ internal sealed class BoundedCache<TKey, TValue> where TKey : notnull
     /// </summary>
     public TValue GetOrAdd(TKey key, Func<TKey, TValue> valueFactory)
     {
-        if (!_entries.TryGetValue(key, out var entry))
-        {
-            var newEntry = new Entry(valueFactory(key));
-            entry = _entries.GetOrAdd(key, newEntry);
-            Touch(entry);
-            if (ReferenceEquals(entry, newEntry) && Interlocked.Increment(ref _count) > Capacity)
-            {
-                Evict();
-            }
+        var currentGeneration = Volatile.Read(ref _currentGeneration);
+        if (currentGeneration.TryGetValue(key, out var value))
+            return value;
 
-            return entry.Value;
+        if (!Volatile.Read(ref _previousGeneration).TryGetValue(key, out value))
+        {
+            value = valueFactory(key);
         }
 
-        Touch(entry);
-        return entry.Value;
-    }
+        if (!currentGeneration.TryAdd(key, value))
+            return currentGeneration.TryGetValue(key, out var existingValue) ? existingValue : value;
 
-    private void Touch(Entry entry) => entry.LastUsage = Interlocked.Increment(ref _lastUsage);
-
-    private void Evict()
-    {
-        lock (_evictionLock)
+        if (Interlocked.Increment(ref _currentGenerationCount) >= _generationCapacity)
         {
-            if (_entries.Count > Capacity)
-            {
-                // Remove a quarter of the entries, so the eviction does not run at every addition once the cache is full.
-                // The entries added while the snapshot is taken can be removed, which is fine as their value is recreated on demand.
-                var entries = _entries.ToArray();
-
-                // The entries are used concurrently, so their usage is read once before sorting them. Otherwise, the comparisons are inconsistent and Array.Sort throws.
-                var lastUsages = new long[entries.Length];
-                for (var i = 0; i < entries.Length; i++)
-                {
-                    lastUsages[i] = entries[i].Value.LastUsage;
-                }
-
-                Array.Sort(lastUsages, entries);
-
-                var retainedCount = Math.Max(1, Capacity - (Capacity / 4));
-                for (var i = 0; i < entries.Length - retainedCount; i++)
-                {
-                    _entries.TryRemove(entries[i].Key, out _);
-                }
-            }
-
-            // The entries added in the meantime may not be counted, so the cache can exceed its capacity by a few entries until the next eviction
-            Volatile.Write(ref _count, _entries.Count);
+            Rotate(currentGeneration);
         }
+
+        return value;
     }
 
-    private sealed class Entry(TValue value)
+    private void Rotate(ConcurrentDictionary<TKey, TValue> currentGeneration)
     {
-        private long _lastUsage;
-
-        public TValue Value { get; } = value;
-
-        /// <summary>
-        /// Gets or sets the value of the counter of the cache when the entry was last used. The accessors are
-        /// interlocked, so the value cannot tear when the entry is used concurrently.
-        /// </summary>
-        public long LastUsage
+        lock (_rotationLock)
         {
-            get => Interlocked.Read(ref _lastUsage);
-            set => Interlocked.Exchange(ref _lastUsage, value);
+            // The generations may have been rotated by another thread in the meantime
+            if (!ReferenceEquals(_currentGeneration, currentGeneration))
+                return;
+
+            // The entries added concurrently to the generation that becomes the previous one are kept until the next rotation,
+            // so the cache can exceed its capacity by a few entries
+            Volatile.Write(ref _previousGeneration, currentGeneration);
+            Volatile.Write(ref _currentGeneration, new ConcurrentDictionary<TKey, TValue>());
+            Volatile.Write(ref _currentGenerationCount, 0);
         }
     }
 }

@@ -43,31 +43,36 @@ public sealed class BoundedCacheTests
     }
 
     [Fact]
-    public void TheLeastRecentlyUsedEntriesAreEvicted()
+    public void TheEntriesThatAreNotUsedAreEvicted()
     {
         static int Fail(int key) => throw new InvalidOperationException("The entry should be cached");
 
         var cache = new BoundedCache<int, int>(capacity: 4);
-        for (var i = 0; i < 4; i++)
-        {
-            cache.GetOrAdd(i, static key => key);
-        }
+        cache.GetOrAdd(0, static key => key);
+        cache.GetOrAdd(1, static key => key);
 
-        // Use every entry but the first one, then add an entry so the cache evicts the least recently used entries
-        for (var i = 1; i < 4; i++)
-        {
-            cache.GetOrAdd(i, Fail);
-        }
+        // Use every entry but the first one, then add an entry so the cache evicts the entries that are not used
+        cache.GetOrAdd(1, Fail);
+        cache.GetOrAdd(2, static key => key);
 
-        cache.GetOrAdd(4, static key => key);
-
-        cache.GetOrAdd(4, Fail);
-        cache.GetOrAdd(3, Fail);
         cache.GetOrAdd(2, Fail);
+        cache.GetOrAdd(1, Fail);
 
         var created = false;
         cache.GetOrAdd(0, key => { created = true; return key; });
         Assert.True(created);
+    }
+
+    [Fact]
+    public void TheEntriesThatAreUsedOftenAreKept()
+    {
+        var cache = new BoundedCache<int, int>(capacity: 8);
+        cache.GetOrAdd(-1, static key => key);
+        for (var i = 0; i < 1000; i++)
+        {
+            cache.GetOrAdd(i, static key => key);
+            Assert.Equal(-1, cache.GetOrAdd(-1, static key => throw new InvalidOperationException("The entry should be cached")));
+        }
     }
 
     [Fact]
