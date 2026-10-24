@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Meziantou.Framework.FullPath" Version="3.0.11" />
+    <PackageReference Include="Meziantou.Framework.FullPath" Version="3.0.13" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Workspaces" />
     <PackageReference Include="SharpFuzz" Version="2.3.0" />
   </ItemGroup>
@@ -18,9 +18,9 @@
        The versions are the ones of tests/Meziantou.Analyzer.Test/Harness/ReferenceAssembliesExtensions.cs -->
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.11" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="xunit.v3.assert" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
-    <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.0" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" Version="10.0.12" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="xunit.v3.assert" Version="4.0.2" ExcludeAssets="analyzers;build;buildTransitive" />
+    <PackageReference Include="xunit.v3.extensibility.core" Version="4.0.2" ExcludeAssets="analyzers;build;buildTransitive" />
   </ItemGroup>
 
   <ItemGroup>
