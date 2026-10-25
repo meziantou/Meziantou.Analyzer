@@ -582,4 +582,17 @@ public sealed class UseInlineXmlCommentSyntaxWhenPossibleAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task StartTagOnMultipleLines_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            /// <summary
+            /// >description</summary>
+            class Sample { }
+            """;
+
+        return test.RunAsync();
+    }
 }

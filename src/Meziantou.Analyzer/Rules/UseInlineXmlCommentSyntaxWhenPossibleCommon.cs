@@ -15,7 +15,8 @@ internal static class UseInlineXmlCommentSyntaxWhenPossibleCommon
     /// </remarks>
     public static XmlElementSyntax? CreateInlineElement(XmlElementSyntax elementSyntax)
     {
-        if (!IsContentOnSingleLine(elementSyntax))
+        // The tags are kept as-is, so an element whose tags span several lines cannot be written on a single line
+        if (!IsOnSingleLine(elementSyntax.StartTag) || !IsOnSingleLine(elementSyntax.EndTag) || !IsContentOnSingleLine(elementSyntax))
             return null;
 
         var content = new List<XmlNodeSyntax>(elementSyntax.Content.Count);
@@ -57,6 +58,12 @@ internal static class UseInlineXmlCommentSyntaxWhenPossibleCommon
             XmlElementStartTag(elementName, elementSyntax.StartTag.Attributes),
             List(content),
             XmlElementEndTag(elementName));
+    }
+
+    private static bool IsOnSingleLine(SyntaxNode node)
+    {
+        var lineSpan = node.GetLocation().GetLineSpan();
+        return lineSpan.StartLinePosition.Line == lineSpan.EndLinePosition.Line;
     }
 
     /// <summary>

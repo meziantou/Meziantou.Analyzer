@@ -19,41 +19,46 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
         if (nodeToFix?.FirstAncestorOrSelf<LocalFunctionStatementSyntax>() is not { } localFunction)
             return;
 
+        // The Name property can be written without a valid value, in which case the rule reports the local function but there is nothing to add
+        var attribute = FindUnsafeAccessorAttribute(localFunction);
+        if (attribute is null || HasNameProperty(attribute))
+            return;
+
         const string Title = "Set UnsafeAccessor Name";
         context.RegisterCodeFix(
-            CodeAction.Create(Title, ct => SetNameProperty(context.Document, localFunction, ct), equivalenceKey: Title),
+            CodeAction.Create(Title, ct => SetNameProperty(context.Document, localFunction, attribute, ct), equivalenceKey: Title),
             context.Diagnostics);
     }
 
-    private static async Task<Document> SetNameProperty(Document document, LocalFunctionStatementSyntax localFunction, CancellationToken cancellationToken)
+    private static async Task<Document> SetNameProperty(Document document, LocalFunctionStatementSyntax localFunction, AttributeSyntax attribute, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var argument = AttributeArgument(
+            NameEquals(IdentifierName("Name")),
+            nameColon: null,
+            expression: LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(localFunction.Identifier.ValueText)));
+
+        var newArgumentList = attribute.ArgumentList is null
+            ? AttributeArgumentList(SeparatedList(new[] { argument }))
+            : attribute.ArgumentList.AddArguments(argument);
+        var newAttribute = attribute.WithArgumentList(newArgumentList);
+
+        editor.ReplaceNode(attribute, newAttribute.WithAdditionalAnnotations(Formatter.Annotation));
+        return editor.GetChangedDocument();
+    }
+
+    private static AttributeSyntax? FindUnsafeAccessorAttribute(LocalFunctionStatementSyntax localFunction)
+    {
         foreach (var attributeList in localFunction.AttributeLists)
         {
             foreach (var attribute in attributeList.Attributes)
             {
-                if (!IsUnsafeAccessorAttribute(attribute))
-                    continue;
-
-                if (HasNameProperty(attribute))
-                    return document;
-
-                var argument = AttributeArgument(
-                    NameEquals(IdentifierName("Name")),
-                    nameColon: null,
-                    expression: LiteralExpression(SyntaxKind.StringLiteralExpression, Literal(localFunction.Identifier.ValueText)));
-
-                var newArgumentList = attribute.ArgumentList is null
-                    ? AttributeArgumentList(SeparatedList(new[] { argument }))
-                    : attribute.ArgumentList.AddArguments(argument);
-                var newAttribute = attribute.WithArgumentList(newArgumentList);
-
-                editor.ReplaceNode(attribute, newAttribute.WithAdditionalAnnotations(Formatter.Annotation));
-                return editor.GetChangedDocument();
+                if (IsUnsafeAccessorAttributeName(attribute.Name))
+                    return attribute;
             }
         }
 
-        return document;
+        return null;
     }
 
     private static bool HasNameProperty(AttributeSyntax attribute)
@@ -69,9 +74,6 @@ public sealed class ValidateUnsafeAccessorAttributeUsageFixer : CodeFixProvider
 
         return false;
     }
-
-    private static bool IsUnsafeAccessorAttribute(AttributeSyntax attribute)
-        => IsUnsafeAccessorAttributeName(attribute.Name);
 
     private static bool IsUnsafeAccessorAttributeName(NameSyntax name)
         => name switch

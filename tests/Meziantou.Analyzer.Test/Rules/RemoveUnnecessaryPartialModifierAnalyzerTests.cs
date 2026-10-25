@@ -453,4 +453,23 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task PartialClass_PartialBeforeOtherModifier_ReportsDiagnostic()
+    {
+        var test = CreateTest();
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = """
+            {|MA0204:partial|} public class Sample
+            {
+            }
+            """;
+        test.FixedCode = """
+            public class Sample
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

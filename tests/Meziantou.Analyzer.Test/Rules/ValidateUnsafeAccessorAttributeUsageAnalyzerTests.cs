@@ -1,5 +1,6 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.ValidateUnsafeAccessorAttributeUsageAnalyzer,
     Meziantou.Analyzer.Rules.ValidateUnsafeAccessorAttributeUsageFixer>;
@@ -203,6 +204,28 @@ public sealed class ValidateUnsafeAccessorAttributeUsageAnalyzerTests
                 }
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task LocalFunction_WithNamePropertyWithoutValue_NoCodeFix()
+    {
+        const string SourceCode = """
+            using System.Runtime.CompilerServices;
+            class Sample
+            {
+                void A()
+                {
+                    [UnsafeAccessor(UnsafeAccessorKind.Field, Name = )]
+                    extern static ref int {|MA0146:B|}(System.Version a);
+                }
+            }
+            """;
+        var test = CreateTest();
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+        test.TestCode = SourceCode;
+        test.FixedCode = SourceCode;
 
         return test.RunAsync();
     }

@@ -62,8 +62,9 @@ public sealed class RemoveUnnecessaryPartialModifierFixer : CodeFixProvider
         if (partialKeywordIndex + 1 < modifiers.Count)
         {
             var nextModifier = modifiers[partialKeywordIndex + 1];
+            // Remove by index, as the tokens of the list created by Replace are not equal to the original tokens
             modifiers = modifiers.Replace(nextModifier, nextModifier.WithLeadingTrivia(nonspaceTrivia.Concat(nextModifier.LeadingTrivia)));
-            return typeDeclaration.WithModifiers(modifiers.Remove(partialKeyword));
+            return typeDeclaration.WithModifiers(modifiers.RemoveAt(partialKeywordIndex));
         }
 
         return typeDeclaration
