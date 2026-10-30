@@ -241,6 +241,8 @@
 |[MA0241](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0241.md)|Design|The banned syntax entry is not valid|<span title='Warning'>⚠️</span>|✔️|❌|❌|
 |[MA0242](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0242.md)|Performance|Use a value factory to compute the value only when the key is not in the ConcurrentDictionary|<span title='Info'>ℹ️</span>|✔️|✔️|❌|
 |[MA0243](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0243.md)|Usage|Use an escape sequence for invisible characters|<span title='Info'>ℹ️</span>|❌|✔️|❌|
+|[MA0244](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0244.md)|Usage|Use a decimal literal instead of converting a floating-point constant to decimal|<span title='Warning'>⚠️</span>|✔️|✔️|❌|
+|[MA0245](https://github.com/meziantou/Meziantou.Analyzer/blob/main/docs/Rules/MA0245.md)|Usage|Review the conversion of a floating-point value to decimal|<span title='Info'>ℹ️</span>|❌|❌|❌|
 
 |Id|Suppressed rule|Justification|
 |--|---------------|-------------|
