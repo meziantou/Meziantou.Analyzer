@@ -242,6 +242,8 @@ internal static class RuleIdentifiers
     public const string InvalidBannedSyntaxEntry = "MA0241";
     public const string UseValueFactoryWhenUsingConcurrentDictionary = "MA0242";
     public const string UseEscapeSequenceForInvisibleCharacter = "MA0243";
+    public const string UseDecimalLiteralInsteadOfConvertingFloatingPointConstant = "MA0244";
+    public const string ReviewFloatingPointToDecimalConversion = "MA0245";
 
     public static string GetHelpUri(string identifier)
     {

@@ -721,3 +721,9 @@ dotnet_diagnostic.MA0242.severity = warning
 
 # MA0243: Use an escape sequence for invisible characters
 dotnet_diagnostic.MA0243.severity = warning
+
+# MA0244: Use a decimal literal instead of converting a floating-point constant to decimal
+dotnet_diagnostic.MA0244.severity = warning
+
+# MA0245: Review the conversion of a floating-point value to decimal
+dotnet_diagnostic.MA0245.severity = warning
