@@ -82,7 +82,7 @@ jobs:
         DURATION_MINUTES: ${{ inputs.duration-minutes || 240 }}
       run: ./tests/Meziantou.Analyzer.Fuzz/eng/run.ps1 -LibFuzzer $env:LIBFUZZER -DurationMinutes $env:DURATION_MINUTES -OutputDirectory artifacts/fuzz -PreviousCorpus $env:PREVIOUS_CORPUS
 
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       if: always()
       with:
         name: fuzz-corpus
@@ -90,7 +90,7 @@ jobs:
         if-no-files-found: ignore
         retention-days: 30
 
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       if: always()
       with:
         name: fuzz-findings
@@ -98,7 +98,7 @@ jobs:
         if-no-files-found: ignore
         retention-days: 90
 
-    - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+    - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
       if: always()
       with:
         name: fuzz-logs
@@ -121,7 +121,7 @@ jobs:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       with:
         fetch-depth: 0 # The script checks that the fuzzed commit contains the fix of the issues closed as completed
-    - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+    - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
       continue-on-error: true # There is no artifact when there is no finding
       with:
         name: fuzz-findings
