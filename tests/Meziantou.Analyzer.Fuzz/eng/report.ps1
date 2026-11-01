@@ -146,7 +146,11 @@ $findings = @(Get-ChildItem $FindingsDirectory -Directory | ForEach-Object {
         if (Test-Path $findingFile) {
             $minimized = Join-Path $_.FullName "minimized.cs"
             $inputFile = if (Test-Path $minimized) { Get-Item $minimized } else { Get-ChildItem $_.FullName -Filter "input-*.cs" | Sort-Object Length, Name | Select-Object -First 1 }
-            if ($inputFile) {
+            if (-not $inputFile -and (Get-ChildItem $_.FullName -Filter "not-reproduced-*.cs")) {
+                # The finding depends on the inputs that the libFuzzer worker ran before, not on the input alone
+                Write-Host "Skipping $($_.Name): none of its inputs reproduces it in a new process"
+            }
+            elseif ($inputFile) {
                 # The stack trace and the fixed code depend on the input, so they are read from the file of the input
                 $inputFindingFile = [System.IO.Path]::ChangeExtension($inputFile.FullName, ".json")
                 if (Test-Path $inputFindingFile) {

@@ -16,6 +16,7 @@ return args[0] switch
 {
     "repro" => await ReproCommand.RunAsync(arguments),
     "triage" => await Triage.RunCommandAsync(arguments),
+    "verify" => await Campaign.RunVerifyCommandAsync(arguments),
     "corpus" => CorpusExtractor.RunCommand(arguments),
     "campaign" => await Campaign.RunAsync(arguments),
     _ => PrintUsage(),
@@ -31,6 +32,8 @@ static int PrintUsage()
               Run the analyzers and the code fixers on the inputs and print the findings
           Meziantou.Analyzer.Fuzz triage --kind <crash|timeout> --input <file> [--log <file>] [--timeout <seconds>]
               Find the rule that crashes the process or does not complete
+          Meziantou.Analyzer.Fuzz verify --findings <directory> [--timeout <seconds>]
+              Replay the inputs of the findings in new processes, and rename the ones that do not reproduce their finding
           Meziantou.Analyzer.Fuzz corpus --tests <directory> --output <directory> --dictionary <file> [--shards <count>]
               Extract the code snippets of the tests to use as the seed corpus
           Meziantou.Analyzer.Fuzz campaign --libfuzzer <path> --tests <directory> --output <directory> [--duration <minutes>] [--workers <count>]

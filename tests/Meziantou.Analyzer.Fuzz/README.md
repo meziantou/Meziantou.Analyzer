@@ -30,6 +30,18 @@ Each defect has a signature, computed from its kind, the analyzer or the code fi
 The findings are saved in `findings/<signature>/`: the smallest inputs that reproduce them (`input-*.cs`), the input minimized by libFuzzer
 (`minimized.cs`), and the details of the finding produced by each input (`input-*.json`, `minimized.json`, and `finding.json` for the first one).
 
+A libFuzzer worker runs many inputs in the same process, so a finding can depend on what the previous inputs left in the process, such as
+the shared state of Roslyn, instead of on the input alone. These findings do not reproduce, and are not defects of the rules. So, after fuzzing,
+the inputs of each finding are replayed with `repro`, each one in a new process, the smallest first, until one of them reproduces the finding.
+The inputs that do not reproduce it are renamed to `not-reproduced-*.cs` (and `not-reproduced-*.json`): they are kept for the investigation,
+but they are neither minimized nor reported, and no issue is opened for a finding that none of its inputs reproduces. The crashes and the timeouts
+are already replayed in a new process when they are triaged. The `verify` command does the same on a folder of findings, such as the
+`fuzz-findings` artifact of a run:
+
+```shell
+dotnet run --project tests/Meziantou.Analyzer.Fuzz --configuration Release -- verify --findings fuzz-findings
+```
+
 ## Weekly run
 
 The [fuzz workflow](../../.github/workflows/fuzz.yml) fuzzes for 4 hours every Sunday, starting from the snippets of the tests and the corpus of the
@@ -73,7 +85,8 @@ The script publishes the harness to `artifacts/fuzz/bin`, instruments the analyz
 2. The analyzers save their findings without stopping libFuzzer. When an input crashes the process or does not complete, libFuzzer stops,
    the campaign finds the responsible analyzer or code fixer by replaying the input with groups of them, disables it, and restarts the worker.
 3. The corpus is merged in `artifacts/fuzz/corpus-merged`, to pass to the next campaign with `-PreviousCorpus`.
-4. libFuzzer minimizes the input of each finding, except the crashes and the timeouts. This only works on x64: libfuzzer-dotnet reports
+4. The inputs of the findings are replayed in new processes, and the ones that do not reproduce their finding are set aside.
+5. libFuzzer minimizes the input of each finding, except the crashes and the timeouts. This only works on x64: libfuzzer-dotnet reports
    the findings with `__builtin_trap()`, which raises `SIGTRAP` on Arm64, and libFuzzer does not handle this signal.
 
 `pwsh tests/Meziantou.Analyzer.Fuzz/eng/report.ps1 -FindingsDirectory artifacts/fuzz/findings -DryRun` prints the issues without creating them.

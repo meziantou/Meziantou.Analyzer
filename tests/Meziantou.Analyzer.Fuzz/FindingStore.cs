@@ -15,6 +15,7 @@ internal static class FindingStore
 {
     public const string FindingFileName = "finding.json";
     public const string MinimizedInputFileName = "minimized.cs";
+    public const string NotReproducedInputPrefix = "not-reproduced-";
 
     // The smallest inputs are kept, as they are the easiest to understand and to minimize
     private const int MaxInputsPerFinding = 5;
@@ -67,6 +68,26 @@ internal static class FindingStore
     public static void SaveMinimized(FullPath findingDirectory, Finding finding)
     {
         File.WriteAllText(GetFindingPath(findingDirectory / MinimizedInputFileName), JsonSerializer.Serialize(finding, JsonOptions), Utf8NoBom);
+    }
+
+    /// <summary>
+    /// Rename an input that does not reproduce its finding in a new process to <c>not-reproduced-&lt;hash&gt;.cs</c>,
+    /// so it is kept for the investigation, but it is neither minimized nor reported.
+    /// </summary>
+    public static void MarkNotReproduced(FullPath inputPath)
+    {
+        var destination = inputPath.Parent / (NotReproducedInputPrefix + inputPath.Name["input-".Length..]);
+        File.Move(inputPath, destination, overwrite: true);
+        if (File.Exists(GetFindingPath(inputPath)))
+        {
+            File.Move(GetFindingPath(inputPath), GetFindingPath(destination), overwrite: true);
+        }
+    }
+
+    /// <summary>Whether all the inputs of a finding do not reproduce it in a new process.</summary>
+    public static bool IsNotReproduced(FullPath findingDirectory)
+    {
+        return !GetInputs(findingDirectory).Any() && Directory.EnumerateFiles(findingDirectory, NotReproducedInputPrefix + "*.cs").Any();
     }
 
     /// <summary>The file that contains the finding produced by an input.</summary>
