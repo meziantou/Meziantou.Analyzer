@@ -6,7 +6,7 @@ namespace Meziantou.Analyzer.Fuzz;
 
 /// <summary>
 /// A fuzzing session: start one libFuzzer worker per core until the deadline, triage the inputs that stop a worker,
-/// then merge the corpus for the next session and minimize the inputs of the findings.
+/// then merge the corpus for the next session, replay the inputs of the findings in new processes, and minimize the inputs that reproduce them.
 /// </summary>
 /// <remarks>
 /// The output folder contains:
@@ -72,6 +72,7 @@ internal sealed class Campaign
         await Task.WhenAll(Enumerable.Range(0, workerCount).Select(index => campaign.RunWorkerAsync(index, deadline))).ConfigureAwait(false);
 
         await campaign.MergeCorpusAsync(mergeDuration).ConfigureAwait(false);
+        await VerifyFindingsAsync(campaign.FindingsDirectory, TimeSpan.FromSeconds(campaign._timeoutSeconds * 2)).ConfigureAwait(false);
         await campaign.MinimizeFindingsAsync(minimizeDuration).ConfigureAwait(false);
         campaign.PrintSummary();
         return 0;
@@ -187,6 +188,83 @@ internal sealed class Campaign
     }
 
     /// <summary>
+    /// Replay the inputs of the findings in a new process, the smallest first, until one reproduces the finding. A worker runs many inputs in the same process,
+    /// so a finding can depend on what the previous inputs left in the process, such as the shared state of Roslyn, and not on the input alone.
+    /// The inputs that do not reproduce their finding are renamed, so they are neither minimized nor reported, and a finding without any input left is not reported.
+    /// The crashes and the timeouts are already replayed in a new process by <see cref="Triage"/>, and the other kinds are not reported.
+    /// </summary>
+    public static async Task<int> RunVerifyCommandAsync(CommandLineArguments arguments)
+    {
+        var findingsDirectory = FullPath.FromPath(arguments.GetRequiredString("findings"));
+        var notReproducedCount = await VerifyFindingsAsync(findingsDirectory, TimeSpan.FromSeconds(arguments.GetInt32("timeout", 60))).ConfigureAwait(false);
+        return notReproducedCount > 0 ? 1 : 0;
+    }
+
+    private static async Task<int> VerifyFindingsAsync(FullPath findingsDirectory, TimeSpan timeout)
+    {
+        var findingDirectories = Directory.EnumerateDirectories(findingsDirectory)
+            .Select(FullPath.FromPath)
+            .Where(directory => ReadFindingKind(directory) is FindingKind.AnalyzerException or FindingKind.CodeFixException or FindingKind.CodeFixBreaksCode or FindingKind.CodeFixDoesNotChangeCode)
+            .Order()
+            .ToList();
+
+        Log($"Replaying the inputs of {findingDirectories.Count} findings in new processes");
+        var notReproducedCount = 0;
+        var options = new ParallelOptions { MaxDegreeOfParallelism = Environment.ProcessorCount };
+        await Parallel.ForEachAsync(findingDirectories, options, async (findingDirectory, cancellationToken) =>
+        {
+            if (!await VerifyFindingAsync(findingDirectory, timeout, cancellationToken).ConfigureAwait(false))
+            {
+                Interlocked.Increment(ref notReproducedCount);
+            }
+        }).ConfigureAwait(false);
+
+        Log($"{notReproducedCount} findings do not reproduce in a new process");
+        return notReproducedCount;
+    }
+
+    private static async Task<bool> VerifyFindingAsync(FullPath findingDirectory, TimeSpan timeout, CancellationToken cancellationToken)
+    {
+        var signature = findingDirectory.Name;
+        foreach (var input in FindingStore.GetInputs(findingDirectory).ToList())
+        {
+            var result = await ChildProcess.RunHarnessAsync(["repro", "--json", input], timeout, cancellationToken).ConfigureAwait(false);
+            if (GetReproducedSignatures(result.Output).Contains(signature))
+                return true;
+
+            Log($"The input {input.Name} of {signature} does not reproduce the finding in a new process");
+            FindingStore.MarkNotReproduced(input);
+        }
+
+        return false;
+    }
+
+    /// <summary>The signatures of the findings printed by <c>repro --json</c>, one JSON object per line.</summary>
+    private static HashSet<string> GetReproducedSignatures(string output)
+    {
+        var signatures = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var line in output.Split('\n', StringSplitOptions.TrimEntries))
+        {
+            if (!line.StartsWith('{', StringComparison.Ordinal))
+                continue;
+
+            try
+            {
+                using var document = JsonDocument.Parse(line);
+                if (document.RootElement.TryGetProperty("finding", out var finding) && finding.TryGetProperty("signature", out var signature) && signature.GetString() is { } value)
+                {
+                    signatures.Add(value);
+                }
+            }
+            catch (JsonException)
+            {
+            }
+        }
+
+        return signatures;
+    }
+
+    /// <summary>
     /// Ask libFuzzer to minimize the smallest input of each finding: the harness throws for this finding only, so libFuzzer considers the input as a crash.
     /// The crashes and the timeouts are not minimized, as libFuzzer does not consider the death of the harness process as a crash.
     /// </summary>
@@ -241,7 +319,7 @@ internal sealed class Campaign
             .Select(directory => (Directory: directory, Kind: ReadFindingKind(directory)))
             .ToList();
 
-        Log($"{findings.Count} findings");
+        Log($"{findings.Count} findings, {findings.Count(finding => FindingStore.IsNotReproduced(finding.Directory))} of them do not reproduce in a new process and are not reported");
         foreach (var group in findings.GroupBy(finding => finding.Kind).OrderBy(group => group.Key))
         {
             Log($"  {group.Key}: {group.Count()}");
