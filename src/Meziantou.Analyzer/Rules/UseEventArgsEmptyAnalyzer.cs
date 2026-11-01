@@ -39,6 +39,10 @@ public sealed class UseEventArgsEmptyAnalyzer : DiagnosticAnalyzer
         if (operation.Arguments.Length > 0)
             return;
 
+        // [EventArgs] is invalid code, but the compiler binds it as an object creation that cannot be replaced by EventArgs.Empty
+        if (operation.Parent is IAttributeOperation)
+            return;
+
         if (operation.Constructor.ContainingType.IsEqualTo(type))
         {
             context.ReportDiagnostic(Rule, operation);
