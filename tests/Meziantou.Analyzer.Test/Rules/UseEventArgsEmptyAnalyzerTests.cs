@@ -1,3 +1,4 @@
+using Microsoft.CodeAnalysis.Testing;
 using CodeFixTest = Meziantou.Analyzer.Test.Harness.CSharpCodeFixTest<
     Meziantou.Analyzer.Rules.UseEventArgsEmptyAnalyzer,
     Meziantou.Analyzer.Rules.UseEventArgsEmptyFixer>;
@@ -30,6 +31,33 @@ public sealed class UseEventArgsEmptyAnalyzerTests
                 }
             }
             """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            [System.EventArgs]
+            class TypeName
+            {
+            }
+            """;
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Attribute_InvalidCode_ShouldNotReport()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            delegate d Fi[ System.EventArgs
+            """;
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
 
         return test.RunAsync();
     }
