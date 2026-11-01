@@ -1,12 +1,12 @@
 {
   "sdk": {
-    "version": "10.0.401",
+    "version": "10.0.402",
     "rollForward": "latestPatch"
   },
   "msbuild-sdks": {
-    "Meziantou.NET.Sdk": "1.0.185",
-    "Meziantou.NET.Sdk.Test": "1.0.185",
-    "Meziantou.NET.Sdk.Web": "1.0.185"
+    "Meziantou.NET.Sdk": "1.0.195",
+    "Meziantou.NET.Sdk.Test": "1.0.195",
+    "Meziantou.NET.Sdk.Web": "1.0.195"
   },
   "test": {
     "runner": "Microsoft.Testing.Platform"
