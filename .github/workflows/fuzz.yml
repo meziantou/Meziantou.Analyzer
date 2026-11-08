@@ -129,5 +129,7 @@ jobs:
     - name: Open the issues
       env:
         GH_TOKEN: ${{ github.token }}
+        # The bugs of the compiler are added to a project of the user, which the token of the workflow cannot access
+        FUZZ_PROJECT_TOKEN: ${{ secrets.FUZZ_PROJECT_TOKEN }}
         RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      run: ./tests/Meziantou.Analyzer.Fuzz/eng/report.ps1 -FindingsDirectory artifacts/fuzz/findings -RunUrl $env:RUN_URL
+      run: ./tests/Meziantou.Analyzer.Fuzz/eng/report.ps1 -FindingsDirectory artifacts/fuzz/findings -RunUrl $env:RUN_URL -ProjectOwner meziantou -ProjectNumber 6

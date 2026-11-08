@@ -31,13 +31,17 @@ internal sealed class ComponentFilter
     /// </param>
     /// <param name="suppressed">The full names of the components not to run.</param>
     /// <param name="runCodeFixes">Whether to run the code fixers.</param>
-    public static ComponentFilter Create(IReadOnlyCollection<string> only, IReadOnlySet<string> suppressed, bool runCodeFixes)
+    /// <param name="runAnalyzers">Whether to run the analyzers. When <see langword="false"/>, the input is only compiled, and the code fixers do not run either.</param>
+    public static ComponentFilter Create(IReadOnlyCollection<string> only, IReadOnlySet<string> suppressed, bool runCodeFixes, bool runAnalyzers = true)
     {
         foreach (var name in only)
         {
             if (Components.FindByName(name) is null)
                 throw new ArgumentException($"Cannot find the analyzer or the code fixer '{name}'", nameof(only));
         }
+
+        if (!runAnalyzers)
+            return new ComponentFilter([], []);
 
         var onlyAnalyzers = Components.Analyzers.Where(analyzer => only.Contains(Components.GetName(analyzer))).ToImmutableArray();
         var onlyCodeFixProviders = Components.CodeFixProviders.Where(provider => only.Contains(Components.GetName(provider))).ToImmutableArray();

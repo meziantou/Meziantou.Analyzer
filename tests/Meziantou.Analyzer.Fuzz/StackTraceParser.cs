@@ -5,7 +5,7 @@ using System.Text.RegularExpressions;
 namespace Meziantou.Analyzer.Fuzz;
 
 /// <summary>
-/// Extract the frames of the analyzer from the text of an exception, or from the output of a process that crashed (e.g. "Stack overflow.").
+/// Extract the frames of the analyzer, or of Roslyn, from the text of an exception, or from the output of a process that crashed (e.g. "Stack overflow.").
 /// </summary>
 internal static partial class StackTraceParser
 {
@@ -13,6 +13,20 @@ internal static partial class StackTraceParser
     {
         return [.. GetFrames(text).Where(IsAnalyzerFrame).Select(Normalize)];
     }
+
+    /// <summary>
+    /// The frames of Roslyn, for the exceptions that Roslyn throws without any frame of the analyzers.
+    /// The frames of the assertions of Roslyn (<c>Contract.ThrowIfFalse</c>) are skipped, so the first frame is the one that failed.
+    /// </summary>
+    public static ImmutableArray<string> GetRoslynFrames(string text)
+    {
+        return [.. GetFrames(text).Where(method => method.StartsWith("Microsoft.CodeAnalysis.", StringComparison.Ordinal) && !IsRoslynAssertionFrame(method)).Select(Normalize)];
+    }
+
+    /// <summary>Whether the exception is an assertion of Roslyn, whose message contains the file and the line of the assertion.</summary>
+    public static bool IsRoslynAssertion(string text) => GetFrames(text).Any(IsRoslynAssertionFrame);
+
+    private static bool IsRoslynAssertionFrame(string method) => method.StartsWith("Microsoft.CodeAnalysis.Contract.", StringComparison.Ordinal);
 
     /// <summary>The lines of the text that are stack frames, at most <paramref name="maxCount"/>, with the consecutive duplicates of a stack overflow collapsed.</summary>
     public static string GetFrameLines(string text, int maxCount)

@@ -7,7 +7,7 @@ namespace Meziantou.Analyzer.Fuzz;
 /// </summary>
 internal sealed class CommandLineArguments
 {
-    private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "no-fixes", "json" };
+    private static readonly HashSet<string> Flags = new(StringComparer.Ordinal) { "no-fixes", "no-analyzers", "json" };
 
     private readonly Dictionary<string, string?> _options = new(StringComparer.Ordinal);
 

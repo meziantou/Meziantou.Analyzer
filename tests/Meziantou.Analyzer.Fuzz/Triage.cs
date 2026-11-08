@@ -82,6 +82,19 @@ internal static class Triage
         string[] extraArguments;
         if (analyzersResult.TimedOut)
         {
+            // The compiler can hang on invalid code, such as a parameter whose default value uses a method group of its own method.
+            // Every group of analyzers then times out, and the first analyzer would be blamed, so the input is compiled without analyzers first.
+            var compilerResult = await ChildProcess.RunHarnessAsync(["repro", "--no-analyzers", input], timeout, cancellationToken).ConfigureAwait(false);
+            if (compilerResult.TimedOut)
+            {
+                return new Finding
+                {
+                    Kind = FindingKind.CompilerTimeout,
+                    Component = "Microsoft.CodeAnalysis.CSharp",
+                    Message = $"The input is not compiled within {timeout.TotalSeconds:F0} seconds",
+                };
+            }
+
             candidates = [.. Components.Analyzers];
             extraArguments = ["--no-fixes"];
         }
