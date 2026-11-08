@@ -46,7 +46,7 @@ internal sealed class AnalysisEngine(ComponentFilter filter, int maxFixedDiagnos
             }
             catch (Exception ex) when (ex is not OperationCanceledException)
             {
-                findings.Add(Finding.FromException(FindingKind.RoslynException, "Microsoft.CodeAnalysis.CSharp", [], ex));
+                findings.Add(Finding.FromException(FindingKind.CompilerException, "Microsoft.CodeAnalysis.CSharp", [], ex));
                 return findings;
             }
 

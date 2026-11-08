@@ -13,7 +13,7 @@ internal static class ReproCommand
     public static async Task<int> RunAsync(CommandLineArguments arguments)
     {
         var only = arguments.GetString("only")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) ?? [];
-        var filter = ComponentFilter.Create(only, FuzzEnvironment.GetSuppressedComponents(), runCodeFixes: !arguments.HasFlag("no-fixes"));
+        var filter = ComponentFilter.Create(only, FuzzEnvironment.GetSuppressedComponents(), runCodeFixes: !arguments.HasFlag("no-fixes"), runAnalyzers: !arguments.HasFlag("no-analyzers"));
         var json = arguments.HasFlag("json");
         var findingsDirectory = FuzzEnvironment.FindingsDirectory;
 

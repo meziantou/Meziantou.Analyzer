@@ -7,6 +7,10 @@ The issues are labeled "fuzzing" and contain the signature of their finding, so 
 - an open issue, or an issue closed as not planned or duplicate, means the finding is known, and nothing is done
 - an issue closed as completed means the finding is a regression, and a new issue references it, unless the fuzzed commit
   does not contain the commit that closed the issue, as the finding is then known
+The bugs of the compiler (CompilerException and CompilerTimeout) cannot be fixed in this repository, so they are added to a GitHub project
+as draft items instead, to be reported to Roslyn later. The draft items also contain the signature: a finding with an item is not added again,
+whatever its status. The GITHUB_TOKEN of a workflow cannot access a project of a user, so the project uses its own token, and the bugs of the compiler
+are not reported without a project or its token.
 #>
 param(
     [Parameter(Mandatory = $true)]
@@ -15,6 +19,9 @@ param(
     [string]$CommitSha = $env:GITHUB_SHA,
     [string]$RunUrl,
     [int]$MaxIssues = 50,
+    [string]$ProjectOwner,
+    [int]$ProjectNumber,
+    [string]$ProjectToken = $env:FUZZ_PROJECT_TOKEN,
     [switch]$DryRun
 )
 
@@ -23,6 +30,7 @@ $ErrorActionPreference = "Stop"
 $PSNativeCommandUseErrorActionPreference = $true
 
 $label = "fuzzing"
+$compilerKinds = "CompilerException", "CompilerTimeout"
 
 # The body of an issue is limited to 65536 characters
 $maxInputLength = 20000
@@ -52,6 +60,31 @@ function Format-CodeBlock([string]$text, [string]$language, [int]$maxLength) {
 function Get-ExistingIssues([string]$signature) {
     $json = gh issue list --repo $Repository --label $label --state all --search "$signature in:body" --json "number,state,stateReason" --limit 20
     return @($json | ConvertFrom-Json)
+}
+
+function Invoke-ProjectGh {
+    # The project uses its own token, as the token of the workflow cannot access the projects of a user
+    $previousToken = $env:GH_TOKEN
+    $env:GH_TOKEN = $ProjectToken
+    try {
+        gh @args
+    }
+    finally {
+        $env:GH_TOKEN = $previousToken
+    }
+}
+
+function Get-ProjectSignatures {
+    $json = Invoke-ProjectGh project item-list $ProjectNumber --owner $ProjectOwner --format json --limit 10000
+    $signatures = [System.Collections.Generic.HashSet[string]]::new([System.StringComparer]::Ordinal)
+    foreach ($projectItem in ($json | ConvertFrom-Json).items) {
+        $body = $projectItem.content.PSObject.Properties["body"]?.Value
+        foreach ($match in [regex]::Matches([string]$body, '<!-- fuzz-signature: (?<signature>[0-9a-f]+) -->')) {
+            [void]$signatures.Add($match.Groups["signature"].Value)
+        }
+    }
+
+    return , $signatures
 }
 
 function Get-ClosingCommit([int]$number) {
@@ -170,13 +203,47 @@ if (-not $DryRun) {
     gh label create $label --repo $Repository --color "D93F0B" --description "Found by the fuzz tests" --force
 }
 
+$hasProject = $ProjectOwner -and $ProjectNumber -gt 0 -and $ProjectToken
+if ($ProjectOwner -and $ProjectNumber -gt 0 -and -not $ProjectToken) {
+    Write-Warning "There is no token for the project $ProjectOwner/$ProjectNumber, so the bugs of the compiler are not reported"
+}
+
+$projectSignatures = if ($hasProject) { Get-ProjectSignatures } else { $null }
+
 $createdCount = 0
+$projectItemCount = 0
 foreach ($item in $findings) {
     $finding = $item.Finding
 
-    # The exceptions of the harness or of Roslyn outside of the rules are rarely defects of the analyzers
+    # The exceptions of the harness, and of the services of Roslyn such as the formatter, are rarely defects of the analyzers
     if ($finding.kind -in "RoslynException", "HarnessException" -or $finding.component -eq "unknown") {
         Write-Host "Skipping $($finding.signature): $($finding.title)"
+        continue
+    }
+
+    if ($finding.kind -in $compilerKinds) {
+        if (-not $hasProject) {
+            Write-Host "Skipping $($finding.signature), as there is no project for the bugs of the compiler: $($finding.title)"
+            continue
+        }
+
+        if ($projectSignatures.Contains($finding.signature)) {
+            Write-Host "Known in the project: $($finding.title)"
+            continue
+        }
+
+        $inputText = [System.IO.File]::ReadAllText($item.InputFile.FullName)
+        $body = Get-IssueBody $finding $inputText "$($finding.signature).cs" $null
+        if ($DryRun) {
+            Write-Host "::group::[project] $($finding.title)"
+            Write-Host $body
+            Write-Host "::endgroup::"
+        }
+        else {
+            Invoke-ProjectGh project item-create $ProjectNumber --owner $ProjectOwner --title $finding.title --body $body | Out-Null
+        }
+
+        $projectItemCount++
         continue
     }
 
@@ -228,4 +295,4 @@ foreach ($item in $findings) {
     $createdCount++
 }
 
-Write-Host "$createdCount issues created"
+Write-Host "$createdCount issues created, $projectItemCount items added to the project"

@@ -204,7 +204,7 @@ internal sealed class Campaign
     {
         var findingDirectories = Directory.EnumerateDirectories(findingsDirectory)
             .Select(FullPath.FromPath)
-            .Where(directory => ReadFindingKind(directory) is FindingKind.AnalyzerException or FindingKind.CodeFixException or FindingKind.CodeFixBreaksCode or FindingKind.CodeFixDoesNotChangeCode)
+            .Where(directory => ReadFindingKind(directory) is FindingKind.AnalyzerException or FindingKind.CodeFixException or FindingKind.CodeFixBreaksCode or FindingKind.CodeFixDoesNotChangeCode or FindingKind.CompilerException)
             .Order()
             .ToList();
 
@@ -282,7 +282,7 @@ internal sealed class Campaign
             }
 
             var kind = ReadFindingKind(findingDirectory);
-            if (kind is null or FindingKind.Crash or FindingKind.Timeout or FindingKind.RoslynException or FindingKind.HarnessException || FindingStore.GetSmallestInput(findingDirectory) is not { } input)
+            if (kind is null or FindingKind.Crash or FindingKind.Timeout or FindingKind.CompilerTimeout or FindingKind.RoslynException or FindingKind.HarnessException || FindingStore.GetSmallestInput(findingDirectory) is not { } input)
                 continue;
 
             var signature = findingDirectory.Name;

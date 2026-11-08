@@ -12,6 +12,9 @@ internal sealed class Finding
 {
     private const int SignatureFrameCount = 5;
 
+    // The frames below the first ones depend on the code that calls Roslyn, such as the formatting rule that runs, not on the bug
+    private const int RoslynSignatureFrameCount = 2;
+
     public required FindingKind Kind { get; init; }
 
     /// <summary>The full name of the analyzer or of the code fixer.</summary>
@@ -26,7 +29,10 @@ internal sealed class Finding
 
     public string? StackTrace { get; init; }
 
-    /// <summary>The frames of the analyzer assemblies, normalized so they do not depend on the compiler-generated names.</summary>
+    /// <summary>
+    /// The frames of the analyzer assemblies, or of Roslyn for a <see cref="FindingKind.RoslynException"/> or a <see cref="FindingKind.CompilerException"/>,
+    /// normalized so they do not depend on the compiler-generated names.
+    /// </summary>
     public ImmutableArray<string> Frames { get; init; } = [];
 
     /// <summary>The errors that the code fix introduces.</summary>
@@ -50,9 +56,20 @@ internal sealed class Finding
 
         var text = exception.ToString();
         var frames = StackTraceParser.GetAnalyzerFrames(text);
+        if (frames.IsEmpty && kind is FindingKind.AnalyzerException or FindingKind.CodeFixException)
+        {
+            kind = FindingKind.RoslynException;
+        }
+
+        // A Roslyn exception has no frame of the analyzers, so its signature uses the frames of Roslyn, to tell its bugs apart
+        if (kind is FindingKind.RoslynException or FindingKind.CompilerException)
+        {
+            frames = StackTraceParser.GetRoslynFrames(text);
+        }
+
         return new Finding
         {
-            Kind = frames.IsEmpty && kind is FindingKind.AnalyzerException or FindingKind.CodeFixException ? FindingKind.RoslynException : kind,
+            Kind = kind,
             Component = component as string ?? Components.GetName(component),
             DiagnosticIds = diagnosticIds,
             ExceptionType = exception.GetType().FullName,
@@ -68,6 +85,12 @@ internal sealed class Finding
         {
             FindingKind.CodeFixBreaksCode => [Kind.ToString(), Component, .. DiagnosticIds, .. CompilerErrors],
             FindingKind.CodeFixDoesNotChangeCode or FindingKind.Timeout => [Kind.ToString(), Component, .. DiagnosticIds],
+
+            // The same Roslyn bug can be found while any analyzer or code fixer runs. The message of an assertion contains its file and its line,
+            // which identify it better than the frames, as the JIT can inline the method that fails.
+            FindingKind.RoslynException or FindingKind.CompilerException when StackTrace is not null && StackTraceParser.IsRoslynAssertion(StackTrace) => [Kind.ToString(), ExceptionType ?? "", Message ?? ""],
+            FindingKind.RoslynException or FindingKind.CompilerException => [Kind.ToString(), ExceptionType ?? "", .. Frames.Take(RoslynSignatureFrameCount)],
+            FindingKind.CompilerTimeout => [Kind.ToString()],
             _ => [Kind.ToString(), Component, ExceptionType ?? "", .. Frames.Take(SignatureFrameCount)],
         };
 
@@ -77,6 +100,16 @@ internal sealed class Finding
 
     private string ComputeTitle()
     {
+        var location = Frames.IsEmpty ? "" : " in " + GetShortFrame(Frames[0]);
+        if (Kind is FindingKind.RoslynException)
+            return $"[Fuzzing] Roslyn throws {GetShortName(ExceptionType ?? "an exception")}{location}";
+
+        if (Kind is FindingKind.CompilerException)
+            return $"[Fuzzing] Compiler throws {GetShortName(ExceptionType ?? "an exception")}{location}";
+
+        if (Kind is FindingKind.CompilerTimeout)
+            return "[Fuzzing] Compiler does not complete";
+
         var rules = DiagnosticIds.Length switch
         {
             0 => "",
@@ -85,10 +118,9 @@ internal sealed class Finding
         };
 
         var component = GetShortName(Component);
-        var location = Frames.IsEmpty ? "" : " in " + GetShortFrame(Frames[0]);
         var description = Kind switch
         {
-            FindingKind.AnalyzerException or FindingKind.CodeFixException or FindingKind.RoslynException or FindingKind.HarnessException => $"throws {GetShortName(ExceptionType ?? "an exception")}{location}",
+            FindingKind.AnalyzerException or FindingKind.CodeFixException or FindingKind.HarnessException => $"throws {GetShortName(ExceptionType ?? "an exception")}{location}",
             FindingKind.CodeFixBreaksCode => $"code fix introduces {string.Join(", ", CompilerErrors)}",
             FindingKind.CodeFixDoesNotChangeCode => "registers a code fix that does not change the code",
             FindingKind.Crash => $"crashes the process{(Message is null ? "" : ": " + Message)}{location}",
@@ -103,7 +135,13 @@ internal sealed class Finding
 
     private static string GetShortFrame(string frame)
     {
+        // The name of a constructor (".ctor", ".cctor") starts with a dot, which does not separate it from its type
         var index = frame.AsSpan().LastIndexOf('.');
+        if (index > 0 && frame[index - 1] is '.')
+        {
+            index--;
+        }
+
         if (index > 0)
         {
             index = frame.AsSpan(0, index).LastIndexOf('.');

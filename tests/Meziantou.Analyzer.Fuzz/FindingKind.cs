@@ -25,9 +25,16 @@ internal enum FindingKind
 
     /// <summary>
     /// Roslyn throws while it runs an analyzer or applies a code fix, and no frame of the analyzer assemblies is in the stack trace,
-    /// e.g. the formatter fails on the invalid code of the input. These are not reported, as they are rarely defects of the rules.
+    /// e.g. the formatter fails on the invalid code of the input. These are not reported, as they are rarely defects of the rules,
+    /// and the services of the workspace, such as the formatter, are not expected to support any invalid code.
     /// </summary>
     RoslynException,
+
+    /// <summary>The compiler throws when it computes the diagnostics of the input, before any analyzer runs. This is reported as a Roslyn issue.</summary>
+    CompilerException,
+
+    /// <summary>The compiler does not complete on the input, even without any analyzer. This is reported as a Roslyn issue.</summary>
+    CompilerTimeout,
 
     /// <summary>The harness itself or Roslyn throws, outside of an analyzer or a code fixer.</summary>
     HarnessException,
