@@ -671,7 +671,6 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task Report_GetAwaiterExtensionBlock()
     {
@@ -701,7 +700,6 @@ public sealed class AwaitAwaitableMethodInSyncMethodAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task NoReport_GetAwaiterExtensionMethod_OtherType()

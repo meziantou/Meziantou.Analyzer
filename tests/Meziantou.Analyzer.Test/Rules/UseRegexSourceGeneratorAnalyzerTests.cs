@@ -610,7 +610,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task NewRegex_PartialProperty()
     {
@@ -882,7 +881,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#endif
     [Fact]
     public Task Field_SuggestFieldName()
     {
@@ -1063,7 +1061,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task Field_RemoveAndReplaceWithProperty_PartialProperty()
     {
@@ -1340,7 +1337,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#endif
     [Fact]
     public Task TopLevelStatement_NewRegex_PartialMethod()
     {
@@ -1368,7 +1364,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task TopLevelStatement_NewRegex_PartialProperty()
     {
@@ -1451,7 +1446,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#endif
     [Fact]
     public Task TopLevelStatement_StaticMethod_PartialMethod()
     {
@@ -1921,7 +1915,6 @@ public class UseRegexSourceGeneratorAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1681")]
     public Task NewRegex_VariableDeclaredAsEmbeddedStatement_KeepVariable()
@@ -2009,5 +2002,4 @@ public class UseRegexSourceGeneratorAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 }

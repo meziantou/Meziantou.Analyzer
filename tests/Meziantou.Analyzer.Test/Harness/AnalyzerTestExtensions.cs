@@ -1,4 +1,3 @@
-#if ROSLYN_4_10_OR_GREATER
 using System.Reflection;
 using Microsoft.CodeAnalysis.Diagnostics;
 using MetadataReference = Microsoft.CodeAnalysis.MetadataReference;
@@ -17,11 +16,7 @@ internal static class AnalyzerTestExtensions
     public static void AddMicrosoftCodeAnalysisNetAnalyzers<TAnalyzer>(this CSharpAnalyzerTest<TAnalyzer> test, params string[] ruleIds)
         where TAnalyzer : DiagnosticAnalyzer, new()
     {
-#if ROSLYN_5_0_OR_GREATER
         test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.NetAnalyzers", "10.0.100", ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft."], ruleIds);
-#else
-        test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.NetAnalyzers", "9.0.0", ["analyzers/dotnet/cs/Microsoft.CodeAnalysis"], ruleIds);
-#endif
     }
 
     /// <summary>
@@ -40,10 +35,8 @@ internal static class AnalyzerTestExtensions
         test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.CSharp.CodeStyle", "5.9.0", ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"], ruleIds);
 #elif ROSLYN_5_6_OR_GREATER
         test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.CSharp.CodeStyle", "5.6.0", ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"], ruleIds);
-#elif ROSLYN_5_0_OR_GREATER
-        test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.CSharp.CodeStyle", "5.0.0", ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"], ruleIds);
 #else
-        test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.CSharp.CodeStyle", "4.14.0", ["analyzers/dotnet/cs/"], ruleIds);
+        test.AddAnalyzersFromNuGet("Microsoft.CodeAnalysis.CSharp.CodeStyle", "5.0.0", ["analyzers/dotnet/cs/", "analyzers/dotnet/Microsoft.CodeAnalysis"], ruleIds);
 #endif
     }
 
@@ -71,4 +64,3 @@ internal static class AnalyzerTestExtensions
             throw new InvalidOperationException($"No analyzer of '{packageName}' reports {string.Join(", ", ruleIds)}");
     }
 }
-#endif

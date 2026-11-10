@@ -92,10 +92,8 @@ public sealed class NullableAttributeUsageAnalyzer : DiagnosticAnalyzer
         if (parameters.Any(p => p.Name == parameterName))
             return true;
 
-#if CSHARP14_OR_GREATER
         if (declaringSymbol.ContainingType?.ExtensionParameter?.Name == parameterName)
             return true;
-#endif
 
         return false;
     }

@@ -235,7 +235,6 @@ public sealed class UseRegexOptionsAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task GeneratedRegexProperty_RegexOptions_Valid()
     {
@@ -301,5 +300,4 @@ public sealed class UseRegexOptionsAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 }

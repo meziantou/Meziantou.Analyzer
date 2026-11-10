@@ -1169,7 +1169,6 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task AllowsRefStructTypeParameter_NoDiagnostic()
     {
@@ -1185,7 +1184,6 @@ public sealed class UseAwaitInsteadOfReturningTaskAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task RefStructInstanceMethod_NoDiagnostic()

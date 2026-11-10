@@ -140,7 +140,6 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
                 continue;
             }
 
-#if ROSLYN_4_14_OR_GREATER
             if (arg.ArgumentKind is ArgumentKind.ParamCollection && arg.Value is ICollectionExpressionOperation collectionExpression)
             {
                 if (collectionExpression.Elements.Length > 0)
@@ -148,7 +147,6 @@ public sealed class StringFormatShouldBeConstantAnalyzer : DiagnosticAnalyzer
 
                 continue;
             }
-#endif
 
             // Skip arguments that were not explicitly provided (e.g. default values)
             if (arg.ArgumentKind is ArgumentKind.DefaultValue)

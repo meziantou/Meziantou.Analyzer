@@ -206,7 +206,7 @@ jobs:
       uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
     - name: Validate the Roslyn version specific projects
       run: |
-        # The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn4.8.csproj
+        # The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn5.0.csproj
         function Get-RoslynVersions($pattern) {
           @(Get-ChildItem $pattern | ForEach-Object { $_.BaseName -replace '^.*\.(roslyn[0-9.]+)$', '$1' } | Sort-Object)
         }

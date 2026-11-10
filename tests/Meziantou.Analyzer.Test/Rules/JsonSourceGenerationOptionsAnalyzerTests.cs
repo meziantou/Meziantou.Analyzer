@@ -9,27 +9,13 @@ namespace Meziantou.Analyzer.Test.Rules;
 
 public sealed class JsonSourceGenerationOptionsAnalyzerTests
 {
-    /// <summary>
-    /// The target framework the tests compile against, or <see langword="null"/> to use the latest one the harness
-    /// provides. The source generators shipped with a .NET version cannot be loaded by the older versions of
-    /// Roslyn, so the tests lower the target framework to the latest one the running version of Roslyn can load.
-    /// </summary>
-    private static ReferenceAssemblies? DefaultReferenceAssemblies =>
-#if ROSLYN_5_0_OR_GREATER
-        null;
-#elif ROSLYN_4_14_OR_GREATER
-        ReferenceAssemblies.Net.Net100;
-#else
-        ReferenceAssemblies.Net.Net90;
-#endif
-
     // The System.Text.Json source generator implements the members of JsonSerializerContext the tests do not declare
     private static AnalyzerTest CreateTest(ReferenceAssemblies? referenceAssemblies = null)
     {
         var test = new AnalyzerTest { UseFrameworkSourceGenerators = true };
-        if ((referenceAssemblies ?? DefaultReferenceAssemblies) is { } assemblies)
+        if (referenceAssemblies is not null)
         {
-            test.ReferenceAssemblies = assemblies;
+            test.ReferenceAssemblies = referenceAssemblies;
         }
 
         return test;
@@ -37,13 +23,7 @@ public sealed class JsonSourceGenerationOptionsAnalyzerTests
 
     private static CodeFixTest CreateCodeFixTest()
     {
-        var test = new CodeFixTest { UseFrameworkSourceGenerators = true };
-        if (DefaultReferenceAssemblies is { } assemblies)
-        {
-            test.ReferenceAssemblies = assemblies;
-        }
-
-        return test;
+        return new CodeFixTest { UseFrameworkSourceGenerators = true };
     }
 
     [Theory]
@@ -127,7 +107,6 @@ public sealed class JsonSourceGenerationOptionsAnalyzerTests
         return test.RunAsync();
     }
 
-#if ROSLYN_4_14_OR_GREATER // The .NET 10 source generators cannot be loaded by the older versions of Roslyn
     [Theory]
     [InlineData("JsonSerializerDefaults.Strict")]
     [InlineData("JsonSerializerDefaults.Strict, RespectNullableAnnotations = false")]
@@ -164,7 +143,6 @@ public sealed class JsonSourceGenerationOptionsAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task Fix_AddsRespectNullableAnnotations()

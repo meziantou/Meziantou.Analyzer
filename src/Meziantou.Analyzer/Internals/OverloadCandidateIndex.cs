@@ -54,11 +54,7 @@ internal sealed class OverloadCandidateIndex
     /// <summary>Indicates whether the type is an <c>extension</c> block, whose members are all extension members.</summary>
     public static bool IsExtensionBlock([NotNullWhen(true)] INamedTypeSymbol? type)
     {
-#if CSHARP14_OR_GREATER
         return type is { TypeKind: TypeKind.Extension };
-#else
-        return false;
-#endif
     }
 
     private ParameterTypes CreateParameterTypes(ParameterTypesKey key)
@@ -262,7 +258,6 @@ internal sealed class OverloadCandidateIndex
 
             AddMemberNames(type);
 
-#if CSHARP14_OR_GREATER
             // An extension block is a type nested in the static class
             if (type is { IsStatic: true, IsGenericType: false })
             {
@@ -274,7 +269,6 @@ internal sealed class OverloadCandidateIndex
                     }
                 }
             }
-#endif
         }
 
         void AddMemberNames(INamedTypeSymbol type)

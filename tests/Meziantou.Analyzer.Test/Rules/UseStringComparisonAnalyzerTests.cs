@@ -1335,7 +1335,6 @@ public sealed class UseStringComparisonAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task ExtensionBlock()
     {
@@ -1387,7 +1386,6 @@ public sealed class UseStringComparisonAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     // The methods of Microsoft.Extensions.Primitives are not checked, as the test project does not reference this package
     public static TheoryData<string> NonCultureSensitiveMethodDocumentationIds => new(UseStringComparisonAnalyzer.NonCultureSensitiveMethodDocumentationIds.Where(id => !id.StartsWith("M:Microsoft.Extensions.Primitives.", StringComparison.Ordinal)));

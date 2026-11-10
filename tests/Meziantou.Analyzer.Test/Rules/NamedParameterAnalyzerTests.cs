@@ -978,7 +978,6 @@ public sealed class NamedParameterAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task Expression_ParamsInLambda_ShouldNotReportDiagnostic()
     {
@@ -999,7 +998,6 @@ public sealed class NamedParameterAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task Expression_ShouldNotReportDiagnostic2()
@@ -1552,7 +1550,6 @@ public sealed class NamedParameterAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task CallerMustUseNamedArgument_ExtensionBlockReceiver()
     {
@@ -1576,7 +1573,6 @@ public sealed class NamedParameterAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task CallerMustUseNamedArgument_ExtensionMethodNonReceiverParameter()

@@ -1173,7 +1173,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
 
     [Fact]
     public Task InternalClassUsedInImplicitExtensionType_NoDiagnostic()
@@ -1329,7 +1328,6 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         return test.RunAsync();
     }
 
-#endif
 
     [Fact]
     public Task DeeplyNestedPrivateClass_Diagnostic()

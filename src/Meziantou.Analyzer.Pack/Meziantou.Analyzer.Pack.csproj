@@ -44,7 +44,7 @@
     </MSBuild>
 
     <ItemGroup>
-      <!-- The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn4.8.csproj -->
+      <!-- The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn5.0.csproj -->
       <TfmSpecificPackageFile Include="@(_AnalyzerAssembly)"
                               PackagePath="analyzers/dotnet/$([System.Text.RegularExpressions.Regex]::Replace('%(MSBuildSourceProjectFile)', '^.*\.(roslyn.*)\.csproj$', '$1'))/cs/" />
     </ItemGroup>

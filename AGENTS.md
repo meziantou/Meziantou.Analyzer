@@ -122,15 +122,13 @@ private static async Task<Document> FixAsync(Document document, BinaryExpression
 
 This project supports multiple versions of Roslyn to ensure compatibility with different versions of Visual Studio and the .NET SDK. The supported Roslyn versions are the ones that have a project per version (see the project layout below):
 
-- `roslyn4.8` - Roslyn 4.8.0
-- `roslyn4.14` - Roslyn 4.14.0
 - `roslyn5.0` - Roslyn 5.0.0
 - `roslyn5.6` - Roslyn 5.6.0
 - `roslyn5.9` - Roslyn 5.9.0 (the default version, used by the projects that are not specific to a Roslyn version)
 
 The default version must always be the latest supported one, and the CI fails if it is not.
 
-The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn4.8` uses `4.8.0`). The `ROSLYN_*_OR_GREATER` and `CSHARP*_OR_GREATER` constants are not defined by this repository: they come from the [`Meziantou.Framework.Roslyn`](https://github.com/meziantou/Meziantou.Framework/blob/main/src/Meziantou.Framework.Roslyn/readme.md) package, which derives them from the version of the referenced `Microsoft.CodeAnalysis.*` packages. Note that this package considers `CSHARP15_OR_GREATER` to start at Roslyn 5.6, while the `closed` types and the union types are only supported from Roslyn 5.9: guard those with `ROSLYN_5_9_OR_GREATER`. What remains version specific in `Directory.Build.targets` is the warnings to disable: the `nullable` warnings are only reported for `DefaultRoslynVersion`, as the nullable annotations of the Roslyn APIs change from one version to another. A project named after a version that does not exist fails the restore, since no `Microsoft.CodeAnalysis.*` package matches the derived version.
+The version of the `Microsoft.CodeAnalysis.*` packages is not listed anywhere: it is derived from `RoslynVersion` in the `Directory.Build.props` of the repository root (`roslyn5.0` uses `5.0.0`). The `ROSLYN_*_OR_GREATER` and `CSHARP*_OR_GREATER` constants are not defined by this repository: they come from the [`Meziantou.Framework.Roslyn`](https://github.com/meziantou/Meziantou.Framework/blob/main/src/Meziantou.Framework.Roslyn/readme.md) package, which derives them from the version of the referenced `Microsoft.CodeAnalysis.*` packages. Note that this package considers `CSHARP15_OR_GREATER` to start at Roslyn 5.6, while the `closed` types and the union types are only supported from Roslyn 5.9: guard those with `ROSLYN_5_9_OR_GREATER`. What remains version specific in `Directory.Build.targets` is the warnings to disable: the `nullable` warnings are only reported for `DefaultRoslynVersion`, as the nullable annotations of the Roslyn APIs change from one version to another. A project named after a version that does not exist fails the restore, since no `Microsoft.CodeAnalysis.*` package matches the derived version.
 
 ### Project layout
 
@@ -156,8 +154,8 @@ To build with a specific Roslyn version, build the project of that version:
 
 ```bash
 # Build a specific Roslyn version
-dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.8.csproj
-dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn4.14.csproj
+dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.0.csproj
+dotnet build src/Meziantou.Analyzer/Meziantou.Analyzer.roslyn5.6.csproj
 
 # Build every Roslyn version, as all the projects are in the solution
 dotnet build
@@ -169,8 +167,6 @@ To run tests with a specific Roslyn version, run the test project of that versio
 
 ```bash
 # Test with a specific Roslyn version
-dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj
-dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.14.csproj
 dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj
 dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.6.csproj
 dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.9.csproj
@@ -183,10 +179,10 @@ You can also filter tests to run only specific test classes or methods:
 
 ```bash
 # Run only tests from a specific test class
-dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests"
 
 # Run a specific test method
-dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn4.8.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
+dotnet test tests/Meziantou.Analyzer.Test/Meziantou.Analyzer.Test.roslyn5.0.csproj --filter "FullyQualifiedName~UseRegexSourceGeneratorAnalyzerTests.NewRegex_Options"
 ```
 
 ### Limiting the number of concurrent tests
@@ -207,7 +203,7 @@ You SHOULD test with multiple Roslyn versions when:
 - Making changes that affect analyzer or code fixer functionality
 - Making changes to the test infrastructure (e.g., `ProjectBuilder` helpers)
 - Making changes that use Roslyn APIs or language features that may behave differently across versions
-- Making changes that involve conditional compilation based on Roslyn version (e.g., `#if CSHARP11_OR_GREATER`)
+- Making changes that involve conditional compilation based on Roslyn version (e.g., `#if ROSLYN_5_9_OR_GREATER`)
 
 You do NOT need to test with multiple Roslyn versions when:
 
