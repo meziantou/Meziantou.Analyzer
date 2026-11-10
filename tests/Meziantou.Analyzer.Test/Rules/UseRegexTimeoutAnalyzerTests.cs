@@ -274,7 +274,6 @@ public sealed class UseRegexTimeoutAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task GeneratedRegexProperty_WithoutTimeout()
     {
@@ -334,5 +333,4 @@ public sealed class UseRegexTimeoutAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 }

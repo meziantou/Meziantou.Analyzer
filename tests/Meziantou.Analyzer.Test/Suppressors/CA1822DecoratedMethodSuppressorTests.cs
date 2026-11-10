@@ -1,4 +1,3 @@
-#if ROSLYN_4_10_OR_GREATER
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
@@ -81,4 +80,3 @@ public sealed class CA1822DecoratedMethodSuppressorTests
         return test.RunAsync();
     }
 }
-#endif

@@ -37,7 +37,7 @@ internal static class SymbolNameFormatter
         symbol = symbol.OriginalDefinition;
 
         // Only the symbols that can be documented have an id. The other ones, such as a parameter, a local or an
-        // alias, throw in Roslyn 4.8 whereas the more recent versions return null.
+        // alias, have none.
         if (symbol.Kind is not (SymbolKind.Namespace or SymbolKind.NamedType or SymbolKind.Method or SymbolKind.Property or SymbolKind.Field or SymbolKind.Event))
             return null;
 

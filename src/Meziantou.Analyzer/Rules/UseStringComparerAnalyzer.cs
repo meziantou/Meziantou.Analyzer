@@ -92,9 +92,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
     private static readonly ConfigurationDefinition<bool> ExcludeQueryOperatorSyntaxesConfiguration = new(Rule.Id + ".exclude_query_operator_syntaxes", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> ReportOnlyNonOrdinalConfiguration = new(Rule.Id + ".report_only_non_ordinal", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> IncludeExtensionMethodsFromNotImportedNamespacesConfiguration = new(Rule.Id + ".include_extension_methods_from_not_imported_namespaces", defaultValue: false);
-#if ROSLYN_4_14_OR_GREATER
     private static readonly ConfigurationDefinition<bool> ReportCollectionExpressionsConfiguration = new(Rule.Id + ".report_collection_expressions", defaultValue: false);
-#endif
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(Rule);
 
@@ -112,9 +110,7 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 var lookupCache = new OverloadLookupCache();
                 symbolContext.RegisterOperationAction(operationContext => analyzerContext.AnalyzeInvocation(operationContext, lookupCache), OperationKind.Invocation);
             }, SymbolKind.NamedType);
-#if ROSLYN_4_14_OR_GREATER
             ctx.RegisterOperationAction(analyzerContext.AnalyzeCollectionExpression, OperationKind.CollectionExpression);
-#endif
         });
     }
 
@@ -311,7 +307,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             return found;
         }
 
-#if ROSLYN_4_14_OR_GREATER
         public void AnalyzeCollectionExpression(OperationAnalysisContext ctx)
         {
             var operation = (ICollectionExpressionOperation)ctx.Operation;
@@ -349,7 +344,6 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 return context.Options.GetConfigurationValue(operation, ReportCollectionExpressionsConfiguration, defaultValue);
             }
         }
-#endif
 
         private static bool IsQueryOperator(IOperation operation)
         {

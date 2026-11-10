@@ -129,12 +129,10 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-#if CSHARP14_OR_GREATER
             if (symbol.ExtensionParameter is not null)
             {
                 AddUsedType(symbol, symbol.ExtensionParameter.Type);
             }
-#endif
         }
 
         public void AnalyzePropertyFieldOrEventSymbol(SymbolAnalysisContext context)

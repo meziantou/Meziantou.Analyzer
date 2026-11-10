@@ -261,12 +261,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                     return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
-#if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation appendFormatCollectionExpression)
                 {
                     return GetCultureSensitivity(appendFormatCollectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
-#endif
                 else
                 {
                     return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversions()), options);
@@ -288,12 +286,10 @@ internal sealed class CultureSensitiveFormattingContext(Compilation compilation)
 
                     return GetCultureSensitivity(initializer.ElementValues.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
-#if ROSLYN_4_14_OR_GREATER
                 else if (invocation.TargetMethod.Parameters.Length == 2 && invocation.Arguments[1].Value is ICollectionExpressionOperation collectionExpression)
                 {
                     return GetCultureSensitivity(collectionExpression.Elements.Select(arg => arg.UnwrapImplicitConversions()), options);
                 }
-#endif
                 else
                 {
                     return GetCultureSensitivity(invocation.Arguments.Skip(1).Select(arg => arg.Value.UnwrapImplicitConversions()), options);

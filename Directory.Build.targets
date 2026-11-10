@@ -3,9 +3,9 @@
   <!-- https://www.nuget.org/packages/Microsoft.CodeAnalysis.CSharp.Workspaces/ -->
   <!-- https://learn.microsoft.com/en-us/visualstudio/extensibility/roslyn-version-support?WT.mc_id=DT-MVP-5003978 -->
   <!-- https://learn.microsoft.com/en-us/visualstudio/releases/2026/servicing-vs?WT.mc_id=DT-MVP-5003978#support-for-older-versions -->
-  <!-- Visual Studio 2022: 4.14 (Lifecycle stage "Extended" is not considered) -->
-  <!-- .NET SDK 8.0.129:   4.8 -->
-  <!-- Minimum version to support: 4.8 -->
+  <!-- Visual Studio 2026: 5.0 -->
+  <!-- .NET SDK 10.0.1xx:  5.0 -->
+  <!-- Minimum version to support: 5.0 -->
   <!-- The version of the packages is derived from RoslynVersion, see the Directory.Build.props of the repository root -->
   <ItemGroup>
     <PackageReference Update="Microsoft.CodeAnalysis.CSharp" Version="$(RoslynPackageVersion)" />

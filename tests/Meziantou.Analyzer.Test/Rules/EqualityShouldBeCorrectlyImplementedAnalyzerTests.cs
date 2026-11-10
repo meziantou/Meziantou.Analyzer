@@ -71,7 +71,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task RefStruct_CSharp13()
     {
@@ -85,7 +84,6 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task Test_ClassImplementsSystemIEquatableWithTOfWrongTypeButProvidesCompatibleEqualsMethod_DiagnosticIsReported()

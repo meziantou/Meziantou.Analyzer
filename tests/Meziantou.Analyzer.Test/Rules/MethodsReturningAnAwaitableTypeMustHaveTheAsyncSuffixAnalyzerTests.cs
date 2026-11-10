@@ -688,11 +688,9 @@ public sealed class MethodsReturningAnAwaitableTypeMustHaveTheAsyncSuffixAnalyze
         test.TestState.OutputKind = OutputKind.ConsoleApplication;
         test.TestCode = Source;
         test.FixedCode = Source;
-#if ROSLYN_4_14_OR_GREATER
         // The older versions of the parser do not declare a method for this invalid code
         test.TestState.ExpectedDiagnostics.Add(new DiagnosticResult("MA0138", DiagnosticSeverity.Warning).WithLocation(0));
         test.FixedState.ExpectedDiagnostics.Add(new DiagnosticResult("MA0138", DiagnosticSeverity.Warning).WithLocation(0));
-#endif
 
         return test.RunAsync();
     }

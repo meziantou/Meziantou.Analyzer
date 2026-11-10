@@ -1,4 +1,3 @@
-#if ROSLYN_4_10_OR_GREATER
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.Testing;
 using DiagnosticResult = Microsoft.CodeAnalysis.Testing.DiagnosticResult;
@@ -127,4 +126,3 @@ public sealed class IDE0058SuppressorTests
         return test.RunAsync();
     }
 }
-#endif

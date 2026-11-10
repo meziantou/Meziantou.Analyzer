@@ -179,7 +179,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task PartialClass_WithPartialProperty_NoDiagnostic()
     {
@@ -209,9 +208,7 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task PartialClass_WithPartialEvent_NoDiagnostic()
     {
@@ -241,7 +238,6 @@ public sealed class RemoveUnnecessaryPartialModifierAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task PartialClass_WithNestedPartialType_ReportsDiagnostic()

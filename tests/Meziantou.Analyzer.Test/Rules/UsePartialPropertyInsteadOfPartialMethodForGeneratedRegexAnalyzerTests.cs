@@ -46,7 +46,6 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task GeneratedRegexPartialMethod_ReportsDiagnostic()
     {
@@ -239,5 +238,4 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
 
         return test.RunAsync();
     }
-#endif
 }

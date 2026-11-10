@@ -358,16 +358,12 @@ public sealed class UseStructLayoutAttributeAnalyzerTests
         test.TestCode = """
             record struct {|MA0008:TypeName|}(int A, int B);
             """;
-        // Roslyn 4.8 inserts CRLF where the newer versions insert LF, and the testing library
-        // compares the text of the fixed code exactly
-#if ROSLYN_4_14_OR_GREATER
         test.FixedCode = """
             using System.Runtime.InteropServices;
 
             [StructLayout(LayoutKind.Auto)]
             record struct TypeName(int A, int B);
             """;
-#endif
 
         return test.RunAsync();
     }

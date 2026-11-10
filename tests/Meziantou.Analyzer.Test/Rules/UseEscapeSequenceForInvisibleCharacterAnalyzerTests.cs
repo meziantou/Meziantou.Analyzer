@@ -150,7 +150,6 @@ public sealed class UseEscapeSequenceForInvisibleCharacterAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP13_OR_GREATER
     [Fact]
     public Task StringLiteral_EscapeCharacter_CSharp13()
     {
@@ -179,7 +178,6 @@ public sealed class UseEscapeSequenceForInvisibleCharacterAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task StringLiteral_SupplementaryCharacter()

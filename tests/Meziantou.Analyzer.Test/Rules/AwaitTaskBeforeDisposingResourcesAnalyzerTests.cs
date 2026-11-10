@@ -148,12 +148,10 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
     [InlineData("unconstrained", "static TaskAwaiter GetAwaiter(this object value) => throw null;")]
     [InlineData("new DerivedAwaitable()", "")]
     [InlineData("instanceAwaitable", "")]
-#if CSHARP14_OR_GREATER
     // The receiver of an extension method can be converted to a span
     [InlineData("\"\"", "static TaskAwaiter GetAwaiter(this ReadOnlySpan<char> value) => throw null;")]
     [InlineData("new[] { 'a' }", "static TaskAwaiter GetAwaiter(this ReadOnlySpan<char> value) => throw null;")]
     [InlineData("new[] { 'a' }", "static TaskAwaiter GetAwaiter(this Span<char> value) => throw null;")]
-#endif
     public Task NotAwaitedCustomAwaitable_InUsing(string returnedValue, string extensionMethod)
     {
         var test = CreateTest();
@@ -282,7 +280,6 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
         return test.RunAsync();
     }
 
-#if CSHARP14_OR_GREATER
     [Fact]
     public Task NotAwaitedExtensionBlockMember_InUsing()
     {
@@ -312,7 +309,6 @@ public sealed class AwaitTaskBeforeDisposingResourcesAnalyzerTests
 
         return test.RunAsync();
     }
-#endif
 
     [Fact]
     public Task NotAwaitedValueTask_InUsing()

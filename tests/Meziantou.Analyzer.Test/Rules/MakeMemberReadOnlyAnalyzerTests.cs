@@ -476,9 +476,6 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-        // Roslyn 4.8 inserts CRLF where the newer versions insert LF, and the testing library
-        // compares the text of the fixed code exactly
-#if ROSLYN_4_14_OR_GREATER
         test.FixedCode = """
             struct Test
             {
@@ -490,7 +487,6 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
                 }
             }
             """;
-#endif
 
         return test.RunAsync();
     }

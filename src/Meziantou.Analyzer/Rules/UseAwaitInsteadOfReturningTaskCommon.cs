@@ -51,10 +51,8 @@ internal static class UseAwaitInsteadOfReturningTaskCommon
         if (type.IsRefLikeType)
             return true;
 
-#if ROSLYN_4_14_OR_GREATER
         if (type is ITypeParameterSymbol { AllowsRefLikeType: true })
             return true;
-#endif
 
         return false;
     }
