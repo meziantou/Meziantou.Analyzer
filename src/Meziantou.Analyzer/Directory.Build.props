@@ -2,7 +2,9 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <!-- Meziantou.NET.Sdk defaults TargetFramework to the SDK version before this file is imported, as the project files are empty. Clear it so the outer build multi-targets. The inner builds set it as a global property, which this assignment does not override. -->
+    <TargetFramework />
+    <TargetFrameworks>net11.0;netstandard2.0</TargetFrameworks>
     <AssemblyName>Meziantou.Analyzer</AssemblyName>
     <RootNamespace>Meziantou.Analyzer</RootNamespace>
     <IncludeBuildOutput>false</IncludeBuildOutput>
