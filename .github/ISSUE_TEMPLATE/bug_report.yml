@@ -43,7 +43,7 @@ body:
   id: dotnet-sdk
   attributes:
     label: .NET SDK version
-    placeholder: "10.0.100, use `dotnet --version` or `dotnet --info`"
+    placeholder: "11.0.100, use `dotnet --version` or `dotnet --info`"
   validations:
     required: false
 

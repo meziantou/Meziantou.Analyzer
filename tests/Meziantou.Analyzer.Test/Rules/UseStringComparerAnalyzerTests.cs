@@ -15,12 +15,14 @@ public sealed class UseStringComparerAnalyzerTests
         return test;
     }
 
+#if CSHARP15_OR_GREATER
     private static CodeFixTest CreatePreviewTest()
     {
         var test = new CodeFixTest();
         test.LanguageVersion = LanguageVersion.Preview;
         return test;
     }
+#endif
 
     private static CodeFixTest CreateMSTestTest()
     {

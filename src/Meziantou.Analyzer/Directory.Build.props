@@ -2,7 +2,7 @@
   <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)../'))" />
 
   <PropertyGroup>
-    <TargetFrameworks>net10.0;netstandard2.0</TargetFrameworks>
+    <TargetFrameworks>net11.0;netstandard2.0</TargetFrameworks>
     <AssemblyName>Meziantou.Analyzer</AssemblyName>
     <RootNamespace>Meziantou.Analyzer</RootNamespace>
     <IncludeBuildOutput>false</IncludeBuildOutput>
