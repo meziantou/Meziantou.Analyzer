@@ -420,7 +420,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:[]|};
+                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:["a"]|};
                 }
             }
             """;
@@ -678,7 +678,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:[]|};
+                    System.Collections.Frozen.FrozenSet<string> a = {|MA0002:["a"]|};
                 }
             }
             """;
@@ -687,7 +687,7 @@ public sealed class UseStringComparerAnalyzerTests
             {
                 public void Test()
                 {
-                    System.Collections.Frozen.FrozenSet<string> a = [with(global::System.StringComparer.Ordinal)];
+                    System.Collections.Frozen.FrozenSet<string> a = [with(global::System.StringComparer.Ordinal), "a"];
                 }
             }
             """;
@@ -749,6 +749,22 @@ public sealed class UseStringComparerAnalyzerTests
                 {
                     System.Collections.Immutable.ImmutableHashSet<string> a = [with(System.StringComparer.Ordinal)];
                 }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("System.Collections.Frozen.FrozenSet<string>")]
+    [InlineData("System.Collections.Frozen.FrozenDictionary<string, int>")]
+    public Task FrozenCollection_String_EmptyCollectionExpression_ShouldNotReportDiagnostic(string type)
+    {
+        var test = CreatePreviewTest();
+        test.TestCode = $$"""
+            class TypeName
+            {
+                private static readonly {{type}} Field = [];
             }
             """;
 

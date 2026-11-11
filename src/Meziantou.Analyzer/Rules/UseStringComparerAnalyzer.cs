@@ -128,6 +128,11 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         // user-defined methods that happen to share a name with a BCL method.
         private readonly HashSet<INamedTypeSymbol> _knownOrdinalContainerTypes = BuildKnownOrdinalContainerTypes(compilation);
 
+        // Collections that cannot be modified once created. An empty collection expression of these types
+        // stays empty, so its comparer is never used. Immutable collections are not included, as their Add
+        // methods create a new instance that keeps the comparer.
+        private readonly HashSet<INamedTypeSymbol> _readOnlyCollectionTypes = BuildReadOnlyCollectionTypes(compilation);
+
         public INamedTypeSymbol? EqualityComparerStringType { get; } = GetIEqualityComparerString(compilation);
         public INamedTypeSymbol? ComparerStringType { get; } = GetIComparerString(compilation);
         public INamedTypeSymbol? EnumerableType { get; } = compilation.GetTypeByMetadataName("System.Linq.Enumerable");
@@ -313,6 +318,9 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             if (!ShouldReportCollectionExpression(ctx, operation))
                 return;
 
+            if (operation.Elements.IsEmpty && IsReadOnlyCollectionType(operation.Type))
+                return;
+
 #if ROSLYN_5_6_OR_GREATER
             // [with(StringComparer.Ordinal)] already provides a comparer — no diagnostic needed.
 #pragma warning disable RSEXPERIMENTAL006
@@ -428,6 +436,34 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
             result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Immutable.ImmutableHashSet`1"));
             result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenDictionary`2"));
             result.AddIfNotNull(compilation.GetTypeByMetadataName("System.Collections.Frozen.FrozenSet`1"));
+            return result;
+        }
+
+        private bool IsReadOnlyCollectionType(ITypeSymbol? type)
+        {
+            return type is INamedTypeSymbol namedType
+                && _readOnlyCollectionTypes.Contains(namedType.OriginalDefinition);
+        }
+
+        private static HashSet<INamedTypeSymbol> BuildReadOnlyCollectionTypes(Compilation compilation)
+        {
+            var result = new HashSet<INamedTypeSymbol>(SymbolEqualityComparer.Default);
+            foreach (var metadataName in (ReadOnlySpan<string>)[
+                "System.Collections.Generic.IEnumerable`1",
+                "System.Collections.Generic.IReadOnlyCollection`1",
+                "System.Collections.Generic.IReadOnlyList`1",
+                "System.Collections.Generic.IReadOnlySet`1",
+                "System.Collections.Generic.IReadOnlyDictionary`2",
+                "System.Collections.ObjectModel.ReadOnlyCollection`1",
+                "System.Collections.ObjectModel.ReadOnlySet`1",
+                "System.Collections.ObjectModel.ReadOnlyDictionary`2",
+                "System.Collections.Frozen.FrozenSet`1",
+                "System.Collections.Frozen.FrozenDictionary`2",
+            ])
+            {
+                result.AddIfNotNull(compilation.GetTypeByMetadataName(metadataName));
+            }
+
             return result;
         }
 
