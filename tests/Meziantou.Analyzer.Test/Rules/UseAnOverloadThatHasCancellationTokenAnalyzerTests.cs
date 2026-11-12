@@ -851,6 +851,74 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
     }
 
     [Fact]
+    public Task AwaitForEach_IAsyncEnumerable_WithCancellationInLocal()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A(IAsyncEnumerable<int> enumerable, CancellationToken ct)
+                {
+                    var configured = enumerable.WithCancellation(ct);
+                    await foreach (var item in configured)
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitForEach_IAsyncEnumerable_WithCancellationInLocalAndConfigureAwait()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A(IAsyncEnumerable<int> enumerable, CancellationToken ct)
+                {
+                    var configured = enumerable.WithCancellation(ct);
+                    await foreach (var item in configured.ConfigureAwait(false))
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitForEach_IAsyncEnumerable_ConfigureAwaitWithoutCancellation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading;
+            using System.Threading.Tasks;
+            class Test
+            {
+                public static async Task A(IAsyncEnumerable<int> enumerable, CancellationToken ct)
+                {
+                    await foreach (var item in {|MA0079:enumerable.ConfigureAwait(false)|})
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AwaitForEach_IAsyncEnumerable_WithCancellationAndConfigureAwait()
     {
         var test = CreateTest();
