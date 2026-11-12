@@ -17,7 +17,7 @@ internal sealed class AvailableValueFinder(Func<ITypeSymbol, bool> isSearchedTyp
     public string[] FindPaths(IOperation operation, CancellationToken cancellationToken)
     {
         var paths = new List<string>();
-        foreach (var symbol in operation.LookupAvailableValues(cancellationToken))
+        foreach (var symbol in operation.LookupAvailableValues(IsCandidate, cancellationToken))
         {
             var symbolType = symbol.GetSymbolType();
             if (symbolType is null)
@@ -45,6 +45,9 @@ internal sealed class AvailableValueFinder(Func<ITypeSymbol, bool> isSearchedTyp
             return [];
 
         return [.. paths.OrderBy(value => value.Count(c => c == '.')).ThenBy(value => value, StringComparer.Ordinal)];
+
+        // Only the values whose type is or contains the searched type are looked up
+        bool IsCandidate(ISymbol symbol) => symbol.GetSymbolType() is { } symbolType && GetMembers(symbolType, maxDepth: 1) is { Count: > 0 };
 
         static bool AreAllSymbolsAccessibleFromOperation(IEnumerable<ISymbol> symbols, IOperation operation)
         {
