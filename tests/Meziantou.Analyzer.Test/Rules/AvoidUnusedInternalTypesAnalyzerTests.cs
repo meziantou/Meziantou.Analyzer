@@ -1820,6 +1820,46 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public Task InternalClassUsedAsTypeArgumentOfPublicBaseType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+
+            internal sealed class {|MA0182:Settings|} : Dictionary<string, Entry>
+            {
+            }
+
+            internal sealed class Entry
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassUsedAsTypeArgumentOfPublicInterface_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public interface IMarker<T>
+            {
+            }
+
+            internal sealed class {|MA0182:Handler|} : IMarker<Entry>
+            {
+            }
+
+            internal sealed class Entry
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
         var test = CreateTest();
