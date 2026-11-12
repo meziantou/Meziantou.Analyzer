@@ -269,6 +269,29 @@ public sealed class MakeMemberReadOnlyAnalyzerTests
     }
 
     [Fact]
+    public Task CannotBeReadOnly_NestedBlock_SetField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            struct Test
+            {
+                int a;
+                void A(bool b)
+                {
+                    if (b)
+                    {
+                        {
+                            a = 0;
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task CannotBeReadOnly_CallNonReadOnlyMember()
     {
         var test = CreateTest();
