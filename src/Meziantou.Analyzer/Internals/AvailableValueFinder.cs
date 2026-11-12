@@ -17,11 +17,8 @@ internal sealed class AvailableValueFinder(Func<ITypeSymbol, bool> isSearchedTyp
     public string[] FindPaths(IOperation operation, CancellationToken cancellationToken)
     {
         var paths = new List<string>();
-        foreach (var symbol in operation.LookupAvailableSymbols(cancellationToken))
+        foreach (var symbol in operation.LookupAvailableValues(cancellationToken))
         {
-            if (symbol is IMethodSymbol or ITypeSymbol)
-                continue;
-
             var symbolType = symbol.GetSymbolType();
             if (symbolType is null)
                 continue;
