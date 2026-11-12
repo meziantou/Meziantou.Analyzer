@@ -29,7 +29,8 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex") is null)
             return;
 
-        if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute") is null)
+        var generatedRegexAttributeSymbol = compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
+        if (generatedRegexAttributeSymbol is null)
             return;
 
         if (compilation.GetTypeByMetadataName("System.Text.RegularExpressions.RegexOptions") is null)
@@ -54,7 +55,7 @@ public sealed class UseRegexSourceGeneratorFixer : CodeFixProvider
         }
 
         // Offer partial property first if C# 14 or later. A property access cannot be used as a statement: new Regex("pattern"); => MyRegex;
-        if (isCSharp14OrAbove && operation is not IObjectCreationOperation { Parent: IExpressionStatementOperation })
+        if (isCSharp14OrAbove && operation is not IObjectCreationOperation { Parent: IExpressionStatementOperation } && UseRegexSourceGeneratorAnalyzerCommon.CanBeAppliedToProperties(compilation, generatedRegexAttributeSymbol))
         {
             context.RegisterCodeFix(
                 CodeAction.Create(

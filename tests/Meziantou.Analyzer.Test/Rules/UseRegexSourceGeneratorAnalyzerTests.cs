@@ -1100,6 +1100,35 @@ public class UseRegexSourceGeneratorAnalyzerTests
     }
 
     [Fact]
+    public Task Net80_AttributeCannotBeAppliedToProperties_PartialMethod()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.LanguageVersion = LanguageVersion.CSharp14;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            class Foo
+            {
+                private static readonly Regex SampleRegex = {|MA0110:new Regex("pattern")|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Foo
+            {
+                private static readonly Regex SampleRegex = SampleRegex_();
+
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex_();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Variable_RemoveAndReplaceWithProperty_PartialProperty()
     {
         var test = CreateTest();
