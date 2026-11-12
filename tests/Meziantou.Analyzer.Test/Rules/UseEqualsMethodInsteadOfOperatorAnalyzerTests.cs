@@ -134,4 +134,71 @@ public class UseEqualsMethodInsteadOfOperatorAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task NoReport_ThisInEqualsOverride()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Sample
+            {
+                public override bool Equals(object obj)
+                {
+                    if (this == obj)
+                        return true;
+
+                    return obj is Sample other && this != other && other != this;
+                }
+
+                public override int GetHashCode() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoReport_ThisInIEquatableEquals()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Sample : System.IEquatable<Sample>
+            {
+                public bool Equals(Sample other) => this == other || other == this;
+                public override bool Equals(object obj) => Equals(obj as Sample);
+                public override int GetHashCode() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Report_FieldInEqualsOverride()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.DynamicallyLinkedLibrary;
+        test.TestCode = """
+            class Sample
+            {
+                private System.Net.IPAddress _address;
+
+                public override bool Equals(object obj) => obj is Sample other && {|MA0169:_address == other._address|};
+                public override int GetHashCode() => 0;
+            }
+            """;
+        test.FixedCode = """
+            class Sample
+            {
+                private System.Net.IPAddress _address;
+
+                public override bool Equals(object obj) => obj is Sample other && object.Equals(_address, other._address);
+                public override int GetHashCode() => 0;
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

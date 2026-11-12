@@ -41,6 +41,11 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
             if (IsNull(operation.LeftOperand) || IsNull(operation.RightOperand))
                 return;
 
+            // Comparing with "this" is an intentional reference comparison, such as the shortcut of an Equals method.
+            // Using Equals instead would call the Equals method of the current instance, which recurses infinitely in Equals.
+            if (IsThis(operation.LeftOperand) || IsThis(operation.RightOperand))
+                return;
+
             var leftType = operation.LeftOperand.UnwrapImplicitConversions().Type;
             if (operation.IsLifted)
             {
@@ -75,4 +80,7 @@ public sealed class UseEqualsMethodInsteadOfOperatorAnalyzer : DiagnosticAnalyze
 
     public static bool IsNull(IOperation operation)
         => operation.UnwrapConversions() is ILiteralOperation { ConstantValue: { HasValue: true, Value: null } };
+
+    private static bool IsThis(IOperation operation)
+        => operation.UnwrapConversions() is IInstanceReferenceOperation { ReferenceKind: InstanceReferenceKind.ContainingTypeInstance };
 }
