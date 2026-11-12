@@ -812,6 +812,80 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task AfterConfigureAwaitFalse_MethodEndingWithReturn_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task<int> Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    {|MA0004:await Task.Delay(1)|};
+                    return 0;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task<int> Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(false);
+                    await Task.Delay(1).ConfigureAwait(false);
+                    return 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitFalse_InBlockFollowedByThrow_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test(bool a)
+                {
+                    if (a)
+                    {
+                        await Task.Delay(1).ConfigureAwait(false);
+                        {|MA0004:await Task.Delay(1)|};
+                    }
+
+                    throw null;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test(bool a)
+                {
+                    if (a)
+                    {
+                        await Task.Delay(1).ConfigureAwait(false);
+                        await Task.Delay(1).ConfigureAwait(false);
+                    }
+
+                    throw null;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task TaskYield_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
