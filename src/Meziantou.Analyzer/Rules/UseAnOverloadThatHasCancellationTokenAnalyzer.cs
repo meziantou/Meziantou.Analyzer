@@ -243,10 +243,6 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
             if (!op.IsAsynchronous)
                 return;
 
-            var collectionType = op.Collection.GetActualType(context.CancellationToken);
-            if (collectionType.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol))
-                return;
-
             // await foreach (var item in A(cancellationToken)) OK
             // await foreach (var item in A())                  KO
             // await foreach (var item in a)                    KO
@@ -277,6 +273,11 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzer : DiagnosticAn
                     collection = argOperation.Value;
                 }
             }
+
+            // The token may have been flowed with WithCancellation() where the ConfiguredCancelableAsyncEnumerable<T>
+            // was created, such as 'var items = enumerable.WithCancellation(ct); await foreach (var item in items)'.
+            if (collection?.Type?.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol) is true)
+                return;
 
             var availableCancellationTokens = _cancellationTokenFinder.FindPaths(op, context.CancellationToken);
             if (availableCancellationTokens.Length > 0)
