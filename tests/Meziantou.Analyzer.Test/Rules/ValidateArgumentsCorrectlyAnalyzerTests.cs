@@ -512,6 +512,56 @@ public sealed class ValidateArgumentsCorrectlyAnalyzerTests
         return test.RunAsync();
     }
 
+    [Fact]
+    public Task ReportDiagnostic_ExplicitInterfaceImplementation()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            interface ITest
+            {
+                IEnumerable<int> A(string a);
+            }
+
+            class TypeName : ITest
+            {
+                IEnumerable<int> ITest.{|MA0050:A|}(string a)
+                {
+                    if (a is null)
+                        throw new ArgumentNullException(nameof(a));
+
+                    yield return 1;
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Collections.Generic;
+            interface ITest
+            {
+                IEnumerable<int> A(string a);
+            }
+
+            class TypeName : ITest
+            {
+                IEnumerable<int> ITest.A(string a)
+                {
+                    if (a is null)
+                        throw new ArgumentNullException(nameof(a));
+
+                    return A(a);
+                    IEnumerable<int> A(string a)
+                    {
+                        yield return 1;
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Theory]
     [InlineData("await System.Threading.Tasks.Task.Delay(1);")]
     [InlineData("await foreach (var item in B()) { }")]
