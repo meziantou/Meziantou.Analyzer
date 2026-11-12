@@ -1412,6 +1412,96 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task AwaitUsingVar_FollowedByLocalFunction_DoesNotMoveLocalFunction()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Local();
+                    await using var {|MA0004:a = new AsyncDisposable()|};
+                    Local();
+
+                    void Local() { }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    Local();
+                    var a = new AsyncDisposable();
+                    await using (a.ConfigureAwait(false))
+                    {
+                        Local();
+                    }
+
+                    void Local() { }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsingVar_TopLevelStatement_FollowedByLocalFunction_DoesNotMoveLocalFunction()
+    {
+        var test = CreateTest();
+        test.TestState.OutputKind = OutputKind.ConsoleApplication;
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            Local();
+            await using var {|MA0004:a = new AsyncDisposable()|};
+            Local();
+
+            void Local() { }
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Threading.Tasks;
+            Local();
+            var a = new AsyncDisposable();
+
+            await using (a.ConfigureAwait(false))
+            {
+                Local();
+            }
+
+            void Local() { }
+
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AwaitUsingAwait_NoVariable()
     {
         var test = CreateTest();

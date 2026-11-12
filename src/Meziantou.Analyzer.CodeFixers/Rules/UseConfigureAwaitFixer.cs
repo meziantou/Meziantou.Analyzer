@@ -151,12 +151,15 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                     if (usingStatement.Parent is GlobalStatementSyntax { Statement: LocalDeclarationStatementSyntax, Parent: CompilationUnitSyntax compilationUnit } globalStatement)
                     {
                         var index = compilationUnit.Members.IndexOf(globalStatement);
-                        var usingStatements = SyntaxFactory.Block(SyntaxFactory.List(compilationUnit.Members
+                        var followingStatements = compilationUnit.Members
                             .Skip(index + 1)
                             .TakeWhile(m => m.IsKind(SyntaxKind.GlobalStatement))
-                            .Select(m => ((GlobalStatementSyntax)m).Statement)));
+                            .Cast<GlobalStatementSyntax>()
+                            .Where(m => !IsLocalFunction(m.Statement))
+                            .ToArray();
+                        var usingStatements = SyntaxFactory.Block(SyntaxFactory.List(followingStatements.Select(m => m.Statement)));
 
-                        foreach (var node in compilationUnit.Members.Skip(index + 1).TakeWhile(m => m.IsKind(SyntaxKind.GlobalStatement)))
+                        foreach (var node in followingStatements)
                         {
                             editor.RemoveNode(node);
                         }
@@ -178,9 +181,10 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                         if (usingStatement.Parent is BlockSyntax statements)
                         {
                             var index = statements.Statements.IndexOf(usingStatement);
-                            usingStatements = SyntaxFactory.Block(SyntaxFactory.List(statements.Statements.Skip(index + 1)));
+                            var followingStatements = statements.Statements.Skip(index + 1).Where(statement => !IsLocalFunction(statement)).ToArray();
+                            usingStatements = SyntaxFactory.Block(SyntaxFactory.List(followingStatements));
 
-                            foreach (var node in statements.Statements.Skip(index + 1))
+                            foreach (var node in followingStatements)
                             {
                                 editor.RemoveNode(node);
                             }
@@ -235,6 +239,10 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
 
             return false;
         }
+
+        // A local function can be called from anywhere in its block, including the statements before the using statement,
+        // so it is not moved into the new using statement
+        static bool IsLocalFunction(StatementSyntax statement) => statement is LocalFunctionStatementSyntax;
 
         static bool IsNameUsedOutsideOfUsingStatement(UsingStatementSyntax usingStatement, string variableName)
         {
