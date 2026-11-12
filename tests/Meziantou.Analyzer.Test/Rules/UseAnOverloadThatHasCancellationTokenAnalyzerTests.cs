@@ -2226,4 +2226,204 @@ public sealed class UseAnOverloadThatHasCancellationTokenAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task AvailableTokens_ExtensionBlockReceiver()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            static class Extensions
+            {
+                extension(CancellationToken cancellationToken)
+                {
+                    public void A()
+                    {
+                        {|#0:MethodWithCancellationToken()|};
+                    }
+                }
+
+                public static void MethodWithCancellationToken() => throw null;
+                public static void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: cancellationToken"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_UsingStatic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            using static Tokens;
+
+            class Test
+            {
+                public void A()
+                {
+                    {|#0:MethodWithCancellationToken()|};
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.TestState.Sources.Add("""
+            global using static GlobalTokens;
+            using System.Threading;
+
+            static class Tokens
+            {
+                public static CancellationToken LocalToken => default;
+            }
+
+            static class GlobalTokens
+            {
+                public static CancellationToken GlobalToken => default;
+            }
+            """);
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: GlobalToken, LocalToken"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_PropertySetterValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                public CancellationToken Token
+                {
+                    set
+                    {
+                        {|#0:MethodWithCancellationToken()|};
+                    }
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: value"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_PrimaryConstructorParameterInAnotherPart()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            partial class Test
+            {
+                public void A()
+                {
+                    {|#0:MethodWithCancellationToken()|};
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.TestState.Sources.Add("""
+            using System.Threading;
+            partial class Test(CancellationToken cancellationToken)
+            {
+                private readonly CancellationToken _token = cancellationToken;
+            }
+            """);
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: _token, cancellationToken"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_LocalHidesField()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            class Test
+            {
+                private CancellationToken token;
+                private static CancellationToken StaticToken;
+
+                public void A()
+                {
+                    var token = this.token;
+                    {|#0:MethodWithCancellationToken()|};
+                }
+
+                public void MethodWithCancellationToken() => throw null;
+                public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: StaticToken, token"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_NestedTypeAndBaseType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Threading;
+            class Base
+            {
+                protected CancellationToken BaseToken { get; }
+            }
+
+            class Outer
+            {
+                private static CancellationToken OuterToken;
+                private CancellationToken OuterInstanceToken;
+
+                class Inner : Base
+                {
+                    public void A()
+                    {
+                        {|#0:MethodWithCancellationToken()|};
+                    }
+
+                    public void MethodWithCancellationToken() => throw null;
+                    public void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+                }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: BaseToken, OuterToken"));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AvailableTokens_LambdaInFieldInitializer()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Threading;
+            class Test
+            {
+                private static readonly Action<CancellationToken> Value = cancellationToken =>
+                {
+                    var source = new CancellationTokenSource();
+                    {|#0:MethodWithCancellationToken()|};
+                };
+
+                public static void MethodWithCancellationToken() => throw null;
+                public static void MethodWithCancellationToken(CancellationToken cancellationToken) => throw null;
+            }
+            """;
+        test.ExpectedDiagnostics.Add(new DiagnosticResult("MA0040", DiagnosticSeverity.Info).WithLocation(0).WithMessage("Use an overload with a CancellationToken, available tokens: cancellationToken, source.Token"));
+
+        return test.RunAsync();
+    }
 }

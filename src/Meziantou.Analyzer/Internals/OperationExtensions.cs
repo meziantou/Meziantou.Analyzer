@@ -113,19 +113,176 @@ internal static class OperationExtensions
         public static StaticContext Instance { get; } = new(IsStatic: false, StartPosition: -1, CanUsePrimaryConstructorParameters: true);
     }
 
-    public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, CancellationToken cancellationToken)
-        => LookupAvailableSymbols(operation, name: null, cancellationToken);
-
-    /// <param name="name">The name of the symbols to find, or <see langword="null"/> to find all the symbols. Looking up all the symbols is expensive, as it binds every name in scope, so provide the name when it is known.</param>
-    public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, string? name, CancellationToken cancellationToken)
+    /// <summary>Finds the symbols named <paramref name="name"/> that can be used at the operation.</summary>
+    public static IEnumerable<ISymbol> LookupAvailableSymbols(this IOperation operation, string name, CancellationToken cancellationToken)
     {
-        // Find available symbols
         var semanticModel = operation.SemanticModel!;
-        var operationLocation = operation.Syntax.GetLocation().SourceSpan.Start;
-        var staticContext = GetStaticContext(operation, cancellationToken);
+        var operationLocation = operation.Syntax.SpanStart;
+        var enclosingType = GetEnclosingType(semanticModel.GetEnclosingSymbol(operationLocation, cancellationToken));
+        return FilterAvailableSymbols(operation, semanticModel.LookupSymbols(operationLocation, name: name), operationLocation, enclosingType, cancellationToken);
+    }
+
+    /// <summary>
+    /// Finds the locals, the parameters, the fields and the properties that can be used at the operation, among the ones for which
+    /// <paramref name="isCandidate"/> returns <see langword="true"/>.
+    /// </summary>
+    /// <remarks>
+    /// Each call to <see cref="SemanticModel.LookupSymbols"/> walks all the scopes of the position, including the using directives,
+    /// and looking up all the names binds every name in scope, which is expensive. Instead, the values declared in scope are listed
+    /// from the syntax of the enclosing member and from the symbols of the enclosing functions and types, and only the names of the
+    /// candidates are looked up. A name that is looked up is resolved the same way, such as a local hiding a field, so the values are
+    /// the same as the ones of a lookup of all the names.
+    /// </remarks>
+    public static IEnumerable<ISymbol> LookupAvailableValues(this IOperation operation, Func<ISymbol, bool> isCandidate, CancellationToken cancellationToken)
+    {
+        var semanticModel = operation.SemanticModel!;
+        var operationLocation = operation.Syntax.SpanStart;
         var enclosingSymbol = semanticModel.GetEnclosingSymbol(operationLocation, cancellationToken);
-        var enclosingType = enclosingSymbol as INamedTypeSymbol ?? enclosingSymbol?.ContainingType;
-        foreach (var symbol in semanticModel.LookupSymbols(operationLocation, name: name))
+        var enclosingType = GetEnclosingType(enclosingSymbol);
+
+        // A script can use the members of its host object and the values declared by the previous submissions
+        if (semanticModel.Compilation.ScriptCompilationInfo is not null)
+            return FilterAvailableSymbols(operation, semanticModel.LookupSymbols(operationLocation).Where(symbol => IsValue(symbol) && isCandidate(symbol)), operationLocation, enclosingType, cancellationToken);
+
+        var names = GetCandidateValueNames(operation, semanticModel, operationLocation, enclosingSymbol, enclosingType, isCandidate, cancellationToken);
+        if (names.Count == 0)
+            return [];
+
+        var symbols = names.SelectMany(name => semanticModel.LookupSymbols(operationLocation, name: name)).Where(IsValue);
+        return FilterAvailableSymbols(operation, symbols, operationLocation, enclosingType, cancellationToken);
+
+        static bool IsValue(ISymbol symbol) => symbol is ILocalSymbol or IParameterSymbol or IFieldSymbol or IPropertySymbol && symbol.CanBeReferencedByName;
+    }
+
+    private static INamedTypeSymbol? GetEnclosingType(ISymbol? enclosingSymbol) => enclosingSymbol as INamedTypeSymbol ?? enclosingSymbol?.ContainingType;
+
+    /// <summary>
+    /// Gets the names of the candidate values declared in scope at <paramref name="position"/>: the locals of the enclosing member, the
+    /// parameters of the enclosing functions, of the primary constructors and of the extension blocks, the fields and the properties of
+    /// the enclosing types, and the ones of the types imported by the <c>using static</c> directives. A value can be declared in scope
+    /// and not be usable at the position, such as a local declared in another block, so the names must be looked up.
+    /// </summary>
+    private static HashSet<string> GetCandidateValueNames(IOperation operation, SemanticModel semanticModel, int position, ISymbol? enclosingSymbol, INamedTypeSymbol? enclosingType, Func<ISymbol, bool> isCandidate, CancellationToken cancellationToken)
+    {
+        var names = new HashSet<string>(StringComparer.Ordinal);
+
+        // The locals are declared in the enclosing member. The locals of the top-level statements are declared in any global statement of the file.
+        foreach (var node in operation.Syntax.AncestorsAndSelf())
+        {
+            if (node is GlobalStatementSyntax { Parent: CompilationUnitSyntax compilationUnit })
+            {
+                foreach (var member in compilationUnit.Members)
+                {
+                    if (member is GlobalStatementSyntax)
+                    {
+                        AddLocals(member);
+                    }
+                }
+
+                break;
+            }
+
+            if (node.Parent is BaseTypeDeclarationSyntax or BaseNamespaceDeclarationSyntax or CompilationUnitSyntax)
+            {
+                AddLocals(node);
+                break;
+            }
+        }
+
+        // The parameters of the enclosing lambdas, local functions and method, including the implicit ones such as "value" in a setter
+        for (var symbol = enclosingSymbol; symbol is IMethodSymbol method; symbol = method.ContainingSymbol)
+        {
+            AddRange(method.Parameters);
+        }
+
+        for (var type = enclosingType; type is not null; type = type.ContainingType)
+        {
+            AddValueMembers(type);
+
+            // The parameters of a primary constructor, which can be declared in another part of a partial type
+            foreach (var constructor in type.InstanceConstructors)
+            {
+                AddRange(constructor.Parameters);
+            }
+
+            if (OverloadCandidateIndex.IsExtensionBlock(type) && type.ExtensionParameter is { } extensionParameter)
+            {
+                Add(extensionParameter);
+            }
+
+            // The default implementations of an interface can use the members of the interfaces it inherits from
+            if (type.TypeKind is TypeKind.Interface)
+            {
+                foreach (var @interface in type.AllInterfaces)
+                {
+                    AddValueMembers(@interface);
+                }
+            }
+        }
+
+        foreach (var importScope in semanticModel.GetImportScopes(position, cancellationToken))
+        {
+            foreach (var import in importScope.Imports)
+            {
+                if (import.NamespaceOrType is INamedTypeSymbol importedType)
+                {
+                    AddValueMembers(importedType);
+                }
+            }
+        }
+
+        return names;
+
+        void AddLocals(SyntaxNode root)
+        {
+            foreach (var node in root.DescendantNodes())
+            {
+                // A local declared after the operation cannot be used
+                if (node.SpanStart > position)
+                    break;
+
+                if (node is VariableDeclaratorSyntax or SingleVariableDesignationSyntax or ForEachStatementSyntax or CatchDeclarationSyntax && semanticModel.GetDeclaredSymbol(node, cancellationToken) is { } symbol)
+                {
+                    Add(symbol);
+                }
+            }
+        }
+
+        void AddValueMembers(INamedTypeSymbol type)
+        {
+            for (var current = type; current is not null; current = current.BaseType)
+            {
+                foreach (var member in current.GetMembers())
+                {
+                    if (member is IFieldSymbol or IPropertySymbol)
+                    {
+                        Add(member);
+                    }
+                }
+            }
+        }
+
+        void AddRange(ImmutableArray<IParameterSymbol> parameters)
+        {
+            foreach (var parameter in parameters)
+            {
+                Add(parameter);
+            }
+        }
+
+        void Add(ISymbol symbol)
+        {
+            if (!names.Contains(symbol.Name) && isCandidate(symbol))
+            {
+                names.Add(symbol.Name);
+            }
+        }
+    }
+
+    private static IEnumerable<ISymbol> FilterAvailableSymbols(IOperation operation, IEnumerable<ISymbol> symbols, int operationLocation, INamedTypeSymbol? enclosingType, CancellationToken cancellationToken)
+    {
+        var staticContext = GetStaticContext(operation, cancellationToken);
+        foreach (var symbol in symbols)
         {
             // LookupSymbols check the accessibility of the symbol, but it can suggest instance members when the current
             // context is static, or when they are declared by a containing type of the current type.
