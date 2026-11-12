@@ -545,4 +545,23 @@ public sealed class UseValueFactoryWhenUsingConcurrentDictionaryAnalyzerTests
                 """,
         }.RunAsync();
     }
+
+    [Fact]
+    public Task VeryLongExpression_NoDiagnostic()
+    {
+        var value = string.Join(" + ", Enumerable.Repeat("value", 50_000));
+        return new CodeFixTest
+        {
+            TestCode = $$"""
+                using System.Collections.Concurrent;
+                class Sample
+                {
+                    void Test(ConcurrentDictionary<string, int> dict, int value)
+                    {
+                        dict.GetOrAdd("key", {{value}});
+                    }
+                }
+                """,
+        }.RunAsync();
+    }
 }

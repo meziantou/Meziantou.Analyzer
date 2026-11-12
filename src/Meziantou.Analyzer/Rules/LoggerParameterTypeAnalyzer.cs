@@ -548,9 +548,31 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return constantValue;
 
                 case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
-                    var leftText = TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
-                    var rightText = TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
-                    return Concat(leftText, rightText, allowNonConstantFormat);
+                    // 'a + b + c + ...' is a tree of binary operations as deep as the number of operands. The left operands are
+                    // handled by a loop instead of a recursive call, as thousands of operands would overflow the stack.
+                    var rightOperands = new Stack<IOperation>();
+                    IOperation leftOperand = binary;
+                    while (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.Add, ConstantValue: not { HasValue: true, Value: string } } leftBinary)
+                    {
+                        rightOperands.Push(leftBinary.RightOperand);
+                        leftOperand = leftBinary.LeftOperand;
+                    }
+
+                    var leftText = TryGetFormatText(leftOperand, allowNonConstantFormat);
+                    if (!allowNonConstantFormat && leftText is null)
+                        return null;
+
+                    var sb = new StringBuilder(leftText);
+                    while (rightOperands.Count > 0)
+                    {
+                        var rightText = TryGetFormatText(rightOperands.Pop(), allowNonConstantFormat);
+                        if (!allowNonConstantFormat && rightText is null)
+                            return null;
+
+                        sb.Append(rightText);
+                    }
+
+                    return sb.ToString();
 
                 case IInterpolatedStringOperation interpolatedString:
                     var result = "";

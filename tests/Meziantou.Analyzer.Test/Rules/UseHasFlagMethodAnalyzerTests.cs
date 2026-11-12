@@ -1323,4 +1323,21 @@ public sealed class UseHasFlagMethodAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task VeryLongValueExpression()
+    {
+        var value = string.Join(" | ", Enumerable.Repeat("v", 50_000));
+        var test = CreateTest();
+        test.TestCode = $$"""
+            [System.Flags]
+            enum MyEnum { None = 0, Flag1 = 1 }
+            class Sample
+            {
+                bool M(MyEnum v, MyEnum flag) => {|MA0192:(flag & ({{value}})) == flag|};
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

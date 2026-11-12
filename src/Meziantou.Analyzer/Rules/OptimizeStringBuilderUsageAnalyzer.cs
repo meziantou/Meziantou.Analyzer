@@ -364,16 +364,30 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
         private static bool IsConstString(IOperation operation)
         {
-            if (TryGetConstStringValue(operation, out _))
-                return true;
-
-            // The compiler merges the constant chars and strings of a concatenation into a single string (e.g. " " + 'c' + " ")
-            return operation switch
+            // 'a + b + c + ...' is a tree of binary operations as deep as the number of operands. The left operands are
+            // handled by the loop instead of a recursive call, as thousands of operands would overflow the stack.
+            while (true)
             {
-                IConversionOperation { IsImplicit: true, Operand.ConstantValue: { HasValue: true, Value: char } } => true,
-                IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binaryOperation when binaryOperation.Type.IsString() => IsConstString(binaryOperation.LeftOperand) && IsConstString(binaryOperation.RightOperand),
-                _ => false,
-            };
+                if (TryGetConstStringValue(operation, out _))
+                    return true;
+
+                // The compiler merges the constant chars and strings of a concatenation into a single string (e.g. " " + 'c' + " ")
+                switch (operation)
+                {
+                    case IConversionOperation { IsImplicit: true, Operand.ConstantValue: { HasValue: true, Value: char } }:
+                        return true;
+
+                    case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binaryOperation when binaryOperation.Type.IsString():
+                        if (!IsConstString(binaryOperation.RightOperand))
+                            return false;
+
+                        operation = binaryOperation.LeftOperand;
+                        break;
+
+                    default:
+                        return false;
+                }
+            }
         }
 
         private static bool TryGetConstStringValue(IOperation operation, [NotNullWhen(true)] out string? value)

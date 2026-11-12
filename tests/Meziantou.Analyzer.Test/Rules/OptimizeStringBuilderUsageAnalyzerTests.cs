@@ -1644,4 +1644,23 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task Append_VeryLongConcatenation()
+    {
+        var value = "s" + string.Concat(Enumerable.Repeat(" + \"a\"", 50_000));
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb, string s)
+                {
+                    {|MA0028:sb.Append({{value}})|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }
