@@ -122,6 +122,115 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("int", "default")]
+    [InlineData("int", "0")]
+    [InlineData("bool", "false")]
+    [InlineData("char", "'\\0'")]
+    [InlineData("double", "0.0")]
+    [InlineData("System.DayOfWeek", "System.DayOfWeek.Sunday")]
+    [InlineData("System.DateTime", "default")]
+    [InlineData("int?", "null")]
+    [InlineData("string", "null")]
+    public Task Override_TypeParameterDefaultValue_SameValue(string type, string value)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            abstract class Test<T>
+            {
+                public abstract void A(T a = default);
+            }
+
+            class TestDerived : Test<{{type}}>
+            {
+                public override void A({{type}} a = {{value}}) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Override_TypeParameterDefaultValue_DifferentValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            abstract class Test<T>
+            {
+                public abstract void A(T a = default);
+            }
+
+            class TestDerived : Test<int>
+            {
+                public override void A(int {|#0:a|} = 1) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(0, "null", "'1'"));
+        test.FixedCode = """
+            abstract class Test<T>
+            {
+                public abstract void A(T a = default);
+            }
+
+            class TestDerived : Test<int>
+            {
+                public override void A(int a = default) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Override_TypeParameterDefaultValue_NullableValueType_DifferentValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            abstract class Test<T>
+            {
+                public abstract void A(T a = default);
+            }
+
+            class TestDerived : Test<int?>
+            {
+                public override void A(int? {|#0:a|} = 0) { }
+            }
+            """;
+        test.ExpectedDiagnostics.Add(ExpectedChangedDefault(0, "null", "'0'"));
+        test.FixedCode = """
+            abstract class Test<T>
+            {
+                public abstract void A(T a = default);
+            }
+
+            class TestDerived : Test<int?>
+            {
+                public override void A(int? a = default) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Interface_TypeParameterDefaultValue_SameValue()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            interface ITest<T>
+            {
+                void A(T a = default);
+            }
+
+            class Test : ITest<int>
+            {
+                public void A(int a = default) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task New_DifferentValue()
     {
