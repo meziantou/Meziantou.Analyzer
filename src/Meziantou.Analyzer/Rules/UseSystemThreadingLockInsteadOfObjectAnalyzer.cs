@@ -40,9 +40,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
                     if (block.Syntax is StatementSyntax or ExpressionSyntax)
                     {
                         var symbols = new SymbolLockContext(lockType);
-                        context.RegisterOperationAction(context => symbols.HandleOperation((ILocalReferenceOperation)context.Operation), OperationKind.LocalReference);
-                        context.RegisterOperationAction(context => symbols.HandleOperation((IVariableDeclaratorOperation)context.Operation), OperationKind.VariableDeclarator);
-                        context.RegisterOperationBlockEndAction(context => symbols.ReportSymbols(context, Rule));
+                        context.RegisterOperationAction(symbols.HandleLocalOperation, OperationKind.LocalReference, OperationKind.VariableDeclarator);
+                        context.RegisterOperationBlockEndAction(symbols.ReportSymbols);
                     }
                 }
             });
@@ -56,10 +55,19 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
 
     private sealed class SymbolLockContext(INamedTypeSymbol lockType)
     {
-        private readonly ConcurrentDictionary<ISymbol, bool> _symbols = new(SymbolEqualityComparer.Default);
+        // A context is created for each operation block, and most of them have no candidate symbol,
+        // so the dictionary is only allocated when the first symbol is recorded
+        private ConcurrentDictionary<ISymbol, bool>? _symbols;
+
+        private ConcurrentDictionary<ISymbol, bool> Symbols => LazyInitializer.EnsureInitialized(ref _symbols, static () => new ConcurrentDictionary<ISymbol, bool>(SymbolEqualityComparer.Default));
+
+        public void ReportSymbols(OperationBlockAnalysisContext context) => ReportSymbols(context, Rule);
 
         public void ReportSymbols(DiagnosticReporter reporter, DiagnosticDescriptor descriptor)
         {
+            if (_symbols is null)
+                return;
+
             foreach (var symbol in _symbols)
             {
                 if (symbol.Value)
@@ -115,6 +123,20 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             }
         }
 
+        public void HandleLocalOperation(OperationAnalysisContext context)
+        {
+            switch (context.Operation)
+            {
+                case ILocalReferenceOperation operation:
+                    HandleOperation(operation);
+                    break;
+
+                case IVariableDeclaratorOperation operation:
+                    HandleOperation(operation);
+                    break;
+            }
+        }
+
         public void HandleOperation(ILocalReferenceOperation operation)
         {
             var symbol = operation.Local;
@@ -153,8 +175,8 @@ public sealed class UseSystemThreadingLockInsteadOfObjectAnalyzer : DiagnosticAn
             }
         }
 
-        public void ExcludeSymbol(ISymbol symbol) => _symbols.AddOrUpdate(symbol, addValue: false, (_, _) => false);
+        public void ExcludeSymbol(ISymbol symbol) => Symbols.AddOrUpdate(symbol, addValue: false, (_, _) => false);
 
-        public void AddPotentialSymbol(ISymbol symbol) => _symbols.TryAdd(symbol, value: true);
+        public void AddPotentialSymbol(ISymbol symbol) => Symbols.TryAdd(symbol, value: true);
     }
 }
