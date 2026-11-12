@@ -3089,6 +3089,215 @@ public sealed class OptimizeLinqUsageAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("All", "TrueForAll")]
+    [InlineData("Any", "Exists")]
+    public Task ListMethod_StaticInvocation(string method, string expectedMethod)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => Enumerable.{|MA0020:{{method}}|}(items, x => x == 0);
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => items.{{expectedMethod}}(x => x == 0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ListMethod_StaticInvocation_NamedArgument()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => Enumerable.{|MA0020:Any|}(items, predicate: x => x == 0);
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items) => items.Exists(x => x == 0);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ListMethod_StaticInvocation_Conversion()
+    {
+        var test = new CodeFixTest();
+        test.TestState.SetConfiguration("MA0020.report_when_conversion_needed", "true");
+        test.TestCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items, Func<int, bool> predicate) => Enumerable.{|MA0020:All|}(items, predicate);
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(List<int> items, Func<int, bool> predicate) => items.TrueForAll(new Predicate<int>(predicate));
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("Enumerable.Count(items) > 0", "items.Any()")]
+    [InlineData("Enumerable.Count(items) == 0", "!items.Any()")]
+    [InlineData("Enumerable.Count(items, x => x > 0) > 0", "items.Any(x => x > 0)")]
+    [InlineData("Enumerable.Count(items) == 1", "items.Take(2).Count() == 1")]
+    [InlineData("Enumerable.Count(items, x => x > 0) == 1", "items.Where(x => x > 0).Take(2).Count() == 1")]
+    [InlineData("Enumerable.Count(items) > 1", "items.Skip(1).Any()")]
+    [InlineData("Enumerable.Count(items, x => x > 0) <= 1", "!items.Where(x => x > 0).Skip(1).Any()")]
+    public Task Count_StaticInvocation(string text, string fix)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(IEnumerable<int> items) => {|MA0031:{{text}}|};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                bool M(IEnumerable<int> items) => {{fix}};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Theory]
+    [InlineData("ElementAt|}(items, 1)", "items[1]")]
+    [InlineData("First|}(items)", "items[0]")]
+    [InlineData("Last|}(items)", "items[^1]")]
+    public Task Indexer_StaticInvocation(string text, string fix)
+    {
+        var test = new CodeFixTest();
+        test.TestCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(List<int> items) => Enumerable.{|MA0098:{{text}};
+            }
+            """;
+        test.FixedCode = $$"""
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(List<int> items) => {{fix}};
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Last_StaticInvocation_CSharp7_3()
+    {
+        var test = new CodeFixTest();
+        test.LanguageVersion = LanguageVersion.CSharp7_3;
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(List<int> items) => Enumerable.{|MA0098:Last|}(items);
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                int M(List<int> items) => items[items.Count - 1];
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task TwoOrderBy_StaticInvocation_FixRemoveDuplicate()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                IEnumerable<int> M(IEnumerable<int> items) => {|MA0030:Enumerable.OrderBy(Enumerable.OrderBy(items, x => -x), x => x * 2)|};
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                IEnumerable<int> M(IEnumerable<int> items) => items.OrderBy(x => x * 2);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task WhereAfterOrderBy_StaticInvocation()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                IEnumerable<int> M(IEnumerable<int> items) => {|MA0063:Enumerable.Where(Enumerable.OrderBy(items, x => -x), x => x > 0)|};
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class Test
+            {
+                IEnumerable<int> M(IEnumerable<int> items) => items.Where(x => x > 0).OrderBy(x => -x);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Any_ICollectionExplicitImplementation_NoDiagnostic()
     {

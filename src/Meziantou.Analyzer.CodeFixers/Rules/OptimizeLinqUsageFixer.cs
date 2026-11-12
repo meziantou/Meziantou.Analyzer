@@ -289,7 +289,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var generator = editor.Generator;
         var newExpression = generator.InvocationExpression(
-            generator.MemberAccessExpression(countOperation.Arguments[0].Syntax, "Any"),
+            generator.MemberAccessExpression(GetSourceSyntax(countOperation), "Any"),
             countOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
 
         if (!constantValue)
@@ -332,7 +332,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var generator = editor.Generator;
 
-        var newExpression = countOperation.Arguments[0].Syntax;
+        var newExpression = GetSourceSyntax(countOperation);
         if (countOperation.Arguments.Length > 1)
         {
             newExpression = generator.InvocationExpression(
@@ -380,7 +380,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
         var generator = editor.Generator;
 
-        var newExpression = countOperation.Arguments[0].Syntax;
+        var newExpression = GetSourceSyntax(countOperation);
         if (countOperation.Arguments.Length > 1)
         {
             newExpression = generator.InvocationExpression(
@@ -520,6 +520,16 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         };
     }
 
+    /// <summary>
+    /// Returns the expression of the source of a LINQ method: 'items' for both 'items.Where(predicate)' and 'Enumerable.Where(items, predicate)'.
+    /// </summary>
+    private static SyntaxNode GetSourceSyntax(IInvocationOperation operation)
+    {
+        // 'Enumerable.Where(items, predicate)' uses an argument, while 'items.Where(predicate)' uses the expression
+        var syntax = operation.Arguments[0].Syntax;
+        return syntax is ArgumentSyntax argument ? argument.Expression : syntax;
+    }
+
     private static SimpleNameSyntax? GetMethodNameSyntax(InvocationExpressionSyntax invocation)
     {
         return invocation.Expression switch
@@ -548,33 +558,44 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
 
     private static async Task<Document> UseListMethod(Document document, SyntaxNode nodeToFix, string methodName, bool convertPredicate, CancellationToken cancellationToken)
     {
-        var expression = GetMemberAccessExpression(nodeToFix);
-        if (expression is null)
+        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        var generator = editor.Generator;
+        if (editor.SemanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
 
-        var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
+        if (operation.Arguments.FirstOrDefault(argument => argument.Parameter?.Ordinal == 1)?.Syntax is not ArgumentSyntax predicateArgument)
+            return document;
 
-        var newExpression = expression.WithName(IdentifierName(methodName));
-        editor.ReplaceNode(expression, newExpression);
+        var predicate = (SyntaxNode)predicateArgument.Expression;
         if (convertPredicate)
         {
-            var compilation = editor.SemanticModel.Compilation;
-            if (editor.SemanticModel.GetSymbolInfo(nodeToFix, cancellationToken: cancellationToken).Symbol is not IMethodSymbol symbol || symbol.TypeArguments.Length != 1)
+            if (operation.TargetMethod.TypeArguments is not [var type])
                 return document;
 
-            var type = symbol.TypeArguments[0];
-            if (type is not null)
+            var predicateType = editor.SemanticModel.Compilation.GetTypeByMetadataName("System.Predicate`1")?.Construct(type);
+            if (predicateType is null)
+                return document;
+
+            predicate = generator.ObjectCreationExpression(predicateType, predicate);
+        }
+
+        if (operation.Arguments[0].Syntax is ArgumentSyntax)
+        {
+            // 'Enumerable.Any(items, predicate)' => 'items.Exists(predicate)'
+            var newInvocation = generator.InvocationExpression(generator.MemberAccessExpression(GetSourceSyntax(operation), methodName), predicate);
+            editor.ReplaceNode(nodeToFix, newInvocation.WithTriviaFrom(nodeToFix));
+        }
+        else
+        {
+            // 'items.Any(predicate)' => 'items.Exists(predicate)'
+            var expression = GetMemberAccessExpression(nodeToFix);
+            if (expression is null)
+                return document;
+
+            editor.ReplaceNode(expression, expression.WithName(IdentifierName(methodName)));
+            if (convertPredicate)
             {
-                var predicateType = compilation.GetTypeByMetadataName("System.Predicate`1")?.Construct(type);
-                if (predicateType is not null)
-                {
-                    var predicate = ((InvocationExpressionSyntax)nodeToFix).ArgumentList.Arguments.Last().Expression;
-                    if (predicate is not null)
-                    {
-                        var newObject = editor.Generator.ObjectCreationExpression(predicateType, predicate);
-                        editor.ReplaceNode(predicate, newObject);
-                    }
-                }
+                editor.ReplaceNode(predicateArgument.Expression, predicate);
             }
         }
 
@@ -593,7 +614,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
 
-        var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, operation.Arguments[1].Syntax);
+        var newExpression = generator.ElementAccessExpression(GetSourceSyntax(operation), operation.Arguments[1].Syntax);
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
@@ -611,7 +632,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (semanticModel.GetOperation(nodeToFix, cancellationToken) is not IInvocationOperation operation)
             return document;
 
-        var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, generator.LiteralExpression(0));
+        var newExpression = generator.ElementAccessExpression(GetSourceSyntax(operation), generator.LiteralExpression(0));
 
         editor.ReplaceNode(nodeToFix, newExpression);
         return editor.GetChangedDocument();
@@ -664,14 +685,14 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         // if C# 8.0, use ^1
         if (CanUseIndexFromEnd(expression, semanticModel.Compilation))
         {
-            var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax, PrefixUnaryExpression(SyntaxKind.IndexExpression, LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1))));
+            var newExpression = generator.ElementAccessExpression(GetSourceSyntax(operation), PrefixUnaryExpression(SyntaxKind.IndexExpression, LiteralExpression(SyntaxKind.NumericLiteralExpression, Literal(1))));
             editor.ReplaceNode(nodeToFix, newExpression);
         }
         else
         {
-            var newExpression = generator.ElementAccessExpression(operation.Arguments[0].Syntax,
+            var newExpression = generator.ElementAccessExpression(GetSourceSyntax(operation),
                 generator.SubtractExpression(
-                    generator.MemberAccessExpression(operation.Arguments[0].Syntax, GetMemberName()),
+                    generator.MemberAccessExpression(GetSourceSyntax(operation), GetMemberName()),
                     generator.LiteralExpression(1)));
             editor.ReplaceNode(nodeToFix, newExpression);
         }
@@ -704,7 +725,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         if (semanticModel?.GetOperation(firstNode, cancellationToken) is not IInvocationOperation firstOperation || semanticModel?.GetOperation(lastNode, cancellationToken) is not IInvocationOperation lastOperation)
             return document;
 
-        var method = editor.Generator.MemberAccessExpression(firstOperation.Arguments[0].Syntax, lastOperation.TargetMethod.Name);
+        var method = editor.Generator.MemberAccessExpression(GetSourceSyntax(firstOperation), lastOperation.TargetMethod.Name);
         var newExpression = editor.Generator.InvocationExpression(method, lastOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
 
         editor.ReplaceNode(lastOperation.Syntax, newExpression);
@@ -756,13 +777,6 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
         var left = CreatePredicateBody(generator, wherePredicate, parameterName);
         var right = CreatePredicateBody(generator, nextPredicate, parameterName);
         return generator.InvocationExpression(method, generator.ValueReturningLambdaExpression(parameterName, generator.LogicalAndExpression(left, right)));
-
-        static SyntaxNode GetSourceSyntax(IInvocationOperation operation)
-        {
-            // 'Enumerable.Where(items, predicate)' uses an argument, while 'items.Where(predicate)' uses the expression
-            var syntax = operation.Arguments[0].Syntax;
-            return syntax is ArgumentSyntax argument ? argument.Expression : syntax;
-        }
 
         static CombinablePredicate? GetCombinablePredicate(IOperation operation)
         {
@@ -860,7 +874,7 @@ public sealed class OptimizeLinqUsageFixer : CodeFixProvider
             return document;
 
         var generator = editor.Generator;
-        var source = firstOperation.Arguments[0].Syntax;
+        var source = GetSourceSyntax(firstOperation);
 
         var whereMethod = generator.MemberAccessExpression(source, lastOperation.TargetMethod.Name);
         var whereInvocation = generator.InvocationExpression(whereMethod, lastOperation.Arguments.Skip(1).Select(arg => arg.Syntax));
