@@ -59,7 +59,7 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
                 var properties = CreateProperties(originalParameter, context.CancellationToken);
                 context.ReportDiagnostic(Rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
             }
-            else if (originalParameter.HasExplicitDefaultValue && !Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
+            else if (originalParameter.HasExplicitDefaultValue && !HasSameDefaultValue(originalParameter, parameter))
             {
                 var properties = CreateProperties(originalParameter, context.CancellationToken);
                 context.ReportDiagnostic(Rule, properties, parameter, GetParameterDisplayValue(originalParameter), GetParameterDisplayValue(parameter));
@@ -82,6 +82,40 @@ public sealed class MethodOverridesShouldNotChangeParameterDefaultsAnalyzer : Di
                 .Add(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.HasDefaultValueKey, parameter.HasExplicitDefaultValue ? "true" : "false")
                 .Add(MethodOverridesShouldNotChangeParameterDefaultsAnalyzerCommon.DefaultValueKey, value: parameter.HasExplicitDefaultValue ? (defaultExpressionSyntax?.ToString() ?? GetDefaultValueExpression(parameter)) : null);
         }
+    }
+
+    private static bool HasSameDefaultValue(IParameterSymbol originalParameter, IParameterSymbol parameter)
+    {
+        if (Equals(originalParameter.ExplicitDefaultValue, parameter.ExplicitDefaultValue))
+            return true;
+
+        // `T value = default` is the default value of the type argument, e.g. `0` when T is substituted by `int`
+        if (originalParameter.ExplicitDefaultValue is null && originalParameter.OriginalDefinition.Type is ITypeParameterSymbol && parameter.Type is { IsValueType: true, OriginalDefinition.SpecialType: not SpecialType.System_Nullable_T })
+            return IsDefaultValue(parameter.ExplicitDefaultValue);
+
+        return false;
+    }
+
+    private static bool IsDefaultValue(object? value)
+    {
+        return value switch
+        {
+            null => true,
+            bool boolean => !boolean,
+            char c => c == '\0',
+            sbyte number => number == 0,
+            byte number => number == 0,
+            short number => number == 0,
+            ushort number => number == 0,
+            int number => number == 0,
+            uint number => number == 0,
+            long number => number == 0,
+            ulong number => number == 0,
+            decimal number => number == 0,
+            float number => number == 0,
+            double number => number == 0,
+            _ => false,
+        };
     }
 
     // The parameters declared in a referenced assembly have no syntax, so the expression is created from the constant value
