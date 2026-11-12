@@ -133,23 +133,37 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
     /// </summary>
     private static ExpressionSyntax CreateCompareToExpression(SyntaxGenerator generator, Compilation compilation, INamedTypeSymbol declaredTypeSymbol)
     {
-        var compareToName = IdentifierName(nameof(IComparable.CompareTo));
-        var comparableOfTSymbol = compilation.GetTypeByMetadataName("System.IComparable`1")?.Construct(declaredTypeSymbol);
-        if (comparableOfTSymbol is null)
-            return compareToName;
+        return CreateInterfaceMethodExpression(generator, compilation, declaredTypeSymbol, "System.IComparable`1", nameof(IComparable.CompareTo));
+    }
 
-        var comparableInterface = declaredTypeSymbol.AllInterfaces.FirstOrDefault(interfaceSymbol => interfaceSymbol.IsEqualTo(comparableOfTSymbol));
-        if (comparableInterface?.GetMembers(nameof(IComparable.CompareTo)).FirstOrDefault() is not IMethodSymbol interfaceMethod)
-            return compareToName;
+    /// <summary>
+    /// Creates the expression to call <c>IEquatable&lt;T&gt;.Equals</c>: <c>Equals</c>, or <c>((IEquatable&lt;T&gt;)this).Equals</c>
+    /// when the method is implemented explicitly, as <c>Equals</c> would bind to <c>Equals(object)</c>.
+    /// </summary>
+    private static ExpressionSyntax CreateEqualsExpression(SyntaxGenerator generator, Compilation compilation, INamedTypeSymbol declaredTypeSymbol)
+    {
+        return CreateInterfaceMethodExpression(generator, compilation, declaredTypeSymbol, "System.IEquatable`1", nameof(object.Equals));
+    }
+
+    private static ExpressionSyntax CreateInterfaceMethodExpression(SyntaxGenerator generator, Compilation compilation, INamedTypeSymbol declaredTypeSymbol, string interfaceMetadataName, string methodName)
+    {
+        var methodNameSyntax = IdentifierName(methodName);
+        var interfaceOfTSymbol = compilation.GetTypeByMetadataName(interfaceMetadataName)?.Construct(declaredTypeSymbol);
+        if (interfaceOfTSymbol is null)
+            return methodNameSyntax;
+
+        var implementedInterface = declaredTypeSymbol.AllInterfaces.FirstOrDefault(interfaceSymbol => interfaceSymbol.IsEqualTo(interfaceOfTSymbol));
+        if (implementedInterface?.GetMembers(methodName).FirstOrDefault() is not IMethodSymbol interfaceMethod)
+            return methodNameSyntax;
 
         if (declaredTypeSymbol.FindImplementationForInterfaceMember(interfaceMethod) is not IMethodSymbol { MethodKind: MethodKind.ExplicitInterfaceImplementation })
-            return compareToName;
+            return methodNameSyntax;
 
-        var interfaceTypeSyntax = ((TypeSyntax)generator.TypeExpression(comparableInterface)).WithAdditionalAnnotations(Simplifier.Annotation);
+        var interfaceTypeSyntax = ((TypeSyntax)generator.TypeExpression(implementedInterface)).WithAdditionalAnnotations(Simplifier.Annotation);
         return MemberAccessExpression(
             SyntaxKind.SimpleMemberAccessExpression,
             ParenthesizedExpression(CastExpression(interfaceTypeSyntax, ThisExpression())),
-            compareToName);
+            methodNameSyntax);
     }
 
     private static async Task<Document> ImplementIEquatable(Document document, TypeDeclarationSyntax nodeToFix, CancellationToken cancellationToken)
@@ -224,7 +238,7 @@ public sealed class EqualityShouldBeCorrectlyImplementedFixer : CodeFixProvider
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var typeSyntax = ((TypeSyntax)editor.Generator.TypeExpression(declaredTypeSymbol)).WithAdditionalAnnotations(Simplifier.Annotation);
         var equalsExpression = InvocationExpression(
-            IdentifierName(nameof(object.Equals)))
+            CreateEqualsExpression(editor.Generator, semanticModel.Compilation, declaredTypeSymbol))
             .WithArgumentList(
                 ArgumentList(
                     SingletonSeparatedList(
