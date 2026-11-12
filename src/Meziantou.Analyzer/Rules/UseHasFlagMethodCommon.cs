@@ -42,6 +42,16 @@ internal static class UseHasFlagMethodCommon
     /// </summary>
     private static bool IsSideEffectFree(IOperation? operation)
     {
+        // 'a | b | c | ...' is a tree of binary operations as deep as the number of operands. The left operands are
+        // handled by the loop instead of a recursive call, as thousands of operands would overflow the stack.
+        while (operation is IBinaryOperation { OperatorMethod: null, ConstantValue.HasValue: false } binary)
+        {
+            if (!IsSideEffectFree(binary.RightOperand))
+                return false;
+
+            operation = binary.LeftOperand;
+        }
+
         if (operation is null)
             return false;
 
@@ -54,7 +64,8 @@ internal static class UseHasFlagMethodCommon
             IFieldReferenceOperation fieldReference => fieldReference.Field.IsStatic || IsSideEffectFree(fieldReference.Instance),
             IConversionOperation conversion => conversion.OperatorMethod is null && IsSideEffectFree(conversion.Operand),
             IUnaryOperation unary => unary.OperatorMethod is null && IsSideEffectFree(unary.Operand),
-            IBinaryOperation binary => binary.OperatorMethod is null && IsSideEffectFree(binary.LeftOperand) && IsSideEffectFree(binary.RightOperand),
+
+            // The binary operators without operator method are handled above
             _ => false,
         };
     }

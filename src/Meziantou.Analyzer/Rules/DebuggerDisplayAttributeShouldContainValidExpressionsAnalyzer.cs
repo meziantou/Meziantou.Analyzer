@@ -105,11 +105,20 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
     private static List<List<string>> ExtractMemberPaths(ExpressionSyntax expressionSyntax)
     {
+        // The expression is parsed from a string and is not bound by the compiler, so it can be arbitrarily deep (a+a+...+a).
+        // The sub-expressions are processed using a stack instead of recursive calls to avoid a StackOverflowException.
+        // They are pushed in the reverse order, so the paths are found in the order of the expression.
         var paths = new List<List<string>>();
-        ExtractMemberPaths(paths, expressionSyntax);
+        var pendingExpressions = new Stack<ExpressionSyntax>();
+        pendingExpressions.Push(expressionSyntax);
+        while (pendingExpressions.Count > 0)
+        {
+            ExtractMemberPaths(paths, pendingExpressions, pendingExpressions.Pop());
+        }
+
         return paths;
 
-        static void ExtractMemberPaths(List<List<string>> results, ExpressionSyntax expressionSyntax)
+        static void ExtractMemberPaths(List<List<string>> results, Stack<ExpressionSyntax> pendingExpressions, ExpressionSyntax expressionSyntax)
         {
             var path = new List<string>();
 
@@ -149,38 +158,30 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
                         expressionSyntax = memberAccessExpression.Expression;
                         break;
 
+                    // The path is discarded because we don't know the return type, so the invoked expression starts a new path
                     case InvocationExpressionSyntax invocationExpression:
-                        foreach (var argument in invocationExpression.ArgumentList.Arguments)
-                        {
-                            ExtractMemberPaths(results, argument.Expression);
-                        }
-
-                        path.Clear(); // Clear the path because we don't know the return type
-                        expressionSyntax = invocationExpression.Expression;
-                        break;
+                        pendingExpressions.Push(invocationExpression.Expression);
+                        PushArguments(pendingExpressions, invocationExpression.ArgumentList.Arguments);
+                        return;
 
                     case BinaryExpressionSyntax binaryExpression:
-                        ExtractMemberPaths(results, binaryExpression.Left);
-                        ExtractMemberPaths(results, binaryExpression.Right);
+                        pendingExpressions.Push(binaryExpression.Right);
+                        pendingExpressions.Push(binaryExpression.Left);
                         return;
 
                     case PrefixUnaryExpressionSyntax unaryExpression:
-                        ExtractMemberPaths(results, unaryExpression.Operand);
+                        pendingExpressions.Push(unaryExpression.Operand);
                         return;
 
                     case PostfixUnaryExpressionSyntax unaryExpression:
-                        ExtractMemberPaths(results, unaryExpression.Operand);
+                        pendingExpressions.Push(unaryExpression.Operand);
                         return;
 
+                    // The path is discarded because we don't know the return type, so the accessed expression starts a new path
                     case ElementAccessExpressionSyntax elementAccess:
-                        foreach (var argument in elementAccess.ArgumentList.Arguments)
-                        {
-                            ExtractMemberPaths(results, argument.Expression);
-                        }
-
-                        path.Clear(); // Clear the path because we don't know the return type
-                        expressionSyntax = elementAccess.Expression;
-                        break;
+                        pendingExpressions.Push(elementAccess.Expression);
+                        PushArguments(pendingExpressions, elementAccess.ArgumentList.Arguments);
+                        return;
 
                     default:
                         return;
@@ -188,6 +189,14 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
             }
 
             results.Add(path);
+        }
+
+        static void PushArguments(Stack<ExpressionSyntax> pendingExpressions, SeparatedSyntaxList<ArgumentSyntax> arguments)
+        {
+            for (var i = arguments.Count - 1; i >= 0; i--)
+            {
+                pendingExpressions.Push(arguments[i].Expression);
+            }
         }
     }
 

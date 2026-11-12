@@ -648,4 +648,21 @@ public sealed class DebuggerDisplayAttributeShouldContainValidExpressionsAnalyze
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task VeryLongExpression()
+    {
+        var expression = string.Join("+", Enumerable.Repeat("Display", 50_000)) + "+Invalid";
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Diagnostics;
+            [{|MA0151:DebuggerDisplay("{{{expression}}}")|}]
+            public class Dummy
+            {
+                public string Display { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

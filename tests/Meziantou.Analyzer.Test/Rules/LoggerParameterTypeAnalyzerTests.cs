@@ -845,4 +845,21 @@ public sealed class LoggerParameterTypeAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task VeryLongFormatConcatenation()
+    {
+        var value = "s" + string.Concat(Enumerable.Repeat(" + \"a\"", 50_000));
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            string s = "";
+            logger.LogInformation({{value}}, 1);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", "Prop;System.String"));
+
+        return test.RunAsync();
+    }
 }
