@@ -56,6 +56,16 @@ public sealed class UseValueFactoryWhenUsingConcurrentDictionaryAnalyzer : Diagn
 
     private static bool IsCheapToEvaluate(IOperation operation)
     {
+        // 'a + b + c + ...' is a tree of binary operations as deep as the number of operands. The left operands are
+        // handled by the loop instead of a recursive call, as thousands of operands would overflow the stack.
+        while (operation is IBinaryOperation { OperatorMethod: null, Type.IsValueType: true, ConstantValue.HasValue: false } binary)
+        {
+            if (!IsCheapToEvaluate(binary.RightOperand))
+                return false;
+
+            operation = binary.LeftOperand;
+        }
+
         if (operation.ConstantValue.HasValue)
             return true;
 
@@ -75,9 +85,8 @@ public sealed class UseValueFactoryWhenUsingConcurrentDictionaryAnalyzer : Diagn
             IArrayElementReferenceOperation arrayElement => IsCheapToEvaluate(arrayElement.ArrayReference) && arrayElement.Indices.All(IsCheapToEvaluate),
             IConversionOperation { OperatorMethod: null } conversion => IsCheapToEvaluate(conversion.Operand),
 
-            // The built-in operators returning a reference type, such as the string concatenation, allocate a new instance
+            // The built-in operators returning a reference type allocate a new instance. The binary operators are handled above.
             IUnaryOperation { OperatorMethod: null, Type.IsValueType: true } unary => IsCheapToEvaluate(unary.Operand),
-            IBinaryOperation { OperatorMethod: null, Type.IsValueType: true } binary => IsCheapToEvaluate(binary.LeftOperand) && IsCheapToEvaluate(binary.RightOperand),
             IConditionalOperation conditional => IsCheapToEvaluate(conditional.Condition) && IsCheapToEvaluate(conditional.WhenTrue) && (conditional.WhenFalse is null || IsCheapToEvaluate(conditional.WhenFalse)),
             ICoalesceOperation coalesce => IsCheapToEvaluate(coalesce.Value) && IsCheapToEvaluate(coalesce.WhenNull),
             IConditionalAccessOperation conditionalAccess => IsCheapToEvaluate(conditionalAccess.Operation) && IsCheapToEvaluate(conditionalAccess.WhenNotNull),

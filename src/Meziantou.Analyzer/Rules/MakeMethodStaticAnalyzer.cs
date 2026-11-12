@@ -13,7 +13,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeMethodStatic));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakeMethodStatic),
+        customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 
     private static readonly DiagnosticDescriptor PropertyRule = new(
      RuleIdentifiers.MakePropertyStatic,
@@ -23,7 +24,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
      DiagnosticSeverity.Info,
      isEnabledByDefault: true,
      description: "",
-     helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic));
+     helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.MakePropertyStatic),
+     customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics { get; } = ImmutableArray.Create(MethodRule, PropertyRule);
 

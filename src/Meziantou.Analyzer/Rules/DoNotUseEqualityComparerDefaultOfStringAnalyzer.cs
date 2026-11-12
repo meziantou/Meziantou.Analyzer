@@ -22,22 +22,28 @@ public sealed class DoNotUseEqualityComparerDefaultOfStringAnalyzer : Diagnostic
 
         context.RegisterCompilationStartAction(compilationContext =>
         {
-            var equalityComparerSymbol = compilationContext.Compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1");
-            if (equalityComparerSymbol is null)
+            var compilation = compilationContext.Compilation;
+            var stringType = compilation.GetSpecialType(SpecialType.System_String);
+
+            // Comparer<string>.Default is culture-sensitive, and EqualityComparer<string>.Default is ordinal.
+            // Both hide the comparison actually used, so an explicit StringComparer is preferred.
+            var equalityComparerStringSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.EqualityComparer`1")?.Construct(stringType);
+            var comparerStringSymbol = compilation.GetTypeByMetadataName("System.Collections.Generic.Comparer`1")?.Construct(stringType);
+            if (equalityComparerStringSymbol is null && comparerStringSymbol is null)
                 return;
 
-            var equalityComparerStringSymbol = equalityComparerSymbol.Construct(compilationContext.Compilation.GetSpecialType(SpecialType.System_String));
-            compilationContext.RegisterOperationAction(context => Analyze(context, equalityComparerStringSymbol), OperationKind.PropertyReference);
+            compilationContext.RegisterOperationAction(context => Analyze(context, equalityComparerStringSymbol, comparerStringSymbol), OperationKind.PropertyReference);
         });
     }
 
-    private static void Analyze(OperationAnalysisContext context, ITypeSymbol equalityComparerStringSymbol)
+    private static void Analyze(OperationAnalysisContext context, ITypeSymbol? equalityComparerStringSymbol, ITypeSymbol? comparerStringSymbol)
     {
         var operation = (IPropertyReferenceOperation)context.Operation;
         if (!string.Equals(operation.Member.Name, nameof(EqualityComparer<>.Default), StringComparison.Ordinal))
             return;
 
-        if (operation.Member.ContainingType.IsEqualTo(equalityComparerStringSymbol))
+        var containingType = operation.Member.ContainingType;
+        if (containingType.IsEqualTo(equalityComparerStringSymbol) || containingType.IsEqualTo(comparerStringSymbol))
         {
             if (operation.IsInNameofOperation())
                 return;

@@ -548,9 +548,31 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
                     return constantValue;
 
                 case IBinaryOperation { OperatorKind: BinaryOperatorKind.Add } binary:
-                    var leftText = TryGetFormatText(binary.LeftOperand, allowNonConstantFormat);
-                    var rightText = TryGetFormatText(binary.RightOperand, allowNonConstantFormat);
-                    return Concat(leftText, rightText, allowNonConstantFormat);
+                    // 'a + b + c + ...' is a tree of binary operations as deep as the number of operands. The left operands are
+                    // handled by a loop instead of a recursive call, as thousands of operands would overflow the stack.
+                    var rightOperands = new Stack<IOperation>();
+                    IOperation leftOperand = binary;
+                    while (leftOperand is IBinaryOperation { OperatorKind: BinaryOperatorKind.Add, ConstantValue: not { HasValue: true, Value: string } } leftBinary)
+                    {
+                        rightOperands.Push(leftBinary.RightOperand);
+                        leftOperand = leftBinary.LeftOperand;
+                    }
+
+                    var leftText = TryGetFormatText(leftOperand, allowNonConstantFormat);
+                    if (!allowNonConstantFormat && leftText is null)
+                        return null;
+
+                    var sb = new StringBuilder(leftText);
+                    while (rightOperands.Count > 0)
+                    {
+                        var rightText = TryGetFormatText(rightOperands.Pop(), allowNonConstantFormat);
+                        if (!allowNonConstantFormat && rightText is null)
+                            return null;
+
+                        sb.Append(rightText);
+                    }
+
+                    return sb.ToString();
 
                 case IInterpolatedStringOperation interpolatedString:
                     var result = "";
@@ -624,29 +646,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private sealed class LoggerConfigurationFile(Dictionary<string, ITypeSymbol[]> configuration)
     {
-        private static readonly SymbolEqualityComparer Comparer = GetComparer();
-
-        private static SymbolEqualityComparer GetComparer()
-        {
-            var kindType = Type.GetType("Microsoft.CodeAnalysis.TypeCompareKind, Microsoft.CodeAnalysis", throwOnError: false);
-            if (kindType != null)
-            {
-                // TypeCompareKind.
-                var ctorParam1 = kindType.GetField("AllNullableIgnoreOptions")?.GetValue(null);
-                var ctorParam2 = kindType.GetField("IgnoreTupleNames")?.GetValue(null);
-                if (ctorParam1 is not null && ctorParam2 is not null)
-                {
-                    var ctor = typeof(SymbolEqualityComparer).GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, binder: null, [kindType], modifiers: null);
-                    if (ctor != null)
-                    {
-                        return (SymbolEqualityComparer)ctor.Invoke([(int)ctorParam1 | (int)ctorParam2]);
-                    }
-                }
-            }
-
-            return SymbolEqualityComparer.Default;
-        }
-
         public static LoggerConfigurationFile Empty { get; } = new LoggerConfigurationFile(new(StringComparer.Ordinal));
 
         public int Count => configuration.Count;
@@ -664,11 +663,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                 foreach (var validSymbol in validSymbols)
                 {
-                    if (Comparer.Equals(validSymbol, type))
+                    if (SymbolEqualityComparer.Default.Equals(validSymbol, type))
                         return true;
 
+                    // An identity conversion exists between types that differ only by the names of the tuple elements,
+                    // including the nested ones, such as List<(string Name, int Value)> and List<(string, int)>
                     var conversion = compilation.ClassifyConversion(type, validSymbol);
-                    if (conversion.Exists && conversion.IsImplicit && conversion.IsNullable)
+                    if (conversion.IsIdentity || (conversion.Exists && conversion.IsImplicit && conversion.IsNullable))
                         return true;
                 }
 

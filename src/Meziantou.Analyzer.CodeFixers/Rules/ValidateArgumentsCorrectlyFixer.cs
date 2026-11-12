@@ -57,8 +57,10 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
             return document;
 
         // Create local function
+        // The name of an explicit interface implementation contains the interface name (ITest.A), so use the identifier of the declaration
+        var localFunctionIdentifier = methodSyntaxNode.Identifier.WithoutTrivia();
         var returnTypeSyntax = generator.TypeExpression(symbol.ReturnType);
-        var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, symbol.Name);
+        var localFunctionSyntaxNode = LocalFunctionStatement((TypeSyntax)returnTypeSyntax, localFunctionIdentifier);
         localFunctionSyntaxNode = localFunctionSyntaxNode.WithParameterList(CreateLocalFunctionParameterList(methodSyntaxNode.ParameterList));
         if (methodSyntaxNode.Modifiers.Any(m => m.IsKind(SyntaxKind.AsyncKeyword)))
         {
@@ -81,7 +83,7 @@ public sealed class ValidateArgumentsCorrectlyFixer : CodeFixProvider
         statements = statements.Add(
             (StatementSyntax)generator.ReturnStatement(
                 generator.InvocationExpression(
-                    generator.IdentifierName(symbol.Name),
+                    IdentifierName(localFunctionIdentifier),
                     methodSyntaxNode.ParameterList.Parameters.Select(p => IdentifierName(p.Identifier))))
             .WithLeadingTrivia(LineFeed));
 

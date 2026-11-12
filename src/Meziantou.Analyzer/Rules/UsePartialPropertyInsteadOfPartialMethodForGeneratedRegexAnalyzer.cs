@@ -24,7 +24,7 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
         context.RegisterCompilationStartAction(ctx =>
         {
             var generatedRegexAttributeSymbol = ctx.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.GeneratedRegexAttribute");
-            if (generatedRegexAttributeSymbol is null)
+            if (generatedRegexAttributeSymbol is null || !UseRegexSourceGeneratorAnalyzerCommon.CanBeAppliedToProperties(ctx.Compilation, generatedRegexAttributeSymbol))
                 return;
 
             var regexSymbol = ctx.Compilation.GetTypeByMetadataName("System.Text.RegularExpressions.Regex");

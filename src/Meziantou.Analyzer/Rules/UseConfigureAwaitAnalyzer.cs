@@ -36,11 +36,17 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
     private sealed class AnalyzerContext(Compilation compilation)
     {
+        // System.Threading.Tasks.ConfigureAwaitOptions.ContinueOnCapturedContext
+        private const int ConfigureAwaitOptionsContinueOnCapturedContext = 1;
+
         private INamedTypeSymbol? ConfiguredAsyncDisposableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredAsyncDisposable");
 
         private INamedTypeSymbol? ConfiguredCancelableAsyncEnumerableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredCancelableAsyncEnumerable`1");
         private INamedTypeSymbol? ConfiguredTaskAwaitableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable");
         private INamedTypeSymbol? ConfiguredTaskAwaitableOfTSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredTaskAwaitable`1");
+        private INamedTypeSymbol? ConfiguredValueTaskAwaitableSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable");
+        private INamedTypeSymbol? ConfiguredValueTaskAwaitableOfTSymbol { get; } = compilation.GetTypeByMetadataName("System.Runtime.CompilerServices.ConfiguredValueTaskAwaitable`1");
+        private INamedTypeSymbol? ConfigureAwaitOptionsSymbol { get; } = compilation.GetTypeByMetadataName("System.Threading.Tasks.ConfigureAwaitOptions");
 
         private INamedTypeSymbol? WPF_DispatcherObject { get; } = compilation.GetTypeByMetadataName("System.Windows.Threading.DispatcherObject");
         private INamedTypeSymbol? WPF_ICommand { get; } = compilation.GetTypeByMetadataName("System.Windows.Input.ICommand");
@@ -85,14 +91,35 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
         public bool IsConfiguredCancelableAsyncEnumerable(ITypeSymbol type) => type.OriginalDefinition.IsEqualTo(ConfiguredCancelableAsyncEnumerableSymbol);
 
-        public bool IsConfiguredTaskAwaitable(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
+        public bool IsConfigureAwaitFalse(SemanticModel semanticModel, AwaitExpressionSyntax awaitSyntax, CancellationToken cancellationToken)
         {
-            var awaitExpressionType = semanticModel.GetTypeInfo(awaitSyntax.Expression, cancellationToken).ConvertedType;
-            if (awaitExpressionType is null)
+            // Only "ConfigureAwait(false)" and "ConfigureAwait(options)" without ConfigureAwaitOptions.ContinueOnCapturedContext
+            // leave the current SynchronizationContext. "ConfigureAwait(true)" keeps it, and a non-constant value is unknown.
+            if (semanticModel.GetOperation(awaitSyntax.Expression, cancellationToken)?.UnwrapImplicitConversions() is not IInvocationOperation { TargetMethod.Name: "ConfigureAwait", Arguments: [.., var argument], Type: { } awaitableType })
                 return false;
 
-            return ConfiguredTaskAwaitableSymbol.IsEqualTo(awaitExpressionType) ||
-                   ConfiguredTaskAwaitableOfTSymbol.IsEqualTo(awaitExpressionType.OriginalDefinition);
+            if (!IsConfiguredAwaitable(awaitableType))
+                return false;
+
+            var value = argument.Value.UnwrapImplicitConversions();
+            if (!value.ConstantValue.HasValue)
+                return false;
+
+            if (value.Type is { SpecialType: SpecialType.System_Boolean })
+                return value.ConstantValue.Value is false;
+
+            if (value.Type.IsEqualTo(ConfigureAwaitOptionsSymbol))
+                return value.ConstantValue.Value is int options && (options & ConfigureAwaitOptionsContinueOnCapturedContext) == 0;
+
+            return false;
+        }
+
+        private bool IsConfiguredAwaitable(ITypeSymbol type)
+        {
+            return ConfiguredTaskAwaitableSymbol.IsEqualTo(type) ||
+                   ConfiguredTaskAwaitableOfTSymbol.IsEqualTo(type.OriginalDefinition) ||
+                   ConfiguredValueTaskAwaitableSymbol.IsEqualTo(type) ||
+                   ConfiguredValueTaskAwaitableOfTSymbol.IsEqualTo(type.OriginalDefinition);
         }
     }
 
@@ -310,8 +337,11 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
         private bool IsReachableFrom(SemanticModel semanticModel, AwaitExpressionSyntax otherAwaitExpression, StatementSyntax? nodeStatement)
         {
+            // Only the statements that contain the other await but not the current node must complete normally.
+            // The walk stops at their common ancestor, as the end point of the enclosing statements (e.g. the body
+            // of a method ending with a return statement) does not matter.
             var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
-            while (parentStatement is not null && nodeStatement != parentStatement)
+            while (parentStatement is not null && (nodeStatement is null || !parentStatement.Span.Contains(nodeStatement.Span)))
             {
                 if (!IsEndPointReachable(semanticModel, parentStatement))
                     return false;
@@ -333,7 +363,7 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
             List<AwaitExpressionSyntax>? awaits = null;
             foreach (var awaitExpression in method.DescendantNodes(_ => true).OfType<AwaitExpressionSyntax>())
             {
-                if (analyzerContext.IsConfiguredTaskAwaitable(semanticModel, awaitExpression, cancellationToken))
+                if (analyzerContext.IsConfigureAwaitFalse(semanticModel, awaitExpression, cancellationToken))
                 {
                     awaits ??= [];
                     awaits.Add(awaitExpression);

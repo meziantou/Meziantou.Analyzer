@@ -287,6 +287,26 @@ public sealed class LoggerParameterTypeAnalyzerTests
     }
 
     [Fact]
+    public Task Logger_LogTrace_ValidParameterType_NestedValueTuple()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            logger.LogInformation("{Prop}", new List<(string, int)>());
+            logger.LogInformation("{Prop}", new List<(string A, int B)>());
+            logger.LogInformation("{Prop}", {|MA0124:new List<(int A, string B)>()|});
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
+            Prop;System.Collections.Generic.List{System.ValueTuple{System.String,System.Int32}}
+            """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Logger_LogTrace_ValidParameterType_NullableReferenceType()
     {
         var test = CreateTest();
@@ -842,6 +862,23 @@ public sealed class LoggerParameterTypeAnalyzerTests
         test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", """
             Prop;System.String
             """));
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task VeryLongFormatConcatenation()
+    {
+        var value = "s" + string.Concat(Enumerable.Repeat(" + \"a\"", 50_000));
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using Microsoft.Extensions.Logging;
+
+            ILogger logger = null;
+            string s = "";
+            logger.LogInformation({{value}}, 1);
+            """;
+        test.TestState.AdditionalFiles.Add(("LoggerParameterTypes.txt", "Prop;System.String"));
 
         return test.RunAsync();
     }

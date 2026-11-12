@@ -1820,6 +1820,46 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    public Task InternalClassUsedAsTypeArgumentOfPublicBaseType_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+
+            internal sealed class {|MA0182:Settings|} : Dictionary<string, Entry>
+            {
+            }
+
+            internal sealed class Entry
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task InternalClassUsedAsTypeArgumentOfPublicInterface_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public interface IMarker<T>
+            {
+            }
+
+            internal sealed class {|MA0182:Handler|} : IMarker<Entry>
+            {
+            }
+
+            internal sealed class Entry
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InternalClassWithDynamicallyAccessedMembersAttribute_NoDiagnostic()
     {
         var test = CreateTest();
@@ -2411,6 +2451,79 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
         test.FixedCode = """
             public class OuterClass
             {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_NestedEnum()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class OuterClass
+            {
+                private enum {|MA0182:UnusedEnum|}
+                {
+                    A,
+                }
+
+                public void Method() { }
+            }
+            """;
+        test.FixedCode = """
+            public class OuterClass
+            {
+                public void Method() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_NestedDelegate()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            public class OuterClass
+            {
+                private delegate void {|MA0182:UnusedDelegate|}();
+
+                public void Method() { }
+            }
+            """;
+        test.FixedCode = """
+            public class OuterClass
+            {
+                public void Method() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_FileWithPublicEnum()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            internal class {|MA0182:UnusedClass|}
+            {
+            }
+
+            public enum PublicEnum
+            {
+                A,
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+
+            public enum PublicEnum
+            {
+                A,
             }
             """;
 

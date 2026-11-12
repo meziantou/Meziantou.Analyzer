@@ -34,7 +34,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-    - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+    - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     - run: dotnet run --project src/DocumentationGenerator/DocumentationGenerator.csproj
     - run: git status
       if: failure()
@@ -89,7 +89,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     # The first dotnet command of a runner runs the NuGet migrations, which can fail when several dotnet commands start them at the same time
     - run: dotnet nuget locals global-packages --list
     # create_nuget skips the analyzers and dotnet test does not run them, so this job reports their diagnostics
@@ -110,7 +110,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     # The first dotnet command of a runner runs the NuGet migrations, which can fail when several dotnet commands start them at the same time
     - run: dotnet nuget locals global-packages --list
 
@@ -147,7 +147,7 @@ jobs:
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
       - name: Setup .NET Core (global.json)
-        uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+        uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
       - uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: nuget
@@ -203,7 +203,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core (global.json)
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     - name: Validate the Roslyn version specific projects
       run: |
         # The Roslyn version is the suffix of the project file name, e.g. Meziantou.Analyzer.roslyn5.0.csproj
@@ -271,7 +271,7 @@ jobs:
     steps:
     - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
     - name: Setup .NET Core (global.json)
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     - run: dotnet test tests/Meziantou.Analyzer.Test/${{ matrix.test-project }}.csproj --configuration Release --results-directory "${{ env.TestResultsDirectory }}"
       name: Run tests
     - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
@@ -297,7 +297,7 @@ jobs:
         name: nuget
         path: ${{ env.NuGetDirectory }}
     - name: Setup .NET Core
-      uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6
+      uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6
     - name: NuGet login (OIDC → temp API key)
       if: github.ref == 'refs/heads/main'
       uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1

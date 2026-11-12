@@ -95,19 +95,17 @@ public sealed class AvoidUnusedInternalTypesAnalyzer : DiagnosticAnalyzer
                 }
             }
 
-            // Track base type (skip system types)
-            if (symbol.BaseType is not null && !symbol.BaseType.IsVisibleOutsideOfAssembly())
+            // Track base type. The externally visible base types are also tracked, as their type arguments
+            // can be internal types (e.g. Dictionary<string, InternalType>).
+            if (symbol.BaseType is not null)
             {
                 AddUsedType(symbol, symbol.BaseType);
             }
 
-            // Track implemented interfaces (skip system interfaces)
+            // Track implemented interfaces, including the type arguments of the externally visible ones
             foreach (var @interface in symbol.Interfaces)
             {
-                if (!@interface.IsVisibleOutsideOfAssembly())
-                {
-                    AddUsedType(symbol, @interface);
-                }
+                AddUsedType(symbol, @interface);
             }
 
             // Track types used in generic constraints
