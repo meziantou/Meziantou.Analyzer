@@ -24,17 +24,21 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
         "Union",
     ];
 
-    private static readonly Dictionary<string, int> ArityIndex = new(StringComparer.Ordinal)
+    // Generic methods with several type parameters. The type parameter compared by the comparer, such as TKey,
+    // is found from the overload that takes the comparer, as its position depends on the overload. For instance,
+    // TKey is the first type parameter of ToDictionary<TKey, TValue>(IEnumerable<KeyValuePair<TKey, TValue>>),
+    // but the second one of ToDictionary<TSource, TKey>(IEnumerable<TSource>, Func<TSource, TKey>).
+    private static readonly HashSet<string> EnumerableMethodsWithKey = new(StringComparer.Ordinal)
     {
-        { "GroupBy", 1 },
-        { "GroupJoin", 2 },
-        { "Join", 2 },
-        { "OrderBy", 1 },
-        { "OrderByDescending", 1 },
-        { "ThenBy", 1 },
-        { "ThenByDescending", 1 },
-        { "ToDictionary", 1 },
-        { "ToLookup", 1 },
+        "GroupBy",
+        "GroupJoin",
+        "Join",
+        "OrderBy",
+        "OrderByDescending",
+        "ThenBy",
+        "ThenByDescending",
+        "ToDictionary",
+        "ToLookup",
     };
 
     // Methods whose default string comparison is ordinal (equality-based). Ordering methods
@@ -231,13 +235,10 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
                 }
                 else
                 {
-                    if (!ArityIndex.TryGetValue(method.Name, out var arityIndex))
+                    if (!EnumerableMethodsWithKey.Contains(method.Name))
                         return;
 
-                    if (arityIndex >= method.Arity)
-                        return;
-
-                    if (!method.TypeArguments[arityIndex].IsString())
+                    if (!HasEnumerableOverloadWithStringComparer(method))
                         return;
                 }
 
@@ -248,6 +249,44 @@ public sealed class UseStringComparerAnalyzer : DiagnosticAnalyzer
 
                     ctx.ReportDiagnostic(Rule, operation, DefaultDiagnosticInvocationReportOptions);
                 }
+            }
+        }
+
+        /// <summary>
+        /// Indicates whether the generic method has an overload with the same type arguments and an additional
+        /// <c>IEqualityComparer&lt;string&gt;</c> or <c>IComparer&lt;string&gt;</c> parameter.
+        /// </summary>
+        private bool HasEnumerableOverloadWithStringComparer(IMethodSymbol method)
+        {
+            foreach (var member in method.ContainingType.GetMembers(method.Name))
+            {
+                if (member is not IMethodSymbol { IsGenericMethod: true } overload)
+                    continue;
+
+                if (overload.Arity != method.Arity || overload.Parameters.Length != method.Parameters.Length + 1)
+                    continue;
+
+                var constructedOverload = overload.Construct([.. method.TypeArguments]);
+                for (var i = 0; i < constructedOverload.Parameters.Length; i++)
+                {
+                    var parameterType = constructedOverload.Parameters[i].Type;
+                    if ((EqualityComparerStringType.IsEqualTo(parameterType) || ComparerStringType.IsEqualTo(parameterType)) && HasSameParameterTypes(method, constructedOverload, i))
+                        return true;
+                }
+            }
+
+            return false;
+
+            static bool HasSameParameterTypes(IMethodSymbol method, IMethodSymbol overload, int skippedOverloadParameterIndex)
+            {
+                for (var i = 0; i < method.Parameters.Length; i++)
+                {
+                    var overloadParameter = overload.Parameters[i < skippedOverloadParameterIndex ? i : i + 1];
+                    if (!method.Parameters[i].Type.IsEqualTo(overloadParameter.Type))
+                        return false;
+                }
+
+                return true;
             }
         }
 
