@@ -111,4 +111,131 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task NoDiagnostic_Lambda()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        System.Action action = () => { throw ex; };
+                        System.Action anonymousMethod = delegate { throw ex; };
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoDiagnostic_LocalFunction()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        void Rethrow() => throw ex;
+                        void Rethrow2() { throw ex; }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task NoDiagnostic_FinallyInCatch()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        try
+                        {
+                        }
+                        finally
+                        {
+                            throw ex;
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ShouldReportDiagnostic_TryInCatch()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        try
+                        {
+                            {|MA0027:throw ex;|}
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            class Test
+            {
+                internal void Sample()
+                {
+                    try
+                    {
+                    }
+                    catch (System.Exception ex)
+                    {
+                        try
+                        {
+                            throw;
+                        }
+                        finally
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

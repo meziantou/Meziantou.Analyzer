@@ -32,7 +32,7 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         if (operation.Exception.UnwrapImplicitConversions() is not ILocalReferenceOperation localReferenceOperation)
             return;
 
-        var catchOperation = operation.Ancestors().OfType<ICatchClauseOperation>().FirstOrDefault();
+        var catchOperation = GetContainingCatchClause(operation);
         if (catchOperation is null)
             return;
 
@@ -40,5 +40,28 @@ public sealed class DoNotRemoveOriginalExceptionFromThrowStatementAnalyzer : Dia
         {
             context.ReportDiagnostic(Rule, operation);
         }
+    }
+
+    // "throw;" is only valid in a catch clause.
+    // It is not valid in an anonymous function or a local function (CS0156), nor in a finally clause nested in the catch clause (CS0724).
+    private static ICatchClauseOperation? GetContainingCatchClause(IOperation operation)
+    {
+        var current = operation;
+        while (current.Parent is { } parent)
+        {
+            switch (parent)
+            {
+                case ICatchClauseOperation catchClause:
+                    return catchClause;
+
+                case IAnonymousFunctionOperation or ILocalFunctionOperation:
+                case ITryOperation tryOperation when tryOperation.Finally == current:
+                    return null;
+            }
+
+            current = parent;
+        }
+
+        return null;
     }
 }
