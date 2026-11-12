@@ -47,6 +47,25 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
     }
 
     [Fact]
+    public Task Net80_AttributeCannotBeAppliedToProperties_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.LanguageVersion = LanguageVersion.CSharp13;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                [GeneratedRegex("pattern")]
+                private static partial Regex SampleRegex();
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task GeneratedRegexPartialMethod_ReportsDiagnostic()
     {
         var test = CreateTest();
