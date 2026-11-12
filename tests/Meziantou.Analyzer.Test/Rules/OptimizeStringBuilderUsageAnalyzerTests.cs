@@ -285,6 +285,30 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [InlineData("a + b")]
+    [InlineData(@""",""")]
+    [InlineData(@"""""")]
+    [InlineData(@"$""a{b}""")]
+    [InlineData("a.Substring(1)")]
+    [InlineData("b.ToString()")]
+    public Task Append_StartIndexAndCount_NoDiagnostic(string text)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            using System.Text;
+            class Test
+            {
+                void A(StringBuilder sb, string a, int b)
+                {
+                    sb.Append({{text}}, 0, 0);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task Append_ConcatConstantChar_NoDiagnostic()
     {
@@ -1229,9 +1253,6 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
     public Task AppendLine_AppendSubString()
     {
         var test = CreateTest();
-        // Applying this fix reveals another diagnostic, and the test asserts the result of a single application
-        test.FixedState.MarkupHandling = MarkupMode.Allow;
-        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.FixOne;
         test.TestCode = """
             using System.Text;
             class Test
@@ -1248,7 +1269,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzerTests
             {
                 void A()
                 {
-                    {|MA0028:new StringBuilder().Append("", 0, 1)|}.AppendLine();
+                    new StringBuilder().Append("", 0, 1).AppendLine();
                 }
             }
             """;

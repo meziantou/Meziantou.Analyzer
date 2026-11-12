@@ -82,7 +82,8 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
 
             if (string.Equals(method.Name, nameof(StringBuilder.Append), System.StringComparison.Ordinal))
             {
-                if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+                // Append(string, int, int) appends a substring, so the fixes of Append(string) would change the result or not compile
+                if (method.Parameters is not [{ Type: var parameterType }] || !parameterType.IsString())
                     return;
 
                 if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
@@ -90,7 +91,7 @@ public sealed class OptimizeStringBuilderUsageAnalyzer : DiagnosticAnalyzer
             }
             else if (string.Equals(method.Name, nameof(StringBuilder.AppendLine), System.StringComparison.Ordinal))
             {
-                if (method.Parameters.Length == 0 || !method.Parameters[0].Type.IsString())
+                if (method.Parameters is not [{ Type: var parameterType }] || !parameterType.IsString())
                     return;
 
                 if (!IsOptimizable(context, operation, method.Name, operation.Arguments[0]))
