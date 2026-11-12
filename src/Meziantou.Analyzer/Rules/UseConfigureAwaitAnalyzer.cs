@@ -337,8 +337,11 @@ public sealed class UseConfigureAwaitAnalyzer : DiagnosticAnalyzer
 
         private bool IsReachableFrom(SemanticModel semanticModel, AwaitExpressionSyntax otherAwaitExpression, StatementSyntax? nodeStatement)
         {
+            // Only the statements that contain the other await but not the current node must complete normally.
+            // The walk stops at their common ancestor, as the end point of the enclosing statements (e.g. the body
+            // of a method ending with a return statement) does not matter.
             var parentStatement = otherAwaitExpression.Ancestors().OfType<StatementSyntax>().FirstOrDefault();
-            while (parentStatement is not null && nodeStatement != parentStatement)
+            while (parentStatement is not null && (nodeStatement is null || !parentStatement.Span.Contains(nodeStatement.Span)))
             {
                 if (!IsEndPointReachable(semanticModel, parentStatement))
                     return false;
