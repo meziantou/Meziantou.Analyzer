@@ -35,7 +35,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
             // collected and the event is reported once every one of them can be readonly
             var readOnlyEventAccessors = new ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>>(SymbolEqualityComparer.Default);
 
-            ctx.RegisterOperationBlockStartAction(ctx =>
+            ctx.RegisterOperationBlockAction(ctx =>
             {
                 if (!CouldBeReadOnly(ctx.OwningSymbol))
                     return;
@@ -46,9 +46,7 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
                         return;
                 }
 
-                var analyzerContext = new AnalyzerContext(readOnlyEventAccessors);
-                ctx.RegisterOperationAction(analyzerContext.AnalyzeBlock, OperationKind.Block);
-                ctx.RegisterOperationBlockEndAction(analyzerContext.AnalyzeEnd);
+                AnalyzeOperationBlock(ctx, readOnlyEventAccessors);
             });
 
             ctx.RegisterSymbolEndAction(ctx => ReportEvents(ctx, readOnlyEventAccessors));
@@ -83,84 +81,84 @@ public sealed class MakeMemberReadOnlyAnalyzer : DiagnosticAnalyzer
         }
     }
 
-    private sealed class AnalyzerContext(ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>> readOnlyEventAccessors)
+    private static void AnalyzeOperationBlock(OperationBlockAnalysisContext context, ConcurrentDictionary<IEventSymbol, ConcurrentHashSet<IMethodSymbol>> readOnlyEventAccessors)
     {
-        private bool _canBeReadOnly = true;
-
-        public void AnalyzeBlock(OperationAnalysisContext context)
+        foreach (var operationBlock in context.OperationBlocks)
         {
-            var operation = (IBlockOperation)context.Operation;
-            var semanticModel = operation.SemanticModel!;
-
-            var arg = GetDataFlowArgument(operation.Syntax);
-            if (arg is null)
+            if (IsInstanceModified(operationBlock))
                 return;
-
-            var dataFlow = semanticModel.AnalyzeDataFlow(arg);
-            foreach (var symbol in dataFlow.WrittenInside)
-            {
-                if (symbol is IParameterSymbol parameter && parameter.IsThis)
-                {
-                    _canBeReadOnly = false;
-                }
-            }
-
-            foreach (var symbol in dataFlow.UnsafeAddressTaken)
-            {
-                if (symbol is IParameterSymbol parameter && parameter.IsThis)
-                {
-                    _canBeReadOnly = false;
-                }
-            }
         }
 
-        public void AnalyzeEnd(OperationBlockAnalysisContext context)
+        if (context.OwningSymbol is IMethodSymbol method)
         {
-            if (_canBeReadOnly)
+            if (method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
             {
-                if (context.OwningSymbol is IMethodSymbol method)
+                var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
+                if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
                 {
-                    if (method.MethodKind is MethodKind.PropertyGet or MethodKind.PropertySet)
-                    {
-                        var parent = context.OperationBlocks.FirstOrDefault()?.Syntax.Parent;
-                        if (parent?.IsKind(SyntaxKind.PropertyDeclaration) == true)
-                        {
-                            // Both parts of a partial property must be readonly, and the code fix only updates the implementation part
-                            if (((PropertyDeclarationSyntax)parent).Modifiers.Any(SyntaxKind.PartialKeyword))
-                                return;
-
-                            context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
-                            return;
-                        }
-                    }
-                    else if (method.MethodKind is MethodKind.EventAdd or MethodKind.EventRemove)
-                    {
-                        // The event is reported by ReportEvents once all its accessors can be readonly
-                        if (method.AssociatedSymbol is IEventSymbol eventSymbol)
-                        {
-                            readOnlyEventAccessors.GetOrAdd(eventSymbol, _ => []).Add(method);
-                        }
-
+                    // Both parts of a partial property must be readonly, and the code fix only updates the implementation part
+                    if (((PropertyDeclarationSyntax)parent).Modifiers.Any(SyntaxKind.PartialKeyword))
                         return;
-                    }
+
+                    context.ReportDiagnostic(Rule, ((PropertyDeclarationSyntax)parent).Identifier, context.OwningSymbol.Name);
+                    return;
+                }
+            }
+            else if (method.MethodKind is MethodKind.EventAdd or MethodKind.EventRemove)
+            {
+                // The event is reported by ReportEvents once all its accessors can be readonly
+                if (method.AssociatedSymbol is IEventSymbol eventSymbol)
+                {
+                    readOnlyEventAccessors.GetOrAdd(eventSymbol, _ => []).Add(method);
                 }
 
-                context.ReportDiagnostic(Rule, context.OwningSymbol, context.OwningSymbol.Name);
+                return;
             }
         }
 
-        private static SyntaxNode? GetDataFlowArgument(SyntaxNode node)
+        context.ReportDiagnostic(Rule, context.OwningSymbol, context.OwningSymbol.Name);
+    }
+
+    /// <summary>
+    /// The data flow analysis of a block includes the blocks it contains, so only the outermost blocks are analyzed.
+    /// </summary>
+    private static bool IsInstanceModified(IOperation operation)
+    {
+        if (operation is not IBlockOperation)
         {
-            if (node is null)
-                return null;
-
-            if (node is ArrowExpressionClauseSyntax expression)
+            foreach (var child in operation.GetChildOperations())
             {
-                return expression.Expression;
+                if (IsInstanceModified(child))
+                    return true;
             }
 
-            return node;
+            return false;
         }
+
+        var dataFlow = operation.SemanticModel!.AnalyzeDataFlow(GetDataFlowArgument(operation.Syntax));
+        foreach (var symbol in dataFlow.WrittenInside)
+        {
+            if (symbol is IParameterSymbol { IsThis: true })
+                return true;
+        }
+
+        foreach (var symbol in dataFlow.UnsafeAddressTaken)
+        {
+            if (symbol is IParameterSymbol { IsThis: true })
+                return true;
+        }
+
+        return false;
+    }
+
+    private static SyntaxNode GetDataFlowArgument(SyntaxNode node)
+    {
+        if (node is ArrowExpressionClauseSyntax expression)
+        {
+            return expression.Expression;
+        }
+
+        return node;
     }
 
     private static bool EnsureLanguageVersion(IOperation operation)

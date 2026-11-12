@@ -6068,4 +6068,130 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task MA0045Suppressed_PrivateNonAsync_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.DisabledDiagnostics.Add("MA0045");
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    Task.Delay(1).Wait();
+                }
+
+                private async Task B()
+                {
+                    {|MA0042:Task.Delay(1).Wait()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MA0045SuppressedInEditorConfig_PrivateNonAsync_NoDiagnostic()
+    {
+        var test = new AnalyzerTest();
+        test.SolutionTransforms.Add((solution, projectId) =>
+        {
+            var project = solution.GetProject(projectId)!;
+            var options = project.CompilationOptions!;
+            return solution.WithProjectCompilationOptions(projectId, options.WithSpecificDiagnosticOptions(options.SpecificDiagnosticOptions.SetItem("MA0045", ReportDiagnostic.Default)));
+        });
+        test.TestState.SetConfiguration("dotnet_diagnostic.MA0045.severity", "none");
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A()
+                {
+                    Task.Delay(1).Wait();
+                }
+
+                private async Task B()
+                {
+                    {|MA0042:Task.Delay(1).Wait()|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_QueryExpression()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private void A(IEnumerable<Task<int>> tasks)
+                {
+                    _ = from task in tasks
+                        where {|MA0045:task.Result|} > 0
+                        select {|MA0045:task.Result|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_LambdaInFieldInitializer()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System;
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private static readonly Func<int> Value = () => {|MA0045:Task.FromResult(0).Result|};
+                private static readonly int Value2 = Task.FromResult(0).Result;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_ExpressionBodiedProperty()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Test
+            {
+                private int Value => {|MA0045:Task.FromResult(0).Result|};
+                private int Value2 { get { return {|MA0045:Task.FromResult(0).Result|}; } }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task PrivateNonAsync_ConstructorInitializer()
+    {
+        var test = new AnalyzerTest();
+        test.TestCode = """
+            using System.Threading.Tasks;
+            public class Base(int value);
+            public class Test : Base
+            {
+                private Test() : base({|MA0045:Task.FromResult(0).Result|}) { }
+            }
+            internal class Test2() : Base({|MA0045:Task.FromResult(0).Result|});
+            """;
+
+        return test.RunAsync();
+    }
 }

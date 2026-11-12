@@ -624,29 +624,6 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
     private sealed class LoggerConfigurationFile(Dictionary<string, ITypeSymbol[]> configuration)
     {
-        private static readonly SymbolEqualityComparer Comparer = GetComparer();
-
-        private static SymbolEqualityComparer GetComparer()
-        {
-            var kindType = Type.GetType("Microsoft.CodeAnalysis.TypeCompareKind, Microsoft.CodeAnalysis", throwOnError: false);
-            if (kindType != null)
-            {
-                // TypeCompareKind.
-                var ctorParam1 = kindType.GetField("AllNullableIgnoreOptions")?.GetValue(null);
-                var ctorParam2 = kindType.GetField("IgnoreTupleNames")?.GetValue(null);
-                if (ctorParam1 is not null && ctorParam2 is not null)
-                {
-                    var ctor = typeof(SymbolEqualityComparer).GetConstructor(System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Public | System.Reflection.BindingFlags.Instance, binder: null, [kindType], modifiers: null);
-                    if (ctor != null)
-                    {
-                        return (SymbolEqualityComparer)ctor.Invoke([(int)ctorParam1 | (int)ctorParam2]);
-                    }
-                }
-            }
-
-            return SymbolEqualityComparer.Default;
-        }
-
         public static LoggerConfigurationFile Empty { get; } = new LoggerConfigurationFile(new(StringComparer.Ordinal));
 
         public int Count => configuration.Count;
@@ -664,11 +641,13 @@ public sealed class LoggerParameterTypeAnalyzer : DiagnosticAnalyzer
 
                 foreach (var validSymbol in validSymbols)
                 {
-                    if (Comparer.Equals(validSymbol, type))
+                    if (SymbolEqualityComparer.Default.Equals(validSymbol, type))
                         return true;
 
+                    // An identity conversion exists between types that differ only by the names of the tuple elements,
+                    // including the nested ones, such as List<(string Name, int Value)> and List<(string, int)>
                     var conversion = compilation.ClassifyConversion(type, validSymbol);
-                    if (conversion.Exists && conversion.IsImplicit && conversion.IsNullable)
+                    if (conversion.IsIdentity || (conversion.Exists && conversion.IsImplicit && conversion.IsNullable))
                         return true;
                 }
 
