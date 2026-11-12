@@ -224,7 +224,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
 
             // Nothing is reported when the enclosing method cannot await, so the async equivalent of the
             // called method, whose search is expensive, is only looked for when a diagnostic can be reported.
-            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            var asyncContextKind = GetAsyncContextKind(context, operation);
             if (asyncContextKind is AsyncContextKind.None)
                 return;
 
@@ -625,7 +625,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             {
                 if (operation.Member.ContainingType.OriginalDefinition.IsEqualToAny(TaskOfTSymbol, ValueTaskOfTSymbol))
                 {
-                    var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+                    var asyncContextKind = GetAsyncContextKind(context, operation);
                     var data = new DiagnosticData("Use await instead of 'Result'", DoNotUseBlockingCallInAsyncContextData.Task_Result);
                     ReportDiagnosticIfNeeded(context, data.CreateProperties(), operation, data.DiagnosticMessage, asyncContextKind);
                 }
@@ -654,43 +654,48 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
         /// <summary>
         /// Indicates which rule can be reported at the location of the operation, or <see cref="AsyncContextKind.None"/>
         /// when neither can. Nothing is reported in a method that cannot await, so this is checked before looking for a
-        /// blocking call, which is much more expensive.
+        /// blocking call, which is much more expensive. <see cref="Rule2"/> is disabled by default, so the methods that
+        /// could become async are not considered when the compiler drops its diagnostics.
         /// </summary>
-        private AsyncContextKind GetAsyncContextKind(IOperation operation, CancellationToken cancellationToken)
+        private AsyncContextKind GetAsyncContextKind(OperationAnalysisContext context, IOperation operation)
         {
-            if (IsInLock(operation))
-                return AsyncContextKind.None;
-
             // lambda, delegate, method, local function
-            if (operation.SemanticModel!.GetEnclosingSymbol(operation.Syntax.SpanStart, cancellationToken) is not IMethodSymbol methodSymbol)
+            if (GetEnclosingFunction(operation, context.ContainingSymbol) is not IMethodSymbol methodSymbol)
                 return AsyncContextKind.None;
 
             // Check if returns Task or async void
-            if (_awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol, operation.SemanticModel, cancellationToken))
+            if (_awaitableTypes.DoesNotReturnVoidAndCanUseAsyncKeyword(methodSymbol, operation.SemanticModel!, context.CancellationToken))
                 return AsyncContextKind.AsyncContext;
 
-            if (!methodSymbol.IsOverrideOrInterfaceImplementation() && !methodSymbol.IsVisibleOutsideOfAssembly())
+            if (!methodSymbol.IsOverrideOrInterfaceImplementation() && !methodSymbol.IsVisibleOutsideOfAssembly() && !Rule2.IsSuppressed(context.Compilation, operation.Syntax.SyntaxTree, context.CancellationToken))
                 return AsyncContextKind.CanBecomeAsyncContext;
 
             return AsyncContextKind.None;
         }
 
         /// <summary>
-        /// Indicates whether the operation is in a lock statement of its enclosing method. A lambda or a local function declared
-        /// in a lock statement is not executed while the lock is held, so it can await.
+        /// Gets the lambda, the local function, or the member containing the operation, or <see langword="null"/> when the
+        /// operation is in a lock statement of its enclosing function. A lambda or a local function declared in a lock
+        /// statement is not executed while the lock is held, so it can await.
         /// </summary>
-        private static bool IsInLock(IOperation operation)
+        private static ISymbol? GetEnclosingFunction(IOperation operation, ISymbol containingSymbol)
         {
             for (var current = operation.Parent; current is not null; current = current.Parent)
             {
-                if (current is ILockOperation)
-                    return true;
+                switch (current)
+                {
+                    case ILockOperation:
+                        return null;
 
-                if (current is IAnonymousFunctionOperation or ILocalFunctionOperation)
-                    return false;
+                    case IAnonymousFunctionOperation anonymousFunction:
+                        return anonymousFunction.Symbol;
+
+                    case ILocalFunctionOperation localFunction:
+                        return localFunction.Symbol;
+                }
             }
 
-            return false;
+            return containingSymbol;
         }
 
         private bool HasDisposeAsyncMethod(INamedTypeSymbol symbol)
@@ -874,7 +879,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
-            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            var asyncContextKind = GetAsyncContextKind(context, operation);
             if (asyncContextKind is AsyncContextKind.None)
                 return;
 
@@ -899,7 +904,7 @@ public sealed class DoNotUseBlockingCallInAsyncContextAnalyzer : DiagnosticAnaly
             if (operation.IsAsynchronous)
                 return;
 
-            var asyncContextKind = GetAsyncContextKind(operation, context.CancellationToken);
+            var asyncContextKind = GetAsyncContextKind(context, operation);
             if (asyncContextKind is AsyncContextKind.None)
                 return;
 
