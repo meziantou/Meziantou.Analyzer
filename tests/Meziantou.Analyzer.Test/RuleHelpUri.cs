@@ -25,6 +25,18 @@ public sealed class RuleHelpUri
         Assert.Empty(duplicatedIds);
     }
 
+    [Theory]
+    [InlineData(RuleIdentifiers.MakeClassStatic)]
+    [InlineData(RuleIdentifiers.MakeMethodStatic)]
+    [InlineData(RuleIdentifiers.MakePropertyStatic)]
+    [InlineData(RuleIdentifiers.ClassMustBeSealed)]
+    [InlineData(RuleIdentifiers.AvoidUnusedInternalTypes)]
+    public void CompilationEndRulesHaveTheCompilationEndTag(string ruleId)
+    {
+        var descriptor = Assert.Single(GetSupportedDiagnostics(), diag => diag.Id == ruleId);
+        Assert.Contains(WellKnownDiagnosticTags.CompilationEnd, descriptor.CustomTags);
+    }
+
     private static IEnumerable<DiagnosticDescriptor> GetSupportedDiagnostics()
     {
         foreach (var type in typeof(AbstractTypesShouldNotHaveConstructorsAnalyzer).Assembly.GetExportedTypes())
