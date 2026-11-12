@@ -1368,6 +1368,108 @@ public sealed class UseStringComparerAnalyzerTests
     }
 
     [Fact]
+    public Task EnumerableToDictionary_KeyValuePairWithStringValue_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<KeyValuePair<int, string>> obj)
+                {
+                    obj.ToDictionary();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumerableToDictionary_TupleWithStringValue_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<(int, string)> obj)
+                {
+                    obj.ToDictionary();
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumerableToDictionary_KeyValuePairWithStringKey_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<KeyValuePair<string, int>> obj)
+                {
+                    obj.{|MA0002:ToDictionary()|};
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<KeyValuePair<string, int>> obj)
+                {
+                    obj.ToDictionary(System.StringComparer.Ordinal);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task EnumerableGroupByAndJoin_StringKey_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<int> obj)
+                {
+                    obj.{|MA0002:GroupBy(p => p.ToString(), p => p)|};
+                    obj.{|MA0002:Join(obj, p => p.ToString(), p => p.ToString(), (a, b) => a)|};
+                    obj.GroupBy(p => p, p => p.ToString());
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Linq;
+            class TypeName
+            {
+                public void Test(IEnumerable<int> obj)
+                {
+                    obj.GroupBy(p => p.ToString(), p => p, System.StringComparer.Ordinal);
+                    obj.Join(obj, p => p.ToString(), p => p.ToString(), (a, b) => a, System.StringComparer.Ordinal);
+                    obj.GroupBy(p => p, p => p.ToString());
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Order_String_ShouldReportDiagnostic()
     {
         var test = CreateTest();
