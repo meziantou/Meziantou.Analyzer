@@ -138,8 +138,8 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzer : Diagnosti
             var parent = operation.Parent;
             if (parent is IConversionOperation conversionOperation)
             {
-                // `FormattableString _ = $""` is valid whereas `string _ = $""` may not be
-                if (conversionOperation.Type.IsEqualTo(_cultureSensitiveContext.FormattableStringSymbol))
+                // `FormattableString _ = $""` and `IFormattable _ = $""` are valid whereas `string _ = $""` may not be
+                if (conversionOperation.Type.IsEqualTo(_cultureSensitiveContext.FormattableStringSymbol) || conversionOperation.Type.IsEqualTo(_cultureSensitiveContext.SystemIFormattableSymbol))
                     return;
             }
 

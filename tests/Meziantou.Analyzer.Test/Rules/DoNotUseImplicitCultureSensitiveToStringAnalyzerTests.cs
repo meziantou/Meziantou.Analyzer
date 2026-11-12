@@ -360,6 +360,35 @@ public sealed class DoNotUseImplicitCultureSensitiveToStringAnalyzerTests
     }
 
     [Fact]
+    public Task IFormattable()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() { System.IFormattable a = $"abc{System.DateTime.Now}"; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task IFormattable_Argument()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            class Test
+            {
+                void A() => B($"abc{System.DateTime.Now}");
+                void B(System.IFormattable value) { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task FormattableString_Invariant()
     {
         var test = CreateTest();
