@@ -53,6 +53,51 @@ public sealed class DoNotIgnoreReturnValueAnalyzerTests
     }
 
     [Fact]
+    public Task Stream_ReadAsync_ConfigureAwait_ReturnValueNotUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.IO;
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A(Stream stream, byte[] buffer)
+                {
+                    await {|MA0060:stream.ReadAsync(buffer, 0, 0)|}.ConfigureAwait(false);
+                    await {|MA0060:stream.ReadAsync(buffer.AsMemory())|}.ConfigureAwait(false);
+                    await {|MA0060:stream.ReadAsync(buffer, 0, 0)|}.ConfigureAwait(ConfigureAwaitOptions.None);
+                    {|MA0060:stream.ReadAsync(buffer, 0, 0)|}.ConfigureAwait(false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task Stream_ReadAsync_ConfigureAwait_ReturnValueUsed()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.IO;
+            using System.Threading.Tasks;
+            class Test
+            {
+                async Task A(Stream stream, byte[] buffer)
+                {
+                    _ = await stream.ReadAsync(buffer, 0, 0).ConfigureAwait(false);
+                    var read = await stream.ReadAsync(buffer.AsMemory()).ConfigureAwait(false);
+                    var awaitable = stream.ReadAsync(buffer, 0, 0).ConfigureAwait(false);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task Stream_ReadAsync_ReturnValueUsed_DiscardOperator()
     {
         var test = CreateTest();
