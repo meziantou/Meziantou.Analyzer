@@ -20,6 +20,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
+        if (!CanAddConfigureAwait(context.Diagnostics[0], nodeToFix))
+            return;
+
         context.RegisterCodeFix(
             CodeAction.Create(
                 "Use ConfigureAwait(false)",
@@ -33,6 +36,47 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
                 ct => AddConfigureAwait(context, nodeToFix, value: true, ct),
                 equivalenceKey: "Use ConfigureAwait(true)"),
             context.Diagnostics);
+    }
+
+    private static bool CanAddConfigureAwait(Diagnostic diagnostic, SyntaxNode nodeToFix)
+    {
+        if (diagnostic.Properties.TryGetValue(UseConfigureAwaitAnalyzerCommon.KindKey, out var kind))
+        {
+            if (kind is "foreach")
+                return true;
+
+            if (kind is "using")
+                return nodeToFix.FirstAncestorOrSelf<UsingStatementSyntax>()?.Expression is not null;
+        }
+
+        return nodeToFix switch
+        {
+            // await expr, or await using (expr)
+            ExpressionSyntax => true,
+
+            // The declaration can only be moved out of the using statement when it declares a single variable:
+            // await using (var a = expr, b = expr) or await using var a = expr, b = expr;
+            VariableDeclaratorSyntax => FindUsingStatement(nodeToFix) is { } usingStatement
+                ? usingStatement.Declaration is { Variables.Count: 1 }
+                : FindLocalDeclarationStatement(nodeToFix) is { Declaration.Variables.Count: 1 },
+            _ => false,
+        };
+    }
+
+    private static UsingStatementSyntax? FindUsingStatement(SyntaxNode nodeToFix)
+    {
+        return nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault(usingStatement =>
+        {
+            if (usingStatement.Declaration is not null)
+                return usingStatement.Declaration.Span.Contains(nodeToFix.Span);
+
+            return usingStatement.Expression?.Span.Contains(nodeToFix.Span) == true;
+        });
+    }
+
+    private static LocalDeclarationStatementSyntax? FindLocalDeclarationStatement(SyntaxNode nodeToFix)
+    {
+        return nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
     }
 
     private static async Task<Document> AddConfigureAwait(CodeFixContext context, SyntaxNode nodeToFix, bool value, CancellationToken cancellationToken)
@@ -104,13 +148,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             // await using (var a = expr);
             // var a = expr; await using (a.ConfigureAwait(false));
-            var usingBlock = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<UsingStatementSyntax>().FirstOrDefault(usingStatement =>
-            {
-                if (usingStatement.Declaration is not null)
-                    return usingStatement.Declaration.Span.Contains(nodeToFix.Span);
-
-                return usingStatement.Expression?.Span.Contains(nodeToFix.Span) == true;
-            });
+            var usingBlock = FindUsingStatement(nodeToFix);
             if (usingBlock is not null)
             {
                 if (usingBlock.Declaration is not null && usingBlock.Declaration.Variables.Count == 1)
@@ -142,7 +180,7 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
             {
                 // await using var a = expr;
                 // var a = expr; await var aConfigured = a.ConfigureAwait(false);
-                var usingStatement = nodeToFix.Ancestors(ascendOutOfTrivia: true).OfType<LocalDeclarationStatementSyntax>().FirstOrDefault();
+                var usingStatement = FindLocalDeclarationStatement(nodeToFix);
                 if (usingStatement is not null && usingStatement.Declaration.Variables.Count == 1)
                 {
                     var variablesStatement = SyntaxFactory.LocalDeclarationStatement(SyntaxFactory.VariableDeclaration(usingStatement.Declaration.Type, usingStatement.Declaration.Variables))

@@ -1576,6 +1576,58 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task AwaitUsing_MultipleDeclarators_NoCodeFix()
+    {
+        var code = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await using (AsyncDisposable {|MA0004:a = new AsyncDisposable()|}, {|MA0004:b = new AsyncDisposable()|})
+                    {
+                    }
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AwaitUsingDeclaration_MultipleDeclarators_NoCodeFix()
+    {
+        var code = """
+            using System;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    await using AsyncDisposable {|MA0004:a = new AsyncDisposable()|}, {|MA0004:b = new AsyncDisposable()|};
+                }
+            }
+            class AsyncDisposable : IAsyncDisposable
+            {
+                public ValueTask DisposeAsync() => throw null;
+            }
+            """;
+        var test = CreateTest();
+        test.TestCode = code;
+        test.FixedCode = code;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task AwaitUsingAwait_NoVariable()
     {
         var test = CreateTest();
