@@ -60,12 +60,13 @@ internal static class AnalyzerTestDefaults
     private static readonly ConcurrentDictionary<string, Type[]> FrameworkSourceGenerators = new(StringComparer.Ordinal);
 
     /// <summary>
-    /// The tests compile with <see cref="MetadataImportOptions.All"/>, which the rules
-    /// that analyze the non-public members of the referenced assemblies rely on.
+    /// The tests compile with <see cref="MetadataImportOptions.Public"/>, like the command line compiler, so the rules only see the
+    /// members of the referenced assemblies that a build sees. A test that needs the non-public members of the referenced assemblies
+    /// can add a transform to <c>SolutionTransforms</c> that sets <see cref="MetadataImportOptions.All"/>.
     /// </summary>
     public static Solution ConfigureCompilationOptions(Solution solution, ProjectId projectId)
     {
         var compilationOptions = (CSharpCompilationOptions)solution.GetProject(projectId)!.CompilationOptions!;
-        return solution.WithProjectCompilationOptions(projectId, compilationOptions.WithMetadataImportOptions(MetadataImportOptions.All));
+        return solution.WithProjectCompilationOptions(projectId, compilationOptions.WithMetadataImportOptions(MetadataImportOptions.Public));
     }
 }

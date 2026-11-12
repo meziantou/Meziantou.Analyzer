@@ -47,14 +47,14 @@ internal static class Components
     public static CSharpParseOptions ParseOptions { get; } = new(LanguageVersion.Preview);
 
     /// <summary>
-    /// The rules disabled by default are enabled, so all the rules run. <see cref="MetadataImportOptions.All"/> is the option of the tests,
-    /// which some rules need to analyze the non-public members of the referenced assemblies.
+    /// The rules disabled by default are enabled, so all the rules run. <see cref="MetadataImportOptions.Public"/> is the option of the
+    /// command line compiler and of the tests, so the rules only see the members of the referenced assemblies that a build sees.
     /// </summary>
     public static CSharpCompilationOptions CompilationOptions { get; } = new CSharpCompilationOptions(
             OutputKind.DynamicallyLinkedLibrary,
             nullableContextOptions: NullableContextOptions.Enable,
             allowUnsafe: true)
-        .WithMetadataImportOptions(MetadataImportOptions.All)
+        .WithMetadataImportOptions(MetadataImportOptions.Public)
         .WithSpecificDiagnosticOptions(Analyzers
             .SelectMany(analyzer => analyzer.SupportedDiagnostics)
             .Select(descriptor => descriptor.Id)
