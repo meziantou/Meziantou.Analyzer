@@ -1067,4 +1067,24 @@ public sealed class MakeMethodStaticAnalyzerTests
 
         return test.RunAsync();
     }
+
+    [Fact]
+    public Task ExtensionBlockMembers_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Extensions
+            {
+                extension(string value)
+                {
+                    public int Method() => value.Length;
+                    public int MethodWithoutReceiverUsage() => 0;
+                    public int Property => value.Length;
+                    public int PropertyWithoutReceiverUsage => 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
 }

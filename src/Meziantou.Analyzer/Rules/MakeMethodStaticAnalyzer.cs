@@ -178,6 +178,9 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
             _cannotBeStaticSymbols.Add(member.OriginalDefinition);
         }
 
+        /// <summary>
+        /// The instance members of an <c>extension</c> block are called on the receiver, so they cannot be made static.
+        /// </summary>
         private static bool IsPotentialStatic(IMethodSymbol symbol)
         {
             return
@@ -187,6 +190,7 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
                 !IsPatternBasedMember(symbol) &&
+                !OverloadCandidateIndex.IsExtensionBlock(symbol.ContainingType) &&
                 symbol.PartialDefinitionPart is null;
         }
 
@@ -198,7 +202,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
-                !IsPatternBasedMember(symbol);
+                !IsPatternBasedMember(symbol) &&
+                !OverloadCandidateIndex.IsExtensionBlock(symbol.ContainingType);
         }
 
         /// <summary>
