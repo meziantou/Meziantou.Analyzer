@@ -17,12 +17,22 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         if (nodeToFix is null)
             return;
 
-        // The diagnostic is reported on the type name identifier, so we need to find the type declaration
-        var typeDeclarationSyntax = nodeToFix.FirstAncestorOrSelf<TypeDeclarationSyntax>();
-        if (typeDeclarationSyntax is null)
+        // The diagnostic is reported on the type name identifier, so we need to find the type declaration.
+        // Enums and delegates are not TypeDeclarationSyntax, so the declaration must be the one whose identifier is reported,
+        // otherwise the fix would apply to the containing type.
+        var typeDeclarationSyntax = nodeToFix.FirstAncestorOrSelf<MemberDeclarationSyntax>(node => node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax);
+        var identifier = typeDeclarationSyntax switch
+        {
+            BaseTypeDeclarationSyntax declaration => declaration.Identifier,
+            DelegateDeclarationSyntax declaration => declaration.Identifier,
+            _ => default,
+        };
+
+        if (typeDeclarationSyntax is null || identifier.Span != context.Span)
             return;
 
-        // Code fix 1: Add DynamicallyAccessedMembers attribute
+        // Code fix 1: Add DynamicallyAccessedMembers attribute (the attribute cannot be applied to enums and delegates)
+        if (typeDeclarationSyntax is TypeDeclarationSyntax)
         {
             var semanticModel = await context.Document.GetSemanticModelAsync(context.CancellationToken).ConfigureAwait(false);
             var dynamicallyAccessedMembersAttribute = semanticModel?.Compilation.GetBestTypeByMetadataName("System.Diagnostics.CodeAnalysis.DynamicallyAccessedMembersAttribute");
@@ -51,7 +61,7 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         }
     }
 
-    private static async Task<Document> AddDynamicallyAccessedMembersAttribute(Document document, TypeDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol dynamicallyAccessedMembersAttribute, INamedTypeSymbol dynamicallyAccessedMemberTypes, CancellationToken cancellationToken)
+    private static async Task<Document> AddDynamicallyAccessedMembersAttribute(Document document, MemberDeclarationSyntax typeDeclarationSyntax, INamedTypeSymbol dynamicallyAccessedMembersAttribute, INamedTypeSymbol dynamicallyAccessedMemberTypes, CancellationToken cancellationToken)
     {
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         var generator = editor.Generator;
@@ -70,14 +80,14 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         return editor.GetChangedDocument();
     }
 
-    private static async Task<Solution> RemoveTypeDeclaration(Document document, TypeDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
+    private static async Task<Solution> RemoveTypeDeclaration(Document document, MemberDeclarationSyntax typeDeclarationSyntax, CancellationToken cancellationToken)
     {
         var solution = document.Project.Solution;
 
         // All the declarations of a partial type must be removed, as the remaining ones would still declare the type
         var semanticModel = await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
         var typeSymbol = semanticModel?.GetDeclaredSymbol(typeDeclarationSyntax, cancellationToken);
-        var declarationsByDocument = new Dictionary<DocumentId, HashSet<TypeDeclarationSyntax>>();
+        var declarationsByDocument = new Dictionary<DocumentId, HashSet<MemberDeclarationSyntax>>();
         if (typeSymbol is not null)
         {
             foreach (var syntaxReference in typeSymbol.DeclaringSyntaxReferences)
@@ -85,7 +95,7 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
                 if (solution.GetDocumentId(syntaxReference.SyntaxTree) is not { } documentId)
                     continue;
 
-                if (await syntaxReference.GetSyntaxAsync(cancellationToken).ConfigureAwait(false) is not TypeDeclarationSyntax declaration)
+                if (await syntaxReference.GetSyntaxAsync(cancellationToken).ConfigureAwait(false) is not MemberDeclarationSyntax declaration)
                     continue;
 
                 if (!declarationsByDocument.TryGetValue(documentId, out var declarations))
@@ -111,7 +121,7 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         return solution;
     }
 
-    private static async Task<Solution> RemoveTypeDeclarations(Solution solution, DocumentId documentId, HashSet<TypeDeclarationSyntax> declarations, CancellationToken cancellationToken)
+    private static async Task<Solution> RemoveTypeDeclarations(Solution solution, DocumentId documentId, HashSet<MemberDeclarationSyntax> declarations, CancellationToken cancellationToken)
     {
         var document = solution.GetDocument(documentId);
         if (document is null)
@@ -135,18 +145,20 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
         return editor.GetChangedDocument().Project.Solution;
     }
 
-    private static List<TypeDeclarationSyntax> GetAllTypeDeclarations(SyntaxNode node)
+    private static List<MemberDeclarationSyntax> GetAllTypeDeclarations(SyntaxNode node)
     {
-        var types = new List<TypeDeclarationSyntax>();
+        var types = new List<MemberDeclarationSyntax>();
         CollectTypeDeclarations(node, types);
         return types;
     }
 
-    private static void CollectTypeDeclarations(SyntaxNode node, List<TypeDeclarationSyntax> types)
+    private static void CollectTypeDeclarations(SyntaxNode node, List<MemberDeclarationSyntax> types)
     {
-        if (node is TypeDeclarationSyntax typeDeclaration)
+        // The nested types are removed with their containing type, so only the outermost type declarations are collected
+        if (node is BaseTypeDeclarationSyntax or DelegateDeclarationSyntax)
         {
-            types.Add(typeDeclaration);
+            types.Add((MemberDeclarationSyntax)node);
+            return;
         }
 
         foreach (var child in node.ChildNodes())
