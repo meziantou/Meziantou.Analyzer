@@ -44,7 +44,9 @@ public sealed class UseConfigureAwaitFixer : CodeFixProvider
         {
             if (kind is "foreach")
             {
-                var foreachSyntax = nodeToFix.FirstAncestorOrSelf<ForEachStatementSyntax>();
+                // "await foreach (var item in ...)" and "await foreach (var (a, b) in ...)". The diagnostic is reported
+                // on the collection, so the loop must contain it in its expression and not only in its body.
+                var foreachSyntax = nodeToFix.FirstAncestorOrSelf<CommonForEachStatementSyntax>(node => node.Expression.Span.Contains(nodeToFix.Span));
                 if (foreachSyntax is null)
                     return editor.GetChangedDocument();
 

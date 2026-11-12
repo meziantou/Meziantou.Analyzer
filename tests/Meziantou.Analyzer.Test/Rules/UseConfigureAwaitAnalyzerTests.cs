@@ -113,6 +113,88 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_Deconstruction_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<(int, int)> Enumerable() => throw null;
+
+                    await foreach(var (a, b) in {|MA0004:Enumerable()|})
+                    {
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<(int, int)> Enumerable() => throw null;
+
+                    await foreach(var (a, b) in Enumerable().ConfigureAwait(false))
+                    {
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task MissingConfigureAwait_AwaitForeach_DeconstructionInNestedLoop_ShouldReportError()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<(int, int)> Enumerable() => throw null;
+
+                    await foreach(var item in Enumerable().ConfigureAwait(false))
+                    {
+                        await foreach(var (a, b) in {|MA0004:Enumerable()|})
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+        test.FixedCode = """
+            using System.Collections.Generic;
+            using System.Threading.Tasks;
+            class ClassTest
+            {
+                async Task Test()
+                {
+                    IAsyncEnumerable<(int, int)> Enumerable() => throw null;
+
+                    await foreach(var item in Enumerable().ConfigureAwait(false))
+                    {
+                        await foreach(var (a, b) in Enumerable().ConfigureAwait(false))
+                        {
+                        }
+                    }
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task MissingConfigureAwait_AwaitForeach_ShouldReportError_ConfigureAwait()
     {
         var test = CreateTest();
