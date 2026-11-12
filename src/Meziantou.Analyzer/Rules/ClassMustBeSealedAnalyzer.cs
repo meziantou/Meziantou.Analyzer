@@ -13,7 +13,8 @@ public sealed class ClassMustBeSealedAnalyzer : DiagnosticAnalyzer
         DiagnosticSeverity.Info,
         isEnabledByDefault: true,
         description: "",
-        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassMustBeSealed));
+        helpLinkUri: RuleIdentifiers.GetHelpUri(RuleIdentifiers.ClassMustBeSealed),
+        customTags: [WellKnownDiagnosticTags.CompilationEnd]);
 
     private static readonly ConfigurationDefinition<bool> ExceptionsShouldBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".exceptions_should_be_sealed", defaultValue: false);
     private static readonly ConfigurationDefinition<bool> PublicClassShouldBeSealedConfiguration = new(RuleIdentifiers.ClassMustBeSealed + ".public_class_should_be_sealed", defaultValue: false);
