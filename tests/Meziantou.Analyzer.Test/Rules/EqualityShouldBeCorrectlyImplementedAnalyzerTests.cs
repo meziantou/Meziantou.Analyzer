@@ -601,6 +601,31 @@ public sealed class EqualityShouldBeCorrectlyImplementedAnalyzerTests
     }
 
     [Fact]
+    public Task MA0095_CodeFix_ExplicitEquals()
+    {
+        var test = new CodeFixTest();
+        test.TestCode = """
+            using System;
+
+            public sealed class {|MA0095:Test|} : IEquatable<Test>
+            {
+                bool IEquatable<Test>.Equals(Test other) => true;
+            }
+            """;
+        test.FixedCode = """
+            using System;
+
+            public sealed class Test : IEquatable<Test>
+            {
+                bool IEquatable<Test>.Equals(Test other) => true;
+                public override bool Equals(object obj) => obj is Test other && ((IEquatable<Test>)this).Equals(other);
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task DirectImplementation_WithEqualsObject_ShouldNotTrigger()
     {
         var test = new CodeFixTest();
