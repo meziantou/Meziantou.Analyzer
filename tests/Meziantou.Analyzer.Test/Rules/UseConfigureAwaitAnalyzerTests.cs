@@ -812,6 +812,198 @@ public sealed class UseConfigureAwaitAnalyzerTests
     }
 
     [Fact]
+    public Task AfterConfigureAwaitTrue_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(true);
+                    await Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitNonConstant_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.NetFramework.Net48.Wpf;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            class MyClass : System.Windows.Window
+            {
+                async Task Test(bool value)
+                {
+                    await Task.Delay(1).ConfigureAwait(value);
+                    await Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitOptionsContinueOnCapturedContext_ShouldNotReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(ConfigureAwaitOptions.ContinueOnCapturedContext | ConfigureAwaitOptions.ForceYielding);
+                    await Task.Delay(1);
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterConfigureAwaitOptionsWithoutContinueOnCapturedContext_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await Task.Delay(1).ConfigureAwait(ConfigureAwaitOptions.ForceYielding);
+                    {|MA0004:await Task.Delay(1)|};
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterValueTaskConfigureAwaitFalse_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await GetAsync().ConfigureAwait(false);
+                    {|MA0004:await Task.Delay(1)|};
+                }
+
+                ValueTask GetAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await GetAsync().ConfigureAwait(false);
+                    await Task.Delay(1).ConfigureAwait(false);
+                }
+
+                ValueTask GetAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task AfterValueTaskOfTConfigureAwaitFalse_ShouldReportDiagnostic()
+    {
+        var test = CreateTest();
+        test.ReferenceAssemblies = ReferenceAssemblies.Net.Net80;
+        test.TestCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await GetValueAsync().ConfigureAwait(false);
+                    {|MA0004:await Task.Delay(1)|};
+                }
+
+                ValueTask<int> GetValueAsync() => throw null;
+            }
+            """;
+        test.FixedCode = """
+            using System.Threading.Tasks;
+            namespace Microsoft.AspNetCore.Components
+            {
+                public interface IComponent
+                {
+                }
+            }
+
+            class ClassTest : Microsoft.AspNetCore.Components.IComponent
+            {
+                async Task Test()
+                {
+                    await GetValueAsync().ConfigureAwait(false);
+                    await Task.Delay(1).ConfigureAwait(false);
+                }
+
+                ValueTask<int> GetValueAsync() => throw null;
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task TaskYield_ShouldNotReportDiagnostic()
     {
         var test = CreateTest();
