@@ -56,7 +56,9 @@ internal sealed class Finding
 
         var text = exception.ToString();
         var frames = StackTraceParser.GetAnalyzerFrames(text);
-        if (frames.IsEmpty && kind is FindingKind.AnalyzerException or FindingKind.CodeFixException)
+        // A NullReferenceException thrown by Roslyn is a bug of Roslyn, even when an analyzer or a code fixer calls it, e.g. the
+        // semantic model that SymbolFinder uses throws on "namespace[(async delegate"
+        if ((frames.IsEmpty || exception is NullReferenceException && StackTraceParser.IsThrownByRoslyn(text)) && kind is FindingKind.AnalyzerException or FindingKind.CodeFixException)
         {
             kind = FindingKind.RoslynException;
         }
