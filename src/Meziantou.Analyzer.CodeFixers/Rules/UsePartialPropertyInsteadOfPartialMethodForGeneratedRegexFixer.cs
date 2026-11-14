@@ -72,17 +72,21 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFix
             if (docRoot is null)
                 continue;
 
+            var docSemanticModel = await doc.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+            if (docSemanticModel is null)
+                continue;
+
             var nodesToReplace = new Dictionary<SyntaxNode, SyntaxNode>();
             foreach (var refLoc in group)
             {
-                var refNode = docRoot.FindNode(refLoc.Location.SourceSpan, getInnermostNodeForTie: true);
+                var refNode = docRoot.FindNode(refLoc.Location.SourceSpan, findInsideTrivia: true, getInnermostNodeForTie: true);
                 if (refNode is null)
                     continue;
 
-                var invocation = GetContainingInvocationExpression(refNode);
-                if (invocation is not null && invocation.ArgumentList.Arguments.Count == 0)
+                var replacement = GetReplacement(docSemanticModel, refNode, cancellationToken);
+                if (replacement is not null)
                 {
-                    nodesToReplace[invocation] = invocation.Expression.WithTriviaFrom(invocation);
+                    nodesToReplace[replacement.Value.Node] = replacement.Value.Replacement;
                 }
             }
 
@@ -109,6 +113,38 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexFix
         var propertyDeclaration = CreatePropertyDeclaration(currentMethodDecl);
         var newRoot = updatedRoot.ReplaceNode(currentMethodDecl, propertyDeclaration);
         return solution.WithDocumentSyntaxRoot(document.Id, newRoot);
+    }
+
+    private static (SyntaxNode Node, SyntaxNode Replacement)? GetReplacement(SemanticModel semanticModel, SyntaxNode refNode, CancellationToken cancellationToken)
+    {
+        // <see cref="MyRegex()"/> => <see cref="MyRegex"/>
+        if (refNode.FirstAncestorOrSelf<NameMemberCrefSyntax>() is { Parameters: not null } nameMemberCref)
+            return (nameMemberCref, nameMemberCref.WithParameters(null).WithTriviaFrom(nameMemberCref));
+
+        var invocation = GetContainingInvocationExpression(refNode);
+        if (invocation is not null)
+        {
+            if (invocation.ArgumentList.Arguments.Count != 0)
+                return null;
+
+            // A property access cannot be used as a statement: MyRegex(); => _ = MyRegex;
+            ExpressionSyntax propertyAccess = invocation.Expression.WithoutTrivia();
+            if (semanticModel.GetOperation(invocation, cancellationToken)?.Parent is IExpressionStatementOperation)
+            {
+                // The compiler only binds '_' as a discard when its contextual kind is UnderscoreToken, which IdentifierName("_") does not set
+                var discard = IdentifierName(Identifier(default, SyntaxKind.UnderscoreToken, "_", "_", default));
+                propertyAccess = AssignmentExpression(SyntaxKind.SimpleAssignmentExpression, discard, propertyAccess);
+            }
+
+            return (invocation, propertyAccess.WithTriviaFrom(invocation));
+        }
+
+        // A property cannot be converted to a delegate: Func<Regex> func = MyRegex; => Func<Regex> func = () => MyRegex;
+        var expression = refNode.Parent is MemberAccessExpressionSyntax memberAccess && memberAccess.Name == refNode ? memberAccess : refNode;
+        if (expression is ExpressionSyntax expressionSyntax && semanticModel.GetOperation(expressionSyntax, cancellationToken) is IMethodReferenceOperation)
+            return (expressionSyntax, ParenthesizedLambdaExpression(expressionSyntax.WithoutTrivia()).WithTriviaFrom(expressionSyntax));
+
+        return null;
     }
 
     private static InvocationExpressionSyntax? GetContainingInvocationExpression(SyntaxNode refNode)
