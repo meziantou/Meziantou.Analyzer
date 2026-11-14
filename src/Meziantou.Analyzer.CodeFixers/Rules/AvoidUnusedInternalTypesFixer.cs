@@ -113,15 +113,95 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
             declarationsByDocument.Add(document.Id, [typeDeclarationSyntax]);
         }
 
+        // The using directives that reference the type (using static, using alias) would not compile once the type is removed.
+        // The analyzer does not consider them as usages, so they are removed with the type. They can be in any document (global using).
+        var usingDirectivesByDocument = new Dictionary<DocumentId, List<UsingDirectiveSyntax>>();
+        if (typeSymbol is not null)
+        {
+            foreach (var projectDocument in document.Project.Documents)
+            {
+                var usingDirectives = await GetUsingDirectivesReferencingType(projectDocument, typeSymbol, cancellationToken).ConfigureAwait(false);
+                if (usingDirectives.Count > 0)
+                {
+                    usingDirectivesByDocument.Add(projectDocument.Id, usingDirectives);
+                }
+            }
+        }
+
         foreach (var (documentId, declarations) in declarationsByDocument)
         {
-            solution = await RemoveTypeDeclarations(solution, documentId, declarations, cancellationToken).ConfigureAwait(false);
+            usingDirectivesByDocument.TryGetValue(documentId, out var usingDirectives);
+            solution = await RemoveNodes(solution, documentId, declarations, usingDirectives, cancellationToken).ConfigureAwait(false);
+        }
+
+        foreach (var (documentId, usingDirectives) in usingDirectivesByDocument)
+        {
+            if (declarationsByDocument.ContainsKey(documentId))
+                continue;
+
+            solution = await RemoveNodes(solution, documentId, declarations: [], usingDirectives, cancellationToken).ConfigureAwait(false);
         }
 
         return solution;
     }
 
-    private static async Task<Solution> RemoveTypeDeclarations(Solution solution, DocumentId documentId, HashSet<MemberDeclarationSyntax> declarations, CancellationToken cancellationToken)
+    private static async Task<List<UsingDirectiveSyntax>> GetUsingDirectivesReferencingType(Document document, ISymbol typeSymbol, CancellationToken cancellationToken)
+    {
+        var result = new List<UsingDirectiveSyntax>();
+        if (await document.GetSyntaxRootAsync(cancellationToken).ConfigureAwait(false) is not CompilationUnitSyntax compilationUnit)
+            return result;
+
+        SemanticModel? semanticModel = null;
+        foreach (var usingDirective in GetUsingDirectives(compilationUnit))
+        {
+            foreach (var name in usingDirective.DescendantNodes().OfType<SimpleNameSyntax>())
+            {
+                // Only bind the names that can reference the type
+                if (name.Identifier.ValueText != typeSymbol.Name)
+                    continue;
+
+                semanticModel ??= await document.GetSemanticModelAsync(cancellationToken).ConfigureAwait(false);
+                if (semanticModel is null)
+                    return result;
+
+                if (semanticModel.GetSymbolInfo(name, cancellationToken).Symbol is INamedTypeSymbol referencedType && SymbolEqualityComparer.Default.Equals(referencedType.OriginalDefinition, typeSymbol))
+                {
+                    result.Add(usingDirective);
+                    break;
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private static IEnumerable<UsingDirectiveSyntax> GetUsingDirectives(SyntaxNode node)
+    {
+        var (usings, members) = node switch
+        {
+            CompilationUnitSyntax compilationUnit => (compilationUnit.Usings, compilationUnit.Members),
+            BaseNamespaceDeclarationSyntax namespaceDeclaration => (namespaceDeclaration.Usings, namespaceDeclaration.Members),
+            _ => default,
+        };
+
+        foreach (var usingDirective in usings)
+        {
+            yield return usingDirective;
+        }
+
+        foreach (var member in members)
+        {
+            if (member is BaseNamespaceDeclarationSyntax)
+            {
+                foreach (var usingDirective in GetUsingDirectives(member))
+                {
+                    yield return usingDirective;
+                }
+            }
+        }
+    }
+
+    private static async Task<Solution> RemoveNodes(Solution solution, DocumentId documentId, HashSet<MemberDeclarationSyntax> declarations, List<UsingDirectiveSyntax>? usingDirectives, CancellationToken cancellationToken)
     {
         var document = solution.GetDocument(documentId);
         if (document is null)
@@ -132,14 +212,22 @@ public sealed class AvoidUnusedInternalTypesFixer : CodeFixProvider
             return solution;
 
         // If the file only contains the removed declarations and there are no assembly attributes, remove the document from the solution
-        if (root is CompilationUnitSyntax compilationUnit && compilationUnit.AttributeLists.Count == 0 && GetAllTypeDeclarations(compilationUnit).All(declarations.Contains))
+        if (declarations.Count > 0 && root is CompilationUnitSyntax compilationUnit && compilationUnit.AttributeLists.Count == 0 && GetAllTypeDeclarations(compilationUnit).All(declarations.Contains))
             return solution.RemoveDocument(documentId);
 
-        // Otherwise, just remove the type declarations
+        // Otherwise, just remove the type declarations and the using directives that reference the type
         var editor = await DocumentEditor.CreateAsync(document, cancellationToken).ConfigureAwait(false);
         foreach (var declaration in declarations)
         {
             editor.RemoveNode(declaration);
+        }
+
+        if (usingDirectives is not null)
+        {
+            foreach (var usingDirective in usingDirectives)
+            {
+                editor.RemoveNode(usingDirective);
+            }
         }
 
         return editor.GetChangedDocument().Project.Solution;
