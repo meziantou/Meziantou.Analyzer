@@ -2900,6 +2900,92 @@ public sealed class AvoidUnusedInternalTypesAnalyzerTests
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1813")]
+    public Task CodeFix_RemoveType_UsingStatic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using static Tokens;
+            using System;
+
+            static class {|MA0182:Tokens|} { }
+
+            public class UsedClass
+            {
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+            using System;
+
+            public class UsedClass
+            {
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_UsingAliasAndNestedType()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Alias = System.Collections.Generic.List<Sample>;
+            using static Sample.Nested;
+
+            namespace MyNamespace
+            {
+                using static Sample;
+
+                public class UsedClass
+                {
+                }
+            }
+
+            class {|MA0182:Sample|}
+            {
+                public static class {|MA0182:Nested|} { }
+            }
+            """;
+        test.CodeActionIndex = 1;
+        test.FixedCode = """
+
+            namespace MyNamespace
+            {
+                public class UsedClass
+                {
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_RemoveType_GlobalUsingStaticInOtherFile()
+    {
+        var test = CreateTest();
+        test.TestState.Sources.Add("""
+            global using static Sample;
+            global using System;
+            """);
+        test.TestState.Sources.Add("""
+            class {|MA0182:Sample|}
+            {
+            }
+            """);
+        test.CodeActionIndex = 1;
+        test.FixedState.InheritanceMode = StateInheritanceMode.Explicit;
+        test.FixedState.Sources.Add("""
+            global using System;
+            """);
+        test.CodeFixTestBehaviors |= CodeFixTestBehaviors.SkipFixAllCheck;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task TypeUsedInDelegateSignature_NoDiagnostic()
     {
         var test = CreateTest();
