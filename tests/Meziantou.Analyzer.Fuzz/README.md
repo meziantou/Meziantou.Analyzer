@@ -30,7 +30,9 @@ as there is no stack trace to tell them apart.
 
 The exceptions thrown by Roslyn without a frame of the analyzers in their stack trace while an analyzer or a code fixer runs (`RoslynException`), and
 the exceptions of the harness itself (`HarnessException`), are saved, but no issue is opened for them. Most `RoslynException` findings are the formatter
-or the simplifier failing on the invalid code of an input, which is full of syntax errors, even before a code fix changes it.
+or the simplifier failing on the invalid code of an input, which is full of syntax errors, even before a code fix changes it. A `NullReferenceException`
+thrown by Roslyn is also a `RoslynException`, even when an analyzer or a code fixer is in its stack trace, as the analyzer only called a Roslyn API that
+fails on the input (e.g. `SymbolFinder` on `namespace[(async delegate`).
 
 The signature of a `RoslynException` or a `CompilerException` does not use the analyzer or the code fixer that was running, as the same bug can be found
 while any of them runs. It uses the message of the assertions of Roslyn (`Contract.ThrowIfFalse`), which contains their file and their line, and the first

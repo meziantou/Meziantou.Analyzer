@@ -582,6 +582,81 @@ public sealed class MakeMethodStaticAnalyzerTests
     }
 
     [Fact]
+    public Task PartialProperty_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            partial class Test
+            {
+                public partial int P { get; }
+                public partial int P { get => 1; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionBlock_MethodUsesExtensionParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Extensions
+            {
+                extension(object obj)
+                {
+                    public object A() => obj;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionBlock_PropertyUsesExtensionParameter_NoDiagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Extensions
+            {
+                extension(object obj)
+                {
+                    public object P => obj;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task ExtensionBlock_MethodDoesNotUseExtensionParameter()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            static class Extensions
+            {
+                extension(object obj)
+                {
+                    public int {|MA0038:A|}() => 0;
+                }
+            }
+            """;
+        test.FixedCode = """
+            static class Extensions
+            {
+                extension(object obj)
+                {
+                    public static int A() => 0;
+                }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task XamlEventHandler_Add_NoDiagnostic()
     {
         var test = CreateTest();

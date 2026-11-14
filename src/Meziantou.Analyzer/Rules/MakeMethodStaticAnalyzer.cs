@@ -200,7 +200,8 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
                 !symbol.IsOverride &&
                 !symbol.IsStatic &&
                 !symbol.IsInterfaceImplementation() &&
-                !IsPatternBasedMember(symbol);
+                !IsPatternBasedMember(symbol) &&
+                symbol.PartialDefinitionPart is null;
         }
 
         /// <summary>
@@ -237,6 +238,10 @@ public sealed class MakeMethodStaticAnalyzer : DiagnosticAnalyzer
 
                     // The parameters of a constructor can only be referenced from a method or an accessor when they are the parameters of the primary constructor, which are captured by the instance
                     case IParameterReferenceOperation { Parameter.ContainingSymbol: IMethodSymbol { MethodKind: MethodKind.Constructor } }:
+                        return true;
+
+                    // The parameter of an extension block is the receiver of its instance members, which a static member cannot access (CS9347)
+                    case IParameterReferenceOperation { Parameter.ContainingSymbol: INamedTypeSymbol }:
                         return true;
                 }
             }

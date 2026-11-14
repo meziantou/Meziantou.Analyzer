@@ -26,6 +26,9 @@ internal static partial class StackTraceParser
     /// <summary>Whether the exception is an assertion of Roslyn, whose message contains the file and the line of the assertion.</summary>
     public static bool IsRoslynAssertion(string text) => GetFrames(text).Any(IsRoslynAssertionFrame);
 
+    /// <summary>Whether the first frame of the stack trace, where the exception is thrown, is a frame of Roslyn.</summary>
+    public static bool IsThrownByRoslyn(string text) => GetFrames(text).FirstOrDefault() is { } method && method.StartsWith("Microsoft.CodeAnalysis.", StringComparison.Ordinal);
+
     private static bool IsRoslynAssertionFrame(string method) => method.StartsWith("Microsoft.CodeAnalysis.Contract.", StringComparison.Ordinal);
 
     /// <summary>The lines of the text that are stack frames, at most <paramref name="maxCount"/>, with the consecutive duplicates of a stack overflow collapsed.</summary>
