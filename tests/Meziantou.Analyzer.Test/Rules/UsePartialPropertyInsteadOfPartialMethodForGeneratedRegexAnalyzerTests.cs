@@ -228,6 +228,146 @@ public sealed class UsePartialPropertyInsteadOfPartialMethodForGeneratedRegexAna
     }
 
     [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1811")]
+    public Task CodeFix_InvocationUsedAsStatement()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                void A()
+                {
+                    SampleRegex();
+                    Sample.SampleRegex();
+                    for (SampleRegex(); ; SampleRegex())
+                    {
+                    }
+                }
+
+                void B() => SampleRegex();
+
+                void C()
+                {
+                    Action action = () => SampleRegex();
+                    Func<Regex> func = () => SampleRegex();
+                }
+
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex {|MA0190:SampleRegex|}();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                void A()
+                {
+                    _ = SampleRegex;
+                    _ = Sample.SampleRegex;
+                    for (_ = SampleRegex; ; _ = SampleRegex)
+                    {
+                    }
+                }
+
+                void B() => _ = SampleRegex;
+
+                void C()
+                {
+                    Action action = () => _ = SampleRegex;
+                    Func<Regex> func = () => SampleRegex;
+                }
+
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex SampleRegex { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_MethodGroup()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                void A()
+                {
+                    Func<Regex> func1 = SampleRegex;
+                    Func<Regex> func2 = Sample.SampleRegex;
+                    Use(SampleRegex);
+                    _ = nameof(SampleRegex);
+                }
+
+                static void Use(Func<Regex> func) { }
+
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex {|MA0190:SampleRegex|}();
+            }
+            """;
+        test.FixedCode = """
+            using System;
+            using System.Text.RegularExpressions;
+
+            partial class Sample
+            {
+                void A()
+                {
+                    Func<Regex> func1 = () => SampleRegex;
+                    Func<Regex> func2 = () => Sample.SampleRegex;
+                    Use(() => SampleRegex);
+                    _ = nameof(SampleRegex);
+                }
+
+                static void Use(Func<Regex> func) { }
+
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex SampleRegex { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    public Task CodeFix_Cref()
+    {
+        var test = CreateTest();
+        test.TestState.DocumentationMode = DocumentationMode.Diagnose;
+        test.TestCode = """
+            using System.Text.RegularExpressions;
+
+            /// <summary><see cref="SampleRegex()"/> <see cref="Sample.SampleRegex()"/> <see cref="SampleRegex"/></summary>
+            public partial class Sample
+            {
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex {|MA0190:SampleRegex|}();
+            }
+            """;
+        test.FixedCode = """
+            using System.Text.RegularExpressions;
+
+            /// <summary><see cref="SampleRegex"/> <see cref="Sample.SampleRegex"/> <see cref="SampleRegex"/></summary>
+            public partial class Sample
+            {
+                [GeneratedRegex("[a-z]+")]
+                private static partial Regex SampleRegex { get; }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1679")]
     public Task InvalidCode_ReferenceBeforeDeclaration()
     {
