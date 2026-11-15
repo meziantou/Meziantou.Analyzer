@@ -1,3 +1,6 @@
+using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
+
 namespace Meziantou.Analyzer.Rules;
 
 [DiagnosticAnalyzer(LanguageNames.CSharp)]
@@ -47,6 +50,7 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                 OperationKind.PropertyReference,
                 OperationKind.EventReference,
                 OperationKind.MethodReference);
+            ctx.RegisterSyntaxNodeAction(analyzerContext.AnalyzeUsingDirective, SyntaxKind.UsingDirective);
             ctx.RegisterCompilationEndAction(analyzerContext.AnalyzeCompilationEnd);
         });
     }
@@ -195,6 +199,20 @@ public sealed class MakeClassStaticAnalyzer : DiagnosticAnalyzer
                 case { Type: { } type }:
                     AddCannotBeStaticType(type);
                     break;
+            }
+        }
+
+        // There is no operation for the using directives, so the syntax is used.
+        // using Alias = StaticClass; is valid, but not using Alias = List<StaticClass>; nor using Alias = StaticClass[];
+        public void AnalyzeUsingDirective(SyntaxNodeAnalysisContext context)
+        {
+            var usingDirective = (UsingDirectiveSyntax)context.Node;
+            if (usingDirective.Alias is null)
+                return;
+
+            if (context.SemanticModel.GetDeclaredSymbol(usingDirective, context.CancellationToken) is { Target: ITypeSymbol type })
+            {
+                AddTypeComponents(type);
             }
         }
 
