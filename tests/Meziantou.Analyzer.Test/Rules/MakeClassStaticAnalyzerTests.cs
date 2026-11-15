@@ -388,6 +388,52 @@ public sealed class MakeClassStaticAnalyzerTests
         return test.RunAsync();
     }
 
+    [Theory]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1821")]
+    [InlineData("using Alias = System.Collections.Generic.List<Helper>;")]
+    [InlineData("using Alias = Helper[];")]
+    [InlineData("using Alias = (Helper, int);")]
+    [InlineData("global using Alias = System.Collections.Generic.List<Helper>;")]
+    public Task TypeUsedInUsingAlias_NoDiagnostic(string usingDirective)
+    {
+        var test = CreateTest();
+        test.TestCode = $$"""
+            {{usingDirective}}
+
+            class Helper
+            {
+                public static void M() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
+    [Trait("Issue", "https://github.com/meziantou/Meziantou.Analyzer/issues/1821")]
+    public Task TypeUsedAsUsingAliasTarget_Diagnostic()
+    {
+        var test = CreateTest();
+        test.TestCode = """
+            using Alias = Helper;
+
+            class {|MA0036:Helper|}
+            {
+                public static void M() { }
+            }
+            """;
+        test.FixedCode = """
+            using Alias = Helper;
+
+            static class Helper
+            {
+                public static void M() { }
+            }
+            """;
+
+        return test.RunAsync();
+    }
+
     [Fact]
     public Task TypeUsedAsTypeOfOperandOrStaticMemberAccess_Diagnostic()
     {
