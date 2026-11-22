@@ -248,6 +248,21 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineAnalyzerTest
     }
 
     [Fact]
+    public Task UnterminatedVerbatimString_NoCodeFix()
+    {
+        const string Source = """
+            {|MA0101:@"
+            |}
+            """;
+        var test = CreateTest();
+        test.TestCode = Source;
+        test.FixedCode = Source;
+        test.CompilerDiagnostics = CompilerDiagnostics.None;
+
+        return test.RunAsync();
+    }
+
+    [Fact]
     public Task InterpolatedString_NoCodeFix()
     {
         const string Source = """
