@@ -17,6 +17,10 @@ public sealed class StringShouldNotContainsNonDeterministicEndOfLineFixer : Code
         if (root?.FindNode(context.Span, getInnermostNodeForTie: true) is not LiteralExpressionSyntax nodeToFix)
             return;
 
+        // An unterminated string literal has no closing quote, so its content cannot be extracted
+        if (nodeToFix.Token.ContainsDiagnostics)
+            return;
+
         foreach (var newLine in new[] { null, "\n", "\r\n" })
         {
             var title = "Use explicit " + (newLine switch
